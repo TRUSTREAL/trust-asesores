@@ -256,6 +256,16 @@ tr.Perdido td.cli{text-decoration:line-through;text-decoration-color:var(--st-bl
 .row .val{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
 .f.third{grid-column:span 1}
 @media (max-width:480px){.tiles{grid-template-columns:1fr 1fr}}
+
+/* columna cliente fija */
+table{min-width:1500px}
+td.cli,th:first-child{position:sticky;left:0;z-index:2;background:var(--surface);box-shadow:1px 0 0 var(--line)}
+th:first-child{z-index:3;background:var(--surface-2)}
+tbody tr:nth-child(even) td.cli{background:#FBFAF6}
+tr:hover td.cli{background:var(--surface-2)}
+tr.Perdido td.cli{opacity:1;color:var(--muted)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) tbody tr:nth-child(even) td.cli{background:#1E2724}}
+:root[data-theme="dark"] tbody tr:nth-child(even) td.cli{background:#1E2724}
 </style>
 </head>
 <body>
