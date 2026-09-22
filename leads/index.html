@@ -1397,7 +1397,7 @@ document.addEventListener("keydown", e=>{
   if(e.key==="Escape" && !document.getElementById("modal").classList.contains("on")) resetForm();
 });
 
-if("serviceWorker" in navigator) 
+/* service worker deshabilitado (no hay sw.js en el repo) */
 /* ===== Actualización automática (cada 60 s) ===== */
 let afterLoad=null;   // las variantes (Tanhia, asesores) pueden filtrar aquí
 async function refresh(){
