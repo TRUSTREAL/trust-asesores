@@ -480,7 +480,7 @@ function listaPDF(p){
   const money=v=>"$ "+Math.round(v).toLocaleString("es-MX");
   const th=[["Tipo"],hasTorre?["Torre"]:null,["Nivel","num"],hasVista?["Vista"]:null,["m² int.","num"],hasTerr?["m² terraza","num"]:null,["m² total","num"],hasPark?["Cajones","num"]:null,[renta?"Renta mensual":"Precio","num strong"],!renta?[`Enganche mín. ${eng}%`,"num eng"]:null].filter(Boolean);
   const tr=rows.map(u=>[[esc(u.tipo),"tipo"],hasTorre?[esc(u.torre)]:null,[u.nivel??"","num"],hasVista?[esc(u.vista)]:null,[n2(u.m2int),"num dim"],hasTerr?[u.m2terr?n2(u.m2terr):"–","num dim"]:null,[n2(u.m2tot),"num tot"],hasPark?[u.parking??"","num"]:null,[money(u.precio),"num strong"],!renta?[money(u.precio*eng/100),"num eng"]:null].filter(Boolean));
-  const nota=p.nota_lista||(renta?"":`Enganche mínimo del ${eng}% para apartar tu unidad.`);
+  const nota=renta?"":"Aparta tu unidad con $5,000 reembolsables.";
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Lista de precios · ${esc(p.nombre)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -529,7 +529,7 @@ td.eng{font-weight:600}
   <div class="meta">${[p.giro?`<span>${esc(p.giro)}</span>`:"",p.ubicacion?`<span>${esc(p.ubicacion)}</span>`:"",`<span><b>${rows.length}</b> unidad${rows.length===1?"":"es"} disponible${rows.length===1?"":"s"}</span>`].filter(Boolean).join("")}</div>
   ${rows.length?`<table><thead><tr>${th.map(h=>`<th class="${h[1]||""}">${h[0]}</th>`).join("")}</tr></thead><tbody>${tr.map(r=>`<tr>${r.map(c=>`<td class="${c[1]||""}">${c[0]}</td>`).join("")}</tr>`).join("")}</tbody></table>`:`<div class="empty">Sin unidades disponibles en este momento.</div>`}
   ${nota?`<div class="band"><div class="t">${esc(nota)}</div><div class="c">33 3376 5616</div></div>`:""}
-  <div class="foot"><div>Precios en pesos mexicanos · Sujetos a cambio sin previo aviso${renta?" · Renta mensual sin IVA":""}</div><div class="by">Comercializado por <img src="data:image/png;base64,${LOGO_B64}" alt="TRUST"></div></div>
+  <div class="foot"><div>Precios en pesos mexicanos · Sujetos a cambio sin previo aviso${renta?" · Renta mensual sin IVA":""}${p.nota_lista?" · "+esc(p.nota_lista):""}</div><div class="by">Comercializado por <img src="data:image/png;base64,${LOGO_B64}" alt="TRUST"></div></div>
 </div>
 <script>window.addEventListener("load",()=>setTimeout(()=>window.print(),500));<\/script>
 </body></html>`;
@@ -587,7 +587,7 @@ function openProject(p){
     fld("ubicacion","Ubicación",p?.ubicacion||"")+
     fld("lista","Lista de precios vigente",p?.lista||"","placeholder='Ej. Lista 6 · Sep–Dic 2026'")+
     fld("enganche","% de apartado / enganche (PDF)",p?.enganche??5,"type=number step=0.5 min=0 max=100")+
-    fld("nota_lista","Nota al pie del PDF",p?.nota_lista||"","placeholder='Ej. Aparta con solo el 5% de enganche.'",true)+
+    fld("nota_lista","Nota adicional al pie del PDF",p?.nota_lista||"","placeholder='Opcional, ej. Entrega estimada diciembre 2027'",true)+
     `<div class="f full"><label for="fx-notas">Notas</label><textarea id="fx-notas" name="notas">${esc(p?.notas||"")}</textarea></div>`,
     d=>{d.enganche=d.enganche===""?5:+d.enganche;if(p){Object.assign(p,d);db(()=>sb.from("proyectos").update(rowP(p)).eq("id",p.id))}else{const np={id:newId(),units:[],...d};S.projects.push(np);S.cat=np.cat;S.sel=np.id;db(()=>sb.from("proyectos").insert(rowP(np)))}},
     p?()=>{S.projects=S.projects.filter(x=>x!==p);db(()=>sb.from("proyectos").delete().eq("id",p.id))}:null);
