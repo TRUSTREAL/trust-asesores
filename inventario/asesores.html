@@ -196,6 +196,21 @@ select.st{padding-right:10px}
 .pol .upd{font-size:12px;color:var(--faint);margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
 .pol.empty{color:var(--muted);text-align:center;padding:36px}
 .pol.empty b{display:block;font-family:Lora,serif;font-size:18px;color:var(--text);font-weight:500;margin-bottom:6px}
+
+/* documentos */
+.docs{margin-top:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.doc{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-decoration:none;color:var(--text);transition:border-color .15s}
+.doc:hover{border-color:var(--gold)}
+.doc .ext{flex:none;width:40px;height:40px;border-radius:8px;background:var(--surface-2);color:var(--green);font-size:10px;font-weight:700;letter-spacing:.06em;display:flex;align-items:center;justify-content:center;text-transform:uppercase}
+.doc .n{min-width:0;flex:1}
+.doc .n b{display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc .n small{color:var(--muted);font-size:11px}
+.doc .del{flex:none}
+.upl{margin-top:14px;border:1px dashed var(--line-2);border-radius:10px;padding:18px;text-align:center;color:var(--muted);font-size:13px;background:var(--surface)}
+.upl.drag{border-color:var(--green);color:var(--green);background:var(--surface-2)}
+.upl input{display:none}
+.upl label{color:var(--green);font-weight:500;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.upl .prog{margin-top:8px;font-size:12px}
 /* drawer */
 .scrim{position:fixed;inset:0;background:rgba(15,22,19,.45);z-index:20}
 .drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--surface);z-index:21;box-shadow:var(--shadow);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
@@ -345,6 +360,7 @@ async function loadAll(){
   const byId=Object.fromEntries(S.projects.map(p=>[p.id,p]));
   (us||[]).forEach(u=>{const p=byId[u.proyecto_id];if(p)p.units.push({id:u.id,estatus:u.estatus,tipo:u.tipo,torre:u.torre,nivel:u.nivel,vista:u.vista,m2int:+u.m2int||0,m2terr:+u.m2terr||0,m2tot:+u.m2tot||0,parking:u.parking,precio:+u.precio||0})});
   lastSync=new Date(); setSync();
+  S.projects.forEach(p=>{ if(!docs[p.id]) loadDocs(p.id).then(()=>{ if(p.id===S.sel && !$("#drawer-root").innerHTML && document.activeElement?.id!=="f-q") renderMain(); }); });
 }
 function setSync(msg){const el=$("#sync");if(!el)return;const rb=$("#btn-refresh"),rs=$("#btn-reset");if(rb)rb.hidden=!sb;if(rs)rs.hidden=!!sb;el.textContent=msg||(sb?"Supabase · "+lastSync.toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"}):"Modo local · los cambios se guardan solo en este navegador");}
 function db(fn){ if(!sb)return; fn().then(({error})=>{ if(error){alert("No se pudo guardar en Supabase: "+error.message);loadAll().then(render)} else {lastSync=new Date();setSync()} }).catch(err=>alert("Sin conexión: "+err.message)); }
@@ -359,7 +375,8 @@ const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36);
 const isRenta=p=>/renta/i.test(p.giro||"");
 function counts(p){const c={Disponible:0,Apartado:0,Vendido:0,Bloqueado:0,dispVal:0};p.units.forEach(u=>{c[u.estatus]=(c[u.estatus]||0)+1;if(u.estatus==="Disponible")c.dispVal+=u.precio||0});return c}
 let filt={q:"",estatus:"",torre:"",tipo:"",vista:""};
-let vista="precios"; // precios | politica
+let vista="precios"; // precios | politica | docs
+let docs={}; // proyecto_id -> [{name,url,size,updated}]
 let sort={k:null,dir:"asc"};
 
 // ---------- render ----------
@@ -426,7 +443,7 @@ function renderMain(){
         ${READONLY?"":`<td><button class="ico edit-u" data-id="${u.id}" title="Editar">✎</button></td>`}</tr>`).join("")}</tbody>
     </table>${rows.length?"":`<div class="empty">Ninguna unidad coincide con los filtros.</div>`}</div>`
   :`<div class="empty" style="margin-top:18px;border:1px dashed var(--line-2);border-radius:0"><b>Sin unidades cargadas</b>${READONLY?"Aún no hay inventario capturado para este proyecto.":"Agrega las unidades desde la lista de precios o el Excel del desarrollador."}</div>`;
-  const seg=`<div class="vseg" role="tablist" aria-label="Vista"><button data-vista="precios" aria-pressed="${vista==="precios"}">Precios</button><button data-vista="politica" aria-pressed="${vista==="politica"}">Política de venta</button></div>`;
+  const seg=`<div class="vseg" role="tablist" aria-label="Vista"><button data-vista="precios" aria-pressed="${vista==="precios"}">Precios</button><button data-vista="politica" aria-pressed="${vista==="politica"}">Política de venta</button><button data-vista="docs" aria-pressed="${vista==="docs"}">Documentos${(docs[p.id]||[]).length?` · ${(docs[p.id]||[]).length}`:""}</button></div>`;
   const pol=p.politica?`<div class="pol">${polHTML(p.politica)}</div>`:`<div class="pol empty"><b>Sin política de venta cargada</b>${READONLY?"Pronto estará disponible para este proyecto.":"Usa \"Editar política\" para capturarla."}</div>`;
   m.innerHTML=`
     <div class="phead">
@@ -435,7 +452,8 @@ function renderMain(){
       <div class="actions"><button class="btn" id="btn-pdf" ${c.Disponible?"":"disabled"} title="Lista de precios de unidades disponibles">⤓ Lista de precios (PDF)</button>${READONLY?"":`<button class="btn" id="btn-edit-project">Editar proyecto</button><button class="btn" id="btn-edit-pol">Editar política</button><button class="btn primary" id="btn-add-unit">+ Unidad</button>`}</div>
     </div>
     ${seg}
-    ${vista==="precios"?tiles+table+(p.notas?`<div class="notes"><span class="eyebrow">Notas</span><p>${esc(p.notas)}</p></div>`:""):pol}`;
+    ${vista==="precios"?tiles+table+(p.notas?`<div class="notes"><span class="eyebrow">Notas</span><p>${esc(p.notas)}</p></div>`:""):vista==="politica"?pol:docsHTML(p)}`;
+  if(vista==="docs"&&sb&&!docs[p.id])loadDocs(p.id).then(()=>{if(vista==="docs")renderMain()});
 }
 
 // ---------- events ----------
@@ -444,8 +462,9 @@ document.addEventListener("click",e=>{
   if(!t)return;
   if(t.dataset.cat){S.cat=t.dataset.cat;filt={q:"",estatus:"",torre:"",tipo:"",vista:""};save();render();return}
   if(t.id==="pbtn"){const pk=$("#picker");const open=pk.toggleAttribute("open");t.setAttribute("aria-expanded",open);if(open)($("#picker .pitem[aria-current='true']")||$("#picker .pitem"))?.focus();return}
-  if(t.classList.contains("pitem")){S.sel=t.dataset.id;vista="precios";filt={q:"",estatus:"",torre:"",tipo:"",vista:""};sort={k:null,dir:"asc"};save();render();return}
+  if(t.classList.contains("pitem")){S.sel=t.dataset.id;vista="precios";delete docs[t.dataset.id];filt={q:"",estatus:"",torre:"",tipo:"",vista:""};sort={k:null,dir:"asc"};save();render();return}
   if(t.dataset.vista){vista=t.dataset.vista;renderMain();return}
+  if(t.classList.contains("del-doc")){e.preventDefault();deleteDoc(S.sel,t.dataset.name);return}
   if(t.id==="btn-pdf")return listaPDF(S.projects.find(p=>p.id===S.sel));
   if(READONLY)return;
   if(t.id==="btn-add-project")return openProject(null);
@@ -456,10 +475,14 @@ document.addEventListener("click",e=>{
   if(t.id==="btn-reset"&&!sb&&confirm("¿Volver a los datos iniciales? Se perderán los cambios de este navegador.")){S=seed();save();render()}
   if(t.id==="btn-refresh"&&sb){loadAll().then(render)}
 });
+document.addEventListener("dragover",e=>{const u=e.target.closest&&e.target.closest("#upl");if(u){e.preventDefault();u.classList.add("drag")}});
+document.addEventListener("dragleave",e=>{const u=e.target.closest&&e.target.closest("#upl");if(u)u.classList.remove("drag")});
+document.addEventListener("drop",e=>{const u=e.target.closest&&e.target.closest("#upl");if(u){e.preventDefault();u.classList.remove("drag");if(e.dataTransfer.files.length)uploadDocs(S.sel,[...e.dataTransfer.files])}});
 document.addEventListener("pointerdown",e=>{const pk=$("#picker");if(pk&&pk.hasAttribute("open")&&!pk.contains(e.target)){pk.removeAttribute("open");$("#pbtn").setAttribute("aria-expanded","false")}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){const pk=$("#picker");if(pk?.hasAttribute("open")){pk.removeAttribute("open");$("#pbtn").focus()}}});
 document.addEventListener("change",e=>{
   const t=e.target;
+  if(t.id==="doc-file"&&t.files.length){uploadDocs(S.sel,[...t.files]);return}
   if(t.classList.contains("st")){const p=S.projects.find(p=>p.id===S.sel);const u=p.units.find(u=>u.id===t.dataset.id);u.estatus=t.value;save();render();db(()=>sb.from("unidades").update({estatus:u.estatus}).eq("id",u.id));return}
   if(t.id&&t.id.startsWith("f-")&&t.dataset.k){filt[t.dataset.k]=t.value;renderMain()}
 });
@@ -558,6 +581,44 @@ function openPolitica(p){
     `<div class="f full"><label for="fx-politica">Texto</label><textarea id="fx-politica" name="politica" style="min-height:360px;font-family:inherit">${esc(p.politica||"")}</textarea></div>
      <p class="hint">Formato: "# Título", "## Subtítulo", "- punto" para viñetas, **negritas**. Una línea en blanco separa párrafos.</p>`,
     d=>{p.politica=d.politica;db(()=>sb.from("proyectos").update({politica:p.politica}).eq("id",p.id))},null);
+}
+
+
+// ---------- documentos (Supabase Storage, bucket "documentos") ----------
+const BUCKET="documentos";
+const fmtSize=b=>b>1048576?(b/1048576).toFixed(1)+" MB":b>1024?Math.round(b/1024)+" KB":b+" B";
+async function loadDocs(pid){
+  if(!sb){docs[pid]=docs[pid]||[];return}
+  const {data,error}=await sb.storage.from(BUCKET).list(pid,{limit:200,sortBy:{column:"name",order:"asc"}});
+  if(error){docs[pid]=[];setSync("Documentos: "+error.message);return}
+  docs[pid]=(data||[]).filter(f=>f.name&&!f.name.startsWith(".")).map(f=>({name:f.name,size:f.metadata?.size||0,updated:f.updated_at||f.created_at,url:sb.storage.from(BUCKET).getPublicUrl(pid+"/"+f.name).data.publicUrl}));
+}
+function docsHTML(p){
+  const list=docs[p.id];
+  if(!sb)return `<div class="pol empty"><b>Documentos</b>Disponible cuando el panel está conectado a Supabase.</div>`;
+  if(!list)return `<div class="pol empty">Cargando documentos…</div>`;
+  const items=list.map(d=>{const ext=(d.name.split(".").pop()||"").slice(0,4);
+    return `<a class="doc" href="${d.url}" target="_blank" rel="noopener"><span class="ext">${esc(ext)}</span><span class="n"><b title="${esc(d.name)}">${esc(d.name)}</b><small>${fmtSize(d.size)}${d.updated?" · "+new Date(d.updated).toLocaleDateString("es-MX",{day:"numeric",month:"short",year:"numeric"}):""}</small></span>${READONLY?"":`<button class="ico del del-doc" data-name="${esc(d.name)}" title="Eliminar">✕</button>`}</a>`}).join("");
+  const empty=`<div class="pol empty"><b>Sin documentos</b>${READONLY?"Aún no hay archivos para este proyecto.":"Sube el brochure, planos, lista del desarrollador o lo que necesite el equipo."}</div>`;
+  const upl=READONLY?"":`<div class="upl" id="upl"><input type="file" id="doc-file" multiple><label for="doc-file">Elegir archivos</label> o arrástralos aquí · PDF, imágenes, Excel… (máx. 50 MB c/u)<div class="prog" id="upl-prog"></div></div>`;
+  return (list.length?`<div class="docs">${items}</div>`:empty)+upl;
+}
+async function uploadDocs(pid,files){
+  const prog=$("#upl-prog"); let n=0;
+  for(const f of files){
+    if(f.size>50*1048576){alert(f.name+": supera 50 MB");continue}
+    const name=f.name.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^\w.\-() ]+/g,"_");
+    if(prog)prog.textContent=`Subiendo ${++n} de ${files.length}: ${name}…`;
+    const {error}=await sb.storage.from(BUCKET).upload(pid+"/"+name,f,{upsert:true,contentType:f.type||undefined});
+    if(error){alert("No se pudo subir "+name+": "+error.message)}
+  }
+  delete docs[pid]; await loadDocs(pid); renderMain();
+}
+async function deleteDoc(pid,name){
+  if(!confirm("¿Eliminar "+name+"?"))return;
+  const {error}=await sb.storage.from(BUCKET).remove([pid+"/"+name]);
+  if(error){alert("No se pudo eliminar: "+error.message);return}
+  delete docs[pid]; await loadDocs(pid); renderMain();
 }
 
 // ---------- drawers ----------
