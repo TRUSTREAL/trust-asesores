@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FAF8F2">
-<title>Inventario | TRUST</title>
+<title>Inventario | TRUST · Asesores</title>
 <link rel="icon" href="data:,">
 </head>
 <body>
@@ -220,7 +220,7 @@ select.st{padding-right:10px}
       <h1>Inventario</h1>
       <span class="sub" id="subtitle">Control interno de proyectos en comercialización</span>
     </div>
-    <div class="topright"><a class="home-link" href="../admin/">← Inicio</a>
+    <div class="topright"><a class="home-link" href="../">← Inicio</a>
     <div class="seg" role="tablist" aria-label="Categoría">
       <button id="tab-in" role="tab" aria-pressed="true" data-cat="In House">In House</button>
       <button id="tab-off" role="tab" aria-pressed="false" data-cat="Off House">Off House</button>
@@ -241,7 +241,7 @@ select.st{padding-right:10px}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
-const READONLY=false; // asesores.html: true (solo consulta)
+const READONLY=true; // asesores.html: true (solo consulta)
 const STATUSES=["Disponible","Apartado","Vendido","Bloqueado"];
 const KEY="inventario-trust-v1";
 
