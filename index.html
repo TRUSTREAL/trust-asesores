@@ -29,7 +29,7 @@ body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--bg);co
 .brand h1{font-family:Lora,Georgia,serif;font-weight:500;font-size:28px;color:var(--green);line-height:1.15}
 .brand .sub{color:var(--muted);font-size:13px}
 .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-2);font-weight:600}
-.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.tools{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
 a.tool{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px 22px 18px;text-decoration:none;color:var(--text);transition:border-color .15s,box-shadow .15s,transform .15s}
 a.tool:hover{border-color:var(--gold);box-shadow:var(--shadow);transform:translateY(-2px)}
 a.tool:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
@@ -67,16 +67,22 @@ a.tool:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
       <p>Revisa los prospectos que te asignaron y actualiza su estatus: no contestó, seguimiento, cita, hot lead, apartado, venta.</p>
       <span class="go">Entrar</span>
     </a>
+    <a class="tool" href="hotleads/asesores.html">
+      <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 22c4-3 7-6.5 7-11a7 7 0 0 0-14 0c0 4.5 3 8 7 11z"/><path d="M12 14a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg></div>
+      <h2>Mis hot leads</h2>
+      <p>Tus prospectos más cerca del cierre: monto, apartado, estatus y siguiente paso.</p>
+      <span class="go">Entrar</span>
+    </a>
     <a class="tool" href="cotizador/">
       <div class="ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg></div>
-      <h2>Cotizar</h2>
-      <p>Genera la cotización de un departamento con esquema de pagos, adicionales y PDF listo para enviar al cliente.</p>
+      <h2>Cotizaciones</h2>
+      <p>Genera la cotización de una unidad con esquema de pagos, adicionales y PDF listo para enviar al cliente.</p>
       <span class="go">Abrir cotizador</span>
     </a>
     <a class="tool" href="inventario/asesores.html">
       <div class="ic"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-5h6v5"/><path d="M9 10h.01M15 10h.01M9 14h.01M15 14h.01"/></svg></div>
       <h2>Inventario</h2>
-      <p>Consulta las unidades disponibles, apartadas y vendidas de los proyectos que comercializa TRUST, con precios de lista vigentes.</p>
+      <p>Unidades disponibles, políticas de venta, documentos y lista de precios de cada proyecto. Cotiza desde la unidad.</p>
       <span class="go">Ver inventario</span>
     </a>
   </div>
