@@ -382,6 +382,7 @@ const $=s=>document.querySelector(s);
 const fmt=n=>n==null||isNaN(n)?"—":"$ "+Math.round(n).toLocaleString("es-MX");
 const fmtM=n=>n>=1e6?"$ "+(n/1e6).toFixed(1).replace(/\.0$/,"")+" M":fmt(n);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const engMin=p=>{const pols=Array.isArray(p.politicas)?p.politicas:[];const pcts=pols.filter(x=>x.eng_tipo!=="monto"&&+x.eng>0).map(x=>+x.eng);if(pcts.length)return Math.min(...pcts);return (p.enganche==null||p.enganche===""||+p.enganche<=0)?5:+p.enganche};
 const COTIZADOR_URL="../cotizador/";
 const cotUrl=(p,u)=>{const o={proyecto:p.nombre,giro:p.giro,tipo:/preventa/i.test(p.giro)?"Preventa":"Obra terminada",id:u.tipo,nivel:u.nivel,vista:u.vista,m2int:u.m2int,m2terr:u.m2terr,rec:u.recamaras,banos:u.banos,estac:u.parking,precio:u.precio};const b=btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");return COTIZADOR_URL+"?u="+b};
 const nivKey=v=>{const t=String(v??"").trim().toUpperCase();if(t==="PB"||t==="S"||t==="SÓTANO"||t==="SOTANO")return -1;if(t.startsWith("PH"))return 999;const n=parseFloat(t);return isNaN(n)?500:n};
@@ -418,7 +419,7 @@ function renderMain(){
   const p=S.projects.find(x=>x.id===S.sel);
   const m=$("#main");
   if(!p){m.innerHTML=`<div class="phead"><div class="left">${pickerHTML()}</div></div><div class="empty"><b>Sin proyectos ${S.cat}</b>Agrega el primero desde el menú.</div>`;return}
-  const c=counts(p), n=p.units.length, renta=isRenta(p), eng=(p.enganche==null||p.enganche===""||+p.enganche<=0)?5:+p.enganche;
+  const c=counts(p), n=p.units.length, renta=isRenta(p), eng=engMin(p);
   const meta=[["Giro",p.giro],["Desarrollador",p.desarrollador],["Ubicación",p.ubicacion],["Lista vigente",p.lista]].filter(x=>x[1]).map(x=>`<span>${x[0]}: <b>${esc(x[1])}</b></span>`).join("");
   const labelSold=renta?"Rentado":"Vendido";
   const tiles=`
@@ -513,7 +514,7 @@ const LOGO_B64="iVBORw0KGgoAAAANSUhEUgAAAtAAAACTCAYAAACnBC53AABDfklEQVR42u2de3yc
 function listaPDF(p){
   if(!p)return;
   const renta=isRenta(p);
-  const eng=(p.enganche==null||p.enganche===""||+p.enganche<=0)?5:+p.enganche;
+  const eng=engMin(p);
   const rows=p.units.filter(u=>u.estatus==="Disponible").sort((a,b)=>nivKey(a.nivel)-nivKey(b.nivel)||String(a.torre).localeCompare(String(b.torre),"es")||String(a.tipo).localeCompare(String(b.tipo),"es"));
   const hasTorre=rows.some(u=>u.torre), hasVista=rows.some(u=>u.vista), hasTerr=rows.some(u=>u.m2terr>0), hasPark=rows.some(u=>u.parking!=null), hasRec=rows.some(u=>u.recamaras!=null), hasBan=rows.some(u=>u.banos!=null);
   const hoy=new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"});
@@ -758,10 +759,9 @@ function openProject(p){
     fld("desarrollador","Desarrollador",p?.desarrollador||"")+
     fld("ubicacion","Ubicación",p?.ubicacion||"")+
     fld("lista","Lista de precios vigente",p?.lista||"","placeholder='Ej. Lista 6 · Sep–Dic 2026'")+
-    fld("enganche","% de apartado / enganche (PDF)",p?.enganche??5,"type=number step=0.5 min=0 max=100")+
     fld("nota_lista","Nota adicional al pie del PDF",p?.nota_lista||"","placeholder='Opcional, ej. Entrega estimada diciembre 2027'",true)+
     `<div class="f full"><label for="fx-notas">Notas</label><textarea id="fx-notas" name="notas">${esc(p?.notas||"")}</textarea></div>`,
-    d=>{d.enganche=d.enganche===""?5:+d.enganche;if(p){Object.assign(p,d);db(()=>sb.from("proyectos").update(rowP(p)).eq("id",p.id))}else{const np={id:newId(),units:[],...d};S.projects.push(np);S.cat=np.cat;S.sel=np.id;db(()=>sb.from("proyectos").insert(rowP(np)))}},
+    d=>{if(p){Object.assign(p,d);db(()=>sb.from("proyectos").update(rowP(p)).eq("id",p.id))}else{const np={id:newId(),units:[],...d};S.projects.push(np);S.cat=np.cat;S.sel=np.id;db(()=>sb.from("proyectos").insert(rowP(np)))}},
     p?()=>{S.projects=S.projects.filter(x=>x!==p);db(()=>sb.from("proyectos").delete().eq("id",p.id))}:null);
 }
 function openUnit(u){
