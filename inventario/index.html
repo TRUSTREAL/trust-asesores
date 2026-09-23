@@ -373,7 +373,7 @@ function save(){ // modo local: todo; modo Supabase: solo la vista (categoría /
 }
 function restoreUI(){ try{const r=localStorage.getItem(KEY+"-ui");if(r){const u=JSON.parse(r);S.cat=u.cat||S.cat;S.sel=u.sel||S.sel}}catch(e){} }
 const rowP=p=>({id:p.id,nombre:p.nombre,cat:p.cat,giro:p.giro,desarrollador:p.desarrollador||"",ubicacion:p.ubicacion||"",lista:p.lista||"",notas:p.notas||"",enganche:p.enganche==null||p.enganche===""?5:+p.enganche,nota_lista:p.nota_lista||"",politica:p.politica||"",politicas:Array.isArray(p.politicas)?p.politicas:[]});
-const rowU=(u,pid)=>({id:u.id,proyecto_id:pid,estatus:u.estatus,tipo:u.tipo,torre:u.torre||"",nivel:u.nivel,vista:u.vista||"",m2int:u.m2int,m2terr:u.m2terr,m2tot:u.m2tot,parking:u.parking,precio:u.precio});
+const rowU=(u,pid)=>({id:u.id,proyecto_id:pid,estatus:u.estatus,tipo:u.tipo,torre:u.torre||"",nivel:u.nivel,vista:u.vista||"",m2int:u.m2int,m2terr:u.m2terr,m2tot:u.m2tot,parking:u.parking,precio:u.precio,recamaras:u.recamaras,banos:u.banos});
 async function loadAll(){
   if(!sb){ try{const r=localStorage.getItem(KEY);S=r?JSON.parse(r):seed();}catch(e){S=seed()} return; }
   const [{data:ps,error:e1},{data:us,error:e2}]=await Promise.all([
@@ -382,7 +382,7 @@ async function loadAll(){
   if(e1||e2){ setSync("Error al leer: "+(e1||e2).message); return; }
   S.projects=(ps||[]).map(p=>({...p,units:[]}));
   const byId=Object.fromEntries(S.projects.map(p=>[p.id,p]));
-  (us||[]).forEach(u=>{const p=byId[u.proyecto_id];if(p)p.units.push({id:u.id,estatus:u.estatus,tipo:u.tipo,torre:u.torre,nivel:u.nivel,vista:u.vista,m2int:+u.m2int||0,m2terr:+u.m2terr||0,m2tot:+u.m2tot||0,parking:u.parking,precio:+u.precio||0})});
+  (us||[]).forEach(u=>{const p=byId[u.proyecto_id];if(p)p.units.push({id:u.id,estatus:u.estatus,tipo:u.tipo,torre:u.torre,nivel:u.nivel,vista:u.vista,m2int:+u.m2int||0,m2terr:+u.m2terr||0,m2tot:+u.m2tot||0,parking:u.parking,precio:+u.precio||0,recamaras:u.recamaras,banos:u.banos})});
   lastSync=new Date(); setSync();
   S.projects.forEach(p=>{ if(!docs[p.id]) loadDocs(p.id).then(()=>{ if(p.id===S.sel && !$("#drawer-root").innerHTML && document.activeElement?.id!=="f-q") renderMain(); }); });
 }
@@ -454,14 +454,14 @@ function renderMain(){
     <div class="filters">
       <input id="f-q" placeholder="Buscar…" value="${esc(filt.q)}">
       <select id="f-estatus" data-k="estatus"><option value="">Estatus</option>${STATUSES.map(s=>`<option ${filt.estatus===s?"selected":""}>${s}</option>`).join("")}</select>
-      ${sel("f-torre","torre","Torre")}${sel("f-tipo","tipo","Tipo")}${sel("f-vista","vista","Vista")}
+      ${sel("f-torre","torre","Torre")}${sel("f-tipo","tipo","ID")}${sel("f-vista","vista","Vista")}
       <span class="count">${rows.length} de ${n}</span>
     </div>
     <div class="twrap"><table>
-      <thead><tr>${th("estatus","Estatus")}${th("tipo","Tipo")}${th("torre","Torre")}${th("nivel","Nivel",1)}${th("vista","Vista")}${th("m2int","m² int.",1)}${th("m2terr","m² terr.",1)}${th("m2tot","m² total",1)}${th("parking","Cajones",1)}${th("precio",renta?"Renta mensual":"Precio",1)}${renta?"":`<th class="num eng">Enganche mín. ${eng}%</th>`}${READONLY?"":"<th></th>"}</tr></thead>
+      <thead><tr>${th("estatus","Estatus")}${th("tipo","ID")}${th("torre","Torre")}${th("nivel","Nivel",1)}${th("vista","Vista")}${th("recamaras","Rec.",1)}${th("banos","Baños",1)}${th("m2int","m² int.",1)}${th("m2terr","m² terr.",1)}${th("m2tot","m² total",1)}${th("parking","Cajones",1)}${th("precio",renta?"Renta mensual":"Precio",1)}${renta?"":`<th class="num eng">Enganche mín. ${eng}%</th>`}${READONLY?"":"<th></th>"}</tr></thead>
       <tbody>${rows.map(u=>`<tr data-id="${u.id}">
         <td>${READONLY?`<span class="st ${u.estatus}">${u.estatus}</span>`:`<select class="st ${u.estatus}" data-id="${u.id}" aria-label="Estatus">${STATUSES.map(s=>`<option ${u.estatus===s?"selected":""}>${s}</option>`).join("")}</select>`}</td>
-        <td class="type">${esc(u.tipo)}</td><td>${esc(u.torre)}</td><td class="num">${u.nivel??""}</td><td>${esc(u.vista)}</td>
+        <td class="type">${esc(u.tipo)}</td><td>${esc(u.torre)}</td><td class="num">${u.nivel??""}</td><td>${esc(u.vista)}</td><td class="num dim">${u.recamaras??""}</td><td class="num dim">${u.banos??""}</td>
         <td class="num dim">${u.m2int?.toFixed(2)??""}</td><td class="num dim">${u.m2terr?u.m2terr.toFixed(2):"–"}</td><td class="num tot">${u.m2tot?.toFixed(2)??""}</td>
         <td class="num">${u.parking??""}</td><td class="num price">${fmt(u.precio)}</td>${renta?"":`<td class="num eng">${fmt(u.precio*eng/100)}</td>`}
         ${READONLY?"":`<td><button class="ico edit-u" data-id="${u.id}" title="Editar">✎</button></td>`}</tr>`).join("")}</tbody>
@@ -476,7 +476,7 @@ function renderMain(){
     <div class="phead">
       <div class="left">${pickerHTML()}
         <div class="meta">${meta||`<span>Sin datos generales</span>`}</div></div>
-      <div class="actions"><button class="btn" id="btn-pdf" ${c.Disponible?"":"disabled"} title="Lista de precios de unidades disponibles">⤓ Lista de precios (PDF)</button>${READONLY?"":`<button class="btn" id="btn-edit-project">Editar proyecto</button>${renta?"":`<button class="btn" id="btn-edit-pol">Editar políticas</button>`}<button class="btn primary" id="btn-add-unit">+ Unidad</button>`}</div>
+      <div class="actions"><button class="btn" id="btn-pdf" ${c.Disponible?"":"disabled"} title="Lista de precios de unidades disponibles">⤓ Lista de precios (PDF)</button>${READONLY?"":`<button class="btn" id="btn-edit-project">Editar proyecto</button>${renta?"":`<button class="btn" id="btn-edit-pol">Editar políticas</button>`}<button class="btn" id="btn-import">⇪ Importar</button><button class="btn primary" id="btn-add-unit">+ Unidad</button>`}</div>
     </div>
     ${seg}
     ${vista==="precios"?tiles+table+(p.notas?`<div class="notes"><span class="eyebrow">Notas</span><p>${esc(p.notas)}</p></div>`:""):vista==="politica"?pol:docsHTML(p)}`;
@@ -497,6 +497,7 @@ document.addEventListener("click",e=>{
   if(t.id==="btn-add-project")return openProject(null);
   if(t.id==="btn-edit-project")return openProject(S.projects.find(p=>p.id===S.sel));
   if(t.id==="btn-add-unit")return openUnit(null);
+  if(t.id==="btn-import")return openImport(S.projects.find(p=>p.id===S.sel));
   if(t.id==="btn-edit-pol")return openPolitica(S.projects.find(p=>p.id===S.sel));
   if(t.classList.contains("edit-u")){const p=S.projects.find(p=>p.id===S.sel);return openUnit(p.units.find(u=>u.id===t.dataset.id))}
   if(t.id==="btn-reset"&&!sb&&confirm("¿Volver a los datos iniciales? Se perderán los cambios de este navegador.")){S=seed();save();render()}
@@ -524,12 +525,12 @@ function listaPDF(p){
   const renta=isRenta(p);
   const eng=(p.enganche==null||p.enganche===""||+p.enganche<=0)?5:+p.enganche;
   const rows=p.units.filter(u=>u.estatus==="Disponible").sort((a,b)=>(a.nivel??0)-(b.nivel??0)||String(a.torre).localeCompare(String(b.torre),"es")||String(a.tipo).localeCompare(String(b.tipo),"es"));
-  const hasTorre=rows.some(u=>u.torre), hasVista=rows.some(u=>u.vista), hasTerr=rows.some(u=>u.m2terr>0), hasPark=rows.some(u=>u.parking!=null);
+  const hasTorre=rows.some(u=>u.torre), hasVista=rows.some(u=>u.vista), hasTerr=rows.some(u=>u.m2terr>0), hasPark=rows.some(u=>u.parking!=null), hasRec=rows.some(u=>u.recamaras!=null), hasBan=rows.some(u=>u.banos!=null);
   const hoy=new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"});
   const n2=v=>v==null||v===""?"—":(+v).toFixed(2);
   const money=v=>"$ "+Math.round(v).toLocaleString("es-MX");
-  const th=[["Tipo"],hasTorre?["Torre"]:null,["Nivel","num"],hasVista?["Vista"]:null,["m² int.","num"],hasTerr?["m² terraza","num"]:null,["m² total","num"],hasPark?["Cajones","num"]:null,[renta?"Renta mensual":"Precio","num strong"],!renta?[`Enganche mín. ${eng}%`,"num eng"]:null].filter(Boolean);
-  const tr=rows.map(u=>[[esc(u.tipo),"tipo"],hasTorre?[esc(u.torre)]:null,[u.nivel??"","num"],hasVista?[esc(u.vista)]:null,[n2(u.m2int),"num dim"],hasTerr?[u.m2terr?n2(u.m2terr):"–","num dim"]:null,[n2(u.m2tot),"num tot"],hasPark?[u.parking??"","num"]:null,[money(u.precio),"num strong"],!renta?[money(u.precio*eng/100),"num eng"]:null].filter(Boolean));
+  const th=[["ID"],hasTorre?["Torre"]:null,["Nivel","num"],hasVista?["Vista"]:null,hasRec?["Rec.","num"]:null,hasBan?["Baños","num"]:null,["m² int.","num"],hasTerr?["m² terraza","num"]:null,["m² total","num"],hasPark?["Cajones","num"]:null,[renta?"Renta mensual":"Precio","num strong"],!renta?[`Enganche mín. ${eng}%`,"num eng"]:null].filter(Boolean);
+  const tr=rows.map(u=>[[esc(u.tipo),"tipo"],hasTorre?[esc(u.torre)]:null,[u.nivel??"","num"],hasVista?[esc(u.vista)]:null,hasRec?[u.recamaras??"","num"]:null,hasBan?[u.banos??"","num"]:null,[n2(u.m2int),"num dim"],hasTerr?[u.m2terr?n2(u.m2terr):"–","num dim"]:null,[n2(u.m2tot),"num tot"],hasPark?[u.parking??"","num"]:null,[money(u.precio),"num strong"],!renta?[money(u.precio*eng/100),"num eng"]:null].filter(Boolean));
   const nota=renta?"":"Aparta tu unidad con $5,000 reembolsables.";
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Lista de precios · ${esc(p.nombre)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
@@ -701,6 +702,44 @@ async function deleteDoc(pid,name){
   delete docs[pid]; await loadDocs(pid); renderMain();
 }
 
+
+// ---------- importar unidades (pegar desde Excel) ----------
+const IMP_COLS=[["estatus",/^estatus|status$/i],["tipo",/^id|tipo|prototipo|modelo|unidad|depto|depa$/i],["recamaras",/rec[aá]m|hab|dorm/i],["banos",/ba[ñn]o/i],["torre",/^torre|edificio$/i],["nivel",/^nivel|piso$/i],["vista",/^vista|orientaci/i],["m2int",/m.?2?\s*int|interior/i],["m2terr",/terr/i],["m2tot",/total/i],["parking",/cajon|parking|estac/i],["precio",/precio|renta|monto/i]];
+const numv=v=>{const n=parseFloat(String(v).replace(/[^\d.,-]/g,"").replace(/,/g,""));return isNaN(n)?null:n};
+function parseImport(txt){
+  const lines=txt.replace(/\r/g,"").split("\n").map(l=>l.split("\t")).filter(r=>r.some(c=>c.trim()));
+  if(!lines.length)return {rows:[],map:null};
+  let map=null,start=0;
+  const h=lines[0].map(c=>c.trim());
+  const isHeader=h.filter(c=>IMP_COLS.some(([k,re])=>re.test(c))).length>=3;
+  if(isHeader){map=h.map(c=>{const f=IMP_COLS.find(([k,re])=>re.test(c));return f?f[0]:null});start=1}
+  else map=["estatus","tipo","torre","nivel","vista","recamaras","banos","m2int","m2terr","parking","precio"]; // orden por default sin encabezado
+  const rows=[];
+  for(const r of lines.slice(start)){const o={};map.forEach((k,i)=>{if(k&&r[i]!=null)o[k]=r[i].trim()});
+    if(!o.tipo&&!o.precio)continue;
+    const st=(o.estatus||"Disponible").toLowerCase();
+    const estatus=st.startsWith("apart")?"Apartado":st.startsWith("vend")||st.startsWith("rent")?"Vendido":st.startsWith("bloq")?"Bloqueado":"Disponible";
+    const m2int=numv(o.m2int)||0,m2terr=numv(o.m2terr)||0;
+    rows.push({estatus,tipo:o.tipo||"",torre:o.torre||"",nivel:numv(o.nivel),vista:o.vista||"",recamaras:numv(o.recamaras),banos:numv(o.banos),m2int,m2terr,m2tot:numv(o.m2tot)||+(m2int+m2terr).toFixed(2),parking:numv(o.parking),precio:numv(o.precio)||0});}
+  return {rows,map};
+}
+function openImport(p){
+  drawer("Importar unidades · "+p.nombre,
+    `<p class="hint" style="grid-column:1/-1;margin:0 0 4px">Copia las filas desde Excel o Google Sheets (con o sin encabezados) y pégalas aquí. Columnas reconocidas: <b>Estatus, ID, Torre, Nivel, Vista, Recámaras, Baños, m² int, m² terraza, m² total, Cajones, Precio</b>. Sin encabezados se asume ese orden (sin m² total).</p>
+     <div class="f full"><label for="fx-imp">Pegar aquí</label><textarea id="fx-imp" name="imp" style="min-height:220px;font-family:ui-monospace,monospace;font-size:12px;white-space:pre"></textarea></div>
+     <div class="f full"><label style="display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;font-weight:400;color:var(--text);font-size:13px"><input type="checkbox" name="replace" id="fx-replace" style="width:auto;flex:none"> Reemplazar las ${p.units.length} unidades actuales del proyecto</label></div>
+     <div class="calc" id="imp-prev" style="grid-column:1/-1;font-size:12px;color:var(--muted)">Pega para ver la vista previa.</div>`,
+    d=>{const {rows}=parseImport(d.imp);if(!rows.length){alert("No se detectaron filas.");return}
+      const nuevos=rows.map(r=>({id:newId(),...r}));
+      const doIns=()=>{p.units.push(...nuevos);db(()=>sb.from("unidades").insert(nuevos.map(u=>rowU(u,p.id))))};
+      if(d.replace&&p.units.length){const ids=p.units.map(u=>u.id);p.units=[];if(sb){sb.from("unidades").delete().in("id",ids).then(({error})=>{if(error){alert("No se pudieron borrar: "+error.message);return}doIns();render()})}else doIns()}
+      else doIns();},null);
+  const ta=$("#fx-imp");
+  ta.addEventListener("input",()=>{const {rows,map}=parseImport(ta.value);const el=$("#imp-prev");if(!rows.length){el.textContent="Sin filas válidas todavía.";return}
+    const c={};rows.forEach(r=>c[r.estatus]=(c[r.estatus]||0)+1);
+    el.innerHTML=`<b style="color:var(--green)">${rows.length} unidades</b> · ${Object.entries(c).map(([k,v])=>`${v} ${k.toLowerCase()}`).join(", ")} · columnas: ${map.filter(Boolean).join(", ")}<br>Ej.: ${esc(rows[0].tipo)} · ${esc(rows[0].torre)} · nivel ${rows[0].nivel??"—"} · ${rows[0].m2tot} m² · ${fmt(rows[0].precio)}`;});
+}
+
 // ---------- drawers ----------
 function drawer(title,body,onSave,onDelete){
   $("#drawer-root").innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" aria-label="${esc(title)}">
@@ -710,7 +749,7 @@ function drawer(title,body,onSave,onDelete){
       <span style="display:flex;gap:8px"><button type="button" class="btn" id="d-cancel">Cancelar</button><button type="button" class="btn primary" id="d-save">Guardar</button></span></footer></div>`;
   const close=()=>$("#drawer-root").innerHTML="";
   $("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
-  $("#d-save").onclick=()=>{const f=$("#d-form");if(!f.reportValidity())return;const d=Object.fromEntries(new FormData(f));onSave(d);save();render();close()};
+  $("#d-save").onclick=()=>{const f=$("#d-form");if(!f.reportValidity())return;const d=Object.fromEntries(new FormData(f));f.querySelectorAll("input[type=checkbox]").forEach(c=>d[c.name]=c.checked);onSave(d);save();render();close()};
   if(onDelete)$("#d-del").onclick=()=>{if(confirm("¿Eliminar?")){onDelete();save();render();close()}};
   $("#d-form").addEventListener("submit",e=>{e.preventDefault();$("#d-save").click()});
   const first=$("#d-form input,#d-form select");first&&first.focus();
@@ -737,16 +776,18 @@ function openUnit(u){
   const p=S.projects.find(p=>p.id===S.sel), renta=isRenta(p);
   drawer(u?"Editar unidad":"Nueva unidad · "+p.nombre,
     fsel("estatus","Estatus",u?.estatus||"Disponible",STATUSES)+
-    fld("tipo","Tipo / prototipo",u?.tipo||"","required placeholder='C, D, PH1…'")+
+    fld("tipo","ID / prototipo",u?.tipo||"","required placeholder='101, C, PH1…'")+
     fld("torre","Torre / edificio",u?.torre||"")+
     fld("nivel","Nivel",u?.nivel??"","type=number step=1")+
     fld("vista","Vista / orientación",u?.vista||"")+
+    fld("recamaras","Recámaras",u?.recamaras??"","type=number step=0.5 min=0")+
+    fld("banos","Baños",u?.banos??"","type=number step=0.5 min=0")+
     fld("parking","Cajones",u?.parking??"","type=number step=1 min=0")+
     fld("m2int","m² interior",u?.m2int??"","type=number step=0.01 min=0")+
     fld("m2terr","m² terraza",u?.m2terr??"","type=number step=0.01 min=0")+
     fld("precio",renta?"Renta mensual (MXN)":"Precio de lista (MXN)",u?.precio??"","type=number step=1 min=0 required",true)+
     `<p class="hint">m² total se calcula como interior + terraza.</p>`,
-    d=>{const v={estatus:d.estatus,tipo:d.tipo.trim(),torre:d.torre.trim(),nivel:d.nivel===""?null:+d.nivel,vista:d.vista.trim(),parking:d.parking===""?null:+d.parking,
+    d=>{const v={estatus:d.estatus,tipo:d.tipo.trim(),torre:d.torre.trim(),nivel:d.nivel===""?null:+d.nivel,vista:d.vista.trim(),parking:d.parking===""?null:+d.parking,recamaras:d.recamaras===""?null:+d.recamaras,banos:d.banos===""?null:+d.banos,
         m2int:+d.m2int||0,m2terr:+d.m2terr||0,precio:+d.precio||0};v.m2tot=+(v.m2int+v.m2terr).toFixed(2);
       if(u){Object.assign(u,v);db(()=>sb.from("unidades").update(rowU(u,p.id)).eq("id",u.id))}else{const nu={id:newId(),...v};p.units.push(nu);db(()=>sb.from("unidades").insert(rowU(nu,p.id)))}},
     u?()=>{p.units=p.units.filter(x=>x!==u);db(()=>sb.from("unidades").delete().eq("id",u.id))}:null);
