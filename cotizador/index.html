@@ -3516,6 +3516,22 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
       else if (i + 1 === n) s.classList.add('active');
     });
     window.scrollTo({top: 0, behavior: 'smooth'});
+    if (n === 3) actualizarResumenUnidad();
+  }
+
+  // Tarjeta resumen del paso 3: siempre refleja lo capturado en el paso 1
+  function actualizarResumenUnidad() {
+    try {
+      const sel = document.getElementById('selector-proyecto');
+      let proyecto = sel.value;
+      if (proyecto === 'Otro') proyecto = (document.getElementById('proyecto-otro-nombre').value || '').trim() || 'Proyecto sin definir';
+      const g = id => (document.getElementById(id) || {}).value || '';
+      const card = document.querySelector('.unit-summary-card');
+      if (!card) return;
+      card.querySelector('.unit-summary-project').textContent = proyecto;
+      const partes = [g('unidad-modelo'), g('unidad-id') && 'ID: ' + g('unidad-id'), g('unidad-nivel') && 'Nivel ' + g('unidad-nivel'), g('unidad-vista') && 'Vista ' + g('unidad-vista'), g('m2-total') && g('m2-total') + ' m²'].filter(Boolean);
+      card.querySelector('.unit-summary-details').innerHTML = partes.map(t => `<span>${t.replace(/[<>&]/g, '')}</span>`).join('<span class="dot">·</span>');
+    } catch (e) { console.warn('resumen unidad', e); }
   }
 
   document.querySelectorAll('.step').forEach((s, i) => {
