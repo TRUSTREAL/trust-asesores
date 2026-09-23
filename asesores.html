@@ -196,9 +196,48 @@ select.st{padding-right:10px}
 .pol .upd{font-size:12px;color:var(--faint);margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
 .pol.empty{color:var(--muted);text-align:center;padding:36px}
 .pol.empty b{display:block;font-family:Lora,serif;font-size:18px;color:var(--text);font-weight:500;margin-bottom:6px}
+
+/* documentos */
+.docs{margin-top:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.doc{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-decoration:none;color:var(--text);transition:border-color .15s}
+.doc:hover{border-color:var(--gold)}
+.doc .ext{flex:none;width:40px;height:40px;border-radius:8px;background:var(--surface-2);color:var(--green);font-size:10px;font-weight:700;letter-spacing:.06em;display:flex;align-items:center;justify-content:center;text-transform:uppercase}
+.doc .n{min-width:0;flex:1}
+.doc .n b{display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc .n small{color:var(--muted);font-size:11px}
+.doc .del{flex:none}
+.upl{margin-top:14px;border:1px dashed var(--line-2);border-radius:10px;padding:18px;text-align:center;color:var(--muted);font-size:13px;background:var(--surface)}
+.upl.drag{border-color:var(--green);color:var(--green);background:var(--surface-2)}
+.upl input{display:none}
+.upl label{color:var(--green);font-weight:500;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.upl .prog{margin-top:8px;font-size:12px}
+
+/* políticas estructuradas */
+.pols{margin-top:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.polc{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;position:relative}
+.polc h3{font-family:Lora,Georgia,serif;font-size:18px;color:var(--green);font-weight:500;margin:0 0 10px}
+.polc .steps{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.polc .stp{background:var(--surface-2);border-radius:8px;padding:8px 10px}
+.polc .stp small{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.polc .stp b{display:block;font-family:Lora,serif;font-size:20px;font-weight:500;color:var(--text);line-height:1.15;margin-top:2px}
+.polc .stp span{font-size:11px;color:var(--muted)}
+.polc .stp.esc b{color:var(--gold-2)}
+.polc .bar{margin-top:12px}
+.polc .ej{margin-top:10px;font-size:12px;color:var(--muted)}
+.polc .ej b{color:var(--text);font-weight:500}
+.polnote{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 18px;max-width:820px;line-height:1.6}
+/* editor */
+.pe{grid-column:1/-1;border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:2px;background:var(--bg);display:grid;grid-template-columns:1fr 1fr;gap:10px;position:relative}
+.pe .full{grid-column:1/-1}
+.pe .rm{position:absolute;top:8px;right:8px}
+.pe .row{display:flex;gap:6px}
+.pe .row input{flex:1;min-width:80px}
+.pe .row select{width:auto;flex:none}
+.pe .calc{grid-column:1/-1;font-size:12px;color:var(--muted)}
+.pe .calc b{color:var(--gold-2)}
 /* drawer */
 .scrim{position:fixed;inset:0;background:rgba(15,22,19,.45);z-index:20}
-.drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--surface);z-index:21;box-shadow:var(--shadow);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(520px,100%);background:var(--surface);z-index:21;box-shadow:var(--shadow);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
 .drawer header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line)}
 .drawer header h3{font-size:20px;color:var(--green)}
 .drawer form{padding:16px 20px;overflow:auto;display:grid;gap:12px;grid-template-columns:1fr 1fr;flex:1}
@@ -318,7 +357,7 @@ function seed(){
   return {cat:"In House",sel:"balcana",projects:[
     {id:"epicentria",nombre:"Epicentria",cat:"In House",giro:"Oficinas en renta",desarrollador:"",ubicacion:"",lista:"",notas:"",units:[]},
     {id:"neza",nombre:"Neza",cat:"In House",giro:"Oficinas en renta",desarrollador:"",ubicacion:"",lista:"",notas:"",units:[]},
-    {id:"balcana",nombre:"Balcana",cat:"In House",giro:"Departamentos en preventa",desarrollador:"Tazakan",ubicacion:"",lista:"Lista 6 · Septiembre – Diciembre 2026",notas:"Aparta con 5% de enganche. Torres Frontal, Posterior y PH; vistas Américas y Chapultepec. 1 cajón por departamento; PH con 2.",politica:"# Política de venta\n## Esquema de pago\n- Apartado: 5% del valor de la unidad\n- Enganche: 25% diferido durante la construcción\n- Liquidación: 70% contra entrega, con recursos propios o crédito\n## Descuentos\n- **Contado**: 8% sobre precio de lista\n- Pago de enganche en una exhibición: 3%\n## Condiciones\n- Precios en MXN, sujetos a cambio sin previo aviso\n- Vigencia de la lista: septiembre – diciembre 2026",units:balcanaUnits()},
+    {id:"balcana",nombre:"Balcana",cat:"In House",giro:"Departamentos en preventa",desarrollador:"Tazakan",ubicacion:"",lista:"Lista 6 · Septiembre – Diciembre 2026",notas:"Aparta con 5% de enganche. Torres Frontal, Posterior y PH; vistas Américas y Chapultepec. 1 cajón por departamento; PH con 2.",politica:"Precios en MXN, sujetos a cambio sin previo aviso. Apartado de $5,000 reembolsables.",politicas:[{nombre:"Contado",eng_tipo:"pct",eng:100,meses:0,men_tipo:"pct",men:0,nota:"8% de descuento sobre lista"},{nombre:"30 / 70",eng_tipo:"pct",eng:30,meses:0,men_tipo:"pct",men:0,nota:""},{nombre:"Financiamiento 18 meses",eng_tipo:"pct",eng:10,meses:18,men_tipo:"pct",men:30,nota:""}],units:balcanaUnits()},
     {id:"luciana",nombre:"Luciana Providencia",cat:"In House",giro:"Departamentos en preventa",desarrollador:"",ubicacion:"Providencia",lista:"",notas:"",units:[]},
     {id:"lazaro",nombre:"Lázaro",cat:"In House",giro:"Departamentos en preventa",desarrollador:"",ubicacion:"",lista:"",notas:"",units:[]}
   ]};
@@ -333,7 +372,7 @@ function save(){ // modo local: todo; modo Supabase: solo la vista (categoría /
   try{ if(sb) localStorage.setItem(KEY+"-ui",JSON.stringify({cat:S.cat,sel:S.sel})); else localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){}
 }
 function restoreUI(){ try{const r=localStorage.getItem(KEY+"-ui");if(r){const u=JSON.parse(r);S.cat=u.cat||S.cat;S.sel=u.sel||S.sel}}catch(e){} }
-const rowP=p=>({id:p.id,nombre:p.nombre,cat:p.cat,giro:p.giro,desarrollador:p.desarrollador||"",ubicacion:p.ubicacion||"",lista:p.lista||"",notas:p.notas||"",enganche:p.enganche==null||p.enganche===""?5:+p.enganche,nota_lista:p.nota_lista||"",politica:p.politica||""});
+const rowP=p=>({id:p.id,nombre:p.nombre,cat:p.cat,giro:p.giro,desarrollador:p.desarrollador||"",ubicacion:p.ubicacion||"",lista:p.lista||"",notas:p.notas||"",enganche:p.enganche==null||p.enganche===""?5:+p.enganche,nota_lista:p.nota_lista||"",politica:p.politica||"",politicas:Array.isArray(p.politicas)?p.politicas:[]});
 const rowU=(u,pid)=>({id:u.id,proyecto_id:pid,estatus:u.estatus,tipo:u.tipo,torre:u.torre||"",nivel:u.nivel,vista:u.vista||"",m2int:u.m2int,m2terr:u.m2terr,m2tot:u.m2tot,parking:u.parking,precio:u.precio});
 async function loadAll(){
   if(!sb){ try{const r=localStorage.getItem(KEY);S=r?JSON.parse(r):seed();}catch(e){S=seed()} return; }
@@ -345,6 +384,7 @@ async function loadAll(){
   const byId=Object.fromEntries(S.projects.map(p=>[p.id,p]));
   (us||[]).forEach(u=>{const p=byId[u.proyecto_id];if(p)p.units.push({id:u.id,estatus:u.estatus,tipo:u.tipo,torre:u.torre,nivel:u.nivel,vista:u.vista,m2int:+u.m2int||0,m2terr:+u.m2terr||0,m2tot:+u.m2tot||0,parking:u.parking,precio:+u.precio||0})});
   lastSync=new Date(); setSync();
+  S.projects.forEach(p=>{ if(!docs[p.id]) loadDocs(p.id).then(()=>{ if(p.id===S.sel && !$("#drawer-root").innerHTML && document.activeElement?.id!=="f-q") renderMain(); }); });
 }
 function setSync(msg){const el=$("#sync");if(!el)return;const rb=$("#btn-refresh"),rs=$("#btn-reset");if(rb)rb.hidden=!sb;if(rs)rs.hidden=!!sb;el.textContent=msg||(sb?"Supabase · "+lastSync.toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"}):"Modo local · los cambios se guardan solo en este navegador");}
 function db(fn){ if(!sb)return; fn().then(({error})=>{ if(error){alert("No se pudo guardar en Supabase: "+error.message);loadAll().then(render)} else {lastSync=new Date();setSync()} }).catch(err=>alert("Sin conexión: "+err.message)); }
@@ -359,7 +399,8 @@ const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36);
 const isRenta=p=>/renta/i.test(p.giro||"");
 function counts(p){const c={Disponible:0,Apartado:0,Vendido:0,Bloqueado:0,dispVal:0};p.units.forEach(u=>{c[u.estatus]=(c[u.estatus]||0)+1;if(u.estatus==="Disponible")c.dispVal+=u.precio||0});return c}
 let filt={q:"",estatus:"",torre:"",tipo:"",vista:""};
-let vista="precios"; // precios | politica
+let vista="precios"; // precios | politica | docs
+let docs={}; // proyecto_id -> [{name,url,size,updated}]
 let sort={k:null,dir:"asc"};
 
 // ---------- render ----------
@@ -426,16 +467,20 @@ function renderMain(){
         ${READONLY?"":`<td><button class="ico edit-u" data-id="${u.id}" title="Editar">✎</button></td>`}</tr>`).join("")}</tbody>
     </table>${rows.length?"":`<div class="empty">Ninguna unidad coincide con los filtros.</div>`}</div>`
   :`<div class="empty" style="margin-top:18px;border:1px dashed var(--line-2);border-radius:0"><b>Sin unidades cargadas</b>${READONLY?"Aún no hay inventario capturado para este proyecto.":"Agrega las unidades desde la lista de precios o el Excel del desarrollador."}</div>`;
-  const seg=`<div class="vseg" role="tablist" aria-label="Vista"><button data-vista="precios" aria-pressed="${vista==="precios"}">Precios</button><button data-vista="politica" aria-pressed="${vista==="politica"}">Política de venta</button></div>`;
-  const pol=p.politica?`<div class="pol">${polHTML(p.politica)}</div>`:`<div class="pol empty"><b>Sin política de venta cargada</b>${READONLY?"Pronto estará disponible para este proyecto.":"Usa \"Editar política\" para capturarla."}</div>`;
+  if(renta&&vista==="politica")vista="precios";
+  const seg=`<div class="vseg" role="tablist" aria-label="Vista"><button data-vista="precios" aria-pressed="${vista==="precios"}">Precios</button>${renta?"":`<button data-vista="politica" aria-pressed="${vista==="politica"}">Política de venta</button>`}<button data-vista="docs" aria-pressed="${vista==="docs"}">Documentos${(docs[p.id]||[]).length?` · ${(docs[p.id]||[]).length}`:""}</button></div>`;
+  const pols=Array.isArray(p.politicas)?p.politicas:[];
+  const minP=Math.min(...p.units.filter(u=>u.estatus==="Disponible").map(u=>u.precio).concat([Infinity]));
+  const pol=(pols.length?`<div class="pols">${pols.map(x=>polCard(x,isFinite(minP)?minP:null)).join("")}</div>`:`<div class="pol empty"><b>Sin políticas de venta</b>${READONLY?"Pronto estarán disponibles para este proyecto.":"Usa \"Editar políticas\" para capturarlas."}</div>`)+(p.politica?`<div class="polnote">${polHTML(p.politica)}</div>`:"");
   m.innerHTML=`
     <div class="phead">
       <div class="left">${pickerHTML()}
         <div class="meta">${meta||`<span>Sin datos generales</span>`}</div></div>
-      <div class="actions"><button class="btn" id="btn-pdf" ${c.Disponible?"":"disabled"} title="Lista de precios de unidades disponibles">⤓ Lista de precios (PDF)</button>${READONLY?"":`<button class="btn" id="btn-edit-project">Editar proyecto</button><button class="btn" id="btn-edit-pol">Editar política</button><button class="btn primary" id="btn-add-unit">+ Unidad</button>`}</div>
+      <div class="actions"><button class="btn" id="btn-pdf" ${c.Disponible?"":"disabled"} title="Lista de precios de unidades disponibles">⤓ Lista de precios (PDF)</button>${READONLY?"":`<button class="btn" id="btn-edit-project">Editar proyecto</button>${renta?"":`<button class="btn" id="btn-edit-pol">Editar políticas</button>`}<button class="btn" id="btn-import">⇪ Importar</button><button class="btn primary" id="btn-add-unit">+ Unidad</button>`}</div>
     </div>
     ${seg}
-    ${vista==="precios"?tiles+table+(p.notas?`<div class="notes"><span class="eyebrow">Notas</span><p>${esc(p.notas)}</p></div>`:""):pol}`;
+    ${vista==="precios"?tiles+table+(p.notas?`<div class="notes"><span class="eyebrow">Notas</span><p>${esc(p.notas)}</p></div>`:""):vista==="politica"?pol:docsHTML(p)}`;
+  if(vista==="docs"&&sb&&!docs[p.id])loadDocs(p.id).then(()=>{if(vista==="docs")renderMain()});
 }
 
 // ---------- events ----------
@@ -444,22 +489,28 @@ document.addEventListener("click",e=>{
   if(!t)return;
   if(t.dataset.cat){S.cat=t.dataset.cat;filt={q:"",estatus:"",torre:"",tipo:"",vista:""};save();render();return}
   if(t.id==="pbtn"){const pk=$("#picker");const open=pk.toggleAttribute("open");t.setAttribute("aria-expanded",open);if(open)($("#picker .pitem[aria-current='true']")||$("#picker .pitem"))?.focus();return}
-  if(t.classList.contains("pitem")){S.sel=t.dataset.id;vista="precios";filt={q:"",estatus:"",torre:"",tipo:"",vista:""};sort={k:null,dir:"asc"};save();render();return}
+  if(t.classList.contains("pitem")){S.sel=t.dataset.id;vista="precios";delete docs[t.dataset.id];filt={q:"",estatus:"",torre:"",tipo:"",vista:""};sort={k:null,dir:"asc"};save();render();return}
   if(t.dataset.vista){vista=t.dataset.vista;renderMain();return}
+  if(t.classList.contains("del-doc")){e.preventDefault();deleteDoc(S.sel,t.dataset.name);return}
   if(t.id==="btn-pdf")return listaPDF(S.projects.find(p=>p.id===S.sel));
   if(READONLY)return;
   if(t.id==="btn-add-project")return openProject(null);
   if(t.id==="btn-edit-project")return openProject(S.projects.find(p=>p.id===S.sel));
   if(t.id==="btn-add-unit")return openUnit(null);
+  if(t.id==="btn-import")return openImport(S.projects.find(p=>p.id===S.sel));
   if(t.id==="btn-edit-pol")return openPolitica(S.projects.find(p=>p.id===S.sel));
   if(t.classList.contains("edit-u")){const p=S.projects.find(p=>p.id===S.sel);return openUnit(p.units.find(u=>u.id===t.dataset.id))}
   if(t.id==="btn-reset"&&!sb&&confirm("¿Volver a los datos iniciales? Se perderán los cambios de este navegador.")){S=seed();save();render()}
   if(t.id==="btn-refresh"&&sb){loadAll().then(render)}
 });
+document.addEventListener("dragover",e=>{const u=e.target.closest&&e.target.closest("#upl");if(u){e.preventDefault();u.classList.add("drag")}});
+document.addEventListener("dragleave",e=>{const u=e.target.closest&&e.target.closest("#upl");if(u)u.classList.remove("drag")});
+document.addEventListener("drop",e=>{const u=e.target.closest&&e.target.closest("#upl");if(u){e.preventDefault();u.classList.remove("drag");if(e.dataTransfer.files.length)uploadDocs(S.sel,[...e.dataTransfer.files])}});
 document.addEventListener("pointerdown",e=>{const pk=$("#picker");if(pk&&pk.hasAttribute("open")&&!pk.contains(e.target)){pk.removeAttribute("open");$("#pbtn").setAttribute("aria-expanded","false")}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){const pk=$("#picker");if(pk?.hasAttribute("open")){pk.removeAttribute("open");$("#pbtn").focus()}}});
 document.addEventListener("change",e=>{
   const t=e.target;
+  if(t.id==="doc-file"&&t.files.length){uploadDocs(S.sel,[...t.files]);return}
   if(t.classList.contains("st")){const p=S.projects.find(p=>p.id===S.sel);const u=p.units.find(u=>u.id===t.dataset.id);u.estatus=t.value;save();render();db(()=>sb.from("unidades").update({estatus:u.estatus}).eq("id",u.id));return}
   if(t.id&&t.id.startsWith("f-")&&t.dataset.k){filt[t.dataset.k]=t.value;renderMain()}
 });
@@ -480,7 +531,7 @@ function listaPDF(p){
   const money=v=>"$ "+Math.round(v).toLocaleString("es-MX");
   const th=[["Tipo"],hasTorre?["Torre"]:null,["Nivel","num"],hasVista?["Vista"]:null,["m² int.","num"],hasTerr?["m² terraza","num"]:null,["m² total","num"],hasPark?["Cajones","num"]:null,[renta?"Renta mensual":"Precio","num strong"],!renta?[`Enganche mín. ${eng}%`,"num eng"]:null].filter(Boolean);
   const tr=rows.map(u=>[[esc(u.tipo),"tipo"],hasTorre?[esc(u.torre)]:null,[u.nivel??"","num"],hasVista?[esc(u.vista)]:null,[n2(u.m2int),"num dim"],hasTerr?[u.m2terr?n2(u.m2terr):"–","num dim"]:null,[n2(u.m2tot),"num tot"],hasPark?[u.parking??"","num"]:null,[money(u.precio),"num strong"],!renta?[money(u.precio*eng/100),"num eng"]:null].filter(Boolean));
-  const nota=p.nota_lista||(renta?"":`Enganche mínimo del ${eng}% para apartar tu unidad.`);
+  const nota=renta?"":"Aparta tu unidad con $5,000 reembolsables.";
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Lista de precios · ${esc(p.nombre)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -511,6 +562,11 @@ th.eng,td.eng{background:#173F35;color:#fff}
 th.eng{color:#D9C9A8}
 tr:nth-child(even) td.eng{background:#1B4A3E}
 td.eng{font-weight:600}
+.polsp{margin-top:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.pp{background:#fff;border:1px solid #E3DDD0;border-radius:8px;padding:8px 12px;font-size:10px}
+.pp b{display:block;font-family:Lora,serif;font-size:12.5px;color:#173F35;font-weight:500}
+.pp span{color:#1E241F}
+.pp small{display:block;color:#6F726B;margin-top:2px}
 .band{margin-top:16px;background:#173F35;color:#FAF8F2;border-radius:10px;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;gap:20px}
 .band .t{font-family:Lora,Georgia,serif;font-size:17px;font-weight:500}
 .band .c{font-size:15px;letter-spacing:.08em;font-weight:500;white-space:nowrap}
@@ -528,8 +584,9 @@ td.eng{font-weight:600}
   <div class="proj">${esc(p.nombre)}</div>
   <div class="meta">${[p.giro?`<span>${esc(p.giro)}</span>`:"",p.ubicacion?`<span>${esc(p.ubicacion)}</span>`:"",`<span><b>${rows.length}</b> unidad${rows.length===1?"":"es"} disponible${rows.length===1?"":"s"}</span>`].filter(Boolean).join("")}</div>
   ${rows.length?`<table><thead><tr>${th.map(h=>`<th class="${h[1]||""}">${h[0]}</th>`).join("")}</tr></thead><tbody>${tr.map(r=>`<tr>${r.map(c=>`<td class="${c[1]||""}">${c[0]}</td>`).join("")}</tr>`).join("")}</tbody></table>`:`<div class="empty">Sin unidades disponibles en este momento.</div>`}
+  ${(Array.isArray(p.politicas)&&p.politicas.length&&!renta)?`<div class="polsp">${p.politicas.map(x=>{const c=polCalc(x);const n=+x.meses||0;return `<div class="pp"><b>${esc(x.nombre)}</b><span>Enganche ${x.eng_tipo==="pct"?pct(x.eng):money(x.eng)}${n?` · ${n} mensualidad${n===1?"":"es"} ${x.men_tipo==="pct"?"("+pct(x.men)+" total)":"de "+money(x.men)}`:""} · Escritura ${c.saldo!=null?pct(c.saldo):"resto"}</span>${x.nota?`<small>${esc(x.nota)}</small>`:""}</div>`}).join("")}</div>`:""}
   ${nota?`<div class="band"><div class="t">${esc(nota)}</div><div class="c">33 3376 5616</div></div>`:""}
-  <div class="foot"><div>Precios en pesos mexicanos · Sujetos a cambio sin previo aviso${renta?" · Renta mensual sin IVA":""}</div><div class="by">Comercializado por <img src="data:image/png;base64,${LOGO_B64}" alt="TRUST"></div></div>
+  <div class="foot"><div>Precios en pesos mexicanos · Sujetos a cambio sin previo aviso${renta?" · Renta mensual sin IVA":""}${p.nota_lista?" · "+esc(p.nota_lista):""}</div><div class="by">Comercializado por <img src="data:image/png;base64,${LOGO_B64}" alt="TRUST"></div></div>
 </div>
 <script>window.addEventListener("load",()=>setTimeout(()=>window.print(),500));<\/script>
 </body></html>`;
@@ -553,11 +610,134 @@ function polHTML(txt){
   if(ul)out+="</ul>";
   return out;
 }
+const pct=v=>(+v).toLocaleString("es-MX",{maximumFractionDigits:2})+"%";
+function polCalc(x){ // devuelve % de cada bloque cuando se puede
+  const e=x.eng_tipo==="pct"?+x.eng||0:null;
+  const mTot=x.men_tipo==="pct"?+x.men||0:null; // % total del bloque de mensualidades
+  const saldo=(e!=null&&mTot!=null)?Math.max(0,100-e-mTot):null;
+  return {e,mTot,saldo};
+}
+function polCard(x,minP){
+  const {e,mTot,saldo}=polCalc(x); const n=+x.meses||0;
+  const engTxt=x.eng_tipo==="pct"?pct(x.eng):fmt(x.eng);
+  const menTxt=x.men_tipo==="pct"?pct(x.men):fmt(x.men);
+  const menSub=n?(x.men_tipo==="pct"?`${n} mensualidad${n===1?"":"es"} · ${pct((+x.men||0)/n)} c/u`:`${n} mensualidad${n===1?"":"es"} de ${fmt(x.men)}`):"sin mensualidades";
+  const saldoTxt=saldo!=null?pct(saldo):"Resto";
+  const w=v=>v==null?0:v;
+  // ejemplo con la unidad más barata
+  let ej="";
+  if(minP){const eng=x.eng_tipo==="pct"?minP*(+x.eng||0)/100:+x.eng||0;const men=x.men_tipo==="pct"?minP*(+x.men||0)/100:(+x.men||0)*n;const sal=Math.max(0,minP-eng-men);
+    ej=`<div class="ej">Ej. unidad de <b>${fmt(minP)}</b>: enganche <b>${fmt(eng)}</b>${n?` · ${n} × <b>${fmt(men/n)}</b>`:""} · escritura <b>${fmt(sal)}</b></div>`;}
+  return `<div class="polc"><h3>${esc(x.nombre||"Política")}</h3>
+    <div class="steps">
+      <div class="stp"><small>Enganche</small><b>${engTxt}</b><span>${x.eng_tipo==="pct"?"del precio":"monto fijo"}</span></div>
+      <div class="stp"><small>Mensualidades</small><b>${n?menTxt:"—"}</b><span>${menSub}</span></div>
+      <div class="stp esc"><small>Saldo a escritura</small><b>${saldoTxt}</b><span>${saldo!=null?"del precio":"al escriturar"}</span></div>
+    </div>
+    ${saldo!=null?`<div class="bar"><i style="width:${w(e)}%;background:var(--green)"></i><i style="width:${w(mTot)}%;background:var(--st-apart)"></i><i style="width:${w(saldo)}%;background:var(--gold)"></i></div>`:""}
+    ${ej}${x.nota?`<div class="ej">${esc(x.nota)}</div>`:""}</div>`;
+}
 function openPolitica(p){
-  drawer("Política de venta · "+p.nombre,
-    `<div class="f full"><label for="fx-politica">Texto</label><textarea id="fx-politica" name="politica" style="min-height:360px;font-family:inherit">${esc(p.politica||"")}</textarea></div>
-     <p class="hint">Formato: "# Título", "## Subtítulo", "- punto" para viñetas, **negritas**. Una línea en blanco separa párrafos.</p>`,
-    d=>{p.politica=d.politica;db(()=>sb.from("proyectos").update({politica:p.politica}).eq("id",p.id))},null);
+  let list=JSON.parse(JSON.stringify(Array.isArray(p.politicas)?p.politicas:[]));
+  if(!list.length)list.push({nombre:"",eng_tipo:"pct",eng:10,meses:0,men_tipo:"pct",men:0,nota:""});
+  const row=(x,i)=>`<div class="pe" data-i="${i}">
+    <button type="button" class="ico rm" title="Quitar">✕</button>
+    <div class="f full"><label>Nombre de la política</label><input name="nombre_${i}" value="${esc(x.nombre)}" placeholder="Ej. Contado, 30/70, Financiamiento 24 meses" required></div>
+    <div class="f"><label>Enganche</label><div class="row"><input name="eng_${i}" type="number" step="0.01" min="0" value="${x.eng??""}" required><select name="eng_tipo_${i}"><option value="pct" ${x.eng_tipo!=="monto"?"selected":""}>%</option><option value="monto" ${x.eng_tipo==="monto"?"selected":""}>$ MXN</option></select></div></div>
+    <div class="f"><label>Número de mensualidades</label><input name="meses_${i}" type="number" step="1" min="0" value="${x.meses??0}"></div>
+    <div class="f full"><label>Mensualidades (total del bloque en % o monto por mes)</label><div class="row"><input name="men_${i}" type="number" step="0.01" min="0" value="${x.men??0}"><select name="men_tipo_${i}"><option value="pct" ${x.men_tipo!=="monto"?"selected":""}>% total</option><option value="monto" ${x.men_tipo==="monto"?"selected":""}>$ por mes</option></select></div></div>
+    <div class="f full"><label>Nota (opcional)</label><input name="nota_${i}" value="${esc(x.nota||"")}" placeholder="Ej. descuento 5% pagando en una exhibición"></div>
+    <div class="calc" id="calc_${i}"></div></div>`;
+  const body=()=>list.map(row).join("")+`<button type="button" class="btn" id="pol-add" style="grid-column:1/-1">+ Agregar política</button>
+    <div class="f full" style="margin-top:6px"><label for="fx-politica">Notas generales (opcional)</label><textarea id="fx-politica" name="politica" style="min-height:90px">${esc(p.politica||"")}</textarea></div>`;
+  drawer("Políticas de venta · "+p.nombre, body(),
+    d=>{const out=list.map((x,i)=>({nombre:(d["nombre_"+i]||"").trim(),eng_tipo:d["eng_tipo_"+i],eng:+d["eng_"+i]||0,meses:+d["meses_"+i]||0,men_tipo:d["men_tipo_"+i],men:+d["men_"+i]||0,nota:(d["nota_"+i]||"").trim()})).filter(x=>x.nombre);
+      p.politicas=out;p.politica=d.politica;db(()=>sb.from("proyectos").update({politicas:out,politica:p.politica}).eq("id",p.id))},null);
+  const f=$("#d-form");
+  const recalc=()=>{list.forEach((x,i)=>{const d=Object.fromEntries(new FormData(f));const y={eng_tipo:d["eng_tipo_"+i],eng:d["eng_"+i],men_tipo:d["men_tipo_"+i],men:d["men_"+i],meses:d["meses_"+i]};const c=polCalc(y);const el=$("#calc_"+i);if(!el)return;
+    el.innerHTML=c.saldo!=null?`Saldo a escritura: <b>${pct(c.saldo)}</b>${+y.meses&&y.men_tipo==="pct"?` · ${pct((+y.men||0)/+y.meses)} por mensualidad`:""}`:`Saldo a escritura: <b>resto</b> (se calcula por unidad)`;})};
+  const rebuild=()=>{list=list.map((x,i)=>{const d=Object.fromEntries(new FormData(f));return {nombre:d["nombre_"+i]??x.nombre,eng_tipo:d["eng_tipo_"+i]??x.eng_tipo,eng:d["eng_"+i]??x.eng,meses:d["meses_"+i]??x.meses,men_tipo:d["men_tipo_"+i]??x.men_tipo,men:d["men_"+i]??x.men,nota:d["nota_"+i]??x.nota}});};
+  f.addEventListener("input",recalc); f.addEventListener("change",recalc);
+  f.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+    if(b.id==="pol-add"){rebuild();list.push({nombre:"",eng_tipo:"pct",eng:10,meses:0,men_tipo:"pct",men:0,nota:""});f.innerHTML=body();recalc();return}
+    if(b.classList.contains("rm")){rebuild();const i=+b.closest(".pe").dataset.i;list.splice(i,1);if(!list.length)list.push({nombre:"",eng_tipo:"pct",eng:10,meses:0,men_tipo:"pct",men:0,nota:""});f.innerHTML=body();recalc();}});
+  recalc();
+}
+
+
+// ---------- documentos (Supabase Storage, bucket "documentos") ----------
+const BUCKET="documentos";
+const fmtSize=b=>b>1048576?(b/1048576).toFixed(1)+" MB":b>1024?Math.round(b/1024)+" KB":b+" B";
+async function loadDocs(pid){
+  if(!sb){docs[pid]=docs[pid]||[];return}
+  const {data,error}=await sb.storage.from(BUCKET).list(pid,{limit:200,sortBy:{column:"name",order:"asc"}});
+  if(error){docs[pid]=[];setSync("Documentos: "+error.message);return}
+  docs[pid]=(data||[]).filter(f=>f.name&&!f.name.startsWith(".")).map(f=>({name:f.name,size:f.metadata?.size||0,updated:f.updated_at||f.created_at,url:sb.storage.from(BUCKET).getPublicUrl(pid+"/"+f.name).data.publicUrl}));
+}
+function docsHTML(p){
+  const list=docs[p.id];
+  if(!sb)return `<div class="pol empty"><b>Documentos</b>Disponible cuando el panel está conectado a Supabase.</div>`;
+  if(!list)return `<div class="pol empty">Cargando documentos…</div>`;
+  const items=list.map(d=>{const ext=(d.name.split(".").pop()||"").slice(0,4);
+    return `<a class="doc" href="${d.url}" target="_blank" rel="noopener"><span class="ext">${esc(ext)}</span><span class="n"><b title="${esc(d.name)}">${esc(d.name)}</b><small>${fmtSize(d.size)}${d.updated?" · "+new Date(d.updated).toLocaleDateString("es-MX",{day:"numeric",month:"short",year:"numeric"}):""}</small></span>${READONLY?"":`<button class="ico del del-doc" data-name="${esc(d.name)}" title="Eliminar">✕</button>`}</a>`}).join("");
+  const empty=`<div class="pol empty"><b>Sin documentos</b>${READONLY?"Aún no hay archivos para este proyecto.":"Sube el brochure, planos, lista del desarrollador o lo que necesite el equipo."}</div>`;
+  const upl=READONLY?"":`<div class="upl" id="upl"><input type="file" id="doc-file" multiple><label for="doc-file">Elegir archivos</label> o arrástralos aquí · PDF, imágenes, Excel… (máx. 50 MB c/u)<div class="prog" id="upl-prog"></div></div>`;
+  return (list.length?`<div class="docs">${items}</div>`:empty)+upl;
+}
+async function uploadDocs(pid,files){
+  const prog=$("#upl-prog"); let n=0;
+  for(const f of files){
+    if(f.size>50*1048576){alert(f.name+": supera 50 MB");continue}
+    const name=f.name.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^\w.\-() ]+/g,"_");
+    if(prog)prog.textContent=`Subiendo ${++n} de ${files.length}: ${name}…`;
+    const {error}=await sb.storage.from(BUCKET).upload(pid+"/"+name,f,{upsert:true,contentType:f.type||undefined});
+    if(error){alert("No se pudo subir "+name+": "+error.message)}
+  }
+  delete docs[pid]; await loadDocs(pid); renderMain();
+}
+async function deleteDoc(pid,name){
+  if(!confirm("¿Eliminar "+name+"?"))return;
+  const {error}=await sb.storage.from(BUCKET).remove([pid+"/"+name]);
+  if(error){alert("No se pudo eliminar: "+error.message);return}
+  delete docs[pid]; await loadDocs(pid); renderMain();
+}
+
+
+// ---------- importar unidades (pegar desde Excel) ----------
+const IMP_COLS=[["estatus",/^estatus|status$/i],["tipo",/^tipo|prototipo|modelo$/i],["torre",/^torre|edificio$/i],["nivel",/^nivel|piso$/i],["vista",/^vista|orientaci/i],["m2int",/m.?2?\s*int|interior/i],["m2terr",/terr/i],["m2tot",/total/i],["parking",/cajon|parking|estac/i],["precio",/precio|renta|monto/i]];
+const numv=v=>{const n=parseFloat(String(v).replace(/[^\d.,-]/g,"").replace(/,/g,""));return isNaN(n)?null:n};
+function parseImport(txt){
+  const lines=txt.replace(/\r/g,"").split("\n").map(l=>l.split("\t")).filter(r=>r.some(c=>c.trim()));
+  if(!lines.length)return {rows:[],map:null};
+  let map=null,start=0;
+  const h=lines[0].map(c=>c.trim());
+  const isHeader=h.filter(c=>IMP_COLS.some(([k,re])=>re.test(c))).length>=3;
+  if(isHeader){map=h.map(c=>{const f=IMP_COLS.find(([k,re])=>re.test(c));return f?f[0]:null});start=1}
+  else map=["estatus","tipo","torre","nivel","vista","m2int","m2terr","parking","precio"]; // orden por default sin encabezado
+  const rows=[];
+  for(const r of lines.slice(start)){const o={};map.forEach((k,i)=>{if(k&&r[i]!=null)o[k]=r[i].trim()});
+    if(!o.tipo&&!o.precio)continue;
+    const st=(o.estatus||"Disponible").toLowerCase();
+    const estatus=st.startsWith("apart")?"Apartado":st.startsWith("vend")||st.startsWith("rent")?"Vendido":st.startsWith("bloq")?"Bloqueado":"Disponible";
+    const m2int=numv(o.m2int)||0,m2terr=numv(o.m2terr)||0;
+    rows.push({estatus,tipo:o.tipo||"",torre:o.torre||"",nivel:numv(o.nivel),vista:o.vista||"",m2int,m2terr,m2tot:numv(o.m2tot)||+(m2int+m2terr).toFixed(2),parking:numv(o.parking),precio:numv(o.precio)||0});}
+  return {rows,map};
+}
+function openImport(p){
+  drawer("Importar unidades · "+p.nombre,
+    `<p class="hint" style="grid-column:1/-1;margin:0 0 4px">Copia las filas desde Excel o Google Sheets (con o sin encabezados) y pégalas aquí. Columnas reconocidas: <b>Estatus, Tipo, Torre, Nivel, Vista, m² int, m² terraza, m² total, Cajones, Precio</b>. Sin encabezados se asume ese orden (sin m² total).</p>
+     <div class="f full"><label for="fx-imp">Pegar aquí</label><textarea id="fx-imp" name="imp" style="min-height:220px;font-family:ui-monospace,monospace;font-size:12px;white-space:pre"></textarea></div>
+     <div class="f full"><label style="display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;font-weight:400;color:var(--text);font-size:13px"><input type="checkbox" name="replace" id="fx-replace" style="width:auto;flex:none"> Reemplazar las ${p.units.length} unidades actuales del proyecto</label></div>
+     <div class="calc" id="imp-prev" style="grid-column:1/-1;font-size:12px;color:var(--muted)">Pega para ver la vista previa.</div>`,
+    d=>{const {rows}=parseImport(d.imp);if(!rows.length){alert("No se detectaron filas.");return}
+      const nuevos=rows.map(r=>({id:newId(),...r}));
+      const doIns=()=>{p.units.push(...nuevos);db(()=>sb.from("unidades").insert(nuevos.map(u=>rowU(u,p.id))))};
+      if(d.replace&&p.units.length){const ids=p.units.map(u=>u.id);p.units=[];if(sb){sb.from("unidades").delete().in("id",ids).then(({error})=>{if(error){alert("No se pudieron borrar: "+error.message);return}doIns();render()})}else doIns()}
+      else doIns();},null);
+  const ta=$("#fx-imp");
+  ta.addEventListener("input",()=>{const {rows,map}=parseImport(ta.value);const el=$("#imp-prev");if(!rows.length){el.textContent="Sin filas válidas todavía.";return}
+    const c={};rows.forEach(r=>c[r.estatus]=(c[r.estatus]||0)+1);
+    el.innerHTML=`<b style="color:var(--green)">${rows.length} unidades</b> · ${Object.entries(c).map(([k,v])=>`${v} ${k.toLowerCase()}`).join(", ")} · columnas: ${map.filter(Boolean).join(", ")}<br>Ej.: ${esc(rows[0].tipo)} · ${esc(rows[0].torre)} · nivel ${rows[0].nivel??"—"} · ${rows[0].m2tot} m² · ${fmt(rows[0].precio)}`;});
 }
 
 // ---------- drawers ----------
@@ -569,7 +749,7 @@ function drawer(title,body,onSave,onDelete){
       <span style="display:flex;gap:8px"><button type="button" class="btn" id="d-cancel">Cancelar</button><button type="button" class="btn primary" id="d-save">Guardar</button></span></footer></div>`;
   const close=()=>$("#drawer-root").innerHTML="";
   $("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
-  $("#d-save").onclick=()=>{const f=$("#d-form");if(!f.reportValidity())return;const d=Object.fromEntries(new FormData(f));onSave(d);save();render();close()};
+  $("#d-save").onclick=()=>{const f=$("#d-form");if(!f.reportValidity())return;const d=Object.fromEntries(new FormData(f));f.querySelectorAll("input[type=checkbox]").forEach(c=>d[c.name]=c.checked);onSave(d);save();render();close()};
   if(onDelete)$("#d-del").onclick=()=>{if(confirm("¿Eliminar?")){onDelete();save();render();close()}};
   $("#d-form").addEventListener("submit",e=>{e.preventDefault();$("#d-save").click()});
   const first=$("#d-form input,#d-form select");first&&first.focus();
@@ -587,7 +767,7 @@ function openProject(p){
     fld("ubicacion","Ubicación",p?.ubicacion||"")+
     fld("lista","Lista de precios vigente",p?.lista||"","placeholder='Ej. Lista 6 · Sep–Dic 2026'")+
     fld("enganche","% de apartado / enganche (PDF)",p?.enganche??5,"type=number step=0.5 min=0 max=100")+
-    fld("nota_lista","Nota al pie del PDF",p?.nota_lista||"","placeholder='Ej. Aparta con solo el 5% de enganche.'",true)+
+    fld("nota_lista","Nota adicional al pie del PDF",p?.nota_lista||"","placeholder='Opcional, ej. Entrega estimada diciembre 2027'",true)+
     `<div class="f full"><label for="fx-notas">Notas</label><textarea id="fx-notas" name="notas">${esc(p?.notas||"")}</textarea></div>`,
     d=>{d.enganche=d.enganche===""?5:+d.enganche;if(p){Object.assign(p,d);db(()=>sb.from("proyectos").update(rowP(p)).eq("id",p.id))}else{const np={id:newId(),units:[],...d};S.projects.push(np);S.cat=np.cat;S.sel=np.id;db(()=>sb.from("proyectos").insert(rowP(np)))}},
     p?()=>{S.projects=S.projects.filter(x=>x!==p);db(()=>sb.from("proyectos").delete().eq("id",p.id))}:null);
