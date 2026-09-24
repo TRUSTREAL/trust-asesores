@@ -572,7 +572,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
     <div class="asehead">
       <button class="btn2" onclick="go(aseBack)">← Volver</button>
       <h1 id="aseName">Asesor</h1>
-      <button class="btn" style="margin-left:auto" onclick="reportes(aseCur)">Reporte de la semana</button>
+      <button class="btn" style="margin-left:auto" onclick="reportes(aseCur, rangeA(), periodTxtA())">Reporte del periodo</button>
     </div>
     <div class="filters" id="aseFilters">
       <button class="chip" data-p="hoy" onclick="setPeriodA('hoy',this)">Hoy</button>
@@ -1294,18 +1294,18 @@ body{background:#fff;padding:0}.wrap{max-width:none;padding:24px}#reportes{displ
 
 /* ===== Reporte semanal por asesor ===== */
 function repBars(entries){
-  if(!entries.length) return `<p class="empty" style="padding:6px 0">Sin leads esta semana.</p>`;
+  if(!entries.length) return `<p class="empty" style="padding:6px 0">Sin leads en el periodo.</p>`;
   const max=entries[0][1];
   return entries.map(([k,v])=>`<div class="bar" style="padding:4px 0"><span class="lab">${esc(k)}</span><div class="trk"><div class="fil" style="width:${Math.round(v/max*100)}%"></div></div><span class="val">${v}</span></div>`).join("");
 }
-function repAsesor(name, a, b){
+function repAsesor(name, a, b, lbl){
   const rows=leads.filter(l=> l.asesor===name && l.fecha>=a && l.fecha<=b);
   const n=rows.length, nc=rows.filter(l=>l.nc).length, sg=rows.filter(l=>l.seguimiento).length, ht=rows.filter(l=>l.hot).length, c=rows.filter(esCita).length, ap=rows.filter(l=>l.apartado).length, v=rows.filter(l=>l.venta).length, pd=rows.filter(l=>l.perdido).length;
   const pend=leads.filter(l=> l.asesor===name && !l.venta && !l.perdido && !l.apartado && l.fecha>=a && l.fecha<=b).sort((x,y)=>x.fecha.localeCompare(y.fecha));
   const estado=l=> l.nc?"No contestó": l.seguimiento?"Seguimiento": l.hot?"Hot Lead": l.cita?"Cita realizada":"Sin estatus";
   return `<div class="rep">
     <div class="rephead">
-      <div><h1>${esc(name)}</h1><p class="sub">Cierre de semana · ${fmtLong(a)} – ${fmtLong(b)}</p></div>
+      <div><h1>${esc(name)}</h1><p class="sub">${lbl||"Cierre de semana"} · ${a<"1900"?"hasta":fmtLong(a)+" –"} ${b>"9000"?fmtLong(todayISO()):fmtLong(b)}</p></div>
       <div class="brand" style="color:var(--trust-green)"><b>TRUST</b> realtor</div>
     </div>
     <div class="repnums">
@@ -1322,21 +1322,23 @@ function repAsesor(name, a, b){
       <div class="repbox"><h2>Por proyecto</h2>${repBars(count(rows,"proyecto"))}</div>
       <div class="repbox"><h2>Por canal</h2>${repBars(count(rows,"canal"))}</div>
     </div>
-    <div class="repbox"><h2>Pendientes de la semana</h2>
+    <div class="repbox"><h2>Pendientes del periodo</h2>
       ${pend.length? `<table><tr><th>Fecha</th><th>Nombre</th><th>Teléfono</th><th>Proyecto</th><th>Canal</th><th>Estado</th></tr>`+
         pend.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td class="n">${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(l.proyecto)}</td><td>${esc(canalTxt(l))}</td><td>${estado(l)}</td></tr>`).join("")+`</table>`
-        : `<p class="empty" style="padding:6px 0">Sin pendientes: todos los leads de la semana tienen cierre.</p>`}
+        : `<p class="empty" style="padding:6px 0">Sin pendientes: todos los leads del periodo tienen cierre.</p>`}
     </div>
     <div class="repfoot">Generado el ${fmtLong(todayISO())} · Lead Management TRUST</div>
   </div>`;
 }
-function reportes(solo){
+function periodTxtA(){ const m={hoy:"Hoy",semana:"Últimos 7 días",mes:"Este mes",mesant:"Mes anterior",todo:"Todo el histórico",rango:"Rango"}; return "Reporte · "+(m[asePeriod]||"Periodo"); }
+function reportes(solo, rng, lbl){
   const t=new Date(); t.setHours(0,0,0,0);
-  const b=todayISO(); const d=new Date(t); d.setDate(d.getDate()-6); const a=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+  let b=todayISO(); const d=new Date(t); d.setDate(d.getDate()-6); let a=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+  if(rng){ [a,b]=rng; }
   const names = solo ? [solo] : [...new Set(leads.filter(l=>l.fecha>=a&&l.fecha<=b).map(l=>l.asesor))].sort((x,y)=> ASESORES.indexOf(x)-ASESORES.indexOf(y));
-  if(!names.length){ toast("Nadie tiene leads en los últimos 7 días", true); return; }
-  const html=`<div id="reportes">${names.map(nm=> repAsesor(nm,a,b)).join("")}</div>`;
-  printDoc(solo ? `TRUST_reporte_${solo.replace(/\s+/g,"_")}_${b}` : `TRUST_reportes_semana_${b}`, html);
+  if(!names.length){ toast(rng?"Sin leads en el periodo seleccionado":"Nadie tiene leads en los últimos 7 días", true); return; }
+  const html=`<div id="reportes">${names.map(nm=> repAsesor(nm,a,b,lbl)).join("")}</div>`;
+  printDoc(solo ? `TRUST_reporte_${solo.replace(/\s+/g,"_")}_${b>"9000"?todayISO():b}` : `TRUST_reportes_semana_${b}`, html);
 }
 
 /* ===== Vista de asesor ===== */
