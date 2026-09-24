@@ -393,6 +393,13 @@ const cotUrl=(p,u)=>{const o={proyecto:p.nombre,giro:p.giro,tipo:/preventa/i.tes
 const nivKey=v=>{const t=String(v??"").trim().toUpperCase();if(t==="PB"||t==="S"||t==="SÓTANO"||t==="SOTANO")return -1;if(t.startsWith("PH"))return 999;const n=parseFloat(t);return isNaN(n)?500:n};
 const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36);
 const isRenta=p=>/renta/i.test(p.giro||"");
+function filtActive(){return !!(filt.estatus||filt.torre||filt.tipo||filt.vista||filt.q)}
+function visibleRows(p){
+  let rows=p.units.filter(u=>(!filt.estatus||u.estatus===filt.estatus)&&(!filt.torre||u.torre===filt.torre)&&(!filt.tipo||u.tipo===filt.tipo)&&(!filt.vista||u.vista===filt.vista)
+    &&(!filt.q||[u.tipo,u.torre,u.nivel,u.vista,u.parking,u.clave].join(" ").toLowerCase().includes(filt.q.toLowerCase())));
+  if(sort.k){const k=sort.k,d=sort.dir==="asc"?1:-1;rows=[...rows].sort((a,b)=>{const x=k==="nivel"?nivKey(a[k]):a[k]??"",y=k==="nivel"?nivKey(b[k]):b[k]??"";return (typeof x==="number"&&typeof y==="number"?x-y:String(x).localeCompare(String(y),"es",{numeric:true}))*d})}
+  return rows;
+}
 function counts(p){const c={Disponible:0,Apartado:0,Vendido:0,Bloqueado:0,Aportante:0,dispVal:0};p.units.forEach(u=>{c[u.estatus]=(c[u.estatus]||0)+1;if(u.estatus==="Disponible")c.dispVal+=u.precio||0});return c}
 let filt={q:"",estatus:"",torre:"",tipo:"",vista:""};
 let vista="precios"; // precios | politica | docs
@@ -444,9 +451,7 @@ function renderMain(){
       <i style="width:${c.Disponible/n*100}%;background:var(--st-disp)"></i></div>`:""}`;
   const opts=k=>[...new Set(p.units.map(u=>u[k]).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),"es",{numeric:true}));
   const sel=(id,k,lbl)=>`<select id="${id}" data-k="${k}"><option value="">${lbl}</option>${opts(k).map(v=>`<option ${filt[k]===v?"selected":""}>${esc(v)}</option>`).join("")}</select>`;
-  let rows=p.units.filter(u=>(!filt.estatus||u.estatus===filt.estatus)&&(!filt.torre||u.torre===filt.torre)&&(!filt.tipo||u.tipo===filt.tipo)&&(!filt.vista||u.vista===filt.vista)
-    &&(!filt.q||[u.tipo,u.torre,u.nivel,u.vista,u.parking,u.clave].join(" ").toLowerCase().includes(filt.q.toLowerCase())));
-  if(sort.k){const k=sort.k,d=sort.dir==="asc"?1:-1;rows=[...rows].sort((a,b)=>{const x=k==="nivel"?nivKey(a[k]):a[k]??"",y=k==="nivel"?nivKey(b[k]):b[k]??"";return (typeof x==="number"&&typeof y==="number"?x-y:String(x).localeCompare(String(y),"es",{numeric:true}))*d})}
+  const rows=visibleRows(p);
   const th=(k,l,num)=>`<th data-k="${k}" ${sort.k===k?`data-dir="${sort.dir}"`:""} class="${num?"num":""}">${l}</th>`;
   const table=n?`
     <div class="filters">
@@ -474,7 +479,7 @@ function renderMain(){
     <div class="phead">
       <div class="left">${pickerHTML()}
         <div class="meta">${meta||`<span>Sin datos generales</span>`}</div></div>
-      <div class="actions"><button class="btn" id="btn-pdf" ${c.Disponible?"":"disabled"} title="Lista de precios de unidades disponibles">⤓ Lista de precios (PDF)</button>${READONLY?"":`<button class="btn" id="btn-edit-project">Editar proyecto</button>${renta?"":`<button class="btn" id="btn-edit-pol">Editar políticas</button>`}<button class="btn" id="btn-import">⇪ Importar</button><button class="btn primary" id="btn-add-unit">+ Unidad</button>`}</div>
+      <div class="actions"><button class="btn" id="btn-pdf" ${(filtActive()?rows.length:c.Disponible)?"":"disabled"} title="${filtActive()?"Lista de precios de las unidades filtradas":"Lista de precios de unidades disponibles"}">⤓ Lista de precios (PDF)</button>${READONLY?"":`<button class="btn" id="btn-edit-project">Editar proyecto</button>${renta?"":`<button class="btn" id="btn-edit-pol">Editar políticas</button>`}<button class="btn" id="btn-import">⇪ Importar</button><button class="btn primary" id="btn-add-unit">+ Unidad</button>`}</div>
     </div>
     ${seg}
     ${vista==="precios"?tiles+table+(p.notas?`<div class="notes"><span class="eyebrow">Notas</span><p>${esc(p.notas)}</p></div>`:""):vista==="politica"?pol:docsHTML(p)}`;
@@ -522,13 +527,17 @@ function listaPDF(p){
   if(!p)return;
   const renta=isRenta(p);
   const eng=engMin(p);
-  const rows=p.units.filter(u=>u.estatus==="Disponible").sort((a,b)=>nivKey(a.nivel)-nivKey(b.nivel)||String(a.torre).localeCompare(String(b.torre),"es")||String(a.tipo).localeCompare(String(b.tipo),"es"));
+  const defSort=(a,b)=>nivKey(a.nivel)-nivKey(b.nivel)||String(a.torre).localeCompare(String(b.torre),"es")||String(a.tipo).localeCompare(String(b.tipo),"es");
+  const filtered=filtActive();
+  const rows=filtered?(sort.k?visibleRows(p):[...visibleRows(p)].sort(defSort)):p.units.filter(u=>u.estatus==="Disponible").sort(defSort);
+  const mixed=new Set(rows.map(u=>u.estatus)).size>1||(filtered&&!filt.estatus&&rows.some(u=>u.estatus!=="Disponible"));
+  const filtTxt=filtered?[filt.estatus,filt.torre?"Torre "+filt.torre:"",filt.tipo?"ID "+filt.tipo:"",filt.vista?"Vista "+filt.vista:"",filt.q?`"${filt.q}"`:""].filter(Boolean).join(" · "):"";
   const hasTorre=rows.some(u=>u.torre), hasVista=rows.some(u=>u.vista), hasTerr=rows.some(u=>u.m2terr>0), hasPark=rows.some(u=>u.parking!=null), hasRec=rows.some(u=>u.recamaras!=null), hasBan=rows.some(u=>u.banos!=null);
   const hoy=new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"});
   const n2=v=>v==null||v===""?"—":(+v).toFixed(2);
   const money=v=>"$ "+Math.round(v).toLocaleString("es-MX");
-  const th=[["ID"],hasTorre?["Torre"]:null,["Nivel","num"],hasVista?["Vista"]:null,hasRec?["Rec.","num"]:null,hasBan?["Baños","num"]:null,["m² int.","num"],hasTerr?["m² terraza","num"]:null,["m² total","num"],hasPark?["Cajones","num"]:null,[renta?"Renta mensual":"Precio","num strong"],!renta?[`Enganche mín. ${eng}%`,"num eng"]:null].filter(Boolean);
-  const tr=rows.map(u=>[[esc(u.tipo),"tipo"],hasTorre?[esc(u.torre)]:null,[esc(u.nivel??""),"num"],hasVista?[esc(u.vista)]:null,hasRec?[esc(u.recamaras??""),"num"]:null,hasBan?[u.banos??"","num"]:null,[n2(u.m2int),"num dim"],hasTerr?[u.m2terr?n2(u.m2terr):"–","num dim"]:null,[n2(u.m2tot),"num tot"],hasPark?[u.parking??"","num"]:null,[money(u.precio),"num strong"],!renta?[money(u.precio*eng/100),"num eng"]:null].filter(Boolean));
+  const th=[mixed?["Estatus"]:null,["ID"],hasTorre?["Torre"]:null,["Nivel","num"],hasVista?["Vista"]:null,hasRec?["Rec.","num"]:null,hasBan?["Baños","num"]:null,["m² int.","num"],hasTerr?["m² terraza","num"]:null,["m² total","num"],hasPark?["Cajones","num"]:null,[renta?"Renta mensual":"Precio","num strong"],!renta?[`Enganche mín. ${eng}%`,"num eng"]:null].filter(Boolean);
+  const tr=rows.map(u=>[mixed?[esc(u.estatus),"stc "+u.estatus]:null,[esc(u.tipo),"tipo"],hasTorre?[esc(u.torre)]:null,[esc(u.nivel??""),"num"],hasVista?[esc(u.vista)]:null,hasRec?[esc(u.recamaras??""),"num"]:null,hasBan?[u.banos??"","num"]:null,[n2(u.m2int),"num dim"],hasTerr?[u.m2terr?n2(u.m2terr):"–","num dim"]:null,[n2(u.m2tot),"num tot"],hasPark?[u.parking??"","num"]:null,[money(u.precio),"num strong"],!renta?[money(u.precio*eng/100),"num eng"]:null].filter(Boolean));
   const nota=renta?"":"Aparta tu unidad con $5,000 reembolsables.";
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Lista de precios · ${esc(p.nombre)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
@@ -555,6 +564,7 @@ tr:last-child td{border-bottom:0}
 tr:nth-child(even) td{background:#FBFAF6}
 .num{text-align:right;font-variant-numeric:tabular-nums}
 .tipo{font-family:Lora,serif;font-size:13px;color:#9C7A4E;font-weight:500}
+.stc{font-size:9px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}.stc.Disponible{color:#2E6B4F}.stc.Apartado{color:#B07A1E}.stc.Vendido{color:#6F726B}.stc.Bloqueado{color:#A8342A}.stc.Aportante{color:#2F5597}
 .dim{color:#6F726B}.tot{font-weight:600}.strong{font-weight:600;color:#1E241F;font-size:11px}
 th.eng,td.eng{background:#173F35;color:#fff}
 th.eng{color:#D9C9A8}
@@ -580,8 +590,8 @@ td.eng{font-weight:600}
   </div>
   <div class="title">Lista de <em>precios</em></div>
   <div class="proj">${esc(p.nombre)}</div>
-  <div class="meta">${[p.giro?`<span>${esc(p.giro)}</span>`:"",p.ubicacion?`<span>${esc(p.ubicacion)}</span>`:"",`<span><b>${rows.length}</b> unidad${rows.length===1?"":"es"} disponible${rows.length===1?"":"s"}</span>`].filter(Boolean).join("")}</div>
-  ${rows.length?`<table><thead><tr>${th.map(h=>`<th class="${h[1]||""}">${h[0]}</th>`).join("")}</tr></thead><tbody>${tr.map(r=>`<tr>${r.map(c=>`<td class="${c[1]||""}">${c[0]}</td>`).join("")}</tr>`).join("")}</tbody></table>`:`<div class="empty">Sin unidades disponibles en este momento.</div>`}
+  <div class="meta">${[p.giro?`<span>${esc(p.giro)}</span>`:"",p.ubicacion?`<span>${esc(p.ubicacion)}</span>`:"",(filtered?`<span><b>${rows.length}</b> unidad${rows.length===1?"":"es"} · filtro: <b>${esc(filtTxt)}</b></span>`:`<span><b>${rows.length}</b> unidad${rows.length===1?"":"es"} disponible${rows.length===1?"":"s"}</span>`)].filter(Boolean).join("")}</div>
+  ${rows.length?`<table><thead><tr>${th.map(h=>`<th class="${h[1]||""}">${h[0]}</th>`).join("")}</tr></thead><tbody>${tr.map(r=>`<tr>${r.map(c=>`<td class="${c[1]||""}">${c[0]}</td>`).join("")}</tr>`).join("")}</tbody></table>`:`<div class="empty">${filtered?"Ninguna unidad coincide con el filtro.":"Sin unidades disponibles en este momento."}</div>`}
   ${(Array.isArray(p.politicas)&&p.politicas.length&&!renta)?`<div class="polsp">${p.politicas.map(x=>{const c=polCalc(x);const n=+x.meses||0;return `<div class="pp"><b>${esc(x.nombre)}${+x.desc?` · ${pct(x.desc)} de descuento`:""}</b><span>Enganche ${x.eng_tipo==="pct"?pct(x.eng):money(x.eng)}${n?` · ${n} mensualidad${n===1?"":"es"} ${x.men_tipo==="pct"?"("+pct(x.men)+" total)":"de "+money(x.men)}`:""} · Escritura ${c.saldo!=null?pct(c.saldo):"resto"}</span>${x.nota?`<small>${esc(x.nota)}</small>`:""}</div>`}).join("")}</div>`:""}
   ${nota?`<div class="band"><div class="t">${esc(nota)}</div><div class="c">33 3376 5616</div></div>`:""}
   <div class="foot"><div>Precios en pesos mexicanos · Sujetos a cambio sin previo aviso${renta?" · Renta mensual sin IVA":""}${p.nota_lista?" · "+esc(p.nota_lista):""}</div><div class="by">Comercializado por <img src="data:image/png;base64,${LOGO_B64}" alt="TRUST"></div></div>
