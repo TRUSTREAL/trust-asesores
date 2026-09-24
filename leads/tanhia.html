@@ -741,6 +741,9 @@ async function toggleFlag(id, k){
   const l=leads.find(x=>x.id===id); if(!l) return;
   const f={}; ESTATUS.forEach(e=> f[e]=false);
   if(!l[k]) f[k]=true;                       // clic en el activo lo quita; clic en otro lo sustituye
+  const CIERRES=["hot","apartado","venta","perdido"];  // pasos posteriores a la cita: conviven con "cita"
+  if(f[k] && CIERRES.includes(k) && l.cita) f.cita=true;          // la cita se conserva al cerrar
+  if(k==="cita") CIERRES.forEach(e=>{ if(l[e]) f[e]=true; });      // marcar/quitar cita no toca el cierre
   if(k==="apartado" && f.apartado){ const r=await askMontos(l); if(!r) return; Object.assign(f, r); }
   if(k==="perdido" && f.perdido){ const r=await askRazon(l); if(r===null) return; f.razon_perdido=r; }
   if(l.perdido && !f.perdido) f.razon_perdido=null;
@@ -995,11 +998,12 @@ function renderBoard(){
   funnelViz("funnel",rows); convAse(rows); convTipo("convTipo",rows); proj("proj",rows);
 }
 function esCita(l){ return !!(l.cita||l.apartado||l.venta); }   // apartado y venta pasaron por cita
-function estatusDe(l){ return ESTATUS.find(k=>l[k]) || "sin"; }
+const PRIORIDAD=["venta","apartado","perdido","hot","cita","seguimiento","nc"];
+function estatusDe(l){ return PRIORIDAD.find(k=>l[k]) || "sin"; }
 function tipoDe(l){ return l.tipo || (l.broker ? "Broker" : "Directo"); }
 function pct(n,d){ return d? Math.round(n/d*100)+"%" : "—"; }
 function funnel(id, rows){
-  const n=rows.length, c=rows.filter(l=>l.cita).length, a=rows.filter(l=>l.apartado).length, v=rows.filter(l=>l.venta).length, sg=rows.filter(l=>l.seguimiento).length, pd=rows.filter(l=>l.perdido).length, nc=rows.filter(l=>l.nc).length, ht=rows.filter(l=>l.hot).length;
+  const n=rows.length, c=rows.filter(esCita).length, a=rows.filter(l=>l.apartado).length, v=rows.filter(l=>l.venta).length, sg=rows.filter(l=>l.seguimiento).length, pd=rows.filter(l=>l.perdido).length, nc=rows.filter(l=>l.nc).length, ht=rows.filter(l=>l.hot).length;
   document.getElementById(id).innerHTML=
     `<div class="fun n"><b>${pct(nc,n)}</b><span>lead → no contestó</span><em>${nc} de ${n}</em></div>`+
     `<div class="fun s"><b>${pct(sg,n)}</b><span>lead → seguimiento</span><em>${sg} de ${n}</em></div>`+
@@ -1011,7 +1015,7 @@ function funnel(id, rows){
 }
 function proj(id, rows){
   const n=rows.length;
-  const v=rows.filter(l=>l.venta).length, a=rows.filter(l=>l.apartado).length+v, c=rows.filter(l=>l.cita).length+a; // embudo acumulado
+  const v=rows.filter(l=>l.venta).length, a=rows.filter(l=>l.apartado).length+v, c=rows.filter(esCita).length; // embudo acumulado
   const et=[["Citas",ESTANDAR.cita,c],["Apartados",ESTANDAR.apartado,a],["Cierres",ESTANDAR.venta,v]];
   document.getElementById(id).innerHTML=`<table class="proj"><tr><th>Etapa</th><th>Estándar</th><th>Esperado</th><th>Real</th><th>Diferencia</th><th>Tasa real</th></tr>`+
     et.map(([lab,st,real])=>{ const exp=n*st, d=real-exp, r=n?real/n:0;
@@ -1302,7 +1306,7 @@ function repAsesor(name, a, b, lbl){
   const rows=leads.filter(l=> l.asesor===name && l.fecha>=a && l.fecha<=b);
   const n=rows.length, nc=rows.filter(l=>l.nc).length, sg=rows.filter(l=>l.seguimiento).length, ht=rows.filter(l=>l.hot).length, c=rows.filter(esCita).length, ap=rows.filter(l=>l.apartado).length, v=rows.filter(l=>l.venta).length, pd=rows.filter(l=>l.perdido).length;
   const pend=leads.filter(l=> l.asesor===name && !l.venta && !l.perdido && !l.apartado && l.fecha>=a && l.fecha<=b).sort((x,y)=>x.fecha.localeCompare(y.fecha));
-  const estado=l=> l.nc?"No contestó": l.seguimiento?"Seguimiento": l.hot?"Hot Lead": l.cita?"Cita realizada":"Sin estatus";
+  const estado=l=> l.nc?"No contestó": l.seguimiento?"Seguimiento": l.hot?(l.cita?"Cita · Hot Lead":"Hot Lead"): l.cita?"Cita realizada":"Sin estatus";
   return `<div class="rep">
     <div class="rephead">
       <div><h1>${esc(name)}</h1><p class="sub">${lbl||"Cierre de semana"} · ${a<"1900"?"hasta":fmtLong(a)+" –"} ${b>"9000"?fmtLong(todayISO()):fmtLong(b)}</p></div>
