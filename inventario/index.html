@@ -18,6 +18,7 @@
   --st-apart:#B27A0F; --st-apart-bg:#FBF0D6;
   --st-vend:#5C5F5A; --st-vend-bg:#ECEBE6;
   --st-bloq:#A8342A; --st-bloq-bg:#F8E1DE;
+  --st-apor:#2F5597; --st-apor-bg:#E7ECF6;
   --shadow:0 1px 2px rgba(23,63,53,.06),0 8px 24px rgba(23,63,53,.06);
 }
 
@@ -43,6 +44,7 @@ tbody tr:nth-child(even) td{background:#FBFAF6}
     --st-apart:#E9C069; --st-apart-bg:#3D3117;
     --st-vend:#B6B9B2; --st-vend-bg:#2A2F2B;
     --st-bloq:#F0958B; --st-bloq-bg:#42201C;
+    --st-apor:#9DB7E6; --st-apor-bg:#22314A;
     --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3);
   }
   :root:not([data-theme="light"]) th{background:#242E29;color:#C9CDC6}
@@ -116,7 +118,7 @@ button{cursor:pointer}
 .btn.danger{color:var(--st-bloq)}
 .actions{display:flex;gap:8px;flex-wrap:wrap}
 
-.tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:18px}
+.tiles{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:18px}
 @media (max-width:820px){.tiles{grid-template-columns:repeat(3,1fr)}}
 @media (max-width:480px){.tiles{grid-template-columns:repeat(2,1fr)}}
 .tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;position:relative;overflow:hidden}
@@ -156,6 +158,9 @@ td.dim{color:var(--muted)}
 .st.Apartado{background:var(--st-apart-bg);color:var(--st-apart)}
 .st.Vendido{background:var(--st-vend-bg);color:var(--st-vend)}
 .st.Bloqueado{background:var(--st-bloq-bg);color:var(--st-bloq)}
+.st.Aportante{background:var(--st-apor-bg);color:var(--st-apor)}
+.tile.apor .v{color:var(--st-apor)}
+.tile.apor::after{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--st-apor)}
 select.st{padding-right:10px}
 .cot{display:inline-block;font-size:12px;font-weight:500;color:var(--green);text-decoration:none;border:1px solid var(--line-2);border-radius:999px;padding:3px 10px;margin-right:4px;background:var(--surface)}
 .cot:hover{background:var(--green);color:#fff;border-color:var(--green)}
@@ -268,7 +273,7 @@ select.st{padding-right:10px}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 const READONLY=false; // asesores.html: true (solo consulta)
-const STATUSES=["Disponible","Apartado","Vendido","Bloqueado"];
+const STATUSES=["Disponible","Apartado","Vendido","Bloqueado","Aportante"];
 const KEY="inventario-trust-v1";
 
 // ---------- seed ----------
@@ -388,7 +393,7 @@ const cotUrl=(p,u)=>{const o={proyecto:p.nombre,giro:p.giro,tipo:/preventa/i.tes
 const nivKey=v=>{const t=String(v??"").trim().toUpperCase();if(t==="PB"||t==="S"||t==="SÓTANO"||t==="SOTANO")return -1;if(t.startsWith("PH"))return 999;const n=parseFloat(t);return isNaN(n)?500:n};
 const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36);
 const isRenta=p=>/renta/i.test(p.giro||"");
-function counts(p){const c={Disponible:0,Apartado:0,Vendido:0,Bloqueado:0,dispVal:0};p.units.forEach(u=>{c[u.estatus]=(c[u.estatus]||0)+1;if(u.estatus==="Disponible")c.dispVal+=u.precio||0});return c}
+function counts(p){const c={Disponible:0,Apartado:0,Vendido:0,Bloqueado:0,Aportante:0,dispVal:0};p.units.forEach(u=>{c[u.estatus]=(c[u.estatus]||0)+1;if(u.estatus==="Disponible")c.dispVal+=u.precio||0});return c}
 let filt={q:"",estatus:"",torre:"",tipo:"",vista:""};
 let vista="precios"; // precios | politica | docs
 let docs={}; // proyecto_id -> [{name,url,size,updated}]
@@ -429,11 +434,13 @@ function renderMain(){
       <div class="tile apart"><span class="l">Apartado</span><span class="v">${c.Apartado}</span><span class="s">${n?Math.round(c.Apartado/n*100)+"%":"—"}</span></div>
       <div class="tile vend"><span class="l">${labelSold}</span><span class="v">${c.Vendido}</span><span class="s">${n?Math.round(c.Vendido/n*100)+"%":"—"}</span></div>
       <div class="tile bloq"><span class="l">Bloqueado</span><span class="v">${c.Bloqueado}</span><span class="s">${n?Math.round(c.Bloqueado/n*100)+"%":"—"}</span></div>
+      <div class="tile apor"><span class="l">Aportante</span><span class="v">${c.Aportante}</span><span class="s">${n?Math.round(c.Aportante/n*100)+"%":"—"}</span></div>
     </div>
     ${n?`<div class="bar" title="Avance de comercialización">
       <i style="width:${c.Vendido/n*100}%;background:var(--st-vend)"></i>
       <i style="width:${c.Apartado/n*100}%;background:var(--st-apart)"></i>
       <i style="width:${c.Bloqueado/n*100}%;background:var(--st-bloq)"></i>
+      <i style="width:${c.Aportante/n*100}%;background:var(--st-apor)"></i>
       <i style="width:${c.Disponible/n*100}%;background:var(--st-disp)"></i></div>`:""}`;
   const opts=k=>[...new Set(p.units.map(u=>u[k]).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),"es",{numeric:true}));
   const sel=(id,k,lbl)=>`<select id="${id}" data-k="${k}"><option value="">${lbl}</option>${opts(k).map(v=>`<option ${filt[k]===v?"selected":""}>${esc(v)}</option>`).join("")}</select>`;
@@ -711,7 +718,7 @@ function parseImport(txt){
   for(const r of lines.slice(start)){const o={};map.forEach((k,i)=>{if(k&&r[i]!=null)o[k]=r[i].trim()});
     if(!o.tipo&&!o.precio)continue;
     const st=(o.estatus||"Disponible").toLowerCase();
-    const estatus=st.startsWith("apart")?"Apartado":st.startsWith("vend")||st.startsWith("rent")?"Vendido":st.startsWith("bloq")?"Bloqueado":"Disponible";
+    const estatus=st.startsWith("apart")?"Apartado":st.startsWith("vend")||st.startsWith("rent")?"Vendido":st.startsWith("bloq")?"Bloqueado":st.startsWith("aport")?"Aportante":"Disponible";
     const m2int=numv(o.m2int)||0,m2terr=numv(o.m2terr)||0;
     rows.push({estatus,tipo:o.tipo||"",torre:o.torre||"",nivel:(o.nivel||"").trim()||null,vista:o.vista||"",recamaras:(o.recamaras||"").trim()||null,banos:numv(o.banos),m2int,m2terr,m2tot:numv(o.m2tot)||+(m2int+m2terr).toFixed(2),parking:numv(o.parking),precio:numv(o.precio)||0});}
   return {rows,map};
