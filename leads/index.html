@@ -178,6 +178,8 @@ td.m{color:var(--trust-gray)}
 .repgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
 .repbox{border:1px solid var(--trust-gray-light);padding:14px 16px}
 .repbox h2{font-size:15px;margin-bottom:8px}
+.lhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.lhead h2{margin-bottom:6px}.lhead .sub{margin-bottom:12px}
 .repfoot{margin-top:18px;font-size:11px;color:var(--trust-gray);border-top:1px solid var(--trust-gray-light);padding-top:8px}
 @media print{
   @page{margin:14mm}
@@ -208,6 +210,7 @@ td.m{color:var(--trust-gray)}
 .mini:hover{border-color:var(--trust-green);color:var(--trust-green)}
 .mini.cur{color:var(--ink);font-size:12px;font-weight:500}
 #aList,#baseList{overflow-x:auto}
+.razon{font-weight:400;font-size:12px;color:var(--trust-gray);margin-top:2px;white-space:normal;max-width:260px}
 #aList table,#baseList table{min-width:820px}
 .flags{flex-wrap:nowrap}
 /* Funnel visual */
@@ -296,7 +299,9 @@ td.m{color:var(--trust-gray)}
   .capture,.grid3{grid-template-columns:1fr}
   .kpis,.kpis.k5,.kpis.k3,.kpis.k7,.kpis.k8{grid-template-columns:repeat(2,1fr)}
   .selrow{flex-wrap:wrap}
-  #bQ,#aQ{min-width:100%}
+  #bQ{min-width:100%}
+  .lhead{flex-direction:column;align-items:stretch}
+  .lhead #aQ{width:100%;margin-bottom:12px}
   .topbar{padding:0 16px}.wrap{padding:16px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -570,7 +575,6 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
       <input type="date" id="ad2" onchange="setPeriodA('rango')">
     </div>
     <div class="selrow">
-      <input type="text" id="aQ" class="sbtn" style="background-image:none;padding-right:14px;min-width:220px" placeholder="Buscar nombre o teléfono" oninput="asePage=0;renderAse()">
       <select id="aProyF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Proyecto: todos</option></select>
       <select id="aCanalF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Canal: todos</option></select>
       <select id="aTipoF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Tipo: todos</option><option>Directo</option><option>Broker</option></select>
@@ -579,14 +583,14 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
     </div>
     <div class="kpis k5">
       <div class="kpi dark"><b id="aTotal">0</b><span>leads asignados</span></div>
-      <div class="kpi"><b id="aShare">—</b><span>del total del periodo</span></div>
+      <div class="kpi"><b id="aShare">0</b><span>leads perdidos</span></div>
       <div class="kpi"><b id="aProy">—</b><span>proyecto principal</span></div>
       <div class="kpi"><b id="aCanal">—</b><span>canal principal</span></div>
       <div class="kpi"><b id="aBroker">0</b><span>de broker</span></div>
       <div class="kpi kpibtn" id="aSinBox" onclick="document.getElementById('aEstF').value='sin';asePage=0;renderAse()" title="Ver solo los leads sin estatus"><b id="aSin">0</b><span>sin estatus</span></div>
     </div>
     <div class="card" style="margin-bottom:16px"><h2>Conversión</h2><div id="aFunnel"></div></div>
-    <div class="card" style="margin-bottom:16px"><h2>Leads del periodo</h2><p class="sub">Marca el estatus de cada lead.</p><div id="aList"></div></div>
+    <div class="card" style="margin-bottom:16px"><div class="lhead"><div><h2>Leads del periodo</h2><p class="sub">Marca el estatus de cada lead.</p></div><input type="text" id="aQ" class="sbtn" style="background-image:none;padding-right:14px;width:260px;flex:0 0 auto" placeholder="Buscar nombre o teléfono" oninput="asePage=0;renderAse()"></div><div id="aList"></div></div>
     <div class="card" style="margin-bottom:16px"><h2>Proyección contra estándar</h2><div id="aProj"></div></div>
     <div class="card" style="margin-bottom:16px"><h2>Directo vs Broker</h2><div id="aConvTipo"></div></div>
     <div class="grid2">
@@ -629,6 +633,14 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
       <div class="field"><label for="eEng">Enganche esperado</label><input type="text" id="eEng" inputmode="numeric" placeholder="$ 0"></div>
     </div>
     <div class="modalact"><button class="btn2" id="modalENo">Cancelar</button><button class="btn" id="modalEYes">Guardar cambios</button></div>
+  </div>
+</div>
+
+<div class="modal" id="modalR">
+  <div class="modalbox">
+    <p id="modalRTitle" style="margin-bottom:14px"></p>
+    <div class="field" style="margin-bottom:12px"><label for="rRazon">¿Por qué se perdió?</label><textarea id="rRazon" rows="3" placeholder="Ej. compró en otro desarrollo, no le alcanzó el enganche, dejó de contestar…" style="width:100%;font:inherit;padding:10px 12px;border:1px solid var(--trust-line,#ddd);border-radius:10px;resize:vertical"></textarea></div>
+    <div class="modalact"><button class="btn2" id="modalRNo">Cancelar</button><button class="btn" id="modalRYes">Marcar perdido</button></div>
   </div>
 </div>
 
@@ -714,13 +726,28 @@ async function patch(id, fields){
   if (fields.fecha) leads.sort((a,b)=> (b.fecha+(b.created_at||"")).localeCompare(a.fecha+(a.created_at||"")));
   if (!sb) localStorage.setItem(LS, JSON.stringify(leads));
 }
-const ESTATUS=["nc","hot","cita","apartado","venta","seguimiento","perdido"];
+const ESTATUS=["nc","hot","cita","apartado","venta","seguimiento","perdido","razon_perdido"];
 async function toggleFlag(id, k){
   const l=leads.find(x=>x.id===id); if(!l) return;
   const f={}; ESTATUS.forEach(e=> f[e]=false);
   if(!l[k]) f[k]=true;                       // clic en el activo lo quita; clic en otro lo sustituye
   if(k==="apartado" && f.apartado){ const r=await askMontos(l); if(!r) return; Object.assign(f, r); }
-  try{ await patch(id, f); render(); }catch(e){ toast("No se guardó: "+e.message, true); }
+  if(k==="perdido" && f.perdido){ const r=await askRazon(l); if(r===null) return; f.razon_perdido=r; }
+  if(l.perdido && !f.perdido) f.razon_perdido=null;
+  try{ await patch(id, f); render(); if(f.perdido) toast("Lead marcado como perdido"); }catch(e){ toast("No se guardó: "+e.message, true); }
+}
+function askRazon(l){
+  return new Promise(res=>{
+    const m=document.getElementById("modalR");
+    document.getElementById("modalRTitle").textContent=`${l.nombre} · ${l.proyecto}`;
+    const ta=document.getElementById("rRazon"); ta.value=l.razon_perdido||"";
+    const y=document.getElementById("modalRYes"), no=document.getElementById("modalRNo");
+    const close=v=>{ m.classList.remove("on"); y.onclick=no.onclick=null; document.removeEventListener("keydown",key,true); res(v); };
+    const key=e=>{ if(e.key==="Escape"){ e.stopPropagation(); close(null); } };
+    y.onclick=()=>{ const v=ta.value.trim(); if(!v){ ta.focus(); ta.style.borderColor="#c0392b"; return; } close(v); }; no.onclick=()=>close(null);
+    document.addEventListener("keydown",key,true);
+    m.classList.add("on"); ta.style.borderColor=""; ta.focus();
+  });
 }
 async function remove(id){
   if (sb){
@@ -1224,7 +1251,7 @@ function renderBase(){
   const page=rows.slice(basePage*PER, basePage*PER+PER);
   const fl=(l,k,lab,cls)=>`<button class="flag ${l[k]?"on":""} ${cls||""}" onclick="toggleFlag(${JSON.stringify(l.id)},'${k}')">${lab}</button>`;
   box.innerHTML=`<table><tr><th><button class="lnk" style="font-size:11px;color:var(--trust-gray)" onclick="baseAsc=!baseAsc;renderBase()">Fecha ${baseAsc?"↑":"↓"}</button></th><th>Nombre</th><th>Teléfono</th><th>Canal</th><th>Proyecto</th><th>Asesor</th><th>Estatus</th><th></th></tr>`+
-    page.map(l=>`<tr><td class="m">${fmt(l.fecha)}/${l.fecha.slice(2,4)}</td><td class="n">${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td>${asesorSel(l)}</td><td><div class="flags">${fl(l,"nc","NC","n")}${fl(l,"seguimiento","Seg.","s")}${fl(l,"hot","Hot","h")}${fl(l,"cita","Cita","c")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div></td><td style="white-space:nowrap"><button class="x" title="Editar" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="x" title="Borrar este lead" onclick="del(${JSON.stringify(l.id)})">×</button></td></tr>`).join("")+`</table>`+
+    page.map(l=>`<tr><td class="m">${fmt(l.fecha)}/${l.fecha.slice(2,4)}</td><td class="n">${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td>${asesorSel(l)}</td><td><div class="flags">${fl(l,"nc","NC","n")}${fl(l,"seguimiento","Seg.","s")}${fl(l,"cita","Cita","c")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div></td><td style="white-space:nowrap"><button class="x" title="Editar" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="x" title="Borrar este lead" onclick="del(${JSON.stringify(l.id)})">×</button></td></tr>`).join("")+`</table>`+
     (pages>1?`<div class="pager"><span>${basePage*PER+1}–${Math.min(rows.length,(basePage+1)*PER)} de ${rows.length}</span><div><button ${basePage===0?"disabled":""} onclick="basePage--;renderBase()">Anteriores</button><button ${basePage>=pages-1?"disabled":""} onclick="basePage++;renderBase()">Siguientes</button></div></div>`:"");
 }
 function exportBase(){
@@ -1343,7 +1370,7 @@ function renderAse(){
   document.getElementById("aSinBox").classList.toggle("warn", sinEst>0);
   const p=count(rows,"proyecto"), c=count(rows,"canal");
   document.getElementById("aTotal").textContent=rows.length;
-  document.getElementById("aShare").textContent= all.length? Math.round(rows.length/all.length*100)+"%" : "—";
+  document.getElementById("aShare").textContent= rows.filter(l=>estatusDe(l)==="perdido").length;
   document.getElementById("aProy").textContent= p[0]? p[0][0] : "—";
   document.getElementById("aCanal").textContent= c[0]? c[0][0] : "—";
   const ab=rows.filter(l=>tipoDe(l)==="Broker").length; document.getElementById("aBroker").innerHTML=`${ab} <small style="font-family:Montserrat;font-size:13px;color:var(--trust-gray)">${pct(ab,rows.length)}</small>`;
@@ -1362,18 +1389,19 @@ function renderAse(){
   funnelViz("aFunnel",rows); proj("aProj",rows); convTipo("aConvTipo",rows);
   // list (paginada de 10)
   const list=document.getElementById("aList");
-  if(!rows.length){ list.innerHTML=`<p class="empty">Sin leads en este periodo.</p>`; return; }
-  const PER=10, pages=Math.ceil(rows.length/PER); if(asePage>=pages) asePage=pages-1; if(asePage<0) asePage=0;
-  const page=rows.slice(asePage*PER, asePage*PER+PER);
+  const lrows= fe==="perdido" ? rows : rows.filter(l=>estatusDe(l)!=="perdido");
+  if(!lrows.length){ list.innerHTML=`<p class="empty">${rows.length?"Sin leads activos en este periodo (los perdidos se ocultan; usa el filtro Estatus: Perdido para verlos).":"Sin leads en este periodo."}</p>`; return; }
+  const PER=10, pages=Math.ceil(lrows.length/PER); if(asePage>=pages) asePage=pages-1; if(asePage<0) asePage=0;
+  const page=lrows.slice(asePage*PER, asePage*PER+PER);
   const fl=(l,k,lab,cls)=>`<button class="flag ${l[k]?"on":""} ${cls||""}" onclick="toggleFlag(${JSON.stringify(l.id)},'${k}')">${lab}</button>`;
   list.innerHTML=`<table><tr><th>Fecha</th><th>Nombre</th><th>Teléfono</th><th>Canal</th><th>Proyecto</th><th>Estatus</th><th></th></tr>`+
-    page.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td class="n">${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td><div class="flags">${fl(l,"nc","NC","n")}${fl(l,"seguimiento","Seg.","s")}${fl(l,"hot","Hot","h")}${fl(l,"cita","Cita","c")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div></td><td style="white-space:nowrap"><button class="x" title="Editar" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="x" title="Borrar este lead" onclick="del(${JSON.stringify(l.id)})">×</button></td></tr>`).join("")+`</table>`+
-    (pages>1?`<div class="pager"><span>${asePage*PER+1}–${Math.min(rows.length,(asePage+1)*PER)} de ${rows.length}</span><div><button ${asePage===0?"disabled":""} onclick="asePage--;renderAse()">Anteriores</button><button ${asePage>=pages-1?"disabled":""} onclick="asePage++;renderAse()">Siguientes</button></div></div>`:"");
+    page.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td class="n">${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td><div class="flags">${fl(l,"nc","NC","n")}${fl(l,"seguimiento","Seg.","s")}${fl(l,"cita","Cita","c")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div></td><td style="white-space:nowrap"><button class="x" title="Editar" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="x" title="Borrar este lead" onclick="del(${JSON.stringify(l.id)})">×</button></td></tr>`).join("")+`</table>`+
+    (pages>1?`<div class="pager"><span>${asePage*PER+1}–${Math.min(lrows.length,(asePage+1)*PER)} de ${lrows.length}</span><div><button ${asePage===0?"disabled":""} onclick="asePage--;renderAse()">Anteriores</button><button ${asePage>=pages-1?"disabled":""} onclick="asePage++;renderAse()">Siguientes</button></div></div>`:"");
 }
 
 function exportCSV(){
   const rows=inPeriod(); if(!rows.length){ toast("No hay leads en el periodo", true); return; }
-  const head=["fecha","nombre","telefono","canal","proyecto","asesor","tipo","marketplace","monto","enganche","nc","hot","cita","apartado","venta","seguimiento","perdido"];
+  const head=["fecha","nombre","telefono","canal","proyecto","asesor","tipo","marketplace","monto","enganche","nc","hot","cita","apartado","venta","seguimiento","perdido","razon_perdido"];
   const csv=[head.join(",")].concat(rows.map(l=> head.map(h=> `"${String(h==="tipo" ? tipoDe(l) : typeof l[h]==="boolean" ? (l[h]?"sí":"") : (l[h]??"")).replace(/"/g,'""')}"`).join(","))).join("\n");
   const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"})); a.download=`leads_${range().join("_")}.csv`; a.click();
 }
