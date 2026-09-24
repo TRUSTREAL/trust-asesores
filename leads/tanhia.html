@@ -216,9 +216,9 @@ td.m{color:var(--trust-gray)}
 .mini{appearance:none;-webkit-appearance:none;height:30px;padding:0 26px 0 10px;border:1px solid var(--trust-gray-light);background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2397999B' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 8px center;color:var(--trust-gray);font-family:inherit;font-size:11px;font-weight:600;cursor:pointer}
 .mini:hover{border-color:var(--trust-green);color:var(--trust-green)}
 .mini.cur{color:var(--ink);font-size:12px;font-weight:500}
-#aList,#baseList{overflow-x:auto}
+#aList,#aCitas,#baseList{overflow-x:auto}
 .razon{font-weight:400;font-size:12px;color:var(--trust-gray);margin-top:2px;white-space:normal;max-width:260px}
-#aList table,#baseList table{min-width:820px}
+#aList table,#aCitas table,#baseList table{min-width:820px}
 .flags{flex-wrap:nowrap}
 /* Funnel visual */
 .fz{display:grid;grid-template-columns:1.3fr 1fr;gap:28px;align-items:start}
@@ -610,7 +610,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
     <div class="card" style="margin-bottom:16px"><h2>Conversión</h2><div id="aFunnel"></div></div>
     <div class="card" style="margin-bottom:16px"><div class="lhead"><div><h2>Leads del periodo</h2><p class="sub">Marca el estatus de cada lead.</p></div><input type="text" id="aQ" class="sbtn" style="background-image:none;padding-right:14px;width:260px;flex:0 0 auto" placeholder="Buscar nombre o teléfono" oninput="asePage=0;renderAse()"></div><div id="aList"></div></div>
     <div class="card" style="margin-bottom:16px"><h2>Proyección contra estándar</h2><div id="aProj"></div></div>
-    <div class="card" style="margin-bottom:16px"><h2>Directo vs Broker</h2><div id="aConvTipo"></div></div>
+    <div class="card" style="margin-bottom:16px"><h2>Citas del periodo</h2><p class="sub">Leads que llegaron a cita (incluye los que después se apartaron, vendieron o perdieron).</p><div id="aCitas"></div></div>
     <div class="grid2">
       <div class="card"><h2>Por proyecto</h2><div class="bars" id="aBProy"></div></div>
       <div class="card"><h2>Por canal</h2><div class="bars" id="aBCanal"></div></div>
@@ -1381,6 +1381,14 @@ function clearAseF(){ document.getElementById("aQ").value=""; document.getElemen
 function openAse(name, from){ aseCur=name; aseBack=from; asePage=0; fillAseF(); clearAseF(); document.getElementById("aseName").textContent=name; go("ase"); renderAse(); window.scrollTo(0,0); }
 function setPeriodA(p, btn){ asePeriod=p; asePage=0; document.querySelectorAll("#aseFilters .chip").forEach(b=>b.classList.toggle("on", b===btn)); renderAse(); }
 function rangeA(){ return rangeWith(asePeriod,"ad1","ad2"); }
+function citasList(id, src){
+  const el=document.getElementById(id);
+  const cl=src.filter(esCita).sort((x,y)=>y.fecha.localeCompare(x.fecha));
+  if(!cl.length){ el.innerHTML=`<p class="empty">Sin citas en este periodo.</p>`; return; }
+  const fl=(l,k,lab,cls)=>`<button class="flag ${l[k]?"on":""} ${cls||""}" onclick="toggleFlag(${JSON.stringify(l.id)},'${k}')">${lab}</button>`;
+  el.innerHTML=`<table><tr><th>Fecha</th><th>Nombre</th><th>Teléfono</th><th>Canal</th><th>Proyecto</th><th>Estatus</th></tr>`+
+    cl.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td class="n">${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td><div class="flags">${fl(l,"cita","Cita","c")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"perdido","Perd.","p")}</div></td></tr>`).join("")+`</table>`;
+}
 function renderAse(){
   if(!aseCur) return;
   const [a,b]=rangeA();
@@ -1416,7 +1424,7 @@ function renderAse(){
       p.map(([pr,tot])=>`<tr><td>${esc(pr)}</td>${cols.map(k=>{const v=m[pr][k]||0; return `<td class="${v?"":"z"}">${v||"·"}</td>`}).join("")}<td class="tot">${tot}</td></tr>`).join("")+
       `<tr><td class="tot">Total</td>${cols.map(k=>`<td class="tot">${colTot[k]}</td>`).join("")}<td class="tot">${rows.length}</td></tr></table>`;
   }
-  funnelViz("aFunnel",rows); proj("aProj",rows); convTipo("aConvTipo",rows);
+  funnelViz("aFunnel",rows); proj("aProj",rows); citasList("aCitas",base);
   // list (paginada de 10)
   const list=document.getElementById("aList");
   const lrows= fe==="perdido" ? rows : rows.filter(l=>estatusDe(l)!=="perdido");
