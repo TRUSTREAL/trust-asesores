@@ -122,6 +122,8 @@ td.m{color:var(--trust-gray)}
 .kpibtn:hover{border-color:var(--trust-green)}
 .kpi.warn{border-color:var(--st-cita)}
 .kpi.warn b{color:var(--st-cita)}
+.kpi.lost{border-color:var(--st-perd)}
+.kpi.lost b{color:var(--st-perd)}
 .kpi.gold{border-color:var(--trust-accent)}
 .kpi.gold b{color:var(--trust-accent)}
 .flags{display:flex;gap:6px}
@@ -591,7 +593,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
     </div>
     <div class="kpis k5">
       <div class="kpi dark"><b id="aTotal">0</b><span>leads asignados</span></div>
-      <div class="kpi"><b id="aShare">0</b><span>leads perdidos</span></div>
+      <div class="kpi kpibtn" id="aPerdBox" onclick="document.getElementById('aEstF').value='perdido';asePage=0;renderAse()" title="Ver solo los leads perdidos"><b id="aShare">0</b><span>leads perdidos</span></div>
       <div class="kpi"><b id="aProy">—</b><span>proyecto principal</span></div>
       <div class="kpi"><b id="aCanal">—</b><span>canal principal</span></div>
       <div class="kpi"><b id="aBroker">0</b><span>de broker</span></div>
@@ -1378,7 +1380,7 @@ function renderAse(){
   document.getElementById("aSinBox").classList.toggle("warn", sinEst>0);
   const p=count(rows,"proyecto"), c=count(rows,"canal");
   document.getElementById("aTotal").textContent=rows.length;
-  document.getElementById("aShare").textContent= rows.filter(l=>estatusDe(l)==="perdido").length;
+  const nPerd=rows.filter(l=>estatusDe(l)==="perdido").length; document.getElementById("aShare").innerHTML=`${nPerd} <small style="font-family:Montserrat;font-size:13px">${pct(nPerd,rows.length)}</small>`; document.getElementById("aPerdBox").classList.toggle("lost", nPerd>0);
   document.getElementById("aProy").textContent= p[0]? p[0][0] : "—";
   document.getElementById("aCanal").textContent= c[0]? c[0][0] : "—";
   const ab=rows.filter(l=>tipoDe(l)==="Broker").length; document.getElementById("aBroker").innerHTML=`${ab} <small style="font-family:Montserrat;font-size:13px;color:var(--trust-gray)">${pct(ab,rows.length)}</small>`;
