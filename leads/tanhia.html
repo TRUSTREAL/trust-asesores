@@ -687,7 +687,7 @@ const MARKETPLACES = ["Propiedades.com","Pincali","Casas y Terrenos","Vivaanunci
 function canalTxt(l){ return l.canal==="MarketPlace" && l.marketplace ? `MarketPlace · ${l.marketplace}` : (l.canal||""); }
 function canalMatch(l, f){ return !f || (f==="Otro" ? !CANALES_FIJOS.includes(l.canal) : l.canal===f); }
 const PROYECTOS = ["Luciana Providencia","Balcana","Epicentria","Neza","Corretaje","Tanhia","Lázaro","Union Square","VIM Tower","TRUST","Otro"];
-const ESTANDAR  = {cita:0.20, apartado:0.05, venta:0.02};   // lead → cita, apartado, cierre
+const ESTANDAR  = {cita:0.10, apartado:0.03, venta:0.01};   // lead → cita, apartado, cierre
 const ASESORES  = ["Ana Lu","Carlos","Fanny","María","Paola","Ramsés","Rodrigo","Álvaro","Majo","Berna","Otro"];
 
 /* ===== STORE ===== */
