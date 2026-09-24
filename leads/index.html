@@ -296,7 +296,7 @@ td.m{color:var(--trust-gray)}
   .capture,.grid3{grid-template-columns:1fr}
   .kpis,.kpis.k5,.kpis.k3,.kpis.k7,.kpis.k8{grid-template-columns:repeat(2,1fr)}
   .selrow{flex-wrap:wrap}
-  #bQ{min-width:100%}
+  #bQ,#aQ{min-width:100%}
   .topbar{padding:0 16px}.wrap{padding:16px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -570,6 +570,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
       <input type="date" id="ad2" onchange="setPeriodA('rango')">
     </div>
     <div class="selrow">
+      <input type="text" id="aQ" class="sbtn" style="background-image:none;padding-right:14px;min-width:220px" placeholder="Buscar nombre o teléfono" oninput="asePage=0;renderAse()">
       <select id="aProyF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Proyecto: todos</option></select>
       <select id="aCanalF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Canal: todos</option></select>
       <select id="aTipoF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Tipo: todos</option><option>Directo</option><option>Broker</option></select>
@@ -1324,7 +1325,7 @@ async function reasignar(id, asesor, el){
   if(!await ask(`¿Reasignar el lead de ${l.nombre} de ${l.asesor} a ${asesor}?`, "Reasignar")){ if(el) el.value=l.asesor; return; }
   try{ await patch(id,{asesor}); render(); toast(`Reasignado a ${asesor}`); }catch(e){ toast("No se guardó: "+e.message, true); }
 }
-function clearAseF(){ document.getElementById("aProyF").value=""; document.getElementById("aCanalF").value=""; document.getElementById("aTipoF").value=""; document.getElementById("aEstF").value=""; asePage=0; renderAse(); }
+function clearAseF(){ document.getElementById("aQ").value=""; document.getElementById("aProyF").value=""; document.getElementById("aCanalF").value=""; document.getElementById("aTipoF").value=""; document.getElementById("aEstF").value=""; asePage=0; renderAse(); }
 function openAse(name, from){ aseCur=name; aseBack=from; asePage=0; fillAseF(); clearAseF(); document.getElementById("aseName").textContent=name; go("ase"); renderAse(); window.scrollTo(0,0); }
 function setPeriodA(p, btn){ asePeriod=p; asePage=0; document.querySelectorAll("#aseFilters .chip").forEach(b=>b.classList.toggle("on", b===btn)); renderAse(); }
 function rangeA(){ return rangeWith(asePeriod,"ad1","ad2"); }
@@ -1332,10 +1333,11 @@ function renderAse(){
   if(!aseCur) return;
   const [a,b]=rangeA();
   const all=leads.filter(l=> l.fecha>=a && l.fecha<=b);
+  const q=(document.getElementById("aQ")?.value||"").trim().toLowerCase();
   const fp=document.getElementById("aProyF").value, fc=document.getElementById("aCanalF").value, ft=document.getElementById("aTipoF").value, fe=document.getElementById("aEstF").value;
-  const base=all.filter(l=> l.asesor===aseCur && (!fp||l.proyecto===fp) && canalMatch(l,fc) && (!ft||tipoDe(l)===ft));
+  const base=all.filter(l=> l.asesor===aseCur && (!q || (l.nombre||"").toLowerCase().includes(q) || (l.telefono||"").toLowerCase().includes(q)) && (!fp||l.proyecto===fp) && canalMatch(l,fc) && (!ft||tipoDe(l)===ft));
   const rows=base.filter(l=> !fe || estatusDe(l)===fe);
-  document.getElementById("aClear").classList.toggle("on", !!(fp||fc||ft||fe));
+  document.getElementById("aClear").classList.toggle("on", !!(q||fp||fc||ft||fe));
   const sinEst=base.filter(l=>estatusDe(l)==="sin").length;
   document.getElementById("aSin").textContent=sinEst;
   document.getElementById("aSinBox").classList.toggle("warn", sinEst>0);
