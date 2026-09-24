@@ -125,6 +125,8 @@ td.m{color:var(--trust-gray)}
 .kpi.warn b{color:var(--st-cita)}
 .kpi.lost{border-color:var(--st-perd)}
 .kpi.lost b{color:var(--st-perd)}
+.kpi.hot{border-color:var(--st-hot)}.kpi.hot b{color:var(--st-hot)}
+.kpi.apa{border-color:var(--st-apa)}.kpi.apa b{color:#B8901A}
 .kpi.gold{border-color:var(--trust-accent)}
 .kpi.gold b{color:var(--trust-accent)}
 .flags{display:flex;gap:6px}
@@ -599,13 +601,12 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
       <select id="aEstF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Estatus: todos</option><option value="sin">Sin estatus</option><option value="nc">No contestó</option><option value="seguimiento">Seguimiento</option><option value="hot">Hot Lead</option><option value="cita">Cita realizada</option><option value="apartado">Apartado</option><option value="venta">Venta</option><option value="perdido">Perdido</option></select>
       <button class="btn2 clear" id="aClear" onclick="clearAseF()">Quitar filtros</button>
     </div>
-    <div class="kpis k5">
-      <div class="kpi dark"><b id="aTotal">0</b><span>leads asignados</span></div>
+    <div class="kpis">
+      <div class="kpi dark"><b id="aTotal">0</b><span>leads recibidos</span></div>
       <div class="kpi kpibtn" id="aPerdBox" onclick="document.getElementById('aEstF').value='perdido';asePage=0;renderAse()" title="Ver solo los leads perdidos"><b id="aShare">0</b><span>leads perdidos</span></div>
-      <div class="kpi"><b id="aProy">—</b><span>proyecto principal</span></div>
-      <div class="kpi"><b id="aCanal">—</b><span>canal principal</span></div>
-      <div class="kpi"><b id="aBroker">0</b><span>de broker</span></div>
+      <div class="kpi kpibtn" id="aHotBox" onclick="document.getElementById('aEstF').value='hot';asePage=0;renderAse()" title="Ver solo los hot leads"><b id="aHot">0</b><span>hot leads</span></div>
       <div class="kpi kpibtn" id="aSinBox" onclick="document.getElementById('aEstF').value='sin';asePage=0;renderAse()" title="Ver solo los leads sin estatus"><b id="aSin">0</b><span>sin estatus</span></div>
+      <div class="kpi kpibtn" id="aApaBox" onclick="document.getElementById('aEstF').value='apartado';asePage=0;renderAse()" title="Ver solo los apartados"><b id="aApa">0</b><span>apartados</span></div>
     </div>
     <div class="card" style="margin-bottom:16px"><h2>Conversión</h2><div id="aFunnel"></div></div>
     <div class="card" style="margin-bottom:16px"><div class="lhead"><div><h2>Leads del periodo</h2><p class="sub">Marca el estatus de cada lead.</p></div><input type="text" id="aQ" class="sbtn" style="background-image:none;padding-right:14px;width:260px;flex:0 0 auto" placeholder="Buscar nombre o teléfono" oninput="asePage=0;renderAse()"></div><div id="aList"></div></div>
@@ -1314,7 +1315,7 @@ function repAsesor(name, a, b, lbl){
   const rows=leads.filter(l=> l.asesor===name && l.fecha>=a && l.fecha<=b);
   const n=rows.length, nc=rows.filter(l=>l.nc).length, sg=rows.filter(l=>l.seguimiento).length, ht=rows.filter(l=>l.hot).length, c=rows.filter(esCita).length, ap=rows.filter(l=>l.apartado).length, v=rows.filter(l=>l.venta).length, pd=rows.filter(l=>l.perdido).length;
   const pend=leads.filter(l=> l.asesor===name && !l.venta && !l.perdido && !l.apartado && l.fecha>=a && l.fecha<=b).sort((x,y)=>x.fecha.localeCompare(y.fecha));
-  const estado=l=> l.nc?"No contestó": l.seguimiento?"Seguimiento": l.hot?"Hot Lead": l.cita?"Cita realizada":"Sin estatus";
+  const estado=l=> l.nc?"No contestó": l.seguimiento?"Seguimiento": l.hot?(l.cita?"Cita · Hot Lead":"Hot Lead"): l.cita?"Cita realizada":"Sin estatus";
   return `<div class="rep">
     <div class="rephead">
       <div><h1>${esc(name)}</h1><p class="sub">${lbl||"Cierre de semana"} · ${a<"1900"?"hasta":fmtLong(a)+" –"} ${b>"9000"?fmtLong(todayISO()):fmtLong(b)}</p></div>
@@ -1395,9 +1396,10 @@ function renderAse(){
   const p=count(rows,"proyecto"), c=count(rows,"canal");
   document.getElementById("aTotal").textContent=rows.length;
   const nPerd=rows.filter(l=>estatusDe(l)==="perdido").length; document.getElementById("aShare").innerHTML=`${nPerd} <small style="font-family:Montserrat;font-size:13px">${pct(nPerd,rows.length)}</small>`; document.getElementById("aPerdBox").classList.toggle("lost", nPerd>0);
-  document.getElementById("aProy").textContent= p[0]? p[0][0] : "—";
-  document.getElementById("aCanal").textContent= c[0]? c[0][0] : "—";
-  const ab=rows.filter(l=>tipoDe(l)==="Broker").length; document.getElementById("aBroker").innerHTML=`${ab} <small style="font-family:Montserrat;font-size:13px;color:var(--trust-gray)">${pct(ab,rows.length)}</small>`;
+  const sm=v=>` <small style="font-family:Montserrat;font-size:13px">${v}</small>`;
+  const nHot=rows.filter(l=>l.hot).length; document.getElementById("aHot").innerHTML=nHot+sm(pct(nHot,rows.length)); document.getElementById("aHotBox").classList.toggle("hot", nHot>0);
+  const nApa=rows.filter(l=>l.apartado||l.venta).length; document.getElementById("aApa").innerHTML=nApa+sm(pct(nApa,rows.length)); document.getElementById("aApaBox").classList.toggle("apa", nApa>0);
+  // (broker KPI retirado)
   bars("aBProy",p,rows.length); bars("aBCanal",c,rows.length);
   // crosstab
   const cross=document.getElementById("aCross");
