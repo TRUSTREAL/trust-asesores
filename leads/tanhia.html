@@ -127,6 +127,9 @@ td.m{color:var(--trust-gray)}
 .kpi.hot{border-color:var(--st-hot)}.kpi.hot b{color:var(--st-hot)}
 .kpi.apa{border-color:var(--st-apa)}.kpi.apa b{color:#B8901A}
 .kpi.kpibtn.sel{border-width:2px;background:#F6F3EC}
+.kpi.seg{border-color:var(--st-seg)}.kpi.seg b{color:var(--st-seg)}
+.kpis.k8a{grid-template-columns:repeat(8,1fr);gap:10px}
+.kpis.k8a .kpi{padding:14px 12px}.kpis.k8a .kpi b{font-size:28px}.kpis.k8a .kpi b small{font-size:11px!important}.kpis.k8a .kpi span{font-size:11px}
 .kpi.gold{border-color:var(--trust-accent)}
 .kpi.gold b{color:var(--trust-accent)}
 .flags{display:flex;gap:6px}
@@ -301,7 +304,7 @@ td.m{color:var(--trust-gray)}
   .grid2{grid-template-columns:1fr}
   .funnel{grid-template-columns:repeat(2,1fr)}
   .capture,.grid3{grid-template-columns:1fr}
-  .kpis,.kpis.k5,.kpis.k3,.kpis.k7,.kpis.k8{grid-template-columns:repeat(2,1fr)}
+  .kpis,.kpis.k5,.kpis.k3,.kpis.k7,.kpis.k8,.kpis.k8a{grid-template-columns:repeat(2,1fr)}
   .selrow{flex-wrap:wrap}
   #bQ{min-width:100%}
   .lhead{flex-direction:column;align-items:stretch}
@@ -591,12 +594,15 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
       <select id="aProyF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Proyecto: todos</option></select>
       <select id="aCanalF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Canal: todos</option></select>
       <select id="aTipoF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Tipo: todos</option><option>Directo</option><option>Broker</option></select>
-      <select id="aEstF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Estatus: todos</option><option value="sin">Sin estatus</option><option value="nc">No contestó</option><option value="seguimiento">Seguimiento</option><option value="hot">Hot Lead</option><option value="cita">Cita realizada</option><option value="apartado">Apartado</option><option value="venta">Venta</option><option value="perdido">Perdido</option></select>
+      <select id="aEstF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Estatus: todos</option><option value="activo">Activos (sin perdidos)</option><option value="sin">Sin estatus</option><option value="nc">No contestó</option><option value="seguimiento">Seguimiento</option><option value="hot">Hot Lead</option><option value="cita">Cita realizada</option><option value="apartado">Apartado</option><option value="venta">Venta</option><option value="perdido">Perdido</option></select>
       <button class="btn2 clear" id="aClear" onclick="clearAseF()">Quitar filtros</button>
     </div>
-    <div class="kpis">
+    <div class="kpis k8a">
       <div class="kpi dark"><b id="aTotal">0</b><span>leads recibidos</span></div>
-      <div class="kpi kpibtn" id="aPerdBox" onclick="kpiFilt('perdido')" title="Ver solo los leads perdidos"><b id="aShare">0</b><span>leads perdidos</span></div>
+      <div class="kpi kpibtn" id="aActBox" onclick="kpiFilt('activo')" title="Leads del periodo que no se han perdido"><b id="aAct">0</b><span>activos</span></div>
+      <div class="kpi kpibtn" id="aPerdBox" onclick="kpiFilt('perdido')" title="Ver solo los leads perdidos"><b id="aShare">0</b><span>perdidos</span></div>
+      <div class="kpi kpibtn" id="aNcBox" onclick="kpiFilt('nc')" title="Ver solo los que no contestaron"><b id="aNc">0</b><span>no contestó</span></div>
+      <div class="kpi kpibtn" id="aSegBox" onclick="kpiFilt('seguimiento')" title="Ver solo los leads en seguimiento"><b id="aSeg">0</b><span>seguimiento</span></div>
       <div class="kpi kpibtn" id="aHotBox" onclick="kpiFilt('hot')" title="Ver solo los hot leads"><b id="aHot">0</b><span>hot leads</span></div>
       <div class="kpi kpibtn" id="aSinBox" onclick="kpiFilt('sin')" title="Ver solo los leads sin estatus"><b id="aSin">0</b><span>sin estatus</span></div>
       <div class="kpi kpibtn" id="aApaBox" onclick="kpiFilt('apartado')" title="Ver solo los apartados"><b id="aApa">0</b><span>apartados</span></div>
@@ -1382,7 +1388,7 @@ function renderAse(){
   const q=(document.getElementById("aQ")?.value||"").trim().toLowerCase();
   const fp=document.getElementById("aProyF").value, fc=document.getElementById("aCanalF").value, ft=document.getElementById("aTipoF").value, fe=document.getElementById("aEstF").value;
   const base=all.filter(l=> l.asesor===aseCur && (!q || (l.nombre||"").toLowerCase().includes(q) || (l.telefono||"").toLowerCase().includes(q)) && (!fp||l.proyecto===fp) && canalMatch(l,fc) && (!ft||tipoDe(l)===ft));
-  const rows=base.filter(l=> !fe || estatusDe(l)===fe);
+  const rows=base.filter(l=> !fe || (fe==="activo" ? estatusDe(l)!=="perdido" : estatusDe(l)===fe));
   document.getElementById("aClear").classList.toggle("on", !!(q||fp||fc||ft||fe));
   const sinEst=base.filter(l=>estatusDe(l)==="sin").length;
   document.getElementById("aSin").textContent=sinEst;
@@ -1391,7 +1397,10 @@ function renderAse(){
   document.getElementById("aTotal").textContent=base.length;
   const nPerd=base.filter(l=>estatusDe(l)==="perdido").length; document.getElementById("aShare").innerHTML=`${nPerd} <small style="font-family:Montserrat;font-size:13px">${pct(nPerd,base.length)}</small>`; document.getElementById("aPerdBox").classList.toggle("lost", nPerd>0);
   const sm=v=>` <small style="font-family:Montserrat;font-size:13px">${v}</small>`;
-  [["perdido","aPerdBox"],["hot","aHotBox"],["sin","aSinBox"],["apartado","aApaBox"]].forEach(([k,id])=>document.getElementById(id).classList.toggle("sel", fe===k));
+  [["activo","aActBox"],["perdido","aPerdBox"],["nc","aNcBox"],["seguimiento","aSegBox"],["hot","aHotBox"],["sin","aSinBox"],["apartado","aApaBox"]].forEach(([k,id])=>document.getElementById(id).classList.toggle("sel", fe===k));
+  const nAct=base.filter(l=>estatusDe(l)!=="perdido").length; document.getElementById("aAct").innerHTML=nAct+sm(pct(nAct,base.length));
+  const nNc=base.filter(l=>estatusDe(l)==="nc").length; document.getElementById("aNc").innerHTML=nNc+sm(pct(nNc,base.length));
+  const nSeg=base.filter(l=>estatusDe(l)==="seguimiento").length; document.getElementById("aSeg").innerHTML=nSeg+sm(pct(nSeg,base.length)); document.getElementById("aSegBox").classList.toggle("seg", nSeg>0);
   const nHot=base.filter(l=>l.hot).length; document.getElementById("aHot").innerHTML=nHot+sm(pct(nHot,base.length)); document.getElementById("aHotBox").classList.toggle("hot", nHot>0);
   const nApa=base.filter(l=>l.apartado||l.venta).length; document.getElementById("aApa").innerHTML=nApa+sm(pct(nApa,base.length)); document.getElementById("aApaBox").classList.toggle("apa", nApa>0);
   // (broker KPI retirado)
