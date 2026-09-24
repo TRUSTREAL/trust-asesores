@@ -127,6 +127,7 @@ td.m{color:var(--trust-gray)}
 .kpi.lost b{color:var(--st-perd)}
 .kpi.hot{border-color:var(--st-hot)}.kpi.hot b{color:var(--st-hot)}
 .kpi.apa{border-color:var(--st-apa)}.kpi.apa b{color:#B8901A}
+.kpi.kpibtn.sel{border-width:2px;background:#F6F3EC}
 .kpi.gold{border-color:var(--trust-accent)}
 .kpi.gold b{color:var(--trust-accent)}
 .flags{display:flex;gap:6px}
@@ -587,10 +588,10 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
     </div>
     <div class="kpis">
       <div class="kpi dark"><b id="aTotal">0</b><span>leads recibidos</span></div>
-      <div class="kpi kpibtn" id="aPerdBox" onclick="document.getElementById('aEstF').value='perdido';asePage=0;renderAse()" title="Ver solo los leads perdidos"><b id="aShare">0</b><span>leads perdidos</span></div>
-      <div class="kpi kpibtn" id="aHotBox" onclick="document.getElementById('aEstF').value='hot';asePage=0;renderAse()" title="Ver solo los hot leads"><b id="aHot">0</b><span>hot leads</span></div>
-      <div class="kpi kpibtn" id="aSinBox" onclick="document.getElementById('aEstF').value='sin';asePage=0;renderAse()" title="Ver solo los leads sin estatus"><b id="aSin">0</b><span>sin estatus</span></div>
-      <div class="kpi kpibtn" id="aApaBox" onclick="document.getElementById('aEstF').value='apartado';asePage=0;renderAse()" title="Ver solo los apartados"><b id="aApa">0</b><span>apartados</span></div>
+      <div class="kpi kpibtn" id="aPerdBox" onclick="kpiFilt('perdido')" title="Ver solo los leads perdidos"><b id="aShare">0</b><span>leads perdidos</span></div>
+      <div class="kpi kpibtn" id="aHotBox" onclick="kpiFilt('hot')" title="Ver solo los hot leads"><b id="aHot">0</b><span>hot leads</span></div>
+      <div class="kpi kpibtn" id="aSinBox" onclick="kpiFilt('sin')" title="Ver solo los leads sin estatus"><b id="aSin">0</b><span>sin estatus</span></div>
+      <div class="kpi kpibtn" id="aApaBox" onclick="kpiFilt('apartado')" title="Ver solo los apartados"><b id="aApa">0</b><span>apartados</span></div>
     </div>
     <div class="card" style="margin-bottom:16px"><h2>Conversión</h2><div id="aFunnel"></div></div>
     <div class="card" style="margin-bottom:16px"><div class="lhead"><div><h2>Leads del periodo</h2><p class="sub">Marca el estatus de cada lead.</p></div><input type="text" id="aQ" class="sbtn" style="background-image:none;padding-right:14px;width:260px;flex:0 0 auto" placeholder="Buscar nombre o teléfono" oninput="asePage=0;renderAse()"></div><div id="aList"></div></div>
@@ -1361,6 +1362,7 @@ async function reasignar(id, asesor, el){
   if(!await ask(`¿Reasignar el lead de ${l.nombre} de ${l.asesor} a ${asesor}?`, "Reasignar")){ if(el) el.value=l.asesor; return; }
   try{ await patch(id,{asesor}); render(); toast(`Reasignado a ${asesor}`); }catch(e){ toast("No se guardó: "+e.message, true); }
 }
+function kpiFilt(k){ const e=document.getElementById("aEstF"); e.value= e.value===k ? "" : k; asePage=0; renderAse(); }
 function clearAseF(){ document.getElementById("aQ").value=""; document.getElementById("aProyF").value=""; document.getElementById("aCanalF").value=""; document.getElementById("aTipoF").value=""; document.getElementById("aEstF").value=""; asePage=0; renderAse(); }
 function openAse(name, from){ aseCur=name; aseBack=from; asePage=0; fillAseF(); clearAseF(); document.getElementById("aseName").textContent=name; go("ase"); renderAse(); window.scrollTo(0,0); }
 function setPeriodA(p, btn){ asePeriod=p; asePage=0; document.querySelectorAll("#aseFilters .chip").forEach(b=>b.classList.toggle("on", b===btn)); renderAse(); }
@@ -1378,11 +1380,12 @@ function renderAse(){
   document.getElementById("aSin").textContent=sinEst;
   document.getElementById("aSinBox").classList.toggle("warn", sinEst>0);
   const p=count(rows,"proyecto"), c=count(rows,"canal");
-  document.getElementById("aTotal").textContent=rows.length;
-  const nPerd=rows.filter(l=>estatusDe(l)==="perdido").length; document.getElementById("aShare").innerHTML=`${nPerd} <small style="font-family:Montserrat;font-size:13px">${pct(nPerd,rows.length)}</small>`; document.getElementById("aPerdBox").classList.toggle("lost", nPerd>0);
+  document.getElementById("aTotal").textContent=base.length;
+  const nPerd=base.filter(l=>estatusDe(l)==="perdido").length; document.getElementById("aShare").innerHTML=`${nPerd} <small style="font-family:Montserrat;font-size:13px">${pct(nPerd,base.length)}</small>`; document.getElementById("aPerdBox").classList.toggle("lost", nPerd>0);
   const sm=v=>` <small style="font-family:Montserrat;font-size:13px">${v}</small>`;
-  const nHot=rows.filter(l=>l.hot).length; document.getElementById("aHot").innerHTML=nHot+sm(pct(nHot,rows.length)); document.getElementById("aHotBox").classList.toggle("hot", nHot>0);
-  const nApa=rows.filter(l=>l.apartado||l.venta).length; document.getElementById("aApa").innerHTML=nApa+sm(pct(nApa,rows.length)); document.getElementById("aApaBox").classList.toggle("apa", nApa>0);
+  [["perdido","aPerdBox"],["hot","aHotBox"],["sin","aSinBox"],["apartado","aApaBox"]].forEach(([k,id])=>document.getElementById(id).classList.toggle("sel", fe===k));
+  const nHot=base.filter(l=>l.hot).length; document.getElementById("aHot").innerHTML=nHot+sm(pct(nHot,base.length)); document.getElementById("aHotBox").classList.toggle("hot", nHot>0);
+  const nApa=base.filter(l=>l.apartado||l.venta).length; document.getElementById("aApa").innerHTML=nApa+sm(pct(nApa,base.length)); document.getElementById("aApaBox").classList.toggle("apa", nApa>0);
   // (broker KPI retirado)
   bars("aBProy",p,rows.length); bars("aBCanal",c,rows.length);
   // crosstab
