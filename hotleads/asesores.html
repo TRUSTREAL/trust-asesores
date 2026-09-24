@@ -280,6 +280,10 @@ tr.Perdido td.cli{opacity:1;color:var(--muted)}
 .vseg button.g[aria-pressed="true"]{background:var(--st-disp)}
 .vseg button.p[aria-pressed="true"]{background:var(--st-bloq)}
 .vseg button b{font-weight:600;margin-left:4px;opacity:.75}
+
+.dd{display:inline-block;min-width:34px;text-align:center;border-radius:999px;padding:2px 8px;font-weight:600;font-size:12px;background:var(--surface-2);color:var(--muted)}
+.dd.warm{background:var(--st-apart-bg);color:var(--st-apart)}
+.dd.hot{background:var(--st-bloq-bg);color:var(--st-bloq)}
 </style>
 </head>
 <body>
@@ -314,6 +318,9 @@ const fmtM=n=>Math.abs(n)>=1e6?"$ "+(n/1e6).toFixed(2).replace(/\.?0+$/,"")+" M"
 const mesTxt=ym=>{if(!ym)return "—";const [y,m]=ym.split("-");return MESES[+m-1]?.slice(0,3)+" "+y.slice(2)};
 const mesLong=ym=>{if(!ym)return "—";const [y,m]=ym.split("-");return MESES[+m-1]+" "+y};
 const com=l=>(+l.monto||0)*(+l.comision_pct||0)/100;
+const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const dias=l=>{const f=l.fecha||(l.created_at||"").slice(0,10);if(!f)return null;const a=new Date(f+"T00:00:00"),b=new Date(today()+"T00:00:00");return Math.max(0,Math.round((b-a)/86400000))};
+const fechaTxt=f=>{if(!f)return "—";const [y,m,d]=f.slice(0,10).split("-");return `${+d} ${MESES[+m-1]?.slice(0,3)} ${y.slice(2)}`};
 const newId=()=>crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now().toString(36);
 let leads=[], lastSync=null, ASESOR=null;
 let VIEW="Pendiente"; // Pendiente | Ganado | Perdido
@@ -337,7 +344,7 @@ function render(){
   const pen=base.filter(l=>l.estatus==="Pendiente"),gan=base.filter(l=>l.estatus==="Ganado"),per=base.filter(l=>l.estatus==="Perdido");
   const totCom=sum(base.filter(l=>l.estatus!=="Perdido"),com);
   const k=sort.k,d=sort.dir==="asc"?1:-1;
-  rows=[...rows].sort((a,b)=>{let x=k==="comision"?com(a):a[k]??"",y=k==="comision"?com(b):b[k]??"";return (typeof x==="number"&&typeof y==="number"?x-y:String(x).localeCompare(String(y),"es",{numeric:true}))*d});
+  rows=[...rows].sort((a,b)=>{let x=k==="comision"?com(a):k==="dias"?(dias(a)??-1):k==="fecha"?(a.fecha||(a.created_at||"").slice(0,10)):a[k]??"",y=k==="comision"?com(b):k==="dias"?(dias(b)??-1):k==="fecha"?(b.fecha||(b.created_at||"").slice(0,10)):b[k]??"";return (typeof x==="number"&&typeof y==="number"?x-y:String(x).localeCompare(String(y),"es",{numeric:true}))*d});
   const th=(k,l,num)=>`<th data-k="${k}" ${sort.k===k?`data-dir="${sort.dir}"`:""} class="${num?"num":""}">${l}</th>`;
   // por asesor
   const byA={};pen.forEach(l=>{byA[l.asesor]=(byA[l.asesor]||0)+com(l)});
@@ -346,7 +353,7 @@ function render(){
   m.innerHTML=`
     <div class="tiles">
       <div class="tile tot"><span class="l">Comisión proyectada</span><span class="v">${fmtM(totCom)}</span><span class="s">${base.length} hot leads · ${fmtM(sum(base.filter(l=>l.estatus!=="Perdido"),l=>+l.monto||0))} en operaciones</span></div>
-      <div class="tile pen"><span class="l">Pendiente</span><span class="v">${pen.length}</span><span class="s">${fmtM(sum(pen,com))} · ${pen.filter(l=>l.apartado).length} con apartado</span></div>
+      <div class="tile pen"><span class="l">Pendiente</span><span class="v">${pen.length}</span><span class="s">${fmtM(sum(pen,com))} · ${pen.filter(l=>l.apartado).length} con apartado · ${pen.length?Math.round(pen.reduce((a,l)=>a+(dias(l)||0),0)/pen.length)+" días prom.":""}</span></div>
       <div class="tile gan"><span class="l">Ganado</span><span class="v">${gan.length}</span><span class="s">${fmtM(sum(gan,com))} comisión</span></div>
       <div class="tile per"><span class="l">Perdido</span><span class="v">${per.length}</span><span class="s">${fmtM(sum(per,com))} no cobrada</span></div>
     </div>
@@ -358,9 +365,10 @@ function render(){
       <span class="count">${rows.length} ${VIEW.toLowerCase()}${rows.length===1?"":"s"}</span>
     </div>
     <div class="twrap"><table>
-      <thead><tr>${th("cliente","Cliente")}${th("un","UN")}${th("asesor","Asesor")}${th("proyecto","Proyecto")}${th("tipo","Tipo")}${th("monto","Monto",1)}${th("comision_pct","%",1)}${th("comision","Comisión",1)}${th("inmobiliaria","Inmobiliaria")}${th("origen","Origen")}<th title="Apartado">Apart.</th>${th("objetivo","Objetivo")}${th("estatus","Estatus")}<th></th></tr></thead>
+      <thead><tr>${th("cliente","Cliente")}${th("fecha","Ingreso")}${th("dias","Días",1)}${th("un","UN")}${th("asesor","Asesor")}${th("proyecto","Proyecto")}${th("tipo","Tipo")}${th("monto","Monto",1)}${th("comision_pct","%",1)}${th("comision","Comisión",1)}${th("inmobiliaria","Inmobiliaria")}${th("origen","Origen")}<th title="Apartado">Apart.</th>${th("objetivo","Objetivo")}${th("estatus","Estatus")}<th></th></tr></thead>
       <tbody>${rows.map(l=>`<tr class="${l.estatus}" data-id="${l.id}">
         <td class="cli">${esc(l.cliente)}${l.notas?`<small title="${esc(l.notas)}">${esc(l.notas).slice(0,40)}${l.notas.length>40?"…":""}</small>`:""}</td>
+        <td class="dim">${fechaTxt(l.fecha||(l.created_at||""))}</td><td class="num"><span class="dd ${(dias(l)??0)>=45?"hot":(dias(l)??0)>=21?"warm":""}">${dias(l)??"—"}</span></td>
         <td><span class="un ${l.un}">${esc(l.un)}</span></td><td>${esc(l.asesor)}</td><td>${esc(l.proyecto)}</td><td class="dim">${esc(l.tipo)}</td>
                 <td class="num price">${fmt(l.monto)}</td><td class="num dim">${(+l.comision_pct||0).toLocaleString("es-MX",{maximumFractionDigits:2})}%</td><td class="num com">${fmt(com(l))}</td>
         <td class="dim">${esc(l.inmobiliaria)}</td><td class="dim">${esc(l.origen)}</td>
@@ -455,8 +463,8 @@ thead{display:table-header-group}
     <div class="tile gan"><div class="l">Ganado</div><div class="v">${gan.length}</div><div class="s">${fmt(sum(gan,com))}</div></div>
     <div class="tile per"><div class="l">Perdido</div><div class="v">${per.length}</div><div class="s">${fmt(sum(per,com))} no cobrada</div></div>
   </div>
-  <table><thead><tr><th>Cliente</th><th>UN</th><th>Asesor</th><th>Proyecto</th><th>Tipo</th><th class="num">Monto</th><th class="num">%</th><th class="num">Comisión</th><th>Inmobiliaria</th><th>Origen</th><th>Apart.</th><th>Objetivo</th><th>Estatus</th><th>Notas</th></tr></thead>
-  <tbody>${rows.map(l=>`<tr class="${l.estatus}"><td class="cli">${esc(l.cliente)}</td><td>${esc(l.un)}</td><td>${esc(l.asesor)}</td><td>${esc(l.proyecto)}</td><td>${esc(l.tipo)}</td><td class="num">${fmt(l.monto)}</td><td class="num">${(+l.comision_pct||0).toLocaleString("es-MX",{maximumFractionDigits:2})}%</td><td class="num com">${fmt(com(l))}</td><td>${esc(l.inmobiliaria)}</td><td>${esc(l.origen)}</td><td class="ap">${l.apartado?"✓":""}</td><td>${esc(l.objetivo)}</td><td><span class="st ${l.estatus}">${l.estatus}</span></td><td style="white-space:normal;max-width:180px;font-size:9px;color:#6F726B">${esc(l.notas||"")}</td></tr>`).join("")}</tbody></table>
+  <table><thead><tr><th>Cliente</th><th>Ingreso</th><th class="num">Días</th><th>UN</th><th>Asesor</th><th>Proyecto</th><th>Tipo</th><th class="num">Monto</th><th class="num">%</th><th class="num">Comisión</th><th>Inmobiliaria</th><th>Origen</th><th>Apart.</th><th>Objetivo</th><th>Estatus</th><th>Notas</th></tr></thead>
+  <tbody>${rows.map(l=>`<tr class="${l.estatus}"><td class="cli">${esc(l.cliente)}</td><td>${fechaTxt(l.fecha||(l.created_at||""))}</td><td class="num">${dias(l)??"—"}</td><td>${esc(l.un)}</td><td>${esc(l.asesor)}</td><td>${esc(l.proyecto)}</td><td>${esc(l.tipo)}</td><td class="num">${fmt(l.monto)}</td><td class="num">${(+l.comision_pct||0).toLocaleString("es-MX",{maximumFractionDigits:2})}%</td><td class="num com">${fmt(com(l))}</td><td>${esc(l.inmobiliaria)}</td><td>${esc(l.origen)}</td><td class="ap">${l.apartado?"✓":""}</td><td>${esc(l.objetivo)}</td><td><span class="st ${l.estatus}">${l.estatus}</span></td><td style="white-space:normal;max-width:180px;font-size:9px;color:#6F726B">${esc(l.notas||"")}</td></tr>`).join("")}</tbody></table>
   ${Object.keys(byA).length?`<div class="ase">${Object.entries(byA).sort((a,b)=>b[1].c-a[1].c).map(([n,v])=>`<div><small>${esc(n)} · ${v.n} pendiente${v.n===1?"":"s"}</small><b>${fmt(v.c)}</b></div>`).join("")}</div>`:""}
   <div class="foot"><span>Comisión proyectada = monto × % de comisión · excluye perdidos</span><span>TRUST realtor · uso interno</span></div>
 </div><script>window.addEventListener("load",()=>setTimeout(()=>window.print(),500));<\/script></body></html>`;
@@ -491,6 +499,7 @@ function openLead(l){
     fld("asesor","Asesor",ASESOR,"readonly")+
     flist("proyecto","Proyecto / propiedad",l?.proyecto||"",proys)+
     fsel("tipo","Tipo",l?.tipo||"Venta",TIPO)+
+    fld("fecha","Fecha de ingreso",l?.fecha||(l?.created_at||"").slice(0,10)||today(),"type=date required")+
     fld("monto","Monto (MXN)",l?.monto??"","type=number step=1 min=0 required")+
     fld("comision_pct","Comisión %",l?.comision_pct??4.5,"type=number step=0.01 min=0 max=100 required")+
     flist("inmobiliaria","Inmobiliaria",l?.inmobiliaria||"TRUST",inmos)+
@@ -499,7 +508,7 @@ function openLead(l){
     fsel("estatus","Estatus",l?.estatus||"Pendiente",ESTATUS)+
     `<div class="f"><label for="fx-apartado">Apartado</label><label style="display:flex;align-items:center;gap:8px;font-size:13px;text-transform:none;letter-spacing:0;color:var(--text)"><input type="checkbox" id="fx-apartado" name="apartado" class="ap" ${l?.apartado?"checked":""}> Ya firmó apartado</label></div>`+
     `<div class="f full"><label for="fx-notas">Notas / siguiente paso</label><textarea id="fx-notas" name="notas">${esc(l?.notas||"")}</textarea></div>`,
-    d=>{const v={cliente:d.cliente.trim(),un:d.un,asesor:d.asesor.trim(),proyecto:d.proyecto.trim(),tipo:d.tipo,monto:+d.monto||0,comision_pct:+d.comision_pct||0,inmobiliaria:d.inmobiliaria.trim(),origen:d.origen,objetivo:d.objetivo,estatus:d.estatus,apartado:!!d.apartado,notas:d.notas.trim()};
+    d=>{const v={cliente:d.cliente.trim(),fecha:d.fecha,un:d.un,asesor:d.asesor.trim(),proyecto:d.proyecto.trim(),tipo:d.tipo,monto:+d.monto||0,comision_pct:+d.comision_pct||0,inmobiliaria:d.inmobiliaria.trim(),origen:d.origen,objetivo:d.objetivo,estatus:d.estatus,apartado:!!d.apartado,notas:d.notas.trim()};
       if(l){Object.assign(l,v);db(()=>sb.from("hot_leads").update(v).eq("id",l.id))}else{const n={id:newId(),...v};leads.push(n);db(()=>sb.from("hot_leads").insert(n))}},
     null);
 }
