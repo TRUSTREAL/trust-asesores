@@ -218,6 +218,7 @@ td.m{color:var(--trust-gray)}
 .mini:hover{border-color:var(--trust-green);color:var(--trust-green)}
 .mini.cur{color:var(--ink);font-size:12px;font-weight:500}
 #aList,#aCitas,#baseList{overflow-x:auto}
+th.sortable{cursor:pointer;user-select:none;white-space:nowrap}th.sortable:hover{color:var(--trust-green)}th.sortable.on{color:var(--trust-green)}
 .dd{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .dd.g{background:#E1F1E8;color:#2E7D5B}.dd.y{background:#FBF0D6;color:#B27A0F}.dd.r{background:#F8E1DE;color:#A8342A}
 .razon{font-weight:400;font-size:12px;color:var(--trust-gray);margin-top:2px;white-space:normal;max-width:260px}
@@ -805,7 +806,7 @@ function pick(id, v){
   if (id==="proyecto"){ const o=document.getElementById("proyOtro"); o.classList.toggle("on", v==="Otro"); if(v==="Otro") document.getElementById("proyOtroTxt").focus(); }
   if (id==="asesor"){ const o=document.getElementById("aseOtro"); o.classList.toggle("on", v==="Otro"); if(v==="Otro") document.getElementById("aseOtroTxt").focus(); }
 }
-function diasDe(l){ if(l.perdido||l.venta||!l.fecha) return ""; const d=Math.max(0,Math.round((new Date(todayISO())-new Date(l.fecha))/86400000)); const c=d<=3?"g":d<=7?"y":"r"; return `<span class="dd ${c}" title="Días desde el registro">${d} d</span>`; }
+function diasDe(l){ if(l.perdido||l.venta||!l.fecha) return ""; const d=Math.max(0,Math.round((new Date(todayISO())-new Date(l.fecha))/86400000)); const c=d<=3?"g":d<=7?"y":"r"; return `<span class="dd ${c}" title="Días desde el registro">${d}</span>`; }
 function todayISO(){ const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
 function resetForm(){
   ["nombre","telefono","proyOtroTxt","aseOtroTxt","canalOtroTxt"].forEach(i=> document.getElementById(i).value="");
@@ -1365,7 +1366,10 @@ function reportes(solo, rng, lbl){
 }
 
 /* ===== Vista de asesor ===== */
-let aseCur=null, asePeriod="todo", aseBack="reg", asePage=0;
+let aseCur=null, asePeriod="todo", aseBack="reg", asePage=0, aseSort={k:"fecha",dir:"desc"};
+function aseSortBy(k){ if(aseSort.k===k) aseSort.dir=aseSort.dir==="asc"?"desc":"asc"; else aseSort={k,dir:k==="fecha"||k==="dias"?"desc":"asc"}; asePage=0; renderAse(); }
+function aseSorted(rows){ const k=aseSort.k, d=aseSort.dir==="asc"?1:-1; const val=l=> k==="fecha"?l.fecha: k==="dias"?l.fecha: k==="nombre"?(l.nombre||""): k==="telefono"?(l.telefono||""): k==="canal"?canalTxt(l): k==="proyecto"?(l.proyecto||""): k==="estatus"?PRIORIDAD.indexOf(estatusDe(l)): ""; return [...rows].sort((a,b)=>{ const x=val(a), y=val(b); if(k==="dias") return (x<y?1:x>y?-1:0)*d; if(typeof x==="number") return (x-y)*d; return String(x).localeCompare(String(y),"es",{numeric:true,sensitivity:"base"})*d; }); }
+function aseTh(k,l){ const on=aseSort.k===k; return `<th class="sortable ${on?"on":""}" onclick="aseSortBy('${k}')">${l}<span class="arr">${on?(aseSort.dir==="asc"?" ↑":" ↓"):""}</span></th>`; }
 function fillAseF(){
   const proys=PROYECTOS.filter(a=>a!=="Otro").concat([...new Set(leads.map(l=>l.proyecto))].filter(x=>!PROYECTOS.includes(x)).sort());
   const keepP=document.getElementById("aProyF").value, keepC=document.getElementById("aCanalF").value;
@@ -1441,9 +1445,9 @@ function renderAse(){
   const lrows= fe==="perdido" ? rows : rows.filter(l=>estatusDe(l)!=="perdido");
   if(!lrows.length){ list.innerHTML=`<p class="empty">${rows.length?"Sin leads activos en este periodo (los perdidos se ocultan; usa el filtro Estatus: Perdido para verlos).":"Sin leads en este periodo."}</p>`; return; }
   const PER=10, pages=Math.ceil(lrows.length/PER); if(asePage>=pages) asePage=pages-1; if(asePage<0) asePage=0;
-  const page=lrows.slice(asePage*PER, asePage*PER+PER);
+  const page=aseSorted(lrows).slice(asePage*PER, asePage*PER+PER);
   const fl=(l,k,lab,cls)=>`<button class="flag ${l[k]?"on":""} ${cls||""}" onclick="toggleFlag(${JSON.stringify(l.id)},'${k}')">${lab}</button>`;
-  list.innerHTML=`<table><tr><th>Fecha</th><th>Días</th><th>Nombre</th><th>Teléfono</th><th>Canal</th><th>Proyecto</th><th>Estatus</th><th></th></tr>`+
+  list.innerHTML=`<table><tr>${aseTh("fecha","Fecha")}${aseTh("dias","Días")}${aseTh("nombre","Nombre")}${aseTh("telefono","Teléfono")}${aseTh("canal","Canal")}${aseTh("proyecto","Proyecto")}${aseTh("estatus","Estatus")}<th></th></tr>`+
     page.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td>${diasDe(l)}</td><td class="n">${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td><div class="flags">${fl(l,"nc","NC","n")}${fl(l,"seguimiento","Seg.","s")}${fl(l,"cita","Cita","c")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div></td><td style="white-space:nowrap"><button class="x" title="Editar" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="x" title="Borrar este lead" onclick="del(${JSON.stringify(l.id)})">×</button></td></tr>`).join("")+`</table>`+
     (pages>1?`<div class="pager"><span>${asePage*PER+1}–${Math.min(lrows.length,(asePage+1)*PER)} de ${lrows.length}</span><div><button ${asePage===0?"disabled":""} onclick="asePage--;renderAse()">Anteriores</button><button ${asePage>=pages-1?"disabled":""} onclick="asePage++;renderAse()">Siguientes</button></div></div>`:"");
 }
