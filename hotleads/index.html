@@ -216,7 +216,7 @@ select.st{padding-right:10px}
 .drawer header h3{font-size:20px;color:var(--green)}
 .drawer form{padding:16px 20px;overflow:auto;display:grid;gap:12px;grid-template-columns:1fr 1fr;flex:1}
 .f{display:flex;flex-direction:column;gap:4px}
-.f.full{grid-column:1/-1}
+.f.full,.drawer form .full{grid-column:1/-1}
 .f label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .f input,.f select,.f textarea{border:1px solid var(--line-2);background:var(--bg);border-radius:8px;padding:8px 10px;font-size:14px;width:100%}
 .f textarea{min-height:70px;resize:vertical}
@@ -288,7 +288,7 @@ tr.Perdido td.cli{opacity:1;color:var(--muted)}
       <span class="sub">Seguimiento de prospectos próximos al cierre</span>
     </div>
     <div class="topright"><a class="home-link" href="../admin/">← Inicio</a>
-      <div class="actions"><button class="btn" id="btn-pdf">⤓ Reporte PDF</button><button class="btn primary" id="btn-add">+ Hot lead</button></div></div>
+      <div class="actions"><button class="btn" id="btn-oo" title="Compromisos y solicitudes de la sesión semanal">☑ One-on-one</button><button class="btn" id="btn-pdf">⤓ Reporte PDF</button><button class="btn primary" id="btn-add">+ Hot lead</button></div></div>
   </div>
   <section class="main" id="main"></section>
   <div class="foot"><span id="sync">Cargando…</span><span><button class="ico" id="btn-refresh">Actualizar</button></span></div>
@@ -374,6 +374,7 @@ document.addEventListener("click",e=>{
   const th=e.target.closest("th[data-k]");if(th){const k=th.dataset.k;sort=sort.k===k?{k,dir:sort.dir==="asc"?"desc":"asc"}:{k,dir:"asc"};render();return}
   const t=e.target.closest("button");if(!t)return;
   if(t.dataset.view){VIEW=t.dataset.view;render();return}
+  if(t.id==="btn-oo")return openOneOnOne();
   if(t.id==="btn-add")return openLead(null);
   if(t.classList.contains("edit"))return openLead(leads.find(l=>l.id===t.dataset.id));
   if(t.id==="btn-refresh")return loadAll().then(render);
@@ -460,6 +461,39 @@ thead{display:table-header-group}
 }
 
 // ---------- drawer ----------
+
+/* ===== One-on-one: compromisos y solicitudes por semana ===== */
+function lunes(d){const x=new Date(d);x.setHours(0,0,0,0);const w=(x.getDay()+6)%7;x.setDate(x.getDate()-w);return new Date(x.getTime()-x.getTimezoneOffset()*60000).toISOString().slice(0,10)}
+function semTxt(iso){const [y,m,d]=iso.split("-");return `Semana del ${+d} de ${["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"][+m-1]} ${y}`}
+async function openOneOnOne(){
+  const ase=(typeof ASESOR!=="undefined"&&ASESOR)||filt.asesor||"";
+  const sem=lunes(new Date());
+  let hist=[];
+  if(sb&&ase){const r=await sb.from("one_on_one").select("*").eq("asesor",ase).order("semana",{ascending:false}).limit(6);hist=r.data||[]}
+  const curr=hist.find(h=>h.semana===sem)||{compromisos:"",solicitudes:""};
+  const prev=hist.filter(h=>h.semana!==sem);
+  const aseSel=(typeof ASESOR!=="undefined"&&ASESOR)?`<div class="f full"><label>Asesor</label><input value="${esc(ase)}" disabled></div>`:`<div class="f full"><label>Asesor</label><select id="oo-ase">${["",...ASESORES].map(a=>`<option ${a===ase?"selected":""}>${esc(a)}</option>`).join("")}</select></div>`;
+  $("#drawer-root").innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" aria-label="One-on-one">
+    <header><div><h3>One-on-one</h3><div style="font-size:12px;color:var(--muted)">${semTxt(sem)}</div></div><button class="ico" id="d-close" aria-label="Cerrar">✕</button></header>
+    <form id="oo-form">${aseSel}
+      <div class="f full"><label>Compromisos del asesor <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted)">· acciones para esta semana</span></label><textarea id="oo-comp" style="min-height:120px" placeholder="Uno por línea. Ej.: Llamar a Juan Pérez martes · Agendar cita con María jueves">${esc(curr.compromisos||"")}</textarea></div>
+      <div class="f full"><label>Solicitudes a dirección <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted)">· qué necesita para destrabar</span></label><textarea id="oo-sol" style="min-height:120px" placeholder="Ej.: Confirmar política de descuento en Tanhia · Llamada del director a cliente X">${esc(curr.solicitudes||"")}</textarea></div>
+      ${prev.length?`<div class="full" style="border-top:1px solid var(--line);padding-top:12px"><div class="eyebrow" style="margin-bottom:8px">Semanas anteriores</div>${prev.map(h=>`<div style="margin-bottom:12px;font-size:12.5px"><b style="color:var(--green)">${semTxt(h.semana)}</b>${h.compromisos?`<div style="margin-top:4px"><span style="color:var(--muted)">Compromisos:</span><br>${esc(h.compromisos).replace(/\n/g,"<br>")}</div>`:""}${h.solicitudes?`<div style="margin-top:4px"><span style="color:var(--muted)">Solicitudes:</span><br>${esc(h.solicitudes).replace(/\n/g,"<br>")}</div>`:""}</div>`).join("")}</div>`:""}
+    </form>
+    <footer><span></span><span style="display:flex;gap:8px"><button type="button" class="btn" id="d-cancel">Cancelar</button><button type="button" class="btn primary" id="d-save">Guardar</button></span></footer></div>`;
+  const close=()=>$("#drawer-root").innerHTML="";
+  $("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
+  $("#d-save").onclick=async()=>{
+    const a=$("#oo-ase")?$("#oo-ase").value:ase;if(!a){alert("Elige el asesor");return}
+    const row={asesor:a,semana:sem,compromisos:$("#oo-comp").value.trim(),solicitudes:$("#oo-sol").value.trim(),updated_at:new Date().toISOString()};
+    if(!sb){alert("Sin conexión");return}
+    const r=await sb.from("one_on_one").upsert(row,{onConflict:"asesor,semana"});
+    if(r.error){alert("No se guardó: "+r.error.message);return}
+    close();
+  };
+  const oa=$("#oo-ase");if(oa)oa.onchange=async()=>{filt.asesor=oa.value;close();openOneOnOne()};
+}
+
 function drawer(title,body,onSave,onDelete){
   $("#drawer-root").innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" aria-label="${esc(title)}">
     <header><h3>${esc(title)}</h3><button class="ico" id="d-close" aria-label="Cerrar">✕</button></header>
