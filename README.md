@@ -16,3 +16,4 @@ Un solo repo / un solo deploy en Vercel (sitio estático, sin build).
 Todos los módulos comparten el diseño (crema, Poppins + Lora, logo TRUST) y un botón "← Inicio".
 Datos: Supabase proyecto "Paneles" (tablas `leads`, `proyectos`, `unidades`).
 Actualizado: portal con 4 módulos para asesores (leads, hot leads, cotizaciones, inventario).
+Actualizado 28 de Septembre del 2026
