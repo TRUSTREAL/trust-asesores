@@ -218,6 +218,8 @@ td.m{color:var(--trust-gray)}
 .mini:hover{border-color:var(--trust-green);color:var(--trust-green)}
 .mini.cur{color:var(--ink);font-size:12px;font-weight:500}
 #aList,#aCitas,#baseList{overflow-x:auto}
+.dd{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.dd.g{background:#E1F1E8;color:#2E7D5B}.dd.y{background:#FBF0D6;color:#B27A0F}.dd.r{background:#F8E1DE;color:#A8342A}
 .razon{font-weight:400;font-size:12px;color:var(--trust-gray);margin-top:2px;white-space:normal;max-width:260px}
 #aList table,#aCitas table,#baseList table{min-width:820px}
 .flags{flex-wrap:nowrap}
@@ -803,6 +805,7 @@ function pick(id, v){
   if (id==="proyecto"){ const o=document.getElementById("proyOtro"); o.classList.toggle("on", v==="Otro"); if(v==="Otro") document.getElementById("proyOtroTxt").focus(); }
   if (id==="asesor"){ const o=document.getElementById("aseOtro"); o.classList.toggle("on", v==="Otro"); if(v==="Otro") document.getElementById("aseOtroTxt").focus(); }
 }
+function diasDe(l){ if(l.perdido||l.venta||!l.fecha) return ""; const d=Math.max(0,Math.round((new Date(todayISO())-new Date(l.fecha))/86400000)); const c=d<=3?"g":d<=7?"y":"r"; return `<span class="dd ${c}" title="Días desde el registro">${d} d</span>`; }
 function todayISO(){ const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
 function resetForm(){
   ["nombre","telefono","proyOtroTxt","aseOtroTxt","canalOtroTxt"].forEach(i=> document.getElementById(i).value="");
@@ -1280,8 +1283,8 @@ function renderBase(){
   const PER=25, pages=Math.ceil(rows.length/PER); if(basePage>=pages) basePage=pages-1; if(basePage<0) basePage=0;
   const page=rows.slice(basePage*PER, basePage*PER+PER);
   const fl=(l,k,lab,cls)=>`<button class="flag ${l[k]?"on":""} ${cls||""}" onclick="toggleFlag(${JSON.stringify(l.id)},'${k}')">${lab}</button>`;
-  box.innerHTML=`<table><tr><th><button class="lnk" style="font-size:11px;color:var(--trust-gray)" onclick="baseAsc=!baseAsc;renderBase()">Fecha ${baseAsc?"↑":"↓"}</button></th><th>Nombre</th><th>Teléfono</th><th>Canal</th><th>Proyecto</th><th>Asesor</th><th>Estatus</th><th></th></tr>`+
-    page.map(l=>`<tr><td class="m">${fmt(l.fecha)}/${l.fecha.slice(2,4)}</td><td class="n">${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td>${asesorSel(l)}</td><td><div class="flags">${fl(l,"nc","NC","n")}${fl(l,"seguimiento","Seg.","s")}${fl(l,"cita","Cita","c")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div></td><td style="white-space:nowrap"><button class="x" title="Editar" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="x" title="Borrar este lead" onclick="del(${JSON.stringify(l.id)})">×</button></td></tr>`).join("")+`</table>`+
+  box.innerHTML=`<table><tr><th><button class="lnk" style="font-size:11px;color:var(--trust-gray)" onclick="baseAsc=!baseAsc;renderBase()">Fecha ${baseAsc?"↑":"↓"}</button></th><th>Días</th><th>Nombre</th><th>Teléfono</th><th>Canal</th><th>Proyecto</th><th>Asesor</th><th>Estatus</th><th></th></tr>`+
+    page.map(l=>`<tr><td class="m">${fmt(l.fecha)}/${l.fecha.slice(2,4)}</td><td>${diasDe(l)}</td><td class="n">${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td>${asesorSel(l)}</td><td><div class="flags">${fl(l,"nc","NC","n")}${fl(l,"seguimiento","Seg.","s")}${fl(l,"cita","Cita","c")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div></td><td style="white-space:nowrap"><button class="x" title="Editar" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="x" title="Borrar este lead" onclick="del(${JSON.stringify(l.id)})">×</button></td></tr>`).join("")+`</table>`+
     (pages>1?`<div class="pager"><span>${basePage*PER+1}–${Math.min(rows.length,(basePage+1)*PER)} de ${rows.length}</span><div><button ${basePage===0?"disabled":""} onclick="basePage--;renderBase()">Anteriores</button><button ${basePage>=pages-1?"disabled":""} onclick="basePage++;renderBase()">Siguientes</button></div></div>`:"");
 }
 function exportBase(){
@@ -1394,8 +1397,8 @@ function citasList(id, src){
   const cl=src.filter(esCita).sort((x,y)=>y.fecha.localeCompare(x.fecha));
   if(!cl.length){ el.innerHTML=`<p class="empty">Sin citas en este periodo.</p>`; return; }
   const fl=(l,k,lab,cls)=>`<button class="flag ${l[k]?"on":""} ${cls||""}" onclick="toggleFlag(${JSON.stringify(l.id)},'${k}')">${lab}</button>`;
-  el.innerHTML=`<table><tr><th>Fecha</th><th>Nombre</th><th>Teléfono</th><th>Canal</th><th>Proyecto</th><th>Estatus</th></tr>`+
-    cl.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td class="n">${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td><div class="flags">${fl(l,"cita","Cita","c")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"perdido","Perd.","p")}</div></td></tr>`).join("")+`</table>`;
+  el.innerHTML=`<table><tr><th>Fecha</th><th>Días</th><th>Nombre</th><th>Teléfono</th><th>Canal</th><th>Proyecto</th><th>Estatus</th></tr>`+
+    cl.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td>${diasDe(l)}</td><td class="n">${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td><div class="flags">${fl(l,"cita","Cita","c")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"perdido","Perd.","p")}</div></td></tr>`).join("")+`</table>`;
 }
 function renderAse(){
   if(!aseCur) return;
@@ -1440,8 +1443,8 @@ function renderAse(){
   const PER=10, pages=Math.ceil(lrows.length/PER); if(asePage>=pages) asePage=pages-1; if(asePage<0) asePage=0;
   const page=lrows.slice(asePage*PER, asePage*PER+PER);
   const fl=(l,k,lab,cls)=>`<button class="flag ${l[k]?"on":""} ${cls||""}" onclick="toggleFlag(${JSON.stringify(l.id)},'${k}')">${lab}</button>`;
-  list.innerHTML=`<table><tr><th>Fecha</th><th>Nombre</th><th>Teléfono</th><th>Canal</th><th>Proyecto</th><th>Estatus</th><th></th></tr>`+
-    page.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td class="n">${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td><div class="flags">${fl(l,"nc","NC","n")}${fl(l,"seguimiento","Seg.","s")}${fl(l,"cita","Cita","c")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div></td><td style="white-space:nowrap"><button class="x" title="Editar" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="x" title="Borrar este lead" onclick="del(${JSON.stringify(l.id)})">×</button></td></tr>`).join("")+`</table>`+
+  list.innerHTML=`<table><tr><th>Fecha</th><th>Días</th><th>Nombre</th><th>Teléfono</th><th>Canal</th><th>Proyecto</th><th>Estatus</th><th></th></tr>`+
+    page.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td>${diasDe(l)}</td><td class="n">${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td><div class="flags">${fl(l,"nc","NC","n")}${fl(l,"seguimiento","Seg.","s")}${fl(l,"cita","Cita","c")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div></td><td style="white-space:nowrap"><button class="x" title="Editar" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="x" title="Borrar este lead" onclick="del(${JSON.stringify(l.id)})">×</button></td></tr>`).join("")+`</table>`+
     (pages>1?`<div class="pager"><span>${asePage*PER+1}–${Math.min(lrows.length,(asePage+1)*PER)} de ${lrows.length}</span><div><button ${asePage===0?"disabled":""} onclick="asePage--;renderAse()">Anteriores</button><button ${asePage>=pages-1?"disabled":""} onclick="asePage++;renderAse()">Siguientes</button></div></div>`:"");
 }
 
