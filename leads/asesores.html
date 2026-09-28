@@ -321,7 +321,7 @@ th.sortable{cursor:pointer;user-select:none;white-space:nowrap}th.sortable:hover
 .pickcard{max-width:640px;margin:32px auto}
 .chips.big .chip{padding:16px 22px;font-size:16px;min-width:120px;text-align:center}
 #ase .asehead .btn2{display:none}
-.x{display:none!important}
+.x[title^="Borrar"]{display:none!important}
 .mini{display:none}
 @media (max-width:900px){.pickcard{margin:8px auto}.chips.big .chip{flex:1 1 40%}}
 </style>
@@ -589,7 +589,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
     <div class="asehead">
       <button class="btn2" onclick="go(aseBack)">← Volver</button>
       <h1 id="aseName">Asesor</h1>
-      <button class="btn" style="margin-left:auto" onclick="reportes(aseCur, rangeA(), periodTxtA())">Reporte del periodo</button>
+      <button class="btn" style="margin-left:auto" onclick="editLead(null,true)">+ Nuevo lead</button><button class="btn" onclick="reportes(aseCur, rangeA(), periodTxtA())">Reporte del periodo</button>
     </div>
     <div class="filters" id="aseFilters">
       <button class="chip" data-p="hoy" onclick="setPeriodA('hoy',this)">Hoy</button>
@@ -860,9 +860,11 @@ function askMontos(l){
     m.classList.add("on"); im.focus(); im.select();
   });
 }
-function editLead(id){
-  const l=leads.find(x=>x.id===id); if(!l) return;
+function editLead(id, isNew){
+  const l= isNew ? {nombre:"",telefono:"",fecha:todayISO(),asesor:(typeof LOCK_ASE!=="undefined"&&LOCK_ASE)||aseCur||"",canal:"Meta Ads",proyecto:"",tipo:"Directo",monto:null,enganche:null} : leads.find(x=>x.id===id); if(!l) return;
   const m=document.getElementById("modalE");
+  m.querySelector(".modalbox > p").textContent= isNew ? "Nuevo lead" : "Editar lead";
+  document.getElementById("modalEYes").textContent= isNew ? "Registrar lead" : "Guardar cambios";
   const g=i=>document.getElementById(i);
   const opts=(list,cur)=> list.map(a=>`<option ${a===cur?"selected":""}>${esc(a)}</option>`).join("");
   const cans=CANALES_FIJOS;
@@ -877,9 +879,9 @@ function editLead(id){
   const syncCanal=()=>{ const v=g("eCanal").value; g("eCanalOtroBox").style.display= v==="Otro"? "block":"none"; g("eMktBox").style.display= v==="MarketPlace"? "block":"none"; };
   syncCanal();
   g("eCanal").onchange=()=>{ syncCanal(); if(g("eCanal").value==="Otro") g("eCanalOtro").focus(); if(g("eCanal").value==="MarketPlace") g("eMkt").focus(); };
-  g("eAsesor").innerHTML=opts(ases,l.asesor);
-  g("eProy").innerHTML=opts(proys, proyEnLista?l.proyecto:null)+`<option value="Otro" ${proyEnLista?"":"selected"}>Otro</option>`;
-  g("eProyOtro").value= proyEnLista? "" : l.proyecto; g("eProyOtroBox").style.display= proyEnLista? "none":"block";
+  g("eAsesor").innerHTML=opts(ases,l.asesor); g("eAsesor").disabled=true; g("eAsesor").title="Solo administración puede reasignar";
+  g("eProy").innerHTML=(isNew?`<option value="" selected>Elegir…</option>`:"")+opts(proys, proyEnLista?l.proyecto:null)+`<option value="Otro" ${proyEnLista||isNew?"":"selected"}>Otro</option>`;
+  g("eProyOtro").value= proyEnLista||isNew? "" : l.proyecto; g("eProyOtroBox").style.display= proyEnLista||isNew? "none":"block";
   g("eProy").onchange=()=>{ g("eProyOtroBox").style.display= g("eProy").value==="Otro"? "block":"none"; if(g("eProy").value==="Otro") g("eProyOtro").focus(); };
   g("eMonto").value= l.monto!=null? money(l.monto):""; g("eEng").value= l.enganche!=null? money(l.enganche):"";
   const fmtIn=e=>{ const v=numOf(e.target.value); e.target.value = v==null? "" : money(v); }; g("eMonto").onblur=fmtIn; g("eEng").onblur=fmtIn;
@@ -897,8 +899,8 @@ function editLead(id){
     const dups=findDup(g("eTel").value, id);
     if(dups.length){ const o=dups[0]; const ok=await ask(`Ese teléfono ya está en otro lead: ${o.nombre} · ${fmtLong(o.fecha)} · ${o.proyecto} · ${o.asesor}. ¿Guardar de todos modos?`, "Guardar"); if(!ok) return; }
     const f={ nombre: g("eNombre").value.trim()||"Sin nombre", telefono: g("eTel").value.trim(), fecha: g("eFecha").value||l.fecha, tipo: g("eTipo").value,
-      canal, marketplace, asesor: g("eAsesor").value, proyecto, monto: numOf(g("eMonto").value), enganche: numOf(g("eEng").value) };
-    try{ await patch(id, f); close(); render(); toast("Lead actualizado"); }catch(e){ toast("No se guardó: "+e.message, true); }
+      canal, marketplace, asesor: l.asesor, proyecto, monto: numOf(g("eMonto").value), enganche: numOf(g("eEng").value) };
+    try{ if(isNew){ await insert(f); close(); render(); toast(`Registrado · ${f.nombre}`); } else { await patch(id, f); close(); render(); toast("Lead actualizado"); } }catch(e){ toast("No se guardó: "+e.message, true); }
   };
   document.addEventListener("keydown",key,true);
   m.classList.add("on"); g("eNombre").focus();
@@ -1495,8 +1497,7 @@ document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) refresh
 /* ===== MODO ASESOR ===== */
 const ASE_KEY="trust_asesor";
 let LOCK_ASE=null;
-insert=async()=>{ throw new Error("Registra tus leads con Berna"); };
-del=()=>{}; editLead=()=>{}; reasignar=()=>{}; remove=async()=>{ throw new Error("No permitido"); };
+del=()=>{}; reasignar=()=>{}; remove=async()=>{ throw new Error("No permitido"); };   // el asesor sí puede registrar y editar; no borrar ni reasignar
 asesorSel=l=> esc(l.asesor);
 const _openAse=openAse;
 openAse=function(){ if(!LOCK_ASE) return; _openAse(LOCK_ASE,"ase"); };
