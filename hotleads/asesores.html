@@ -247,7 +247,14 @@ tr.Perdido td.cli{text-decoration:line-through;text-decoration-color:var(--st-bl
 .bar i{display:block;height:100%}
 .by{margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .oo .oo-h{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-2,#9C7A4E);font-weight:600;margin:10px 0 4px}
-.oo .oo-l{margin:0;padding-left:18px;font-size:13px;line-height:1.5}
+.oo .oo-l{margin:0;padding:0;list-style:none;font-size:13px;line-height:1.5}
+.oo .oo-l li{display:flex;align-items:flex-start;gap:8px;padding:4px 0}
+.oo .oo-l li span{flex:1}
+.oo .oo-l li.done span{color:var(--muted);text-decoration:line-through}
+.oo .oo-ck{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--line-2);background:var(--surface);flex:0 0 auto;font-size:12px;line-height:1;color:#fff;margin-top:1px}
+.oo .oo-l li.done .oo-ck{background:var(--st-disp,#2E7D5B);border-color:var(--st-disp,#2E7D5B)}
+.oo .oo-x{border:0;background:transparent;color:var(--faint,#97999B);font-size:15px;line-height:1;padding:0 4px;opacity:.5}
+.oo .oo-l li:hover .oo-x{opacity:1}.oo .oo-x:hover{color:var(--st-bloq,#A8342A)}
 .oo .oo-a{padding:8px 0;border-top:1px solid var(--line)}.oo .oo-a:first-of-type{border-top:0;padding-top:0}
 .oo .oo-a>b{font-family:Lora,serif;font-weight:500;font-size:15px;color:var(--green)}
 @media (max-width:820px){.by{grid-template-columns:1fr}}
@@ -392,6 +399,10 @@ document.addEventListener("click",e=>{
   if(t.dataset.ase){ASESOR=t.dataset.ase;render();return}
   if(t.id==="btn-switch"){ASESOR=null;filt={q:"",estatus:"",asesor:"",un:"",tipo:"",proyecto:""};render();return}
   if(t.id==="btn-oo"||t.id==="btn-oo2")return openOneOnOne();
+  if(t.dataset.oo){const o=OO.find(x=>x.id===t.dataset.oo);if(!o)return;const k=t.dataset.k,i=+t.dataset.i;const lines=(o[k]||"").split(/\n+/).filter(x=>x.trim());
+    if(t.classList.contains("oo-x")){if(!confirm("¿Quitar este pendiente?"))return;lines.splice(i,1)}
+    else{const done=/^\[x\]\s*/i.test(lines[i]);lines[i]=(done?"":"[x] ")+lines[i].replace(/^\[[ x]?\]\s*/i,"")}
+    o[k]=lines.join("\n");render();if(sb)sb.from("one_on_one").update({[k]:o[k],updated_at:new Date().toISOString()}).eq("id",o.id).then(({error})=>{if(error)alert("No se guardó: "+error.message)});return}
   if(t.id==="btn-add")return openLead(null);
   if(t.classList.contains("edit"))return openLead(leads.find(l=>l.id===t.dataset.id));
   if(t.id==="btn-refresh")return loadAll().then(render);
@@ -484,9 +495,9 @@ let OO=[];
 function ooCard(ase){
   const sem=lunes(new Date());
   const items=ase?OO.filter(o=>o.asesor===ase):OO.filter(o=>(o.compromisos||o.solicitudes));
-  const li=t=>t?`<ul class="oo-l">${esc(t).split(/\n+/).filter(Boolean).map(x=>`<li>${x}</li>`).join("")}</ul>`:`<span class="dim" style="font-size:12px">—</span>`;
-  const body=ase?(items[0]?`<div class="oo-h">Compromisos</div>${li(items[0].compromisos)}<div class="oo-h">Solicitudes</div>${li(items[0].solicitudes)}`:`<p class="dim" style="font-size:13px;margin:0">Sin registro esta semana. Captúralo con el botón <b>One-on-one</b>.</p>`)
-    :(items.length?items.map(o=>`<div class="oo-a"><b>${esc(o.asesor)}</b>${o.compromisos?`<div class="oo-h">Compromisos</div>${li(o.compromisos)}`:""}${o.solicitudes?`<div class="oo-h">Solicitudes</div>${li(o.solicitudes)}`:""}</div>`).join(""):`<p class="dim" style="font-size:13px;margin:0">Sin registros esta semana.</p>`);
+  const li=(t,o,k)=>t?`<ul class="oo-l">${t.split(/\n+/).filter(x=>x.trim()).map((x,i)=>{const done=/^\[x\]\s*/i.test(x);const txt=x.replace(/^\[[ x]?\]\s*/i,"");return `<li class="${done?"done":""}"><button class="oo-ck" data-oo="${o.id}" data-k="${k}" data-i="${i}" title="${done?"Marcar pendiente":"Marcar hecho"}">${done?"✓":""}</button><span>${esc(txt)}</span><button class="oo-x" data-oo="${o.id}" data-k="${k}" data-i="${i}" title="Quitar">×</button></li>`}).join("")}</ul>`:`<span class="dim" style="font-size:12px">—</span>`;
+  const body=ase?(items[0]?`<div class="oo-h">Compromisos</div>${li(items[0].compromisos,items[0],"compromisos")}<div class="oo-h">Solicitudes</div>${li(items[0].solicitudes,items[0],"solicitudes")}`:`<p class="dim" style="font-size:13px;margin:0">Sin registro esta semana. Captúralo con el botón <b>One-on-one</b>.</p>`)
+    :(items.length?items.map(o=>`<div class="oo-a"><b>${esc(o.asesor)}</b>${o.compromisos?`<div class="oo-h">Compromisos</div>${li(o.compromisos,o,"compromisos")}`:""}${o.solicitudes?`<div class="oo-h">Solicitudes</div>${li(o.solicitudes,o,"solicitudes")}`:""}</div>`).join(""):`<p class="dim" style="font-size:13px;margin:0">Sin registros esta semana.</p>`);
   return `<div class="card oo"><h3>One-on-one <span class="dim" style="font-family:Poppins;font-size:12px;font-weight:400">· ${semTxt(sem).toLowerCase()}</span></h3>${body}<button class="btn" id="btn-oo2" style="margin-top:12px">✎ Editar</button></div>`;
 }
 function lunes(d){const x=new Date(d);x.setHours(0,0,0,0);const w=(x.getDay()+6)%7;x.setDate(x.getDate()-w);return new Date(x.getTime()-x.getTimezoneOffset()*60000).toISOString().slice(0,10)}
@@ -502,7 +513,7 @@ async function openOneOnOne(){
   $("#drawer-root").innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" aria-label="One-on-one">
     <header><div><h3>One-on-one</h3><div style="font-size:12px;color:var(--muted)">${semTxt(sem)}</div></div><button class="ico" id="d-close" aria-label="Cerrar">✕</button></header>
     <form id="oo-form">${aseSel}
-      <div class="f full"><label>Compromisos del asesor <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted)">· acciones para esta semana</span></label><textarea id="oo-comp" style="min-height:120px" placeholder="Uno por línea. Ej.: Llamar a Juan Pérez martes · Agendar cita con María jueves">${esc(curr.compromisos||"")}</textarea></div>
+      <div class="f full"><label>Compromisos del asesor <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted)">· acciones para esta semana</span></label><textarea id="oo-comp" style="min-height:120px" title="Las líneas con [x] ya están marcadas como hechas" placeholder="Uno por línea. Ej.: Llamar a Juan Pérez martes · Agendar cita con María jueves">${esc(curr.compromisos||"")}</textarea></div>
       <div class="f full"><label>Solicitudes a dirección <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted)">· qué necesita para destrabar</span></label><textarea id="oo-sol" style="min-height:120px" placeholder="Ej.: Confirmar política de descuento en Tanhia · Llamada del director a cliente X">${esc(curr.solicitudes||"")}</textarea></div>
       ${prev.length?`<div class="full" style="border-top:1px solid var(--line);padding-top:12px"><div class="eyebrow" style="margin-bottom:8px">Semanas anteriores</div>${prev.map(h=>`<div style="margin-bottom:12px;font-size:12.5px"><b style="color:var(--green)">${semTxt(h.semana)}</b>${h.compromisos?`<div style="margin-top:4px"><span style="color:var(--muted)">Compromisos:</span><br>${esc(h.compromisos).replace(/\n/g,"<br>")}</div>`:""}${h.solicitudes?`<div style="margin-top:4px"><span style="color:var(--muted)">Solicitudes:</span><br>${esc(h.solicitudes).replace(/\n/g,"<br>")}</div>`:""}</div>`).join("")}</div>`:""}
     </form>
