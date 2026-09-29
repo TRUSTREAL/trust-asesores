@@ -481,7 +481,7 @@ function renderMain(){
     <div class="phead">
       <div class="left">${pickerHTML()}
         <div class="meta">${meta||`<span>Sin datos generales</span>`}</div></div>
-      <div class="actions">${READONLY?`<button class="btn ${VENTAS?"primary":""}" id="btn-ventas" aria-pressed="${VENTAS}" title="${VENTAS?"Salir del modo ventas":"Oculta estatus y unidades no disponibles para mostrar a clientes"}">${VENTAS?"✓ Modo ventas":"Modo ventas"}</button>`:""}<button class="btn" id="btn-pdf" ${(filtActive()?rows.length:c.Disponible)?"":"disabled"} title="${filtActive()?"Lista de precios de las unidades filtradas":"Lista de precios de unidades disponibles"}">⤓ Lista de precios (PDF)</button>${READONLY?"":`<button class="btn" id="btn-edit-project">Editar proyecto</button>${renta?"":`<button class="btn" id="btn-edit-pol">Editar políticas</button>`}<button class="btn" id="btn-import">⇪ Importar</button><button class="btn primary" id="btn-add-unit">+ Unidad</button>`}</div>
+      <div class="actions">${READONLY?`<button class="btn ${VENTAS?"primary":""}" id="btn-ventas" aria-pressed="${VENTAS}" title="${VENTAS?"Salir del modo ventas":"Oculta estatus y unidades no disponibles para mostrar a clientes"}">${VENTAS?"✓ Modo ventas":"Modo ventas"}</button>`:""}<button class="btn" id="btn-pdf" ${rows.length?"":"disabled"} title="Lista de precios de las unidades que se muestran en la tabla">⤓ Lista de precios (PDF)</button>${READONLY?"":`<button class="btn" id="btn-edit-project">Editar proyecto</button>${renta?"":`<button class="btn" id="btn-edit-pol">Editar políticas</button>`}<button class="btn" id="btn-import">⇪ Importar</button><button class="btn primary" id="btn-add-unit">+ Unidad</button>`}</div>
     </div>
     ${seg}
     ${vista==="precios"?(VENTAS?"":tiles)+table+(p.notas?`<div class="notes"><span class="eyebrow">Notas</span><p>${esc(p.notas)}</p></div>`:""):vista==="politica"?pol:docsHTML(p)}`;
@@ -532,8 +532,8 @@ function listaPDF(p){
   const eng=engMin(p);
   const defSort=(a,b)=>nivKey(a.nivel)-nivKey(b.nivel)||String(a.torre).localeCompare(String(b.torre),"es")||String(a.tipo).localeCompare(String(b.tipo),"es");
   const filtered=filtActive();
-  const rows=filtered?(sort.k?visibleRows(p):[...visibleRows(p)].sort(defSort)):p.units.filter(u=>u.estatus==="Disponible").sort(defSort);
-  const mixed=new Set(rows.map(u=>u.estatus)).size>1||(filtered&&!filt.estatus&&rows.some(u=>u.estatus!=="Disponible"));
+  const rows=sort.k?visibleRows(p):[...visibleRows(p)].sort(defSort);   // exactamente lo que se ve en la tabla
+  const mixed=rows.some(u=>u.estatus!=="Disponible");
   const filtTxt=filtered?[filt.estatus,filt.torre?"Torre "+filt.torre:"",filt.tipo?"ID "+filt.tipo:"",filt.vista?"Vista "+filt.vista:"",filt.q?`"${filt.q}"`:""].filter(Boolean).join(" · "):"";
   const hasTorre=rows.some(u=>u.torre), hasVista=rows.some(u=>u.vista), hasTerr=rows.some(u=>u.m2terr>0), hasPark=rows.some(u=>u.parking!=null), hasRec=rows.some(u=>u.recamaras!=null), hasBan=rows.some(u=>u.banos!=null);
   const hoy=new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"});
@@ -593,7 +593,7 @@ td.eng{font-weight:600}
   </div>
   <div class="title">Lista de <em>precios</em></div>
   <div class="proj">${esc(p.nombre)}</div>
-  <div class="meta">${[p.giro?`<span>${esc(p.giro)}</span>`:"",p.ubicacion?`<span>${esc(p.ubicacion)}</span>`:"",(filtered?`<span><b>${rows.length}</b> unidad${rows.length===1?"":"es"} · filtro: <b>${esc(filtTxt)}</b></span>`:`<span><b>${rows.length}</b> unidad${rows.length===1?"":"es"} disponible${rows.length===1?"":"s"}</span>`)].filter(Boolean).join("")}</div>
+  <div class="meta">${[p.giro?`<span>${esc(p.giro)}</span>`:"",p.ubicacion?`<span>${esc(p.ubicacion)}</span>`:"",(filtered?`<span><b>${rows.length}</b> unidad${rows.length===1?"":"es"} · filtro: <b>${esc(filtTxt)}</b></span>`:mixed?`<span><b>${rows.length}</b> unidad${rows.length===1?"":"es"}</span>`:`<span><b>${rows.length}</b> unidad${rows.length===1?"":"es"} disponible${rows.length===1?"":"s"}</span>`)].filter(Boolean).join("")}</div>
   ${rows.length?`<table><thead><tr>${th.map(h=>`<th class="${h[1]||""}">${h[0]}</th>`).join("")}</tr></thead><tbody>${tr.map(r=>`<tr>${r.map(c=>`<td class="${c[1]||""}">${c[0]}</td>`).join("")}</tr>`).join("")}</tbody></table>`:`<div class="empty">${filtered?"Ninguna unidad coincide con el filtro.":"Sin unidades disponibles en este momento."}</div>`}
   ${(Array.isArray(p.politicas)&&p.politicas.length&&!renta)?`<div class="polsp">${p.politicas.map(x=>{const c=polCalc(x);const n=+x.meses||0;return `<div class="pp"><b>${esc(x.nombre)}${+x.desc?` · ${pct(x.desc)} de descuento`:""}</b><span>Enganche ${x.eng_tipo==="pct"?pct(x.eng):money(x.eng)}${n?` · ${n} mensualidad${n===1?"":"es"} ${x.men_tipo==="pct"?"("+pct(x.men)+" total)":"de "+money(x.men)}`:""} · Escritura ${c.saldo!=null?pct(c.saldo):"resto"}</span>${x.nota?`<small>${esc(x.nota)}</small>`:""}</div>`}).join("")}</div>`:""}
   ${nota?`<div class="band"><div class="t">${esc(nota)}</div><div class="c">33 3376 5616</div></div>`:""}
