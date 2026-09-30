@@ -306,7 +306,7 @@ tr.Perdido td.cli{opacity:1;color:var(--muted)}
       <span class="sub" id="sub">Elige tu nombre para ver tus prospectos próximos al cierre</span>
     </div>
     <div class="topright"><a class="home-link" href="../">← Inicio</a>
-      <div class="actions" id="acts" hidden><button class="btn" id="btn-oo" title="Compromisos y solicitudes de la sesión semanal">☑ One-on-one</button><button class="btn" id="btn-pdf">⤓ Reporte PDF</button><button class="btn" id="btn-switch">Cambiar de asesor</button><button class="btn primary" id="btn-add">+ Hot lead</button></div></div>
+      <div class="actions" id="acts" hidden><button class="btn" id="btn-pdf">⤓ Reporte PDF</button><button class="btn" id="btn-switch">Cambiar de asesor</button><button class="btn primary" id="btn-add">+ Hot lead</button></div></div>
   </div>
   <section class="main" id="main"></section>
   <div class="foot"><span id="sync">Cargando…</span><span><button class="ico" id="btn-refresh">Actualizar</button></span></div>
@@ -388,7 +388,7 @@ function render(){
         <td><select class="st ${l.estatus}" data-id="${l.id}" aria-label="Estatus">${ESTATUS.map(s=>`<option ${l.estatus===s?"selected":""}>${s}</option>`).join("")}</select></td>
         <td><button class="ico edit" data-id="${l.id}" title="Editar">✎</button></td></tr>`).join("")}</tbody></table>
       ${rows.length?"":`<div class="empty"><b>Sin hot leads</b>${rows.length===0&&base.some(l=>l.estatus===VIEW)?"Ninguno coincide con los filtros.":`Sin hot leads ${VIEW.toLowerCase()}s.`}</div>`}</div>
-    <div class="by"><div class="card"><h3>Comisión pendiente por proyecto</h3>${bars(byP)}</div>${ooCard(ASESOR)}</div>`;
+    <div class="by"><div class="card"><h3>Comisión pendiente por proyecto</h3>${bars(byP)}</div><div class="card"><h3>Mis compromisos</h3><p class="dim" style="font-size:13px;margin:0 0 10px">Los compromisos y solicitudes del one-on-one ahora viven en su propio módulo.</p><a class="btn" href="../compromisos/asesores.html">Ir a Mis compromisos →</a></div></div>`;
 }
 
 // ---------- eventos ----------
