@@ -355,7 +355,7 @@ function render(){
   const pen=base.filter(l=>l.estatus==="Pendiente"),gan=base.filter(l=>l.estatus==="Ganado"),per=base.filter(l=>l.estatus==="Perdido");
   const totCom=sum(base.filter(l=>l.estatus!=="Perdido"),com);
   const k=sort.k,d=sort.dir==="asc"?1:-1;
-  rows=[...rows].sort((a,b)=>{let x=k==="comision"?com(a):k==="dias"?(dias(a)??-1):k==="fecha"?(a.fecha||(a.created_at||"").slice(0,10)):a[k]??"",y=k==="comision"?com(b):k==="dias"?(dias(b)??-1):k==="fecha"?(b.fecha||(b.created_at||"").slice(0,10)):b[k]??"";return (typeof x==="number"&&typeof y==="number"?x-y:String(x).localeCompare(String(y),"es",{numeric:true}))*d});
+  rows=[...rows].sort((a,b)=>{let x=k==="comision"?com(a):k==="apartado"?(a.apartado?1:0):k==="dias"?(dias(a)??-1):k==="fecha"?(a.fecha||(a.created_at||"").slice(0,10)):a[k]??"",y=k==="comision"?com(b):k==="apartado"?(b.apartado?1:0):k==="dias"?(dias(b)??-1):k==="fecha"?(b.fecha||(b.created_at||"").slice(0,10)):b[k]??"";return (typeof x==="number"&&typeof y==="number"?x-y:String(x).localeCompare(String(y),"es",{numeric:true}))*d});
   const th=(k,l,num)=>`<th data-k="${k}" ${sort.k===k?`data-dir="${sort.dir}"`:""} class="${num?"num":""}">${l}</th>`;
   // por asesor
   const byA={};pen.forEach(l=>{byA[l.asesor]=(byA[l.asesor]||0)+com(l)});
@@ -376,7 +376,7 @@ function render(){
       <span class="count">${rows.length} ${VIEW.toLowerCase()}${rows.length===1?"":"s"}</span>
     </div>
     <div class="twrap"><table>
-      <thead><tr>${th("cliente","Cliente")}${th("fecha","Ingreso")}${th("dias","Días",1)}${th("un","UN")}${th("asesor","Asesor")}${th("proyecto","Proyecto")}${th("tipo","Tipo")}${th("monto","Monto",1)}${th("comision_pct","%",1)}${th("comision","Comisión",1)}${th("inmobiliaria","Inmobiliaria")}${th("origen","Origen")}<th title="Apartado">Apart.</th>${th("objetivo","Objetivo")}${th("estatus","Estatus")}<th></th></tr></thead>
+      <thead><tr>${th("cliente","Cliente")}${th("fecha","Ingreso")}${th("dias","Días",1)}${th("un","UN")}${th("asesor","Asesor")}${th("proyecto","Proyecto")}${th("tipo","Tipo")}${th("monto","Monto",1)}${th("comision_pct","%",1)}${th("comision","Comisión",1)}${th("inmobiliaria","Inmobiliaria")}${th("origen","Origen")}${th("apartado","Apart.")}${th("objetivo","Objetivo")}${th("estatus","Estatus")}<th></th></tr></thead>
       <tbody>${rows.map(l=>`<tr class="${l.estatus}" data-id="${l.id}">
         <td class="cli">${esc(l.cliente)}${l.notas?`<small title="${esc(l.notas)}">${esc(l.notas).slice(0,40)}${l.notas.length>40?"…":""}</small>`:""}</td>
         <td class="dim">${fechaTxt(l.fecha||(l.created_at||""))}</td><td class="num"><span class="dd ${(dias(l)??0)>=45?"hot":(dias(l)??0)>=21?"warm":""}">${dias(l)??"—"}</span></td>
@@ -393,7 +393,7 @@ function render(){
 
 // ---------- eventos ----------
 document.addEventListener("click",e=>{
-  const th=e.target.closest("th[data-k]");if(th){const k=th.dataset.k;sort=sort.k===k?{k,dir:sort.dir==="asc"?"desc":"asc"}:{k,dir:"asc"};render();return}
+  const th=e.target.closest("th[data-k]");if(th){const k=th.dataset.k;sort=sort.k===k?{k,dir:sort.dir==="asc"?"desc":"asc"}:{k,dir:k==="apartado"||k==="dias"||k==="monto"||k==="comision"?"desc":"asc"};render();return}
   const t=e.target.closest("button");if(!t)return;
   if(t.dataset.view){VIEW=t.dataset.view;render();return}
   if(t.dataset.ase){ASESOR=t.dataset.ase;render();return}
