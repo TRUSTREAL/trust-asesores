@@ -279,6 +279,7 @@ tbody tr:nth-child(even) td.cli{background:#FBFAF6}
 tbody tr.apt td,tbody tr.apt:nth-child(even) td,tbody tr.apt td.cli,tbody tr.apt:nth-child(even) td.cli{background:var(--apt-bg)!important}
 tbody tr.apt:hover td,tbody tr.apt:hover td.cli{background:var(--apt-bg-h)!important}
 .fire{font-size:13px}
+th.s2{color:var(--gold-2)}.s2m{font-size:9px;margin-left:3px;opacity:.8}
 tr:hover td.cli{background:var(--surface-2)}
 tr.Perdido td.cli{opacity:1;color:var(--muted)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) tbody tr:nth-child(even) td.cli{background:#1E2724}}
@@ -341,7 +342,7 @@ const fechaTxt=f=>{if(!f)return "—";const [y,m,d]=f.slice(0,10).split("-");ret
 const newId=()=>crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now().toString(36);
 let leads=[], lastSync=null, ASESOR=null;
 let VIEW="Pendiente"; // Pendiente | Ganado | Perdido
-let filt={q:"",estatus:"",asesor:"",un:"",tipo:"",proyecto:""}, sort={k:"cliente",dir:"asc"};
+let filt={q:"",estatus:"",asesor:"",un:"",tipo:"",proyecto:""}, sort={k:"cliente",dir:"asc"}, sort2=null;
 function setSync(m){const el=$("#sync");if(el)el.textContent=m||(sb?"Supabase · "+lastSync.toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"}):"Sin conexión a Supabase")}
 async function loadAll(){ if(!sb){setSync();return} const {data,error}=await sb.from("hot_leads").select("*").order("cliente"); if(error){setSync("Error: "+error.message);return} leads=data||[]; lastSync=new Date(); setSync(); try{const r=await sb.from("one_on_one").select("*").eq("semana",lunes(new Date()));OO=r.data||[]}catch(e){OO=[]} }
 function db(fn){ if(!sb)return; fn().then(({error})=>{ if(error){alert("No se pudo guardar: "+error.message);loadAll().then(render)} else {lastSync=new Date();setSync()} }).catch(e=>alert("Sin conexión: "+e.message)); }
@@ -360,9 +361,10 @@ function render(){
   const sum=(arr,f)=>arr.reduce((a,l)=>a+f(l),0);
   const pen=base.filter(l=>l.estatus==="Pendiente"),gan=base.filter(l=>l.estatus==="Ganado"),per=base.filter(l=>l.estatus==="Perdido");
   const totCom=sum(base.filter(l=>l.estatus!=="Perdido"),com);
-  const k=sort.k,d=sort.dir==="asc"?1:-1;
-  rows=[...rows].sort((a,b)=>{let x=k==="comision"?com(a):k==="apartado"?(a.apartado?1:0):k==="dias"?(dias(a)??-1):k==="fecha"?(a.fecha||(a.created_at||"").slice(0,10)):a[k]??"",y=k==="comision"?com(b):k==="apartado"?(b.apartado?1:0):k==="dias"?(dias(b)??-1):k==="fecha"?(b.fecha||(b.created_at||"").slice(0,10)):b[k]??"";return (typeof x==="number"&&typeof y==="number"?x-y:String(x).localeCompare(String(y),"es",{numeric:true}))*d});
-  const th=(k,l,num)=>`<th data-k="${k}" ${sort.k===k?`data-dir="${sort.dir}"`:""} class="${num?"num":""}">${l}</th>`;
+  const val=(l,k)=>k==="comision"?com(l):k==="apartado"?(l.apartado?1:0):k==="dias"?(dias(l)??-1):k==="fecha"?(l.fecha||(l.created_at||"").slice(0,10)):l[k]??"";
+  const cmp=(a,b,s)=>{const x=val(a,s.k),y=val(b,s.k);return (typeof x==="number"&&typeof y==="number"?x-y:String(x).localeCompare(String(y),"es",{numeric:true}))*(s.dir==="asc"?1:-1)};
+  rows=[...rows].sort((a,b)=>cmp(a,b,sort)||(sort2?cmp(a,b,sort2):0));
+  const th=(k,l,num)=>`<th data-k="${k}" ${sort.k===k?`data-dir="${sort.dir}"`:""} class="${num?"num":""} ${sort2&&sort2.k===k?"s2":""}" title="${sort.k===k?"Orden principal":sort2&&sort2.k===k?"Orden secundario":"Clic: agregar como orden secundario · Shift+clic: hacerlo principal"}">${l}${sort2&&sort2.k===k?`<small class="s2m">${sort2.dir==="asc"?"↑":"↓"}²</small>`:""}</th>`;
   // por asesor
   const byA={};pen.forEach(l=>{byA[l.asesor]=(byA[l.asesor]||0)+com(l)});
   const byP={};pen.forEach(l=>{byP[l.proyecto]=(byP[l.proyecto]||0)+com(l)});
@@ -399,7 +401,7 @@ function render(){
 
 // ---------- eventos ----------
 document.addEventListener("click",e=>{
-  const th=e.target.closest("th[data-k]");if(th){const k=th.dataset.k;sort=sort.k===k?{k,dir:sort.dir==="asc"?"desc":"asc"}:{k,dir:k==="apartado"||k==="dias"||k==="monto"||k==="comision"?"desc":"asc"};render();return}
+  const th=e.target.closest("th[data-k]");if(th){const k=th.dataset.k;const def=k==="apartado"||k==="dias"||k==="monto"||k==="comision"?"desc":"asc";if(sort.k===k){sort={k,dir:sort.dir==="asc"?"desc":"asc"}}else if(sort2&&sort2.k===k){sort2={k,dir:sort2.dir==="asc"?"desc":"asc"}}else if(e.shiftKey){sort={k,dir:def};sort2=null}else{sort2={k,dir:def}}render();return}
   const t=e.target.closest("button");if(!t)return;
   if(t.dataset.view){VIEW=t.dataset.view;render();return}
   if(t.dataset.ase){ASESOR=t.dataset.ase;render();return}
