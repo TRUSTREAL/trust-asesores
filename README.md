@@ -17,3 +17,4 @@ Todos los módulos comparten el diseño (crema, Poppins + Lora, logo TRUST) y un
 Datos: Supabase proyecto "Paneles" (tablas `leads`, `proyectos`, `unidades`).
 Actualizado: portal con 4 módulos para asesores (leads, hot leads, cotizaciones, inventario).
 Actualizado 28 de Septembre del 2026
+Actualizado 1 de Octubre del 2026
