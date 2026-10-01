@@ -401,7 +401,7 @@ function render(){
 
 // ---------- eventos ----------
 document.addEventListener("click",e=>{
-  const th=e.target.closest("th[data-k]");if(th){const k=th.dataset.k;const def=k==="apartado"||k==="dias"||k==="monto"||k==="comision"?"desc":"asc";if(sort.k===k){sort={k,dir:sort.dir==="asc"?"desc":"asc"}}else if(sort2&&sort2.k===k){sort2={k,dir:sort2.dir==="asc"?"desc":"asc"}}else if(e.shiftKey){sort={k,dir:def};sort2=null}else{sort2={k,dir:def}}render();return}
+  const th=e.target.closest("th[data-k]");if(th){const k=th.dataset.k;const def=k==="apartado"||k==="dias"||k==="monto"||k==="comision"?"desc":"asc";if(sort.k===k){sort={k,dir:sort.dir==="asc"?"desc":"asc"}}else if(sort2&&sort2.k===k){sort2={k,dir:sort2.dir==="asc"?"desc":"asc"}}else if(k==="apartado"){sort2=sort.k==="apartado"?sort2:{...sort};sort={k,dir:"desc"}}else if(e.shiftKey){sort={k,dir:def};sort2=null}else{sort2={k,dir:def}}render();return}
   const t=e.target.closest("button");if(!t)return;
   if(t.dataset.view){VIEW=t.dataset.view;render();return}
   if(t.dataset.ase){ASESOR=t.dataset.ase;render();return}
