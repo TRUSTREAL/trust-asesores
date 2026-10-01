@@ -366,7 +366,7 @@ function save(){ // modo local: todo; modo Supabase: solo la vista (categoría /
 }
 function restoreUI(){ try{const r=localStorage.getItem(KEY+"-ui");if(r){const u=JSON.parse(r);S.cat=u.cat||S.cat;S.sel=u.sel||S.sel}}catch(e){} }
 const rowP=p=>({id:p.id,nombre:p.nombre,cat:p.cat,giro:p.giro,desarrollador:p.desarrollador||"",ubicacion:p.ubicacion||"",lista:p.lista||"",notas:p.notas||"",enganche:p.enganche==null||p.enganche===""?5:+p.enganche,nota_lista:p.nota_lista||"",politica:p.politica||"",politicas:Array.isArray(p.politicas)?p.politicas:[]});
-const rowU=(u,pid)=>({id:u.id,proyecto_id:pid,estatus:u.estatus,tipo:u.tipo,torre:u.torre||"",nivel:u.nivel,vista:u.vista||"",m2int:u.m2int,m2terr:u.m2terr,m2tot:u.m2tot,parking:u.parking,precio:u.precio,recamaras:u.recamaras,banos:u.banos});
+const rowU=(u,pid)=>({id:u.id,proyecto_id:pid,estatus:u.estatus,tipo:u.tipo,torre:u.torre||"",nivel:u.nivel,vista:u.vista||"",m2int:u.m2int,m2terr:u.m2terr,m2desc:u.m2desc??null,m2tot:u.m2tot,parking:u.parking,precio:u.precio,recamaras:u.recamaras,banos:u.banos});
 async function loadAll(){
   if(!sb){ try{const r=localStorage.getItem(KEY);S=r?JSON.parse(r):seed();}catch(e){S=seed()} return; }
   const [{data:ps,error:e1},{data:us,error:e2}]=await Promise.all([
@@ -375,7 +375,7 @@ async function loadAll(){
   if(e1||e2){ setSync("Error al leer: "+(e1||e2).message); return; }
   S.projects=(ps||[]).map(p=>({...p,units:[]}));
   const byId=Object.fromEntries(S.projects.map(p=>[p.id,p]));
-  (us||[]).sort((a,b)=>nivKey(a.nivel)-nivKey(b.nivel)).forEach(u=>{const p=byId[u.proyecto_id];if(p)p.units.push({id:u.id,estatus:u.estatus,tipo:u.tipo,torre:u.torre,nivel:u.nivel,vista:u.vista,m2int:+u.m2int||0,m2terr:+u.m2terr||0,m2tot:+u.m2tot||0,parking:u.parking,precio:+u.precio||0,recamaras:u.recamaras,banos:u.banos})});
+  (us||[]).sort((a,b)=>nivKey(a.nivel)-nivKey(b.nivel)).forEach(u=>{const p=byId[u.proyecto_id];if(p)p.units.push({id:u.id,estatus:u.estatus,tipo:u.tipo,torre:u.torre,nivel:u.nivel,vista:u.vista,m2int:+u.m2int||0,m2terr:+u.m2terr||0,m2desc:u.m2desc!=null?+u.m2desc:null,m2tot:+u.m2tot||0,parking:u.parking,precio:+u.precio||0,recamaras:u.recamaras,banos:u.banos})});
   lastSync=new Date(); setSync();
   S.projects.forEach(p=>{ if(!docs[p.id]) loadDocs(p.id).then(()=>{ if(p.id===S.sel && !$("#drawer-root").innerHTML && document.activeElement?.id!=="f-q") renderMain(); }); });
 }
@@ -390,7 +390,7 @@ const fmtM=n=>n>=1e6?"$ "+(n/1e6).toFixed(1).replace(/\.0$/,"")+" M":fmt(n);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const engMin=p=>{const pols=Array.isArray(p.politicas)?p.politicas:[];const pcts=pols.filter(x=>x.eng_tipo!=="monto"&&+x.eng>0).map(x=>+x.eng);if(pcts.length)return Math.min(...pcts);return (p.enganche==null||p.enganche===""||+p.enganche<=0)?5:+p.enganche};
 const COTIZADOR_URL="../cotizador/";
-const cotUrl=(p,u)=>{const o={proyecto:p.nombre,giro:p.giro,tipo:/preventa/i.test(p.giro)?"Preventa":"Obra terminada",id:u.tipo,nivel:u.nivel,vista:u.vista,m2int:u.m2int,m2terr:u.m2terr,rec:u.recamaras,banos:u.banos,estac:u.parking,precio:u.precio};const b=btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");return COTIZADOR_URL+"?u="+b};
+const cotUrl=(p,u)=>{const o={proyecto:p.nombre,giro:p.giro,tipo:/preventa/i.test(p.giro)?"Preventa":"Obra terminada",id:u.tipo,nivel:u.nivel,vista:u.vista,m2int:u.m2int,m2terr:u.m2terr,m2desc:u.m2desc,rec:u.recamaras,banos:u.banos,estac:u.parking,precio:u.precio};const b=btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");return COTIZADOR_URL+"?u="+b};
 const nivKey=v=>{const t=String(v??"").trim().toUpperCase();if(t==="PB"||t==="S"||t==="SÓTANO"||t==="SOTANO")return -1;if(t.startsWith("PH"))return 999;const n=parseFloat(t);return isNaN(n)?500:n};
 const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36);
 const isRenta=p=>/renta/i.test(p.giro||"");
@@ -454,6 +454,7 @@ function renderMain(){
   const opts=k=>[...new Set(p.units.map(u=>u[k]).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),"es",{numeric:true}));
   const sel=(id,k,lbl)=>`<select id="${id}" data-k="${k}"><option value="">${lbl}</option>${opts(k).map(v=>`<option ${filt[k]===v?"selected":""}>${esc(v)}</option>`).join("")}</select>`;
   const rows=visibleRows(p);
+  const hasDesc=p.units.some(u=>u.m2desc>0);
   const th=(k,l,num)=>`<th data-k="${k}" ${sort.k===k?`data-dir="${sort.dir}"`:""} class="${num?"num":""}">${l}</th>`;
   const table=n?`
     <div class="filters">
@@ -463,11 +464,11 @@ function renderMain(){
       <span class="count">${VENTAS?rows.length+" unidad"+(rows.length===1?"":"es"):rows.length+" de "+n}</span>
     </div>
     <div class="twrap"><table>
-      <thead><tr>${VENTAS?"":th("estatus","Estatus")}${th("tipo","ID")}${th("torre","Torre")}${th("nivel","Nivel",1)}${th("vista","Vista")}${th("recamaras","Rec.",1)}${th("banos","Baños",1)}${th("m2int","m² int.",1)}${th("m2terr","m² terr.",1)}${th("m2tot","m² total",1)}${th("parking","Cajones",1)}${th("precio",renta?"Renta mensual":"Precio",1)}${renta?"":`<th class="num eng">Enganche mín. ${eng}%</th>`}<th></th></tr></thead>
+      <thead><tr>${VENTAS?"":th("estatus","Estatus")}${th("tipo","ID")}${th("torre","Torre")}${th("nivel","Nivel",1)}${th("vista","Vista")}${th("recamaras","Rec.",1)}${th("banos","Baños",1)}${th("m2int","m² int.",1)}${th("m2terr","m² terr.",1)}${hasDesc?th("m2desc","m² s/techar",1):""}${th("m2tot","m² total",1)}${th("parking","Cajones",1)}${th("precio",renta?"Renta mensual":"Precio",1)}${renta?"":`<th class="num eng">Enganche mín. ${eng}%</th>`}<th></th></tr></thead>
       <tbody>${rows.map(u=>`<tr data-id="${u.id}">
         ${VENTAS?"":`<td>${READONLY?`<span class="st ${u.estatus}">${u.estatus}</span>`:`<select class="st ${u.estatus}" data-id="${u.id}" aria-label="Estatus">${STATUSES.map(s=>`<option ${u.estatus===s?"selected":""}>${s}</option>`).join("")}</select>`}</td>`}
         <td class="type">${esc(u.tipo)}</td><td>${esc(u.torre)}</td><td class="num">${esc(u.nivel??"")}</td><td>${esc(u.vista)}</td><td class="num dim">${esc(u.recamaras??"")}</td><td class="num dim">${u.banos??""}</td>
-        <td class="num dim">${u.m2int?.toFixed(2)??""}</td><td class="num dim">${u.m2terr?u.m2terr.toFixed(2):"–"}</td><td class="num tot">${u.m2tot?.toFixed(2)??""}</td>
+        <td class="num dim">${u.m2int?.toFixed(2)??""}</td><td class="num dim">${u.m2terr?u.m2terr.toFixed(2):"–"}</td>${hasDesc?`<td class="num dim">${u.m2desc?(+u.m2desc).toFixed(2):"–"}</td>`:""}<td class="num tot">${u.m2tot?.toFixed(2)??""}</td>
         <td class="num">${u.parking??""}</td><td class="num price">${fmt(u.precio)}</td>${renta?"":`<td class="num eng">${fmt(u.precio*eng/100)}</td>`}
         <td style="white-space:nowrap"><a class="cot ${u.estatus==="Disponible"?"":"off"}" href="${cotUrl(p,u)}" target="_blank" rel="noopener" title="Cotizar esta unidad">Cotizar</a>${READONLY?"":`<button class="ico edit-u" data-id="${u.id}" title="Editar">✎</button>`}</td></tr>`).join("")}</tbody>
     </table>${rows.length?"":`<div class="empty">Ninguna unidad coincide con los filtros.</div>`}</div>`
@@ -535,12 +536,12 @@ function listaPDF(p){
   const rows=sort.k?visibleRows(p):[...visibleRows(p)].sort(defSort);   // exactamente lo que se ve en la tabla
   const mixed=rows.some(u=>u.estatus!=="Disponible");
   const filtTxt=filtered?[filt.estatus,filt.torre?"Torre "+filt.torre:"",filt.tipo?"ID "+filt.tipo:"",filt.vista?"Vista "+filt.vista:"",filt.q?`"${filt.q}"`:""].filter(Boolean).join(" · "):"";
-  const hasTorre=rows.some(u=>u.torre), hasVista=rows.some(u=>u.vista), hasTerr=rows.some(u=>u.m2terr>0), hasPark=rows.some(u=>u.parking!=null), hasRec=rows.some(u=>u.recamaras!=null), hasBan=rows.some(u=>u.banos!=null);
+  const hasTorre=rows.some(u=>u.torre), hasVista=rows.some(u=>u.vista), hasTerr=rows.some(u=>u.m2terr>0), hasDescP=rows.some(u=>u.m2desc>0), hasPark=rows.some(u=>u.parking!=null), hasRec=rows.some(u=>u.recamaras!=null), hasBan=rows.some(u=>u.banos!=null);
   const hoy=new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"});
   const n2=v=>v==null||v===""?"—":(+v).toFixed(2);
   const money=v=>"$ "+Math.round(v).toLocaleString("es-MX");
-  const th=[mixed?["Estatus"]:null,["ID"],hasTorre?["Torre"]:null,["Nivel","num"],hasVista?["Vista"]:null,hasRec?["Rec.","num"]:null,hasBan?["Baños","num"]:null,["m² int.","num"],hasTerr?["m² terraza","num"]:null,["m² total","num"],hasPark?["Cajones","num"]:null,[renta?"Renta mensual":"Precio","num strong"],!renta?[`Enganche mín. ${eng}%`,"num eng"]:null].filter(Boolean);
-  const tr=rows.map(u=>[mixed?[esc(u.estatus),"stc "+u.estatus]:null,[esc(u.tipo),"tipo"],hasTorre?[esc(u.torre)]:null,[esc(u.nivel??""),"num"],hasVista?[esc(u.vista)]:null,hasRec?[esc(u.recamaras??""),"num"]:null,hasBan?[u.banos??"","num"]:null,[n2(u.m2int),"num dim"],hasTerr?[u.m2terr?n2(u.m2terr):"–","num dim"]:null,[n2(u.m2tot),"num tot"],hasPark?[u.parking??"","num"]:null,[money(u.precio),"num strong"],!renta?[money(u.precio*eng/100),"num eng"]:null].filter(Boolean));
+  const th=[mixed?["Estatus"]:null,["ID"],hasTorre?["Torre"]:null,["Nivel","num"],hasVista?["Vista"]:null,hasRec?["Rec.","num"]:null,hasBan?["Baños","num"]:null,["m² int.","num"],hasTerr?["m² terraza","num"]:null,hasDescP?["m² s/techar","num"]:null,["m² total","num"],hasPark?["Cajones","num"]:null,[renta?"Renta mensual":"Precio","num strong"],!renta?[`Enganche mín. ${eng}%`,"num eng"]:null].filter(Boolean);
+  const tr=rows.map(u=>[mixed?[esc(u.estatus),"stc "+u.estatus]:null,[esc(u.tipo),"tipo"],hasTorre?[esc(u.torre)]:null,[esc(u.nivel??""),"num"],hasVista?[esc(u.vista)]:null,hasRec?[esc(u.recamaras??""),"num"]:null,hasBan?[u.banos??"","num"]:null,[n2(u.m2int),"num dim"],hasTerr?[u.m2terr?n2(u.m2terr):"–","num dim"]:null,hasDescP?[u.m2desc?n2(u.m2desc):"–","num dim"]:null,[n2(u.m2tot),"num tot"],hasPark?[u.parking??"","num"]:null,[money(u.precio),"num strong"],!renta?[money(u.precio*eng/100),"num eng"]:null].filter(Boolean));
   const nota=renta?"":"Aparta tu unidad con $5,000 reembolsables.";
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Lista de precios · ${esc(p.nombre)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
@@ -717,7 +718,7 @@ async function deleteDoc(pid,name){
 
 
 // ---------- importar unidades (pegar desde Excel) ----------
-const IMP_COLS=[["estatus",/^estatus|status$/i],["tipo",/^id|tipo|prototipo|modelo|unidad|depto|depa$/i],["recamaras",/rec[aá]m|hab|dorm/i],["banos",/ba[ñn]o/i],["torre",/^torre|edificio$/i],["nivel",/^nivel|piso$/i],["vista",/^vista|orientaci/i],["m2int",/m.?2?\s*int|interior/i],["m2terr",/terr/i],["m2tot",/total/i],["parking",/cajon|parking|estac/i],["precio",/precio|renta|monto/i]];
+const IMP_COLS=[["estatus",/^estatus|status$/i],["tipo",/^id|tipo|prototipo|modelo|unidad|depto|depa$/i],["recamaras",/rec[aá]m|hab|dorm/i],["banos",/ba[ñn]o/i],["torre",/^torre|edificio$/i],["nivel",/^nivel|piso$/i],["vista",/^vista|orientaci/i],["m2int",/m.?2?\s*int|interior/i],["m2desc",/descub|sin\s*tech|s\/\s*tech/i],["m2terr",/terr/i],["m2tot",/total/i],["parking",/cajon|parking|estac/i],["precio",/precio|renta|monto/i]];
 const numv=v=>{const n=parseFloat(String(v).replace(/[^\d.,-]/g,"").replace(/,/g,""));return isNaN(n)?null:n};
 function parseImport(txt){
   const lines=txt.replace(/\r/g,"").split("\n").map(l=>l.split("\t")).filter(r=>r.some(c=>c.trim()));
@@ -732,8 +733,8 @@ function parseImport(txt){
     if(!o.tipo&&!o.precio)continue;
     const st=(o.estatus||"Disponible").toLowerCase();
     const estatus=st.startsWith("apart")?"Apartado":st.startsWith("vend")||st.startsWith("rent")?"Vendido":st.startsWith("bloq")?"Bloqueado":st.startsWith("aport")?"Aportante":"Disponible";
-    const m2int=numv(o.m2int)||0,m2terr=numv(o.m2terr)||0;
-    rows.push({estatus,tipo:o.tipo||"",torre:o.torre||"",nivel:(o.nivel||"").trim()||null,vista:o.vista||"",recamaras:(o.recamaras||"").trim()||null,banos:numv(o.banos),m2int,m2terr,m2tot:numv(o.m2tot)||+(m2int+m2terr).toFixed(2),parking:numv(o.parking),precio:numv(o.precio)||0});}
+    const m2int=numv(o.m2int)||0,m2terr=numv(o.m2terr)||0,m2desc=numv(o.m2desc);
+    rows.push({estatus,tipo:o.tipo||"",torre:o.torre||"",nivel:(o.nivel||"").trim()||null,vista:o.vista||"",recamaras:(o.recamaras||"").trim()||null,banos:numv(o.banos),m2int,m2terr,m2desc,m2tot:numv(o.m2tot)||+(m2int+m2terr).toFixed(2),parking:numv(o.parking),precio:numv(o.precio)||0});}
   return {rows,map};
 }
 function openImport(p){
@@ -797,10 +798,11 @@ function openUnit(u){
     fld("parking","Cajones",u?.parking??"","type=number step=1 min=0")+
     fld("m2int","m² interior",u?.m2int??"","type=number step=0.01 min=0")+
     fld("m2terr","m² terraza",u?.m2terr??"","type=number step=0.01 min=0")+
+    fld("m2desc","m² terraza sin techar (opcional)",u?.m2desc??"","type=number step=0.01 min=0")+
     fld("precio",renta?"Renta mensual (MXN)":"Precio de lista (MXN)",u?.precio??"","type=number step=1 min=0 required",true)+
-    `<p class="hint">m² total se calcula como interior + terraza.</p>`,
+    `<p class="hint">m² total se calcula como interior + terraza. La terraza sin techar se muestra aparte y no suma al total.</p>`,
     d=>{const v={estatus:d.estatus,tipo:d.tipo.trim(),torre:d.torre.trim(),nivel:String(d.nivel).trim()||null,vista:d.vista.trim(),parking:d.parking===""?null:+d.parking,recamaras:d.recamaras.trim()||null,banos:d.banos===""?null:+d.banos,
-        m2int:+d.m2int||0,m2terr:+d.m2terr||0,precio:+d.precio||0};v.m2tot=+(v.m2int+v.m2terr).toFixed(2);
+        m2int:+d.m2int||0,m2terr:+d.m2terr||0,m2desc:d.m2desc===""?null:+d.m2desc,precio:+d.precio||0};v.m2tot=+(v.m2int+v.m2terr).toFixed(2);
       if(u){Object.assign(u,v);db(()=>sb.from("unidades").update(rowU(u,p.id)).eq("id",u.id))}else{const nu={id:newId(),...v};p.units.push(nu);db(()=>sb.from("unidades").insert(rowU(nu,p.id)))}},
     u?()=>{p.units=p.units.filter(x=>x!==u);db(()=>sb.from("unidades").delete().eq("id",u.id))}:null);
 }
