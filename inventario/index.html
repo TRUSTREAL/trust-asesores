@@ -375,7 +375,7 @@ async function loadAll(){
   if(e1||e2){ setSync("Error al leer: "+(e1||e2).message); return; }
   S.projects=(ps||[]).map(p=>({...p,units:[]}));
   const byId=Object.fromEntries(S.projects.map(p=>[p.id,p]));
-  (us||[]).sort((a,b)=>nivKey(a.nivel)-nivKey(b.nivel)).forEach(u=>{const p=byId[u.proyecto_id];if(p)p.units.push({id:u.id,estatus:u.estatus,tipo:u.tipo,torre:u.torre,nivel:u.nivel,vista:u.vista,m2int:+u.m2int||0,m2terr:+u.m2terr||0,m2desc:u.m2desc!=null?+u.m2desc:null,m2tot:+u.m2tot||0,parking:u.parking,precio:+u.precio||0,recamaras:u.recamaras,banos:u.banos})});
+  (us||[]).sort((a,b)=>nivKey(a.nivel)-nivKey(b.nivel)).forEach(u=>{const p=byId[u.proyecto_id];if(p)p.units.push({id:u.id,estatus:u.estatus,tipo:u.tipo,torre:u.torre,nivel:u.nivel,vista:u.vista,m2int:+u.m2int||0,m2terr:+u.m2terr||0,m2desc:u.m2desc!=null?+u.m2desc:null,m2tot:(+u.m2desc>0)?+((+u.m2int||0)+(+u.m2terr||0)+(+u.m2desc)).toFixed(2):(+u.m2tot||0),parking:u.parking,precio:+u.precio||0,recamaras:u.recamaras,banos:u.banos})});
   lastSync=new Date(); setSync();
   S.projects.forEach(p=>{ if(!docs[p.id]) loadDocs(p.id).then(()=>{ if(p.id===S.sel && !$("#drawer-root").innerHTML && document.activeElement?.id!=="f-q") renderMain(); }); });
 }
@@ -734,7 +734,7 @@ function parseImport(txt){
     const st=(o.estatus||"Disponible").toLowerCase();
     const estatus=st.startsWith("apart")?"Apartado":st.startsWith("vend")||st.startsWith("rent")?"Vendido":st.startsWith("bloq")?"Bloqueado":st.startsWith("aport")?"Aportante":"Disponible";
     const m2int=numv(o.m2int)||0,m2terr=numv(o.m2terr)||0,m2desc=numv(o.m2desc);
-    rows.push({estatus,tipo:o.tipo||"",torre:o.torre||"",nivel:(o.nivel||"").trim()||null,vista:o.vista||"",recamaras:(o.recamaras||"").trim()||null,banos:numv(o.banos),m2int,m2terr,m2desc,m2tot:numv(o.m2tot)||+(m2int+m2terr).toFixed(2),parking:numv(o.parking),precio:numv(o.precio)||0});}
+    rows.push({estatus,tipo:o.tipo||"",torre:o.torre||"",nivel:(o.nivel||"").trim()||null,vista:o.vista||"",recamaras:(o.recamaras||"").trim()||null,banos:numv(o.banos),m2int,m2terr,m2desc,m2tot:(m2desc>0?+(m2int+m2terr+m2desc).toFixed(2):(numv(o.m2tot)||+(m2int+m2terr).toFixed(2))),parking:numv(o.parking),precio:numv(o.precio)||0});}
   return {rows,map};
 }
 function openImport(p){
@@ -800,9 +800,9 @@ function openUnit(u){
     fld("m2terr","m² terraza",u?.m2terr??"","type=number step=0.01 min=0")+
     fld("m2desc","m² terraza sin techar (opcional)",u?.m2desc??"","type=number step=0.01 min=0")+
     fld("precio",renta?"Renta mensual (MXN)":"Precio de lista (MXN)",u?.precio??"","type=number step=1 min=0 required",true)+
-    `<p class="hint">m² total se calcula como interior + terraza. La terraza sin techar se muestra aparte y no suma al total.</p>`,
+    `<p class="hint">m² total = interior + terraza + terraza sin techar.</p>`,
     d=>{const v={estatus:d.estatus,tipo:d.tipo.trim(),torre:d.torre.trim(),nivel:String(d.nivel).trim()||null,vista:d.vista.trim(),parking:d.parking===""?null:+d.parking,recamaras:d.recamaras.trim()||null,banos:d.banos===""?null:+d.banos,
-        m2int:+d.m2int||0,m2terr:+d.m2terr||0,m2desc:d.m2desc===""?null:+d.m2desc,precio:+d.precio||0};v.m2tot=+(v.m2int+v.m2terr).toFixed(2);
+        m2int:+d.m2int||0,m2terr:+d.m2terr||0,m2desc:d.m2desc===""?null:+d.m2desc,precio:+d.precio||0};v.m2tot=+(v.m2int+v.m2terr+(v.m2desc||0)).toFixed(2);
       if(u){Object.assign(u,v);db(()=>sb.from("unidades").update(rowU(u,p.id)).eq("id",u.id))}else{const nu={id:newId(),...v};p.units.push(nu);db(()=>sb.from("unidades").insert(rowU(nu,p.id)))}},
     u?()=>{p.units=p.units.filter(x=>x!==u);db(()=>sb.from("unidades").delete().eq("id",u.id))}:null);
 }
