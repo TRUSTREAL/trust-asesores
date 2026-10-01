@@ -398,7 +398,7 @@ function filtActive(){return !!(filt.estatus||filt.torre||filt.tipo||filt.vista|
 function visibleRows(p){
   let rows=p.units.filter(u=>(!VENTAS||u.estatus==="Disponible")&&(!filt.estatus||u.estatus===filt.estatus)&&(!filt.torre||u.torre===filt.torre)&&(!filt.tipo||u.tipo===filt.tipo)&&(!filt.vista||u.vista===filt.vista)
     &&(!filt.q||[u.tipo,u.torre,u.nivel,u.vista,u.parking,u.clave].join(" ").toLowerCase().includes(filt.q.toLowerCase())));
-  if(sort.k){const k=sort.k,d=sort.dir==="asc"?1:-1;rows=[...rows].sort((a,b)=>{const x=k==="nivel"?nivKey(a[k]):a[k]??"",y=k==="nivel"?nivKey(b[k]):b[k]??"";return (typeof x==="number"&&typeof y==="number"?x-y:String(x).localeCompare(String(y),"es",{numeric:true}))*d})}
+  if(sort.k){const k=sort.k,d=sort.dir==="asc"?1:-1;rows=[...rows].sort((a,b)=>{const pm=u=>u.m2tot?u.precio/u.m2tot:0;const x=k==="nivel"?nivKey(a[k]):k==="pm2"?pm(a):a[k]??"",y=k==="nivel"?nivKey(b[k]):k==="pm2"?pm(b):b[k]??"";return (typeof x==="number"&&typeof y==="number"?x-y:String(x).localeCompare(String(y),"es",{numeric:true}))*d})}
   return rows;
 }
 function counts(p){const c={Disponible:0,Apartado:0,Vendido:0,Bloqueado:0,Aportante:0,dispVal:0};p.units.forEach(u=>{c[u.estatus]=(c[u.estatus]||0)+1;if(u.estatus==="Disponible")c.dispVal+=u.precio||0});return c}
@@ -464,12 +464,12 @@ function renderMain(){
       <span class="count">${VENTAS?rows.length+" unidad"+(rows.length===1?"":"es"):rows.length+" de "+n}</span>
     </div>
     <div class="twrap"><table>
-      <thead><tr>${VENTAS?"":th("estatus","Estatus")}${th("tipo","ID")}${th("torre","Torre")}${th("nivel","Nivel",1)}${th("vista","Vista")}${th("recamaras","Rec.",1)}${th("banos","Baños",1)}${th("m2int","m² int.",1)}${th("m2terr","m² terr.",1)}${hasDesc?th("m2desc","m² s/techar",1):""}${th("m2tot","m² total",1)}${th("parking","Cajones",1)}${th("precio",renta?"Renta mensual":"Precio",1)}${renta?"":`<th class="num eng">Enganche mín. ${eng}%</th>`}<th></th></tr></thead>
+      <thead><tr>${VENTAS?"":th("estatus","Estatus")}${th("tipo","ID")}${th("torre","Torre")}${th("nivel","Nivel",1)}${th("vista","Vista")}${th("recamaras","Rec.",1)}${th("banos","Baños",1)}${th("m2int","m² int.",1)}${th("m2terr","m² terr.",1)}${hasDesc?th("m2desc","m² s/techar",1):""}${th("m2tot","m² total",1)}${th("parking","Cajones",1)}${th("precio",renta?"Renta mensual":"Precio",1)}${th("pm2",renta?"Renta / m²":"Precio / m²",1)}${renta?"":`<th class="num eng">Enganche mín. ${eng}%</th>`}<th></th></tr></thead>
       <tbody>${rows.map(u=>`<tr data-id="${u.id}">
         ${VENTAS?"":`<td>${READONLY?`<span class="st ${u.estatus}">${u.estatus}</span>`:`<select class="st ${u.estatus}" data-id="${u.id}" aria-label="Estatus">${STATUSES.map(s=>`<option ${u.estatus===s?"selected":""}>${s}</option>`).join("")}</select>`}</td>`}
         <td class="type">${esc(u.tipo)}</td><td>${esc(u.torre)}</td><td class="num">${esc(u.nivel??"")}</td><td>${esc(u.vista)}</td><td class="num dim">${esc(u.recamaras??"")}</td><td class="num dim">${u.banos??""}</td>
         <td class="num dim">${u.m2int?.toFixed(2)??""}</td><td class="num dim">${u.m2terr?u.m2terr.toFixed(2):"–"}</td>${hasDesc?`<td class="num dim">${u.m2desc?(+u.m2desc).toFixed(2):"–"}</td>`:""}<td class="num tot">${u.m2tot?.toFixed(2)??""}</td>
-        <td class="num">${u.parking??""}</td><td class="num price">${fmt(u.precio)}</td>${renta?"":`<td class="num eng">${fmt(u.precio*eng/100)}</td>`}
+        <td class="num">${u.parking??""}</td><td class="num price">${fmt(u.precio)}</td><td class="num dim">${u.m2tot?fmt(u.precio/u.m2tot):"–"}</td>${renta?"":`<td class="num eng">${fmt(u.precio*eng/100)}</td>`}
         <td style="white-space:nowrap"><a class="cot ${u.estatus==="Disponible"?"":"off"}" href="${cotUrl(p,u)}" target="_blank" rel="noopener" title="Cotizar esta unidad">Cotizar</a>${READONLY?"":`<button class="ico edit-u" data-id="${u.id}" title="Editar">✎</button>`}</td></tr>`).join("")}</tbody>
     </table>${rows.length?"":`<div class="empty">Ninguna unidad coincide con los filtros.</div>`}</div>`
   :`<div class="empty" style="margin-top:18px;border:1px dashed var(--line-2);border-radius:0"><b>Sin unidades cargadas</b>${READONLY?"Aún no hay inventario capturado para este proyecto.":"Agrega las unidades desde la lista de precios o el Excel del desarrollador."}</div>`;
@@ -540,8 +540,8 @@ function listaPDF(p){
   const hoy=new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"});
   const n2=v=>v==null||v===""?"—":(+v).toFixed(2);
   const money=v=>"$ "+Math.round(v).toLocaleString("es-MX");
-  const th=[mixed?["Estatus"]:null,["ID"],hasTorre?["Torre"]:null,["Nivel","num"],hasVista?["Vista"]:null,hasRec?["Rec.","num"]:null,hasBan?["Baños","num"]:null,["m² int.","num"],hasTerr?["m² terraza","num"]:null,hasDescP?["m² s/techar","num"]:null,["m² total","num"],hasPark?["Cajones","num"]:null,[renta?"Renta mensual":"Precio","num strong"],!renta?[`Enganche mín. ${eng}%`,"num eng"]:null].filter(Boolean);
-  const tr=rows.map(u=>[mixed?[esc(u.estatus),"stc "+u.estatus]:null,[esc(u.tipo),"tipo"],hasTorre?[esc(u.torre)]:null,[esc(u.nivel??""),"num"],hasVista?[esc(u.vista)]:null,hasRec?[esc(u.recamaras??""),"num"]:null,hasBan?[u.banos??"","num"]:null,[n2(u.m2int),"num dim"],hasTerr?[u.m2terr?n2(u.m2terr):"–","num dim"]:null,hasDescP?[u.m2desc?n2(u.m2desc):"–","num dim"]:null,[n2(u.m2tot),"num tot"],hasPark?[u.parking??"","num"]:null,[money(u.precio),"num strong"],!renta?[money(u.precio*eng/100),"num eng"]:null].filter(Boolean));
+  const th=[mixed?["Estatus"]:null,["ID"],hasTorre?["Torre"]:null,["Nivel","num"],hasVista?["Vista"]:null,hasRec?["Rec.","num"]:null,hasBan?["Baños","num"]:null,["m² int.","num"],hasTerr?["m² terraza","num"]:null,hasDescP?["m² s/techar","num"]:null,["m² total","num"],hasPark?["Cajones","num"]:null,[renta?"Renta mensual":"Precio","num strong"],[renta?"Renta / m²":"Precio / m²","num"],!renta?[`Enganche mín. ${eng}%`,"num eng"]:null].filter(Boolean);
+  const tr=rows.map(u=>[mixed?[esc(u.estatus),"stc "+u.estatus]:null,[esc(u.tipo),"tipo"],hasTorre?[esc(u.torre)]:null,[esc(u.nivel??""),"num"],hasVista?[esc(u.vista)]:null,hasRec?[esc(u.recamaras??""),"num"]:null,hasBan?[u.banos??"","num"]:null,[n2(u.m2int),"num dim"],hasTerr?[u.m2terr?n2(u.m2terr):"–","num dim"]:null,hasDescP?[u.m2desc?n2(u.m2desc):"–","num dim"]:null,[n2(u.m2tot),"num tot"],hasPark?[u.parking??"","num"]:null,[money(u.precio),"num strong"],[u.m2tot?money(u.precio/u.m2tot):"–","num dim"],!renta?[money(u.precio*eng/100),"num eng"]:null].filter(Boolean));
   const nota=renta?"":"Aparta tu unidad con $5,000 reembolsables.";
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Lista de precios · ${esc(p.nombre)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
