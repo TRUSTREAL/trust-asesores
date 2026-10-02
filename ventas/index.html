@@ -293,18 +293,17 @@ function renderEmpresa(){
   const QL=["Q1","Q2","Q3","Q4"],QLL=["Q1 · Ene–Mar","Q2 · Abr–Jun","Q3 · Jul–Sep","Q4 · Oct–Dic"];
   // periodo
   const vP=VN.filter(v=>inPeriodo(v.fecha));const ingreso=vP.reduce((a,v)=>a+comTotal(v),0);
-  let disp=0;vP.forEach(v=>{const tot=comTotal(v);disp+=(v.dispersion||[]).reduce((a,p)=>a+partAmt(p,tot),0)});
-  const trust=ingreso-disp;
+  const vVen=vP.filter(v=>v.tipo==="Venta"),vRen=vP.filter(v=>v.tipo==="Renta");
   const objetivo=P.trims.length?P.trims.reduce((a,q)=>a+objQ(q-1),0):byMprev.reduce((a,b)=>a+b,0);const falta=objetivo-ingreso;
   const byUN={},byProy={};vP.forEach(v=>{const t=comTotal(v);byUN[v.un]=(byUN[v.un]||0)+t;byProy[v.proyecto]=(byProy[v.proyecto]||0)+t});
   const max=Math.max(...byM,...byMprev,1);
   el.innerHTML=`
   <div class="tiles">
     <div class="tile dark"><span class="l">Ingresos</span><span class="v">${fmtK(ingreso)}</span><span class="s">${vP.length} venta${vP.length===1?"":"s"} · ${periodoTxt()}</span></div>
-    <div class="tile"><span class="l">Margen TRUST</span><span class="v">${fmtK(trust)}</span><span class="s">${pct(trust,ingreso)} después de dispersión</span></div>
-    <div class="tile gold"><span class="l">A dispersar</span><span class="v">${fmtK(disp)}</span><span class="s">asesores, opcionadores y staff</span></div>
     <div class="tile"><span class="l">Objetivo</span><span class="v">${fmtK(objetivo)}</span><span class="s">${periodoTxt()}</span></div>
     <div class="tile"><span class="l">Avance vs objetivo</span><span class="v" style="color:${falta>0?"var(--bad)":"var(--ok)"}">${pct(ingreso,objetivo)}</span><span class="s">${falta>0?"faltan "+fmtK(falta):"objetivo superado por "+fmtK(-falta)}</span></div>
+    <div class="tile"><span class="l">Venta promedio</span><span class="v">${vVen.length?fmtK(vVen.reduce((a,v)=>a+(+v.monto||0),0)/vVen.length):"—"}</span><span class="s">${vVen.length} venta${vVen.length===1?"":"s"}</span></div>
+    <div class="tile"><span class="l">Renta promedio</span><span class="v">${vRen.length?fmtK(vRen.reduce((a,v)=>a+(+v.monto||0),0)/vRen.length):"—"}</span><span class="s">${vRen.length} renta${vRen.length===1?"":"s"}</span></div>
   </div>
   <div class="card" style="margin-bottom:14px"><h3>Ingresos vs objetivo por trimestre · ${Y}</h3>
     <div class="cols">${byM.map((v,i)=>{const ok=v+0.5>=byMprev[i];return `<div class="c" title="${QLL[i]}"><small>${fmtK(v).replace("$ ","")} <span class="dim">/ ${fmtK(byMprev[i]).replace("$ ","")}</span></small><div style="display:flex;gap:2px;width:100%;align-items:flex-end;height:120px;justify-content:center"><i style="height:${v/max*100}%"></i><i class="p" style="height:${byMprev[i]/max*100}%"></i></div><b style="color:${ok?"var(--ok)":"var(--bad)"}">${QL[i]} · ${pct(v,byMprev[i])}</b></div>`}).join("")}${(()=>{const t=byM.reduce((a,b)=>a+b,0),o=byMprev.reduce((a,b)=>a+b,0),ok=t+0.5>=o;return `<div class="c acum"><small>${fmtK(t).replace("$ ","")} <span class="dim">/ ${fmtK(o).replace("$ ","")}</span></small><div style="display:flex;gap:2px;width:100%;align-items:flex-end;height:120px;justify-content:center"><i style="height:${t/Math.max(t,o,1)*100}%"></i><i class="p" style="height:${o/Math.max(t,o,1)*100}%"></i></div><b style="color:${ok?"var(--ok)":"var(--bad)"}">Acumulado ${Y} · ${pct(t,o)}</b></div>`})()}</div>
