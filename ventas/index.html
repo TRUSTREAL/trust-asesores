@@ -46,6 +46,10 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
 .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
 .filters input,.filters select{border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:8px 14px;font-size:13px}
 .filters input[type=text]{min-width:220px}
+.qseg{display:inline-flex;border:1px solid var(--line-2);border-radius:999px;overflow:hidden;background:var(--surface)}
+.qseg button{border:0;background:transparent;padding:8px 14px;font:inherit;font-size:13px;cursor:pointer;color:var(--muted)}
+.qseg button+button{border-left:1px solid var(--line-2)}
+.qseg button.on{background:var(--green);color:#fff}
 .count{color:var(--muted);font-size:12px;margin-left:auto}
 .tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}
 .tile{background:var(--surface);border:1px solid var(--line-2);border-radius:14px;padding:12px 14px}
@@ -85,7 +89,8 @@ td.com{color:var(--gold-2);font-weight:600}
 .cols .c i{width:100%;max-width:70px;background:var(--green);border-radius:6px 6px 0 0;display:block;min-height:2px}
 .cols .c i.p{background:var(--gold);opacity:.85}
 .cols .c b{font-size:10.5px;font-weight:500;color:var(--muted);white-space:nowrap}
-.cols .c small{font-size:10px;color:var(--text);font-weight:600}
+.cols .c small{font-size:10px;color:var(--text);font-weight:600;white-space:nowrap}
+.cols .c.acum{border-left:1px dashed var(--line-2);padding-left:14px;margin-left:8px;max-width:240px}
 .legend{display:flex;gap:14px;font-size:11.5px;color:var(--muted);margin-top:6px}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--green);vertical-align:-1px;margin-right:4px}
 .legend i.p{background:var(--gold)}
@@ -149,7 +154,7 @@ tr.dimrow td{opacity:.55}
   <div class="filters" id="period-bar">
     <select id="p-anio"></select>
     <select id="p-mes"><option value="">Todo el año</option></select>
-    <select id="p-trim"><option value="">Todo el año</option><option value="1">Q1 · Ene–Mar</option><option value="2">Q2 · Abr–Jun</option><option value="3">Q3 · Jul–Sep</option><option value="4">Q4 · Oct–Dic</option></select>
+    <div class="qseg" id="p-trim"><button data-q="">Todo el año</button><button data-q="1">Q1</button><button data-q="2">Q2</button><button data-q="3">Q3</button><button data-q="4">Q4</button></div>
     <span class="hint" id="period-txt"></span>
   </div>
   <section class="pane on" id="pane-ventas"></section>
@@ -187,11 +192,12 @@ const num=s=>{const x=parseFloat(String(s??"").replace(/[^0-9.\-]/g,""));return 
 const pct=(n,d)=>d?Math.round(n/d*100)+"%":"—";
 const todayISO=()=>{const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)};
 const fecha=d=>d?(()=>{const [y,m,dd]=String(d).slice(0,10).split("-");return `${+dd} ${MESES[+m-1]} ${y.slice(2)}`})():"—";
+const fechaM=d=>d?(()=>{const [y,m]=String(d).slice(0,7).split("-");return `${MESES_L[+m-1]} ${y}`})():"—";
 const uid=()=>"p"+Math.random().toString(36).slice(2,9);
 
 let VENTAS=[], PAGOS=[], REGLAS={...REGLAS_DEF}, PANE="ventas";
-let P={anio:new Date().getFullYear(),mes:"",trim:""}; // periodo: Ventas y Empresa por trimestre; el resto por mes
-const useQ=()=>PANE==="ventas"||PANE==="empresa"||PANE==="asesores";
+let P={anio:new Date().getFullYear(),mes:"",trims:[]}; // periodo: Ventas y Empresa por trimestre; el resto por mes
+const useQ=()=>PANE==="empresa"||PANE==="asesores";
 let filt={q:"",un:"",asesor:"",estatus:""}, sort={k:"fecha",dir:"desc"};
 
 /* ---------- carga ---------- */
@@ -225,16 +231,16 @@ function partAmt(p,base){return p.monto!=null&&p.monto!==""?+p.monto:base*(+p.pc
 function partPct(p,base){return p.monto!=null&&p.monto!==""?(base?+p.monto/base*100:0):(+p.pct||0)}
 
 /* ---------- periodo ---------- */
-function inPeriodo(d){if(!d)return false;const [y,m]=String(d).slice(0,7).split("-");if(+y!==+P.anio)return false;return useQ()?(!P.trim||Math.ceil(+m/3)===+P.trim):(!P.mes||+m===+P.mes)}
-function periodoTxt(){return useQ()?(P.trim?`Q${P.trim} ${P.anio}`:`Año ${P.anio}`):(P.mes?`${MESES_L[+P.mes-1]} ${P.anio}`:`Año ${P.anio}`)}
+function inPeriodo(d){if(!d)return false;const [y,m]=String(d).slice(0,7).split("-");if(+y!==+P.anio)return false;return useQ()?(!P.trims.length||P.trims.includes(Math.ceil(+m/3))):(!P.mes||+m===+P.mes)}
+function periodoTxt(){return useQ()?(P.trims.length?P.trims.map(q=>"Q"+q).join("+")+` ${P.anio}`:`Año ${P.anio}`):(P.mes?`${MESES_L[+P.mes-1]} ${P.anio}`:`Año ${P.anio}`)}
 function renderPeriodBar(){
   const years=[...new Set(VENTAS.map(v=>+String(v.fecha).slice(0,4)).concat(PAGOS.map(c=>+String(c.fecha).slice(0,4))).concat([new Date().getFullYear()]))].sort((a,b)=>b-a);
   $("#p-anio").innerHTML=years.map(y=>`<option ${y===+P.anio?"selected":""}>${y}</option>`).join("");
   const ms=$("#p-mes");if(ms.options.length===1)MESES_L.forEach((m,i)=>{const o=document.createElement("option");o.value=i+1;o.textContent=m;ms.appendChild(o)});ms.value=P.mes;
-  ms.style.display=useQ()?"none":"";const ts=$("#p-trim");ts.style.display=useQ()?"":"none";ts.value=P.trim;
+  ms.style.display=useQ()?"none":"";const ts=$("#p-trim");ts.style.display=useQ()?"":"none";ts.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.q?P.trims.includes(+b.dataset.q):!P.trims.length));
   $("#period-txt").textContent=periodoTxt();
 }
-$("#p-anio").onchange=e=>{P.anio=+e.target.value;render()};$("#p-mes").onchange=e=>{P.mes=e.target.value;render()};$("#p-trim").onchange=e=>{P.trim=e.target.value;render()};
+$("#p-anio").onchange=e=>{P.anio=+e.target.value;render()};$("#p-mes").onchange=e=>{P.mes=e.target.value;render()};$$("#p-trim button").forEach(b=>b.onclick=()=>{const q=+b.dataset.q;if(!q)P.trims=[];else P.trims=P.trims.includes(q)?P.trims.filter(x=>x!==q):P.trims.concat([q]).sort();render()});
 
 /* ---------- render ---------- */
 function render(){renderPeriodBar();({ventas:renderVentas,cobranza:renderCobranza,comisiones:renderComisiones,empresa:renderEmpresa,asesores:renderAsesores,reglas:renderReglas})[PANE]();}
@@ -264,8 +270,8 @@ function renderVentas(){
     <select id="f-estatus"><option value="">Estatus de cobro</option>${Object.entries(EST_LABEL).map(([k,v])=>`<option value="${k}" ${filt.estatus===k?"selected":""}>${v}</option>`).join("")}</select>
     <span class="count">${rows.length} de ${all.length}</span>
   </div>
-  <div class="twrap"><table><thead><tr>${th("fecha","Fecha")}${th("cliente","Cliente")}<th>UN</th>${th("proyecto","Proyecto")}<th>Unidad</th>${th("asesor","Asesor")}<th>Opcionador</th>${th("monto","Monto",1)}<th class="num">%</th>${th("comision","Comisión",1)}${th("estatus","Cobranza")}<th></th></tr></thead>
-  <tbody>${rows.map(v=>{const e=estatusDe(v);return `<tr data-id="${v.id}"><td class="dim">${fecha(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${v.autogenerada?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">AG</span>':""}</td><td><span class="un ${v.un}">${esc(v.un)}</span>${esCredito(v)?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(v.proyecto)}</td><td class="dim">${esc(v.unidad||"")}</td><td>${esc(v.asesor)}</td><td class="dim">${esc(v.opcionador||"—")}</td><td class="num money">${fmt(v.monto)}</td><td class="num dim">${v.comision_monto!=null?"fijo":(+v.comision_pct||0).toLocaleString("es-MX",{maximumFractionDigits:2})+"%"}</td><td class="num com">${fmt(comTotal(v))}</td><td><span class="st ${e}">${EST_LABEL[e]}</span></td><td><button class="ico edit" data-id="${v.id}" title="Abrir">✎</button></td></tr>`}).join("")}</tbody></table>
+  <div class="twrap"><table><thead><tr>${th("fecha","Mes")}${th("cliente","Cliente")}<th>UN</th>${th("proyecto","Proyecto")}<th>Unidad</th>${th("asesor","Asesor")}<th>Opcionador</th>${th("monto","Monto",1)}<th class="num">%</th>${th("comision","Comisión",1)}${th("estatus","Cobranza")}<th></th></tr></thead>
+  <tbody>${rows.map(v=>{const e=estatusDe(v);return `<tr data-id="${v.id}"><td class="dim">${fechaM(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${v.autogenerada?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">AG</span>':""}</td><td><span class="un ${v.un}">${esc(v.un)}</span>${esCredito(v)?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(v.proyecto)}</td><td class="dim">${esc(v.unidad||"")}</td><td>${esc(v.asesor)}</td><td class="dim">${esc(v.opcionador||"—")}</td><td class="num money">${fmt(v.monto)}</td><td class="num dim">${v.comision_monto!=null?"fijo":(+v.comision_pct||0).toLocaleString("es-MX",{maximumFractionDigits:2})+"%"}</td><td class="num com">${fmt(comTotal(v))}</td><td><span class="st ${e}">${EST_LABEL[e]}</span></td><td><button class="ico edit" data-id="${v.id}" title="Abrir">✎</button></td></tr>`}).join("")}</tbody></table>
   ${rows.length?"":`<div class="empty"><b>Sin ventas</b>No hay operaciones registradas en ${periodoTxt().toLowerCase()}${filt.q||filt.un||filt.asesor||filt.estatus?" con esos filtros":""}.</div>`}</div>`;
   $("#f-q").oninput=e=>{filt.q=e.target.value;renderVentas();const i=$("#f-q");i.focus();i.setSelectionRange(i.value.length,i.value.length)};
   ["un","asesor","estatus"].forEach(k=>$("#f-"+k).onchange=e=>{filt[k]=e.target.value;renderVentas()});
@@ -291,7 +297,7 @@ function renderEmpresa(){
   let disp=0;vP.forEach(v=>{const tot=comTotal(v);disp+=(v.dispersion||[]).reduce((a,p)=>a+partAmt(p,tot),0)});
   const trust=ingreso-disp;
   const cobP=vP.filter(v=>estatusDe(v)==="pagada").reduce((a,v)=>a+comTotal(v),0);
-  const objetivo=P.trim?objQ(+P.trim-1):byMprev.reduce((a,b)=>a+b,0);const falta=objetivo-ingreso;
+  const objetivo=P.trims.length?P.trims.reduce((a,q)=>a+objQ(q-1),0):byMprev.reduce((a,b)=>a+b,0);const falta=objetivo-ingreso;
   const byUN={},byProy={};vP.forEach(v=>{const t=comTotal(v);byUN[v.un]=(byUN[v.un]||0)+t;byProy[v.proyecto]=(byProy[v.proyecto]||0)+t});
   const max=Math.max(...byM,...byMprev,1);
   el.innerHTML=`
@@ -303,7 +309,7 @@ function renderEmpresa(){
     <div class="tile"><span class="l">Avance vs objetivo</span><span class="v" style="color:${falta>0?"var(--bad)":"var(--ok)"}">${pct(ingreso,objetivo)}</span><span class="s">${falta>0?"faltan "+fmtK(falta):"objetivo superado por "+fmtK(-falta)}</span></div>
   </div>
   <div class="card" style="margin-bottom:14px"><h3>Ingresos vs objetivo por trimestre · ${Y}</h3>
-    <div class="cols">${byM.map((v,i)=>`<div class="c" title="${QLL[i]}: ${fmt(v)} · objetivo: ${fmt(byMprev[i])} (${pct(v,byMprev[i])}) · cobrado: ${fmt(cobM[i])}"><small>${v?fmtK(v).replace("$ ",""):""}</small><div style="display:flex;gap:2px;width:100%;align-items:flex-end;height:120px"><i style="height:${v/max*100}%"></i><i class="p" style="height:${byMprev[i]/max*100}%"></i></div><b>${QL[i]} · ${pct(v,byMprev[i])}</b></div>`).join("")}</div>
+    <div class="cols">${byM.map((v,i)=>{const ok=v+0.5>=byMprev[i];return `<div class="c" title="${QLL[i]} · cobrado: ${fmt(cobM[i])}"><small>${fmtK(v).replace("$ ","")} <span class="dim">/ ${fmtK(byMprev[i]).replace("$ ","")}</span></small><div style="display:flex;gap:2px;width:100%;align-items:flex-end;height:120px;justify-content:center"><i style="height:${v/max*100}%"></i><i class="p" style="height:${byMprev[i]/max*100}%"></i></div><b style="color:${ok?"var(--ok)":"var(--bad)"}">${QL[i]} · ${pct(v,byMprev[i])}</b></div>`}).join("")}${(()=>{const t=byM.reduce((a,b)=>a+b,0),o=byMprev.reduce((a,b)=>a+b,0),ok=t+0.5>=o;return `<div class="c acum"><small>${fmtK(t).replace("$ ","")} <span class="dim">/ ${fmtK(o).replace("$ ","")}</span></small><div style="display:flex;gap:2px;width:100%;align-items:flex-end;height:120px;justify-content:center"><i style="height:${t/Math.max(t,o,1)*100}%"></i><i class="p" style="height:${o/Math.max(t,o,1)*100}%"></i></div><b style="color:${ok?"var(--ok)":"var(--bad)"}">Acumulado ${Y} · ${pct(t,o)}</b></div>`})()}</div>
     <div class="legend"><span><i></i>Ingresos ${Y}</span><span><i class="p"></i>Objetivo</span><span style="margin-left:auto">Ingresos ${Y}: <b>${fmtK(byM.reduce((a,b)=>a+b,0))}</b> de <b>${fmtK(byMprev.reduce((a,b)=>a+b,0))}</b> · cobrado: <b>${fmtK(cobM.reduce((a,b)=>a+b,0))}</b> · cobrado del periodo: <b>${fmtK(cobP)}</b></span></div></div>
   <div class="grid2">
     <div class="card"><h3>Por unidad de negocio</h3><div class="bars">${bars(byUN,ingreso)}</div></div>
@@ -345,8 +351,8 @@ function renderCobranza(){
   </div>
   <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Cobranza · ${periodoTxt()}</h3><label class="chk" style="padding:0"><input type="checkbox" id="cb-all" ${verCobradas?"checked":""} style="width:auto"> Ver cobradas</label></div>
     <p class="hint" style="margin:6px 0 10px">Control de lo que el desarrollador / cliente nos ha pagado. Independiente del pago a asesores.</p>
-    <div class="twrap" style="border:0"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Proyecto</th><th>Asesor</th><th class="num">Monto</th><th class="num">Comisión</th><th>Estatus de cobro</th></tr></thead>
-    <tbody>${rows.map(v=>`<tr class="${estatusDe(v)==="pagada"?"dimrow":""}"><td class="dim">${fecha(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${esCredito(v)?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(v.proyecto)}${v.unidad?` <span class="dim">· ${esc(v.unidad)}</span>`:""}</td><td>${esc(v.asesor)}</td><td class="num money">${fmt(v.monto)}</td><td class="num com">${fmt(comTotal(v))}</td><td>${seg(v)}</td></tr>`).join("")}</tbody></table>
+    <div class="twrap" style="border:0"><table><thead><tr><th>Mes</th><th>Cliente</th><th>Proyecto</th><th>Asesor</th><th class="num">Monto</th><th class="num">Comisión</th><th>Estatus de cobro</th></tr></thead>
+    <tbody>${rows.map(v=>`<tr class="${estatusDe(v)==="pagada"?"dimrow":""}"><td class="dim">${fechaM(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${esCredito(v)?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(v.proyecto)}${v.unidad?` <span class="dim">· ${esc(v.unidad)}</span>`:""}</td><td>${esc(v.asesor)}</td><td class="num money">${fmt(v.monto)}</td><td class="num com">${fmt(comTotal(v))}</td><td>${seg(v)}</td></tr>`).join("")}</tbody></table>
     ${rows.length?"":`<div class="empty"><b>Todo cobrado</b>No hay ventas por cobrar en ${periodoTxt().toLowerCase()}.</div>`}</div></div>`;
   $("#cb-all").onchange=e=>{verCobradas=e.target.checked;renderCobranza()};
   el.querySelectorAll(".segc button").forEach(b=>b.onclick=async()=>{const id=b.closest(".segc").dataset.id,k=b.dataset.k;const v=VENTAS.find(x=>x.id===id);if(estatusDe(v)===k)return;
@@ -381,7 +387,7 @@ function renderComisiones(){
   <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Comisiones por pagar</h3><label class="chk" style="padding:0"><input type="checkbox" id="cm-all" ${verPagadas?"checked":""} style="width:auto"> Ver pagadas del periodo</label></div>
     <p class="hint" style="margin:6px 0 10px">Una línea por persona y venta. La comisión nace al registrar la venta; aquí marcas cuándo se le pagó. No depende de la cobranza.</p>
     <div class="twrap" style="border:0"><table><thead><tr><th>Beneficiario</th><th>Venta</th><th>Rol</th><th class="num">Comisión</th><th class="num">Pagado</th><th class="num">Pendiente</th><th>Estatus</th><th></th></tr></thead>
-    <tbody>${rows.map(L=>{const first=L.n!==lastN;lastN=L.n;const pend=L.mia-L.pag;return `<tr class="${L.e==="pagada"?"dimrow":""}"><td>${first?`<b>${esc(L.n)}</b>`:""}</td><td>${esc(L.v.cliente)}<br><small class="dim">${esc(L.v.proyecto||"")}${L.v.unidad?" · "+esc(L.v.unidad):""} · ${fecha(L.v.fecha)}</small></td><td class="dim">${esc(L.roles.join(" + "))}</td><td class="num com">${fmt(L.mia)}</td><td class="num ${L.pag?"paid":""}">${fmt(L.pag)}</td><td class="num money" style="color:${pend>0.5?"var(--bad)":"var(--ok)"}">${fmt(pend)}</td><td><span class="st ${L.e}">${EST_LABEL[L.e]}</span></td><td style="white-space:nowrap">${pend>0.5?`<button class="btn sm primary pay" data-k="${esc(L.k)}">Pagar…</button>`:""}</td></tr>`}).join("")}</tbody></table>
+    <tbody>${rows.map(L=>{const first=L.n!==lastN;lastN=L.n;const pend=L.mia-L.pag;return `<tr class="${L.e==="pagada"?"dimrow":""}"><td>${first?`<b>${esc(L.n)}</b>`:""}</td><td>${esc(L.v.cliente)}<br><small class="dim">${esc(L.v.proyecto||"")}${L.v.unidad?" · "+esc(L.v.unidad):""} · ${fechaM(L.v.fecha)}</small></td><td class="dim">${esc(L.roles.join(" + "))}</td><td class="num com">${fmt(L.mia)}</td><td class="num ${L.pag?"paid":""}">${fmt(L.pag)}</td><td class="num money" style="color:${pend>0.5?"var(--bad)":"var(--ok)"}">${fmt(pend)}</td><td><span class="st ${L.e}">${EST_LABEL[L.e]}</span></td><td style="white-space:nowrap">${pend>0.5?`<button class="btn sm primary pay" data-k="${esc(L.k)}">Pagar…</button>`:""}</td></tr>`}).join("")}</tbody></table>
     ${rows.length?"":`<div class="empty"><b>Todo pagado</b>No hay comisiones pendientes de pago.</div>`}</div></div>
   <div class="card" style="margin-top:14px"><h3>Pagos registrados · ${periodoTxt()}</h3>
     ${pagP.length?`<div class="twrap" style="border:0"><table><thead><tr><th>Fecha</th><th>Beneficiario</th><th>Venta</th><th class="num">Monto</th><th>Nota</th><th></th></tr></thead><tbody>${[...pagP].sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))).map(p=>`<tr><td class="dim">${fecha(p.fecha)}</td><td>${esc(p.beneficiario)}</td><td class="dim">${p.venta_id&&vmap[p.venta_id]?esc(vmap[p.venta_id].cliente):"—"}</td><td class="num money">${fmt(p.monto)}</td><td class="dim">${esc(p.nota||"")}</td><td><button class="ico delpay" data-id="${p.id}" title="Eliminar pago">×</button></td></tr>`).join("")}</tbody></table></div>`:`<p class="hint">Sin pagos registrados en el periodo.</p>`}</div>`;
@@ -394,7 +400,7 @@ function openPago(L){
   root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(480px,100%)">
     <header><h3>Pagar a ${esc(L.n)}</h3><button class="ico" id="d-close">✕</button></header>
     <div class="body">
-      <p style="margin:0 0 12px"><b>${esc(L.v.cliente)}</b> · ${esc(L.v.proyecto||"")} · ${fecha(L.v.fecha)}<br><span class="dim">${esc(L.roles.join(" + "))} · comisión ${fmt(L.mia)} · pagado ${fmt(L.pag)}</span></p>
+      <p style="margin:0 0 12px"><b>${esc(L.v.cliente)}</b> · ${esc(L.v.proyecto||"")} · ${fechaM(L.v.fecha)}<br><span class="dim">${esc(L.roles.join(" + "))} · comisión ${fmt(L.mia)} · pagado ${fmt(L.pag)}</span></p>
       <div class="fg">
         <div class="f c6"><label>Fecha de pago</label><input type="date" id="pg-fecha" value="${todayISO()}"></div>
         <div class="f c6"><label>Monto</label><input id="pg-m" inputmode="numeric" value="${Math.round(pend).toLocaleString("es-MX")}"></div>
@@ -448,7 +454,7 @@ function openVenta(v){
     <header><h3>${isNew?"Registrar venta":"Venta · "+esc(v.cliente)}</h3><button class="ico" id="d-close">✕</button></header>
     <div class="body">
       <div class="fg">
-        <div class="f c3"><label>Fecha de cierre</label><input type="date" id="v-fecha" value="${v.fecha||""}"></div>
+        <div class="f c3"><label>Mes de la venta</label><input type="month" id="v-fecha" value="${String(v.fecha||"").slice(0,7)}"></div>
         <div class="f c3"><label>Unidad de negocio</label><select id="v-un">${opt(UN,v.un)}</select></div>
         <div class="f c3"><label>Tipo</label><select id="v-tipo">${opt(TIPO,v.tipo)}</select></div>
         <div class="f c3" id="v-prop-box" style="${v.un==="Corretaje"?"":"visibility:hidden"}"><label>Propiedad</label><select id="v-prop"><option value="true" ${v.propiedad_trust!==false?"selected":""}>De TRUST</option><option value="false" ${v.propiedad_trust===false?"selected":""}>Otra inmobiliaria</option></select></div>
@@ -474,7 +480,7 @@ function openVenta(v){
   const g=i=>$("#"+i);const close=()=>root.innerHTML="";
   g("scrim").onclick=close;g("d-close").onclick=close;g("d-cancel").onclick=close;
   let DISP=v.dispersion?v.dispersion.map(p=>({...p,id:p.id||uid()})):null;
-  const cur=()=>({fecha:g("v-fecha").value,un:g("v-un").value,tipo:g("v-tipo").value,propiedad_trust:g("v-prop").value==="true",cliente:g("v-cliente").value.trim(),proyecto:g("v-proyecto").value.trim(),unidad:g("v-unidad").value.trim(),asesor:g("v-asesor").value,opcionador:g("v-opc").value||null,autogenerada:g("v-ag").checked,monto:num(g("v-monto").value),comision_pct:num(g("v-pct").value),comision_monto:num(g("v-cmonto").value),notas:g("v-notas").value.trim()});
+  const cur=()=>({fecha:(g("v-fecha").value||todayISO().slice(0,7))+"-01",un:g("v-un").value,tipo:g("v-tipo").value,propiedad_trust:g("v-prop").value==="true",cliente:g("v-cliente").value.trim(),proyecto:g("v-proyecto").value.trim(),unidad:g("v-unidad").value.trim(),asesor:g("v-asesor").value,opcionador:g("v-opc").value||null,autogenerada:g("v-ag").checked,monto:num(g("v-monto").value),comision_pct:num(g("v-pct").value),comision_monto:num(g("v-cmonto").value),notas:g("v-notas").value.trim()});
   const total=()=>{const c=cur();return c.comision_monto!=null?c.comision_monto:(c.monto||0)*(c.comision_pct||0)/100};
   function drawDisp(){
     const tot=total();g("v-ctotal").value=fmt(tot)+(cur().comision_monto!=null?" (monto fijo)":"");
