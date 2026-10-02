@@ -67,9 +67,9 @@ td.dim{color:var(--muted)}
 td.money{font-weight:600}
 td.com{color:var(--gold-2);font-weight:600}
 .st{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
-.st.por_cobrar{background:var(--bad-bg);color:var(--bad)}
+.st.pendiente{background:var(--bad-bg);color:var(--bad)}
 .st.parcial{background:var(--warn-bg);color:var(--warn)}
-.st.cobrada{background:var(--ok-bg);color:var(--ok)}
+.st.pagada{background:var(--ok-bg);color:var(--ok)}
 .un{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
 .un.Proyectos{background:var(--ok-bg);color:var(--ok)}.un.Corretaje{background:var(--info-bg);color:var(--info)}
 .ico{border:0;background:transparent;color:var(--faint);font-size:15px;padding:2px 6px;border-radius:6px}.ico:hover{color:var(--green);background:var(--surface-2)}
@@ -117,7 +117,11 @@ td.com{color:var(--gold-2);font-weight:600}
 .chk{display:flex;align-items:center;gap:8px;font-size:13px;padding-top:26px}
 .hint{font-size:12px;color:var(--muted)}
 .cobros .row{display:grid;grid-template-columns:130px 1fr 150px 40px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}
-.cobros .row:last-child{border-bottom:0}
+.segc{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden}
+.segc button{border:0;background:var(--bg);padding:5px 10px;font:inherit;font-size:12px;cursor:pointer;color:var(--muted)}
+.segc button+button{border-left:1px solid var(--line-2)}
+.segc button.on.pendiente{background:#FBEDEA;color:var(--bad)}.segc button.on.parcial{background:#FBF3E0;color:var(--gold-2)}.segc button.on.pagada{background:#E6F2EC;color:var(--ok)}
+tr.dimrow td{opacity:.55}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--green);color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:99}
 .toast.show{opacity:1;transform:translateX(-50%)}.toast.err{background:var(--bad)}
 .rules .r{display:grid;grid-template-columns:1fr 120px;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px}
@@ -131,14 +135,15 @@ td.com{color:var(--gold-2);font-weight:600}
 <body>
 <div class="wrap">
   <header class="top">
-    <div class="brand"><img class="logo" id="logo-img" alt="TRUST realtor"><h1>Ventas</h1><p>Registro de operaciones, cobros y dispersión de comisiones</p></div>
+    <div class="brand"><img class="logo" id="logo-img" alt="TRUST realtor"><h1>Ventas</h1><p>Registro de ventas, cobranza y comisiones</p></div>
     <div class="topright"><a class="home-link" href="../admin/">← Inicio</a><button class="btn primary" id="btn-new">+ Registrar venta</button></div>
   </header>
   <div class="vseg" role="tablist">
     <button data-pane="ventas" aria-pressed="true">Ventas</button>
+    <button data-pane="cobranza" aria-pressed="false">Cobranza</button>
+    <button data-pane="comisiones" aria-pressed="false">Comisiones</button>
     <button data-pane="empresa" aria-pressed="false">Empresa</button>
     <button data-pane="asesores" aria-pressed="false">Asesores</button>
-    <button data-pane="dispersion" aria-pressed="false">Dispersión</button>
     <button data-pane="reglas" aria-pressed="false">Reglas</button>
   </div>
   <div class="filters" id="period-bar">
@@ -147,9 +152,10 @@ td.com{color:var(--gold-2);font-weight:600}
     <span class="hint" id="period-txt"></span>
   </div>
   <section class="pane on" id="pane-ventas"></section>
+  <section class="pane" id="pane-cobranza"></section>
+  <section class="pane" id="pane-comisiones"></section>
   <section class="pane" id="pane-empresa"></section>
   <section class="pane" id="pane-asesores"></section>
-  <section class="pane" id="pane-dispersion"></section>
   <section class="pane" id="pane-reglas"></section>
 </div>
 <div id="drawer-root"></div>
@@ -181,24 +187,25 @@ const todayISO=()=>{const d=new Date();return new Date(d.getTime()-d.getTimezone
 const fecha=d=>d?(()=>{const [y,m,dd]=String(d).slice(0,10).split("-");return `${+dd} ${MESES[+m-1]} ${y.slice(2)}`})():"—";
 const uid=()=>"p"+Math.random().toString(36).slice(2,9);
 
-let VENTAS=[], COBROS=[], PAGOS=[], REGLAS={...REGLAS_DEF}, PANE="ventas";
+let VENTAS=[], PAGOS=[], REGLAS={...REGLAS_DEF}, PANE="ventas";
 let P={anio:new Date().getFullYear(),mes:""}; // periodo
 let filt={q:"",un:"",asesor:"",estatus:""}, sort={k:"fecha",dir:"desc"};
 
 /* ---------- carga ---------- */
 async function loadAll(){
   if(!sb){toast("Sin conexión a Supabase",true);return}
-  const [v,c,p,r]=await Promise.all([sb.from("ventas").select("*").order("fecha",{ascending:false}),sb.from("ventas_cobros").select("*").order("fecha"),sb.from("ventas_pagos").select("*").order("fecha"),sb.from("ventas_reglas").select("*").eq("id",1).maybeSingle()]);
+  const [v,p,r]=await Promise.all([sb.from("ventas").select("*").order("fecha",{ascending:false}),sb.from("ventas_pagos").select("*").order("fecha"),sb.from("ventas_reglas").select("*").eq("id",1).maybeSingle()]);
   if(v.error){toast("Error: "+v.error.message,true);return}
-  VENTAS=v.data||[];COBROS=c.data||[];PAGOS=p.data||[];
+  VENTAS=v.data||[];PAGOS=p.data||[];
   if(r.data&&r.data.reglas)REGLAS={...REGLAS_DEF,...r.data.reglas};
   render();
 }
-const cobrosDe=id=>COBROS.filter(c=>c.venta_id===id);
-const cobradoDe=id=>cobrosDe(id).reduce((a,c)=>a+(+c.monto||0),0);
 const comTotal=v=>v.comision_monto!=null?+v.comision_monto:(+v.monto||0)*(+v.comision_pct||0)/100;
-function estatusDe(v){const c=cobradoDe(v.id),t=comTotal(v);return c<=0?"por_cobrar":c+0.5>=t?"cobrada":"parcial"}
-const EST_LABEL={por_cobrar:"Por cobrar",parcial:"Parcial",cobrada:"Cobrada"};
+// Cobranza: estatus manual por venta (independiente del pago a asesores)
+const estatusDe=v=>v.cobro_estatus||"pendiente";
+const EST_LABEL={pendiente:"Pendiente",parcial:"Pago parcial",pagada:"Pagada"};
+// Pagos a beneficiarios por venta
+const pagadoDe=(n,vid)=>PAGOS.filter(p=>p.beneficiario===n&&p.venta_id===vid).reduce((a,p)=>a+(+p.monto||0),0);
 
 /* ---------- dispersión ---------- */
 function dispDefault(v){
@@ -213,14 +220,12 @@ function dispDefault(v){
 }
 function partAmt(p,base){return p.monto!=null&&p.monto!==""?+p.monto:base*(+p.pct||0)/100}
 function partPct(p,base){return p.monto!=null&&p.monto!==""?(base?+p.monto/base*100:0):(+p.pct||0)}
-// Monto que corresponde a cada beneficiario sobre lo COBRADO de la venta
-function dispCobrada(v){const base=cobradoDe(v.id),tot=comTotal(v);const parts=(v.dispersion||[]).map(p=>{const full=partAmt(p,tot);const share=tot?full/tot:0;return {...p,monto_total:full,monto_cobrado:base*share}});const sum=parts.reduce((a,p)=>a+p.monto_cobrado,0);return {parts,trust_cobrado:base-sum,trust_total:tot-parts.reduce((a,p)=>a+p.monto_total,0)}}
 
 /* ---------- periodo ---------- */
 function inPeriodo(d){if(!d)return false;const [y,m]=String(d).slice(0,7).split("-");return +y===+P.anio&&(!P.mes||+m===+P.mes)}
 function periodoTxt(){return P.mes?`${MESES_L[+P.mes-1]} ${P.anio}`:`Año ${P.anio}`}
 function renderPeriodBar(){
-  const years=[...new Set(VENTAS.map(v=>+String(v.fecha).slice(0,4)).concat(COBROS.map(c=>+String(c.fecha).slice(0,4))).concat([new Date().getFullYear()]))].sort((a,b)=>b-a);
+  const years=[...new Set(VENTAS.map(v=>+String(v.fecha).slice(0,4)).concat(PAGOS.map(c=>+String(c.fecha).slice(0,4))).concat([new Date().getFullYear()]))].sort((a,b)=>b-a);
   $("#p-anio").innerHTML=years.map(y=>`<option ${y===+P.anio?"selected":""}>${y}</option>`).join("");
   const ms=$("#p-mes");if(ms.options.length===1)MESES_L.forEach((m,i)=>{const o=document.createElement("option");o.value=i+1;o.textContent=m;ms.appendChild(o)});ms.value=P.mes;
   $("#period-txt").textContent=periodoTxt();
@@ -228,24 +233,25 @@ function renderPeriodBar(){
 $("#p-anio").onchange=e=>{P.anio=+e.target.value;render()};$("#p-mes").onchange=e=>{P.mes=e.target.value;render()};
 
 /* ---------- render ---------- */
-function render(){renderPeriodBar();({ventas:renderVentas,empresa:renderEmpresa,asesores:renderAsesores,dispersion:renderDispersion,reglas:renderReglas})[PANE]();}
+function render(){renderPeriodBar();({ventas:renderVentas,cobranza:renderCobranza,comisiones:renderComisiones,empresa:renderEmpresa,asesores:renderAsesores,reglas:renderReglas})[PANE]();}
 $$(".vseg button").forEach(b=>b.onclick=()=>{PANE=b.dataset.pane;$$(".vseg button").forEach(x=>x.setAttribute("aria-pressed",x===b));$$(".pane").forEach(p=>p.classList.toggle("on",p.id==="pane-"+PANE));$("#period-bar").style.display=PANE==="reglas"?"none":"";render()});
 
 function renderVentas(){
   const el=$("#pane-ventas");
   let rows=VENTAS.filter(v=>inPeriodo(v.fecha)&&(!filt.un||v.un===filt.un)&&(!filt.asesor||v.asesor===filt.asesor||v.opcionador===filt.asesor)&&(!filt.estatus||estatusDe(v)===filt.estatus)&&(!filt.q||[v.cliente,v.proyecto,v.unidad,v.asesor,v.notas].join(" ").toLowerCase().includes(filt.q.toLowerCase())));
-  const d=sort.dir==="asc"?1:-1;const val=v=>({fecha:v.fecha,cliente:v.cliente||"",proyecto:v.proyecto||"",asesor:v.asesor||"",monto:+v.monto||0,comision:comTotal(v),cobrado:cobradoDe(v.id),estatus:estatusDe(v)})[sort.k];
+  const d=sort.dir==="asc"?1:-1;const val=v=>({fecha:v.fecha,cliente:v.cliente||"",proyecto:v.proyecto||"",asesor:v.asesor||"",monto:+v.monto||0,comision:comTotal(v),estatus:estatusDe(v)})[sort.k];
   rows=[...rows].sort((a,b)=>{const x=val(a),y=val(b);return (typeof x==="number"?x-y:String(x).localeCompare(String(y),"es"))*d});
   const all=VENTAS.filter(v=>inPeriodo(v.fecha));
-  const tot=all.reduce((a,v)=>a+comTotal(v),0),cob=all.reduce((a,v)=>a+cobradoDe(v.id),0),op=all.filter(v=>!esCredito(v)).reduce((a,v)=>a+(+v.monto||0),0);
+  const tot=all.reduce((a,v)=>a+comTotal(v),0),op=all.filter(v=>!esCredito(v)).reduce((a,v)=>a+(+v.monto||0),0);
+  const cobradas=all.filter(v=>estatusDe(v)==="pagada"),porCob=all.filter(v=>estatusDe(v)!=="pagada");
   const th=(k,l,n)=>`<th class="sortable ${sort.k===k?"on":""} ${n?"num":""}" data-k="${k}">${l}${sort.k===k?(sort.dir==="asc"?" ↑":" ↓"):""}</th>`;
   el.innerHTML=`
   <div class="tiles">
     <div class="tile dark"><span class="l">Operaciones</span><span class="v">${all.length}</span><span class="s">${periodoTxt()}</span></div>
-    <div class="tile"><span class="l">Monto operado</span><span class="v">${fmtK(op)}</span><span class="s">ticket ${all.length?fmtK(op/all.length):"—"}</span></div>
-    <div class="tile gold"><span class="l">Comisión generada</span><span class="v">${fmtK(tot)}</span><span class="s">${op?(tot/op*100).toFixed(2)+"% promedio":""}</span></div>
-    <div class="tile"><span class="l">Cobrado</span><span class="v">${fmtK(cob)}</span><span class="s">${pct(cob,tot)} de lo generado</span></div>
-    <div class="tile"><span class="l">Por cobrar</span><span class="v">${fmtK(tot-cob)}</span><span class="s">${all.filter(v=>estatusDe(v)!=="cobrada").length} operaciones abiertas</span></div>
+    <div class="tile"><span class="l">Monto de ventas</span><span class="v">${fmtK(op)}</span><span class="s">ticket ${all.length?fmtK(op/all.length):"—"}</span></div>
+    <div class="tile gold"><span class="l">Ingresos</span><span class="v">${fmtK(tot)}</span><span class="s">${op?(tot/op*100).toFixed(2)+"% promedio":""}</span></div>
+    <div class="tile"><span class="l">Cobradas</span><span class="v">${cobradas.length}</span><span class="s">${fmtK(cobradas.reduce((a,v)=>a+comTotal(v),0))}</span></div>
+    <div class="tile"><span class="l">Por cobrar</span><span class="v">${porCob.length}</span><span class="s">${fmtK(porCob.reduce((a,v)=>a+comTotal(v),0))}</span></div>
   </div>
   <div class="filters">
     <input type="text" id="f-q" placeholder="Buscar cliente, proyecto, unidad…" value="${esc(filt.q)}">
@@ -254,12 +260,12 @@ function renderVentas(){
     <select id="f-estatus"><option value="">Estatus de cobro</option>${Object.entries(EST_LABEL).map(([k,v])=>`<option value="${k}" ${filt.estatus===k?"selected":""}>${v}</option>`).join("")}</select>
     <span class="count">${rows.length} de ${all.length}</span>
   </div>
-  <div class="twrap"><table><thead><tr>${th("fecha","Fecha")}${th("cliente","Cliente")}<th>UN</th>${th("proyecto","Proyecto")}<th>Unidad</th>${th("asesor","Asesor")}<th>Opcionador</th>${th("monto","Monto",1)}<th class="num">%</th>${th("comision","Comisión",1)}${th("cobrado","Cobrado",1)}${th("estatus","Estatus")}<th></th></tr></thead>
-  <tbody>${rows.map(v=>{const e=estatusDe(v);return `<tr data-id="${v.id}"><td class="dim">${fecha(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${v.autogenerada?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">AG</span>':""}</td><td><span class="un ${v.un}">${esc(v.un)}</span>${esCredito(v)?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(v.proyecto)}</td><td class="dim">${esc(v.unidad||"")}</td><td>${esc(v.asesor)}</td><td class="dim">${esc(v.opcionador||"—")}</td><td class="num money">${fmt(v.monto)}</td><td class="num dim">${v.comision_monto!=null?"fijo":(+v.comision_pct||0).toLocaleString("es-MX",{maximumFractionDigits:2})+"%"}</td><td class="num com">${fmt(comTotal(v))}</td><td class="num">${fmt(cobradoDe(v.id))}</td><td><span class="st ${e}">${EST_LABEL[e]}</span></td><td><button class="ico edit" data-id="${v.id}" title="Abrir">✎</button></td></tr>`}).join("")}</tbody></table>
+  <div class="twrap"><table><thead><tr>${th("fecha","Fecha")}${th("cliente","Cliente")}<th>UN</th>${th("proyecto","Proyecto")}<th>Unidad</th>${th("asesor","Asesor")}<th>Opcionador</th>${th("monto","Monto",1)}<th class="num">%</th>${th("comision","Comisión",1)}${th("estatus","Cobranza")}<th></th></tr></thead>
+  <tbody>${rows.map(v=>{const e=estatusDe(v);return `<tr data-id="${v.id}"><td class="dim">${fecha(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${v.autogenerada?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">AG</span>':""}</td><td><span class="un ${v.un}">${esc(v.un)}</span>${esCredito(v)?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(v.proyecto)}</td><td class="dim">${esc(v.unidad||"")}</td><td>${esc(v.asesor)}</td><td class="dim">${esc(v.opcionador||"—")}</td><td class="num money">${fmt(v.monto)}</td><td class="num dim">${v.comision_monto!=null?"fijo":(+v.comision_pct||0).toLocaleString("es-MX",{maximumFractionDigits:2})+"%"}</td><td class="num com">${fmt(comTotal(v))}</td><td><span class="st ${e}">${EST_LABEL[e]}</span></td><td><button class="ico edit" data-id="${v.id}" title="Abrir">✎</button></td></tr>`}).join("")}</tbody></table>
   ${rows.length?"":`<div class="empty"><b>Sin ventas</b>No hay operaciones registradas en ${periodoTxt().toLowerCase()}${filt.q||filt.un||filt.asesor||filt.estatus?" con esos filtros":""}.</div>`}</div>`;
   $("#f-q").oninput=e=>{filt.q=e.target.value;renderVentas();const i=$("#f-q");i.focus();i.setSelectionRange(i.value.length,i.value.length)};
   ["un","asesor","estatus"].forEach(k=>$("#f-"+k).onchange=e=>{filt[k]=e.target.value;renderVentas()});
-  el.querySelectorAll("th.sortable").forEach(t=>t.onclick=()=>{const k=t.dataset.k;sort=sort.k===k?{k,dir:sort.dir==="asc"?"desc":"asc"}:{k,dir:k==="fecha"||k==="monto"||k==="comision"||k==="cobrado"?"desc":"asc"};renderVentas()});
+  el.querySelectorAll("th.sortable").forEach(t=>t.onclick=()=>{const k=t.dataset.k;sort=sort.k===k?{k,dir:sort.dir==="asc"?"desc":"asc"}:{k,dir:k==="fecha"||k==="monto"||k==="comision"?"desc":"asc"};renderVentas()});
   el.querySelectorAll(".edit").forEach(b=>b.onclick=()=>openVenta(VENTAS.find(v=>v.id===b.dataset.id)));
 }
 
@@ -273,13 +279,12 @@ function renderEmpresa(){
   const vY=VN.filter(v=>yr(v)===Y),vPrev=VN.filter(v=>yr(v)===Y-1);
   const byM=monthly(a=>vY.forEach(v=>a[mo(v)-1]+=comTotal(v)));
   const byMprev=monthly(a=>vPrev.forEach(v=>a[mo(v)-1]+=comTotal(v)));
-  const vmap={};VENTAS.forEach(v=>vmap[v.id]=v);const noCred=c=>!(vmap[c.venta_id]&&esCredito(vmap[c.venta_id]));
-  const cobM=monthly(a=>COBROS.filter(c=>noCred(c)&&+String(c.fecha).slice(0,4)===Y).forEach(c=>a[+String(c.fecha).slice(5,7)-1]+=+c.monto||0));
+  const cobM=monthly(a=>vY.filter(v=>estatusDe(v)==="pagada").forEach(v=>a[mo(v)-1]+=comTotal(v)));
   // periodo
   const vP=VN.filter(v=>inPeriodo(v.fecha));const ingreso=vP.reduce((a,v)=>a+comTotal(v),0);
   let disp=0;vP.forEach(v=>{const tot=comTotal(v);disp+=(v.dispersion||[]).reduce((a,p)=>a+partAmt(p,tot),0)});
   const trust=ingreso-disp;
-  const cobP=COBROS.filter(c=>noCred(c)&&inPeriodo(c.fecha)).reduce((a,c)=>a+(+c.monto||0),0);
+  const cobP=vP.filter(v=>estatusDe(v)==="pagada").reduce((a,v)=>a+comTotal(v),0);
   const prevIng=(()=>{if(P.mes){const m=+P.mes;const y=m===1?Y-1:Y,pm=m===1?12:m-1;return VN.filter(v=>yr(v)===y&&mo(v)===pm).reduce((a,v)=>a+comTotal(v),0)}return vPrev.reduce((a,v)=>a+comTotal(v),0)})();
   const lyIng=P.mes?byMprev[+P.mes-1]:vPrev.reduce((a,v)=>a+comTotal(v),0);
   const delta=(a,b)=>b?((a-b)/b*100).toFixed(0)+"%":"—";
@@ -295,7 +300,7 @@ function renderEmpresa(){
   </div>
   <div class="card" style="margin-bottom:14px"><h3>Ingresos por mes · ${Y}</h3>
     <div class="cols">${byM.map((v,i)=>`<div class="c" title="${MESES_L[i]}: ${fmt(v)} · ${Y-1}: ${fmt(byMprev[i])} · cobrado: ${fmt(cobM[i])}"><small>${v?fmtK(v).replace("$ ",""):""}</small><div style="display:flex;gap:2px;width:100%;align-items:flex-end;height:120px"><i style="height:${v/max*100}%"></i><i class="p" style="height:${byMprev[i]/max*100}%"></i></div><b>${MESES[i]}</b></div>`).join("")}</div>
-    <div class="legend"><span><i></i>${Y}</span><span><i class="p"></i>${Y-1}</span><span style="margin-left:auto">Ingresos ${Y}: <b>${fmtK(byM.reduce((a,b)=>a+b,0))}</b> · cobrado: <b>${fmtK(cobM.reduce((a,b)=>a+b,0))}</b> · en el periodo cobrado: <b>${fmtK(cobP)}</b></span></div></div>
+    <div class="legend"><span><i></i>${Y}</span><span><i class="p"></i>${Y-1}</span><span style="margin-left:auto">Ingresos ${Y}: <b>${fmtK(byM.reduce((a,b)=>a+b,0))}</b> · cobrado: <b>${fmtK(cobM.reduce((a,b)=>a+b,0))}</b> · cobrado del periodo: <b>${fmtK(cobP)}</b></span></div></div>
   <div class="grid2">
     <div class="card"><h3>Por unidad de negocio</h3><div class="bars">${bars(byUN,ingreso)}</div></div>
     <div class="card"><h3>Por proyecto</h3><div class="bars">${bars(byProy,ingreso)}</div></div>
@@ -307,74 +312,101 @@ function bars(obj,total,g){const e=Object.entries(obj).sort((a,b)=>b[1]-a[1]);if
 function renderAsesores(){
   const el=$("#pane-asesores");
   const vP=VENTAS.filter(v=>inPeriodo(v.fecha));
-  const st={};const add=(n,k,v)=>{if(!n)return;st[n]=st[n]||{ventas:0,monto:0,com:0,gen_asesor:0,cobrado_asesor:0,pagado:0};st[n][k]+=v};
+  const st={};const add=(n,k,v)=>{if(!n)return;st[n]=st[n]||{ventas:0,monto:0,com:0,gen_asesor:0,pagado:0};st[n][k]+=v};
   vP.forEach(v=>{add(v.asesor,"ventas",1);add(v.asesor,"monto",+v.monto||0);add(v.asesor,"com",comTotal(v))});
-  // lo que le toca a cada persona (todas las ventas, cobros del periodo)
-  VENTAS.forEach(v=>{const tot=comTotal(v);const cobP=cobrosDe(v.id).filter(c=>inPeriodo(c.fecha)).reduce((a,c)=>a+(+c.monto||0),0);(v.dispersion||[]).forEach(p=>{if(p.rol==="Staff")return;const full=partAmt(p,tot);add(p.nombre,"gen_asesor",inPeriodo(v.fecha)?full:0);add(p.nombre,"cobrado_asesor",tot?cobP*(full/tot):0)})});
+  // lo que le toca a cada persona sobre ventas del periodo
+  vP.forEach(v=>{const tot=comTotal(v);(v.dispersion||[]).forEach(p=>{if(p.rol==="Staff")return;add(p.nombre,"gen_asesor",partAmt(p,tot))})});
   PAGOS.filter(p=>inPeriodo(p.fecha)).forEach(p=>add(p.beneficiario,"pagado",+p.monto||0));
   const rows=Object.entries(st).filter(([n])=>ASESORES.includes(n)||st[n].ventas).sort((a,b)=>b[1].com-a[1].com);
   const totCom=rows.reduce((a,[,s])=>a+s.com,0);
   el.innerHTML=`<div class="card"><h3>Desempeño por asesor · ${periodoTxt()}</h3>
-    <div class="twrap" style="border:0"><table><thead><tr><th>#</th><th>Asesor</th><th class="num">Ventas</th><th class="num">Monto operado</th><th class="num">Ticket</th><th class="num">Comisión generada</th><th class="num">% del total</th><th class="num">Le corresponde (generado)</th><th class="num">Le corresponde (cobrado)</th><th class="num">Pagado</th></tr></thead>
-    <tbody>${rows.map(([n,s],i)=>`<tr><td class="dim">${i+1}</td><td><b>${esc(n)}</b></td><td class="num">${s.ventas}</td><td class="num">${fmt(s.monto)}</td><td class="num dim">${s.ventas?fmt(s.monto/s.ventas):"—"}</td><td class="num com">${fmt(s.com)}</td><td class="num dim">${pct(s.com,totCom)}</td><td class="num">${fmt(s.gen_asesor)}</td><td class="num">${fmt(s.cobrado_asesor)}</td><td class="num ${s.pagado?"paid":""}">${fmt(s.pagado)}</td></tr>`).join("")}</tbody></table>
+    <div class="twrap" style="border:0"><table><thead><tr><th>#</th><th>Asesor</th><th class="num">Ventas</th><th class="num">Monto de ventas</th><th class="num">Ticket</th><th class="num">Ingresos</th><th class="num">% del total</th><th class="num">Le corresponde</th><th class="num">Pagado</th></tr></thead>
+    <tbody>${rows.map(([n,s],i)=>`<tr><td class="dim">${i+1}</td><td><b>${esc(n)}</b></td><td class="num">${s.ventas}</td><td class="num">${fmt(s.monto)}</td><td class="num dim">${s.ventas?fmt(s.monto/s.ventas):"—"}</td><td class="num com">${fmt(s.com)}</td><td class="num dim">${pct(s.com,totCom)}</td><td class="num">${fmt(s.gen_asesor)}</td><td class="num ${s.pagado?"paid":""}">${fmt(s.pagado)}</td></tr>`).join("")}</tbody></table>
     ${rows.length?"":`<div class="empty">Sin ventas en el periodo.</div>`}</div>
-    <p class="hint" style="margin:10px 0 0">"Le corresponde" suma sus partidas como vendedor, opcionador o autogenerada. Generado = sobre ventas cerradas en el periodo; cobrado = sobre cobros recibidos en el periodo.</p></div>
-    <div class="card" style="margin-top:14px"><h3>Comisión generada por asesor</h3><div class="bars">${bars(Object.fromEntries(rows.map(([n,s])=>[n,s.com])),totCom,1)}</div></div>`;
+    <p class="hint" style="margin:10px 0 0">"Le corresponde" suma sus partidas como vendedor, opcionador o autogenerada sobre ventas cerradas en el periodo. Pagado = pagos registrados en el periodo.</p></div>
+    <div class="card" style="margin-top:14px"><h3>Ingresos por asesor</h3><div class="bars">${bars(Object.fromEntries(rows.map(([n,s])=>[n,s.com])),totCom,1)}</div></div>`;
 }
 
-/* ---------- dispersión ---------- */
-function renderDispersion(){
-  const el=$("#pane-dispersion");
-  const cobP=COBROS.filter(c=>inPeriodo(c.fecha));const vmap={};VENTAS.forEach(v=>vmap[v.id]=v);
-  const due={};const detail={};
-  cobP.forEach(c=>{const v=vmap[c.venta_id];if(!v)return;const tot=comTotal(v);(v.dispersion||[]).forEach(p=>{const full=partAmt(p,tot);const m=tot?(+c.monto||0)*(full/tot):0;if(!p.nombre)return;due[p.nombre]=(due[p.nombre]||0)+m;(detail[p.nombre]=detail[p.nombre]||[]).push({venta:v,cobro:c,rol:p.rol,monto:m})})});
-  const paid={};PAGOS.filter(p=>inPeriodo(p.fecha)).forEach(p=>paid[p.beneficiario]=(paid[p.beneficiario]||0)+(+p.monto||0));
-  // saldo por (beneficiario, venta) acumulado histórico: liberado - pagado
-  const pv={};VENTAS.forEach(v=>{const tot=comTotal(v),cob=cobradoDe(v.id);(v.dispersion||[]).forEach(p=>{if(!p.nombre)return;const full=partAmt(p,tot);const lib=tot?cob*(full/tot):0;const k=p.nombre+"|"+v.id;pv[k]=pv[k]||{n:p.nombre,v,rol:p.rol,lib:0,pag:0};pv[k].lib+=lib})});
-  PAGOS.forEach(p=>{if(!p.venta_id)return;const k=p.beneficiario+"|"+p.venta_id;if(pv[k])pv[k].pag+=+p.monto||0});
-  const names=[...new Set(Object.keys(due).concat(Object.keys(paid)))].sort((a,b)=>(due[b]||0)-(due[a]||0));
-  const ingreso=cobP.reduce((a,c)=>a+(+c.monto||0),0),totDue=Object.values(due).reduce((a,b)=>a+b,0),totPaid=Object.values(paid).reduce((a,b)=>a+b,0);
+/* ---------- cobranza ---------- */
+let verCobradas=false;
+function renderCobranza(){
+  const el=$("#pane-cobranza");
+  const all=VENTAS.filter(v=>inPeriodo(v.fecha)).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
+  const pend=all.filter(v=>estatusDe(v)==="pendiente"),parc=all.filter(v=>estatusDe(v)==="parcial"),pag=all.filter(v=>estatusDe(v)==="pagada");
+  const rows=verCobradas?all:all.filter(v=>estatusDe(v)!=="pagada");
+  const sum=l=>l.reduce((a,v)=>a+comTotal(v),0);
+  const seg=v=>`<div class="segc" data-id="${v.id}">${Object.entries(EST_LABEL).map(([k,l])=>`<button class="${k} ${estatusDe(v)===k?"on":""}" data-k="${k}">${l}</button>`).join("")}</div>`;
   el.innerHTML=`
   <div class="tiles">
-    <div class="tile dark"><span class="l">Ingreso cobrado</span><span class="v">${fmtK(ingreso)}</span><span class="s">${periodoTxt()}</span></div>
-    <div class="tile gold"><span class="l">A dispersar</span><span class="v">${fmtK(totDue)}</span><span class="s">${pct(totDue,ingreso)} del ingreso</span></div>
-    <div class="tile"><span class="l">Pagado</span><span class="v">${fmtK(totPaid)}</span><span class="s">${pct(totPaid,totDue)} de lo debido</span></div>
-    <div class="tile"><span class="l">Pendiente de pago</span><span class="v">${fmtK(totDue-totPaid)}</span><span class="s">${names.filter(n=>(due[n]||0)-(paid[n]||0)>0.5).length} personas</span></div>
-    <div class="tile"><span class="l">Queda en TRUST</span><span class="v">${fmtK(ingreso-totDue)}</span><span class="s">${pct(ingreso-totDue,ingreso)}</span></div>
+    <div class="tile dark"><span class="l">Por cobrar</span><span class="v">${pend.length+parc.length}</span><span class="s">${fmtK(sum(pend)+sum(parc))} · ${periodoTxt()}</span></div>
+    <div class="tile"><span class="l">Pendientes</span><span class="v">${pend.length}</span><span class="s">${fmtK(sum(pend))}</span></div>
+    <div class="tile gold"><span class="l">Pago parcial</span><span class="v">${parc.length}</span><span class="s">${fmtK(sum(parc))}</span></div>
+    <div class="tile"><span class="l">Cobradas</span><span class="v">${pag.length}</span><span class="s">${fmtK(sum(pag))}</span></div>
   </div>
-  <div class="card"><h3>Dispersión · ${periodoTxt()}</h3>
-    <p class="hint" style="margin:0 0 10px">Calculada sobre lo cobrado en el periodo. Al marcar como pagado se registra un pago por el saldo pendiente con fecha de hoy.</p>
-    <div class="twrap" style="border:0"><table><thead><tr><th>Beneficiario</th><th class="num">Le corresponde</th><th class="num">Pagado</th><th class="num">Pendiente</th><th>Detalle</th><th></th></tr></thead>
-    <tbody>${names.map(n=>{const d=due[n]||0,p=paid[n]||0,pend=d-p;return `<tr><td><b>${esc(n)}</b></td><td class="num com">${fmt(d)}</td><td class="num ${p?"paid":""}">${fmt(p)}</td><td class="num money" style="color:${pend>0.5?"var(--bad)":"var(--ok)"}">${fmt(pend)}</td><td class="dim" style="white-space:normal;max-width:420px;font-size:12px">${(detail[n]||[]).map(x=>`${esc(x.venta.cliente)} · ${esc(x.rol)} · ${fmt(x.monto)}`).join("<br>")}</td><td style="white-space:nowrap"><button class="btn sm primary pay" data-n="${esc(n)}">Pagar…</button></td></tr>`}).join("")}</tbody></table>
-    ${names.length?"":`<div class="empty">Sin cobros en el periodo; no hay nada que dispersar.</div>`}</div></div>
-  <div class="card" style="margin-top:14px"><h3>Pagos registrados en el periodo</h3>
-    ${PAGOS.filter(p=>inPeriodo(p.fecha)).length?`<div class="twrap" style="border:0"><table><thead><tr><th>Fecha</th><th>Beneficiario</th><th class="num">Monto</th><th>Nota</th><th></th></tr></thead><tbody>${PAGOS.filter(p=>inPeriodo(p.fecha)).sort((a,b)=>b.fecha.localeCompare(a.fecha)).map(p=>`<tr><td class="dim">${fecha(p.fecha)}</td><td>${esc(p.beneficiario)}</td><td class="num money">${fmt(p.monto)}</td><td class="dim">${p.venta_id&&vmap[p.venta_id]?esc(vmap[p.venta_id].cliente)+" · ":""}${esc(p.nota||"")}</td><td><button class="ico delpay" data-id="${p.id}" title="Eliminar pago">×</button></td></tr>`).join("")}</tbody></table></div>`:`<p class="hint">Sin pagos registrados.</p>`}</div>`;
-  el.querySelectorAll(".pay").forEach(b=>b.onclick=()=>openPago(b.dataset.n,pv));
+  <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Cobranza · ${periodoTxt()}</h3><label class="chk" style="padding:0"><input type="checkbox" id="cb-all" ${verCobradas?"checked":""} style="width:auto"> Ver cobradas</label></div>
+    <p class="hint" style="margin:6px 0 10px">Control de lo que el desarrollador / cliente nos ha pagado. Independiente del pago a asesores.</p>
+    <div class="twrap" style="border:0"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Proyecto</th><th>Asesor</th><th class="num">Monto</th><th class="num">Comisión</th><th>Estatus de cobro</th></tr></thead>
+    <tbody>${rows.map(v=>`<tr class="${estatusDe(v)==="pagada"?"dimrow":""}"><td class="dim">${fecha(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${esCredito(v)?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(v.proyecto)}${v.unidad?` <span class="dim">· ${esc(v.unidad)}</span>`:""}</td><td>${esc(v.asesor)}</td><td class="num money">${fmt(v.monto)}</td><td class="num com">${fmt(comTotal(v))}</td><td>${seg(v)}</td></tr>`).join("")}</tbody></table>
+    ${rows.length?"":`<div class="empty"><b>Todo cobrado</b>No hay ventas por cobrar en ${periodoTxt().toLowerCase()}.</div>`}</div></div>`;
+  $("#cb-all").onchange=e=>{verCobradas=e.target.checked;renderCobranza()};
+  el.querySelectorAll(".segc button").forEach(b=>b.onclick=async()=>{const id=b.closest(".segc").dataset.id,k=b.dataset.k;const v=VENTAS.find(x=>x.id===id);if(estatusDe(v)===k)return;
+    const r=await sb.from("ventas").update({cobro_estatus:k}).eq("id",id);if(r.error){toast("No se guardó: "+r.error.message,true);return}v.cobro_estatus=k;toast(k==="pagada"?"Marcada como cobrada":"Estatus actualizado");renderCobranza()});
+}
+
+/* ---------- comisiones (pago a beneficiarios) ---------- */
+let verPagadas=false;
+function lineasCom(){
+  const out=[];
+  VENTAS.forEach(v=>{const tot=comTotal(v);(v.dispersion||[]).forEach(p=>{if(!p.nombre)return;const mia=partAmt(p,tot);if(!mia)return;const k=p.nombre+"|"+v.id;let L=out.find(x=>x.k===k);if(!L){L={k,n:p.nombre,v,roles:[],mia:0,pag:pagadoDe(p.nombre,v.id)};out.push(L)}L.roles.push(p.rol);L.mia+=mia})});
+  out.forEach(L=>{L.e=L.pag+0.5>=L.mia?"pagada":L.pag>0.5?"parcial":"pendiente"});
+  return out;
+}
+function renderComisiones(){
+  const el=$("#pane-comisiones");
+  const all=lineasCom();
+  const abiertas=all.filter(L=>L.e!=="pagada");
+  const rows=(verPagadas?all.filter(L=>inPeriodo(L.v.fecha)||L.e!=="pagada"):abiertas).sort((a,b)=>a.n.localeCompare(b.n,"es")||String(b.v.fecha).localeCompare(String(a.v.fecha)));
+  const pendTot=abiertas.reduce((a,L)=>a+(L.mia-L.pag),0);
+  const pagP=PAGOS.filter(p=>inPeriodo(p.fecha));const pagTot=pagP.reduce((a,p)=>a+(+p.monto||0),0);
+  const genP=all.filter(L=>inPeriodo(L.v.fecha)).reduce((a,L)=>a+L.mia,0);
+  const personas=[...new Set(abiertas.map(L=>L.n))];
+  const vmap={};VENTAS.forEach(v=>vmap[v.id]=v);
+  let lastN="";
+  el.innerHTML=`
+  <div class="tiles">
+    <div class="tile dark"><span class="l">Pendiente de pagar</span><span class="v">${fmtK(pendTot)}</span><span class="s">${personas.length} persona${personas.length===1?"":"s"} · ${abiertas.length} partida${abiertas.length===1?"":"s"}</span></div>
+    <div class="tile gold"><span class="l">Comisiones generadas</span><span class="v">${fmtK(genP)}</span><span class="s">${periodoTxt()}</span></div>
+    <div class="tile"><span class="l">Pagado</span><span class="v">${fmtK(pagTot)}</span><span class="s">${pagP.length} pago${pagP.length===1?"":"s"} · ${periodoTxt()}</span></div>
+  </div>
+  <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Comisiones por pagar</h3><label class="chk" style="padding:0"><input type="checkbox" id="cm-all" ${verPagadas?"checked":""} style="width:auto"> Ver pagadas del periodo</label></div>
+    <p class="hint" style="margin:6px 0 10px">Una línea por persona y venta. La comisión nace al registrar la venta; aquí marcas cuándo se le pagó. No depende de la cobranza.</p>
+    <div class="twrap" style="border:0"><table><thead><tr><th>Beneficiario</th><th>Venta</th><th>Rol</th><th class="num">Comisión</th><th class="num">Pagado</th><th class="num">Pendiente</th><th>Estatus</th><th></th></tr></thead>
+    <tbody>${rows.map(L=>{const first=L.n!==lastN;lastN=L.n;const pend=L.mia-L.pag;return `<tr class="${L.e==="pagada"?"dimrow":""}"><td>${first?`<b>${esc(L.n)}</b>`:""}</td><td>${esc(L.v.cliente)}<br><small class="dim">${esc(L.v.proyecto||"")}${L.v.unidad?" · "+esc(L.v.unidad):""} · ${fecha(L.v.fecha)}</small></td><td class="dim">${esc(L.roles.join(" + "))}</td><td class="num com">${fmt(L.mia)}</td><td class="num ${L.pag?"paid":""}">${fmt(L.pag)}</td><td class="num money" style="color:${pend>0.5?"var(--bad)":"var(--ok)"}">${fmt(pend)}</td><td><span class="st ${L.e}">${EST_LABEL[L.e]}</span></td><td style="white-space:nowrap">${pend>0.5?`<button class="btn sm primary pay" data-k="${esc(L.k)}">Pagar…</button>`:""}</td></tr>`}).join("")}</tbody></table>
+    ${rows.length?"":`<div class="empty"><b>Todo pagado</b>No hay comisiones pendientes de pago.</div>`}</div></div>
+  <div class="card" style="margin-top:14px"><h3>Pagos registrados · ${periodoTxt()}</h3>
+    ${pagP.length?`<div class="twrap" style="border:0"><table><thead><tr><th>Fecha</th><th>Beneficiario</th><th>Venta</th><th class="num">Monto</th><th>Nota</th><th></th></tr></thead><tbody>${[...pagP].sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))).map(p=>`<tr><td class="dim">${fecha(p.fecha)}</td><td>${esc(p.beneficiario)}</td><td class="dim">${p.venta_id&&vmap[p.venta_id]?esc(vmap[p.venta_id].cliente):"—"}</td><td class="num money">${fmt(p.monto)}</td><td class="dim">${esc(p.nota||"")}</td><td><button class="ico delpay" data-id="${p.id}" title="Eliminar pago">×</button></td></tr>`).join("")}</tbody></table></div>`:`<p class="hint">Sin pagos registrados en el periodo.</p>`}</div>`;
+  $("#cm-all").onchange=e=>{verPagadas=e.target.checked;renderComisiones()};
+  el.querySelectorAll(".pay").forEach(b=>b.onclick=()=>openPago(all.find(L=>L.k===b.dataset.k)));
   el.querySelectorAll(".delpay").forEach(b=>b.onclick=async()=>{if(!confirm("¿Eliminar este pago?"))return;const r=await sb.from("ventas_pagos").delete().eq("id",b.dataset.id);if(r.error){toast(r.error.message,true);return}PAGOS=PAGOS.filter(p=>p.id!==b.dataset.id);render()});
 }
-function openPago(n,pv){
-  const items=Object.values(pv).filter(x=>x.n===n&&x.lib-x.pag>0.5).sort((a,b)=>a.v.fecha.localeCompare(b.v.fecha));
-  const root=$("#drawer-root");
-  root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(560px,100%)">
-    <header><h3>Pagar a ${esc(n)}</h3><button class="ico" id="d-close">✕</button></header>
-    <div class="body"><p class="hint" style="margin:0 0 10px">Saldo liberado (TRUST ya cobró) por venta. Ajusta el monto si pagas parcial.</p>
-      <div class="f" style="margin-bottom:12px"><label>Fecha de pago</label><input type="date" id="pg-fecha" value="${todayISO()}" style="max-width:200px"></div>
-      ${items.length?`<table class="disp"><thead><tr><th></th><th>Venta</th><th>Rol</th><th class="num">Pendiente</th><th class="num" style="width:140px">Pagar</th></tr></thead><tbody>${items.map((x,i)=>`<tr><td><input type="checkbox" class="pg-ck" data-i="${i}" checked></td><td>${esc(x.v.cliente)}<br><small class="dim">${esc(x.v.proyecto||"")} · ${fecha(x.v.fecha)}</small></td><td class="dim">${esc(x.rol)}</td><td class="num">${fmt(x.lib-x.pag)}</td><td><input class="pg-m" data-i="${i}" value="${Math.round(x.lib-x.pag).toLocaleString("es-MX")}"></td></tr>`).join("")}</tbody></table>`:`<div class="empty">Nada pendiente de pagar a ${esc(n)}.</div>`}
-      <div class="f" style="margin-top:12px"><label>Nota</label><input id="pg-nota" placeholder="Transferencia, efectivo…"></div>
-      <div style="margin-top:12px;font-weight:600">Total a pagar: <span id="pg-total"></span></div></div>
-    <footer><span></span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cancelar</button><button class="btn primary" id="d-save" ${items.length?"":"disabled"}>Registrar pago</button></span></footer></div>`;
+function openPago(L){
+  const pend=L.mia-L.pag;const root=$("#drawer-root");
+  root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(480px,100%)">
+    <header><h3>Pagar a ${esc(L.n)}</h3><button class="ico" id="d-close">✕</button></header>
+    <div class="body">
+      <p style="margin:0 0 12px"><b>${esc(L.v.cliente)}</b> · ${esc(L.v.proyecto||"")} · ${fecha(L.v.fecha)}<br><span class="dim">${esc(L.roles.join(" + "))} · comisión ${fmt(L.mia)} · pagado ${fmt(L.pag)}</span></p>
+      <div class="fg">
+        <div class="f c6"><label>Fecha de pago</label><input type="date" id="pg-fecha" value="${todayISO()}"></div>
+        <div class="f c6"><label>Monto</label><input id="pg-m" inputmode="numeric" value="${Math.round(pend).toLocaleString("es-MX")}"></div>
+        <div class="f c12"><label>Nota</label><input id="pg-nota" placeholder="Transferencia, efectivo…"></div>
+      </div>
+      <p class="hint" style="margin-top:10px">Pendiente: ${fmt(pend)}. Si pagas menos queda como pago parcial.</p></div>
+    <footer><span></span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cancelar</button><button class="btn primary" id="d-save">Registrar pago</button></span></footer></div>`;
   const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
-  const calc=()=>{let t=0;items.forEach((x,i)=>{if($(`.pg-ck[data-i="${i}"]`).checked)t+=num($(`.pg-m[data-i="${i}"]`).value)||0});$("#pg-total").textContent=fmt(t)};
-  root.querySelectorAll(".pg-ck,.pg-m").forEach(e=>e.oninput=calc);calc();
-  $("#d-save").onclick=async()=>{
-    const f=$("#pg-fecha").value||todayISO(),nota=$("#pg-nota").value.trim()||null;const rows=[];
-    items.forEach((x,i)=>{if(!$(`.pg-ck[data-i="${i}"]`).checked)return;const m=num($(`.pg-m[data-i="${i}"]`).value);if(m>0)rows.push({beneficiario:n,monto:m,fecha:f,nota,venta_id:x.v.id})});
-    if(!rows.length){toast("Nada que pagar",true);return}
-    const r=await sb.from("ventas_pagos").insert(rows).select();if(r.error){toast("No se guardó: "+r.error.message,true);return}
-    PAGOS.push(...r.data);close();toast("Pago registrado");render();
-  };
+  $("#d-save").onclick=async()=>{const m=num($("#pg-m").value);if(!m||m<=0){toast("Falta el monto",true);return}
+    const r=await sb.from("ventas_pagos").insert({beneficiario:L.n,monto:m,fecha:$("#pg-fecha").value||todayISO(),nota:$("#pg-nota").value.trim()||null,venta_id:L.v.id}).select().single();if(r.error){toast("No se guardó: "+r.error.message,true);return}
+    PAGOS.push(r.data);close();toast("Pago registrado");render()};
 }
-async function addPago(n,m,nota){const f=P.mes?`${P.anio}-${String(P.mes).padStart(2,"0")}-${Math.min(+todayISO().slice(8,10),28).toString().padStart(2,"0")}`:todayISO();const r=await sb.from("ventas_pagos").insert({beneficiario:n,monto:m,fecha:f,nota}).select().single();if(r.error){toast("No se guardó: "+r.error.message,true);return}PAGOS.push(r.data);toast("Pago registrado");render()}
 
 /* ---------- reglas ---------- */
 function renderReglas(){
@@ -428,14 +460,10 @@ function openVenta(v){
         <div class="f c12"><label>Notas</label><textarea id="v-notas" rows="2">${esc(v.notas||"")}</textarea></div>
       </div>
       <div class="sect"><h4>Dispersión de la comisión</h4>
-        <p class="hint" style="margin:0 0 8px">Precargada con las reglas. Edita % o pon un monto fijo por partida; el otro se calcula. Sobre lo cobrado se paga proporcionalmente.</p>
+        <p class="hint" style="margin:0 0 8px">Precargada con las reglas. Edita % o pon un monto fijo por partida; el otro se calcula. Cada partida aparece en Comisiones como pendiente de pago.</p>
         <table class="disp"><thead><tr><th>Beneficiario</th><th>Rol</th><th class="num" style="width:90px">%</th><th class="num" style="width:130px">Monto</th><th></th></tr></thead><tbody id="disp-body"></tbody></table>
         <div style="display:flex;gap:8px;margin-top:8px;align-items:center"><button class="btn sm" id="disp-add">+ Partida</button><button class="btn sm" id="disp-reset">Recalcular con reglas</button><span class="hint" id="disp-warn"></span></div>
       </div>
-      ${isNew?"":`<div class="sect"><h4>Cobros</h4>
-        <div class="cobros" id="cobros-list"></div>
-        <div class="cobros" style="margin-top:8px"><div class="row" style="border:0"><input type="date" id="c-fecha" value="${todayISO()}" style="border:1px solid var(--line-2);border-radius:8px;padding:7px 9px;background:var(--bg)"><input id="c-concepto" placeholder="Concepto (anticipo, escritura…)" style="border:1px solid var(--line-2);border-radius:8px;padding:7px 9px;background:var(--bg)"><input id="c-monto" inputmode="numeric" placeholder="$ monto" style="border:1px solid var(--line-2);border-radius:8px;padding:7px 9px;background:var(--bg);text-align:right"><button class="btn sm primary" id="c-add">+</button></div></div>
-      </div>`}
     </div>
     <footer><span>${isNew?"":`<button class="btn danger" id="d-del">Eliminar venta</button>`}</span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cancelar</button><button class="btn primary" id="d-save">${isNew?"Registrar":"Guardar"}</button></span></footer></div>`;
   const g=i=>$("#"+i);const close=()=>root.innerHTML="";
@@ -459,18 +487,15 @@ function openVenta(v){
   ["v-un","v-prop","v-asesor","v-opc","v-ag","v-tipo"].forEach(id=>g(id).onchange=()=>{g("v-prop-box").style.visibility=g("v-un").value==="Corretaje"?"":"hidden";const cr=g("v-tipo").value==="Crédito hipotecario";g("lbl-monto").textContent=cr?"Monto del crédito (referencia)":"Monto de la operación";g("v-pct").disabled=cr;g("v-cmonto").placeholder=cr?"$ comisión que paga el banco":"$ (opcional)";if(isNew||confirm("¿Recalcular la dispersión con las reglas para estos datos?")){DISP=null}drawDisp()});
   ["v-monto","v-pct","v-cmonto"].forEach(id=>g(id).onchange=()=>{if(id==="v-monto"||id==="v-cmonto"){const x=num(g(id).value);g(id).value=x==null?"":fmt(x)}drawDisp()});
   drawDisp();
-  // cobros
-  function drawCobros(){if(isNew)return;const list=cobrosDe(v.id);const tot=total(),cob=list.reduce((a,c)=>a+(+c.monto||0),0);g("cobros-list").innerHTML=(list.map(c=>`<div class="row"><span class="dim">${fecha(c.fecha)}</span><span>${esc(c.concepto||"")}</span><b style="text-align:right">${fmt(c.monto)}</b><button class="ico delc" data-id="${c.id}">×</button></div>`).join("")||`<p class="hint">Sin cobros registrados.</p>`)+`<div class="row" style="border-top:1px solid var(--line);border-bottom:0"><span></span><b>Cobrado ${fmt(cob)} de ${fmt(tot)}</b><b style="text-align:right;color:${tot-cob>0.5?"var(--bad)":"var(--ok)"}">${tot-cob>0.5?"Falta "+fmt(tot-cob):"Cobrada ✓"}</b><span></span></div>`;
-    g("cobros-list").querySelectorAll(".delc").forEach(b=>b.onclick=async()=>{if(!confirm("¿Eliminar este cobro?"))return;const r=await sb.from("ventas_cobros").delete().eq("id",b.dataset.id);if(r.error){toast(r.error.message,true);return}COBROS=COBROS.filter(c=>c.id!==b.dataset.id);drawCobros()});}
-  if(!isNew){drawCobros();g("c-add").onclick=async()=>{const m=num(g("c-monto").value);if(!m){toast("Falta el monto",true);return}const r=await sb.from("ventas_cobros").insert({venta_id:v.id,fecha:g("c-fecha").value||todayISO(),monto:m,concepto:g("c-concepto").value.trim()||null}).select().single();if(r.error){toast(r.error.message,true);return}COBROS.push(r.data);g("c-monto").value="";g("c-concepto").value="";drawCobros();toast("Cobro registrado")};
-    g("d-del").onclick=async()=>{if(!confirm(`¿Eliminar la venta de ${v.cliente}? Se borran también sus cobros.`))return;const r=await sb.from("ventas").delete().eq("id",v.id);if(r.error){toast(r.error.message,true);return}VENTAS=VENTAS.filter(x=>x.id!==v.id);COBROS=COBROS.filter(c=>c.venta_id!==v.id);close();render();toast("Venta eliminada")}}
+  if(!isNew){
+    g("d-del").onclick=async()=>{if(!confirm(`¿Eliminar la venta de ${v.cliente}? Se borran también sus pagos.`))return;const r=await sb.from("ventas").delete().eq("id",v.id);if(r.error){toast(r.error.message,true);return}VENTAS=VENTAS.filter(x=>x.id!==v.id);PAGOS=PAGOS.filter(c=>c.venta_id!==v.id);close();render();toast("Venta eliminada")}}
   g("d-save").onclick=async()=>{
     const c=cur();if(!c.cliente){toast("Falta el cliente",true);return}if(!c.asesor){toast("Falta el asesor",true);return}if(!c.monto&&c.comision_monto==null){toast("Falta el monto",true);return}
     const row={...c,dispersion:DISP.map(p=>({nombre:p.nombre,rol:p.rol,pct:+p.pct||0,monto:p.monto!=null&&p.monto!==""?+p.monto:null}))};
     const r=isNew?await sb.from("ventas").insert(row).select().single():await sb.from("ventas").update(row).eq("id",v.id).select().single();
     if(r.error){toast("No se guardó: "+r.error.message,true);return}
     if(isNew)VENTAS.unshift(r.data);else VENTAS[VENTAS.findIndex(x=>x.id===v.id)]=r.data;
-    toast(isNew?"Venta registrada. Abre la venta para capturar cobros.":"Guardado");close();render();
+    toast(isNew?"Venta registrada. Las comisiones ya aparecen en Comisiones.":"Guardado");close();render();
   };
 }
 $("#btn-new").onclick=()=>openVenta(null);
