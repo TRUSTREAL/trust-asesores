@@ -51,7 +51,7 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
 .qseg button+button{border-left:1px solid var(--line-2)}
 .qseg button.on{background:var(--green);color:#fff}
 .count{color:var(--muted);font-size:12px;margin-left:auto}
-.tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:16px}
 .tile{background:var(--surface);border:1px solid var(--line-2);border-radius:14px;padding:12px 14px}
 .tile .l{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .tile .v{display:block;font-family:Lora,serif;font-size:26px;color:var(--green);line-height:1.15}
@@ -304,6 +304,7 @@ function renderEmpresa(){
     <div class="tile"><span class="l">Avance vs objetivo</span><span class="v" style="color:${falta>0?"var(--bad)":"var(--ok)"}">${pct(ingreso,objetivo)}</span><span class="s">${falta>0?"faltan "+fmtK(falta):"objetivo superado por "+fmtK(-falta)}</span></div>
     <div class="tile"><span class="l">Venta promedio</span><span class="v">${vVen.length?fmtK(vVen.reduce((a,v)=>a+(+v.monto||0),0)/vVen.length):"—"}</span><span class="s">${vVen.length} venta${vVen.length===1?"":"s"}</span></div>
     <div class="tile"><span class="l">Renta promedio</span><span class="v">${vRen.length?fmtK(vRen.reduce((a,v)=>a+(+v.monto||0),0)/vRen.length):"—"}</span><span class="s">${vRen.length} renta${vRen.length===1?"":"s"}</span></div>
+    <div class="tile gold"><span class="l">Comisión promedio</span><span class="v">${vP.length?fmtK(ingreso/vP.length):"—"}</span><span class="s">${(()=>{const op=vP.reduce((a,v)=>a+(+v.monto||0),0);return op?(ingreso/op*100).toFixed(2)+"% del monto":""})()}</span></div>
   </div>
   <div class="card" style="margin-bottom:14px"><h3>Ingresos vs objetivo por trimestre · ${Y}</h3>
     <div class="cols">${byM.map((v,i)=>{const ok=v+0.5>=byMprev[i];return `<div class="c" title="${QLL[i]}"><small>${fmtK(v).replace("$ ","")} <span class="dim">/ ${fmtK(byMprev[i]).replace("$ ","")}</span></small><div style="display:flex;gap:2px;width:100%;align-items:flex-end;height:120px;justify-content:center"><i style="height:${v/max*100}%"></i><i class="p" style="height:${byMprev[i]/max*100}%"></i></div><b style="color:${ok?"var(--ok)":"var(--bad)"}">${QL[i]} · ${pct(v,byMprev[i])}</b></div>`}).join("")}${(()=>{const t=byM.reduce((a,b)=>a+b,0),o=byMprev.reduce((a,b)=>a+b,0),ok=t+0.5>=o;return `<div class="c acum"><small>${fmtK(t).replace("$ ","")} <span class="dim">/ ${fmtK(o).replace("$ ","")}</span></small><div style="display:flex;gap:2px;width:100%;align-items:flex-end;height:120px;justify-content:center"><i style="height:${t/Math.max(t,o,1)*100}%"></i><i class="p" style="height:${o/Math.max(t,o,1)*100}%"></i></div><b style="color:${ok?"var(--ok)":"var(--bad)"}">Acumulado ${Y} · ${pct(t,o)}</b></div>`})()}</div>
