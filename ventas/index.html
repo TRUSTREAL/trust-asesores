@@ -173,7 +173,8 @@ const UN=["Proyectos","Corretaje"], TIPO=["Venta","Renta","Crédito hipotecario"
 const esCredito=v=>v.tipo==="Crédito hipotecario";
 const MESES=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 const MESES_L=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-const REGLAS_DEF={proy_vendedor:30,proy_opcionador:10,corr_trust_vendedor:25,corr_trust_opcionador:25,corr_otra_vendedor:50,autogenerada:5,staff:[{nombre:"Berna",pct:1},{nombre:"Rodrigo",pct:5},{nombre:"Aly",pct:0.5},{nombre:"Majo",pct:5}]};
+const REGLAS_DEF={proy_vendedor:30,proy_opcionador:10,corr_trust_vendedor:25,corr_trust_opcionador:25,corr_otra_vendedor:50,autogenerada:5,staff:[{nombre:"Berna",pct:1},{nombre:"Rodrigo",pct:5},{nombre:"Aly",pct:0.5},{nombre:"Majo",pct:5}],objetivos:[1500000,1500000,2000000,2000000]};
+const objQ=i=>+((REGLAS.objetivos||REGLAS_DEF.objetivos)[i])||0;
 
 let sb=null; try{ sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); }catch(e){}
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
@@ -282,7 +283,7 @@ function renderEmpresa(){
   const vY=VN.filter(v=>yr(v)===Y),vPrev=VN.filter(v=>yr(v)===Y-1);
   const qo=v=>Math.ceil(mo(v)/3)-1;const quarterly=fn=>{const a=[0,0,0,0];fn(a);return a};
   const byM=quarterly(a=>vY.forEach(v=>a[qo(v)]+=comTotal(v)));
-  const byMprev=quarterly(a=>vPrev.forEach(v=>a[qo(v)]+=comTotal(v)));
+  const byMprev=[0,1,2,3].map(objQ); // objetivo por trimestre
   const cobM=quarterly(a=>vY.filter(v=>estatusDe(v)==="pagada").forEach(v=>a[qo(v)]+=comTotal(v)));
   const QL=["Q1","Q2","Q3","Q4"],QLL=["Q1 · Ene–Mar","Q2 · Abr–Jun","Q3 · Jul–Sep","Q4 · Oct–Dic"];
   // periodo
@@ -290,9 +291,7 @@ function renderEmpresa(){
   let disp=0;vP.forEach(v=>{const tot=comTotal(v);disp+=(v.dispersion||[]).reduce((a,p)=>a+partAmt(p,tot),0)});
   const trust=ingreso-disp;
   const cobP=vP.filter(v=>estatusDe(v)==="pagada").reduce((a,v)=>a+comTotal(v),0);
-  const prevIng=(()=>{if(P.trim){const q=+P.trim;const y=q===1?Y-1:Y,pq=q===1?4:q-1;return VN.filter(v=>yr(v)===y&&qo(v)===pq-1).reduce((a,v)=>a+comTotal(v),0)}return vPrev.reduce((a,v)=>a+comTotal(v),0)})();
-  const lyIng=P.trim?byMprev[+P.trim-1]:vPrev.reduce((a,v)=>a+comTotal(v),0);
-  const delta=(a,b)=>b?((a-b)/b*100).toFixed(0)+"%":"—";
+  const objetivo=P.trim?objQ(+P.trim-1):byMprev.reduce((a,b)=>a+b,0);const falta=objetivo-ingreso;
   const byUN={},byProy={};vP.forEach(v=>{const t=comTotal(v);byUN[v.un]=(byUN[v.un]||0)+t;byProy[v.proyecto]=(byProy[v.proyecto]||0)+t});
   const max=Math.max(...byM,...byMprev,1);
   el.innerHTML=`
@@ -300,12 +299,12 @@ function renderEmpresa(){
     <div class="tile dark"><span class="l">Ingresos</span><span class="v">${fmtK(ingreso)}</span><span class="s">${vP.length} venta${vP.length===1?"":"s"} · ${periodoTxt()}</span></div>
     <div class="tile"><span class="l">Margen TRUST</span><span class="v">${fmtK(trust)}</span><span class="s">${pct(trust,ingreso)} después de dispersión</span></div>
     <div class="tile gold"><span class="l">A dispersar</span><span class="v">${fmtK(disp)}</span><span class="s">asesores, opcionadores y staff</span></div>
-    <div class="tile"><span class="l">vs periodo anterior</span><span class="v">${delta(ingreso,prevIng)}</span><span class="s">${fmtK(prevIng)} ${P.trim?"el trimestre anterior":"el año anterior"}</span></div>
-    <div class="tile"><span class="l">vs mismo periodo ${Y-1}</span><span class="v">${delta(ingreso,lyIng)}</span><span class="s">${fmtK(lyIng)} en ${Y-1}</span></div>
+    <div class="tile"><span class="l">Objetivo</span><span class="v">${fmtK(objetivo)}</span><span class="s">${periodoTxt()}</span></div>
+    <div class="tile"><span class="l">Avance vs objetivo</span><span class="v" style="color:${falta>0?"var(--bad)":"var(--ok)"}">${pct(ingreso,objetivo)}</span><span class="s">${falta>0?"faltan "+fmtK(falta):"objetivo superado por "+fmtK(-falta)}</span></div>
   </div>
-  <div class="card" style="margin-bottom:14px"><h3>Ingresos por trimestre · ${Y}</h3>
-    <div class="cols">${byM.map((v,i)=>`<div class="c" title="${QLL[i]}: ${fmt(v)} · ${Y-1}: ${fmt(byMprev[i])} · cobrado: ${fmt(cobM[i])}"><small>${v?fmtK(v).replace("$ ",""):""}</small><div style="display:flex;gap:2px;width:100%;align-items:flex-end;height:120px"><i style="height:${v/max*100}%"></i><i class="p" style="height:${byMprev[i]/max*100}%"></i></div><b>${QL[i]}</b></div>`).join("")}</div>
-    <div class="legend"><span><i></i>${Y}</span><span><i class="p"></i>${Y-1}</span><span style="margin-left:auto">Ingresos ${Y}: <b>${fmtK(byM.reduce((a,b)=>a+b,0))}</b> · cobrado: <b>${fmtK(cobM.reduce((a,b)=>a+b,0))}</b> · cobrado del periodo: <b>${fmtK(cobP)}</b></span></div></div>
+  <div class="card" style="margin-bottom:14px"><h3>Ingresos vs objetivo por trimestre · ${Y}</h3>
+    <div class="cols">${byM.map((v,i)=>`<div class="c" title="${QLL[i]}: ${fmt(v)} · objetivo: ${fmt(byMprev[i])} (${pct(v,byMprev[i])}) · cobrado: ${fmt(cobM[i])}"><small>${v?fmtK(v).replace("$ ",""):""}</small><div style="display:flex;gap:2px;width:100%;align-items:flex-end;height:120px"><i style="height:${v/max*100}%"></i><i class="p" style="height:${byMprev[i]/max*100}%"></i></div><b>${QL[i]} · ${pct(v,byMprev[i])}</b></div>`).join("")}</div>
+    <div class="legend"><span><i></i>Ingresos ${Y}</span><span><i class="p"></i>Objetivo</span><span style="margin-left:auto">Ingresos ${Y}: <b>${fmtK(byM.reduce((a,b)=>a+b,0))}</b> de <b>${fmtK(byMprev.reduce((a,b)=>a+b,0))}</b> · cobrado: <b>${fmtK(cobM.reduce((a,b)=>a+b,0))}</b> · cobrado del periodo: <b>${fmtK(cobP)}</b></span></div></div>
   <div class="grid2">
     <div class="card"><h3>Por unidad de negocio</h3><div class="bars">${bars(byUN,ingreso)}</div></div>
     <div class="card"><h3>Por proyecto</h3><div class="bars">${bars(byProy,ingreso)}</div></div>
@@ -420,6 +419,10 @@ function renderReglas(){
       <div class="eyebrow" style="margin:14px 0 6px">Corretaje · propiedad de otra inmobiliaria</div>${r("corr_otra_vendedor","Vendedor (sin opcionador)")}
       <div class="eyebrow" style="margin:14px 0 6px">Extra</div>${r("autogenerada","Operación autogenerada (adicional al vendedor)")}
     </div>
+    <div class="card rules"><h3>Objetivos de ingresos por trimestre</h3>
+      ${["Q1 · Ene–Mar","Q2 · Abr–Jun","Q3 · Jul–Sep","Q4 · Oct–Dic"].map((l,i)=>`<div class="r"><span>${l}</span><input data-obj="${i}" value="${Math.round(objQ(i)).toLocaleString("es-MX")}" inputmode="numeric"></div>`).join("")}
+      <p class="hint" style="margin-top:10px">Se comparan contra los ingresos (comisión generada) de cada trimestre en Empresa.</p>
+    </div>
     <div class="card rules"><h3>Staff sobre ingresos</h3>
       <div id="staff-rows">${(R.staff||[]).map((s,i)=>`<div class="r staff"><input class="name" data-si="${i}" data-f="nombre" value="${esc(s.nombre)}" placeholder="Nombre"><input data-si="${i}" data-f="pct" value="${s.pct}" inputmode="decimal"><button class="ico" data-del="${i}" title="Quitar">×</button></div>`).join("")}</div>
       <button class="btn sm" id="staff-add" style="margin-top:10px">+ Agregar persona</button>
@@ -430,6 +433,7 @@ function renderReglas(){
   el.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{REGLAS.staff.splice(+b.dataset.del,1);renderReglas()});
   $("#rules-save").onclick=async()=>{
     el.querySelectorAll("input[data-k]").forEach(i=>REGLAS[i.dataset.k]=num(i.value)||0);
+    REGLAS.objetivos=[0,1,2,3].map(i=>num(el.querySelector(`input[data-obj="${i}"]`).value)||0);
     const staff=[];el.querySelectorAll("#staff-rows .r").forEach(row=>{const n=row.querySelector('[data-f=nombre]').value.trim(),p=num(row.querySelector('[data-f=pct]').value)||0;if(n)staff.push({nombre:n,pct:p})});REGLAS.staff=staff;
     const r=await sb.from("ventas_reglas").upsert({id:1,reglas:REGLAS,updated_at:new Date().toISOString()});if(r.error){toast("No se guardó: "+r.error.message,true);return}toast("Reglas guardadas");renderReglas();
   };
