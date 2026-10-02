@@ -80,9 +80,9 @@ td.com{color:var(--gold-2);font-weight:600}
 .bars .val{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-.cols{display:flex;align-items:flex-end;gap:6px;height:170px;padding-top:10px}
-.cols .c{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;min-width:0}
-.cols .c i{width:100%;background:var(--green);border-radius:6px 6px 0 0;display:block;min-height:2px}
+.cols{display:flex;align-items:flex-end;gap:6px;justify-content:space-evenly;height:170px;padding-top:10px}
+.cols .c{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;min-width:0;max-width:200px}
+.cols .c i{width:100%;max-width:70px;background:var(--green);border-radius:6px 6px 0 0;display:block;min-height:2px}
 .cols .c i.p{background:var(--gold);opacity:.85}
 .cols .c b{font-size:10.5px;font-weight:500;color:var(--muted);white-space:nowrap}
 .cols .c small{font-size:10px;color:var(--text);font-weight:600}
@@ -149,6 +149,7 @@ tr.dimrow td{opacity:.55}
   <div class="filters" id="period-bar">
     <select id="p-anio"></select>
     <select id="p-mes"><option value="">Todo el año</option></select>
+    <select id="p-trim"><option value="">Todo el año</option><option value="1">Q1 · Ene–Mar</option><option value="2">Q2 · Abr–Jun</option><option value="3">Q3 · Jul–Sep</option><option value="4">Q4 · Oct–Dic</option></select>
     <span class="hint" id="period-txt"></span>
   </div>
   <section class="pane on" id="pane-ventas"></section>
@@ -188,7 +189,8 @@ const fecha=d=>d?(()=>{const [y,m,dd]=String(d).slice(0,10).split("-");return `$
 const uid=()=>"p"+Math.random().toString(36).slice(2,9);
 
 let VENTAS=[], PAGOS=[], REGLAS={...REGLAS_DEF}, PANE="ventas";
-let P={anio:new Date().getFullYear(),mes:""}; // periodo
+let P={anio:new Date().getFullYear(),mes:"",trim:""}; // periodo: Ventas y Empresa por trimestre; el resto por mes
+const useQ=()=>PANE==="ventas"||PANE==="empresa";
 let filt={q:"",un:"",asesor:"",estatus:""}, sort={k:"fecha",dir:"desc"};
 
 /* ---------- carga ---------- */
@@ -222,15 +224,16 @@ function partAmt(p,base){return p.monto!=null&&p.monto!==""?+p.monto:base*(+p.pc
 function partPct(p,base){return p.monto!=null&&p.monto!==""?(base?+p.monto/base*100:0):(+p.pct||0)}
 
 /* ---------- periodo ---------- */
-function inPeriodo(d){if(!d)return false;const [y,m]=String(d).slice(0,7).split("-");return +y===+P.anio&&(!P.mes||+m===+P.mes)}
-function periodoTxt(){return P.mes?`${MESES_L[+P.mes-1]} ${P.anio}`:`Año ${P.anio}`}
+function inPeriodo(d){if(!d)return false;const [y,m]=String(d).slice(0,7).split("-");if(+y!==+P.anio)return false;return useQ()?(!P.trim||Math.ceil(+m/3)===+P.trim):(!P.mes||+m===+P.mes)}
+function periodoTxt(){return useQ()?(P.trim?`Q${P.trim} ${P.anio}`:`Año ${P.anio}`):(P.mes?`${MESES_L[+P.mes-1]} ${P.anio}`:`Año ${P.anio}`)}
 function renderPeriodBar(){
   const years=[...new Set(VENTAS.map(v=>+String(v.fecha).slice(0,4)).concat(PAGOS.map(c=>+String(c.fecha).slice(0,4))).concat([new Date().getFullYear()]))].sort((a,b)=>b-a);
   $("#p-anio").innerHTML=years.map(y=>`<option ${y===+P.anio?"selected":""}>${y}</option>`).join("");
   const ms=$("#p-mes");if(ms.options.length===1)MESES_L.forEach((m,i)=>{const o=document.createElement("option");o.value=i+1;o.textContent=m;ms.appendChild(o)});ms.value=P.mes;
+  ms.style.display=useQ()?"none":"";const ts=$("#p-trim");ts.style.display=useQ()?"":"none";ts.value=P.trim;
   $("#period-txt").textContent=periodoTxt();
 }
-$("#p-anio").onchange=e=>{P.anio=+e.target.value;render()};$("#p-mes").onchange=e=>{P.mes=e.target.value;render()};
+$("#p-anio").onchange=e=>{P.anio=+e.target.value;render()};$("#p-mes").onchange=e=>{P.mes=e.target.value;render()};$("#p-trim").onchange=e=>{P.trim=e.target.value;render()};
 
 /* ---------- render ---------- */
 function render(){renderPeriodBar();({ventas:renderVentas,cobranza:renderCobranza,comisiones:renderComisiones,empresa:renderEmpresa,asesores:renderAsesores,reglas:renderReglas})[PANE]();}
@@ -277,16 +280,18 @@ function renderEmpresa(){
   const VN=VENTAS.filter(v=>!esCredito(v));
   const yr=v=>+String(v.fecha).slice(0,4),mo=v=>+String(v.fecha).slice(5,7);
   const vY=VN.filter(v=>yr(v)===Y),vPrev=VN.filter(v=>yr(v)===Y-1);
-  const byM=monthly(a=>vY.forEach(v=>a[mo(v)-1]+=comTotal(v)));
-  const byMprev=monthly(a=>vPrev.forEach(v=>a[mo(v)-1]+=comTotal(v)));
-  const cobM=monthly(a=>vY.filter(v=>estatusDe(v)==="pagada").forEach(v=>a[mo(v)-1]+=comTotal(v)));
+  const qo=v=>Math.ceil(mo(v)/3)-1;const quarterly=fn=>{const a=[0,0,0,0];fn(a);return a};
+  const byM=quarterly(a=>vY.forEach(v=>a[qo(v)]+=comTotal(v)));
+  const byMprev=quarterly(a=>vPrev.forEach(v=>a[qo(v)]+=comTotal(v)));
+  const cobM=quarterly(a=>vY.filter(v=>estatusDe(v)==="pagada").forEach(v=>a[qo(v)]+=comTotal(v)));
+  const QL=["Q1","Q2","Q3","Q4"],QLL=["Q1 · Ene–Mar","Q2 · Abr–Jun","Q3 · Jul–Sep","Q4 · Oct–Dic"];
   // periodo
   const vP=VN.filter(v=>inPeriodo(v.fecha));const ingreso=vP.reduce((a,v)=>a+comTotal(v),0);
   let disp=0;vP.forEach(v=>{const tot=comTotal(v);disp+=(v.dispersion||[]).reduce((a,p)=>a+partAmt(p,tot),0)});
   const trust=ingreso-disp;
   const cobP=vP.filter(v=>estatusDe(v)==="pagada").reduce((a,v)=>a+comTotal(v),0);
-  const prevIng=(()=>{if(P.mes){const m=+P.mes;const y=m===1?Y-1:Y,pm=m===1?12:m-1;return VN.filter(v=>yr(v)===y&&mo(v)===pm).reduce((a,v)=>a+comTotal(v),0)}return vPrev.reduce((a,v)=>a+comTotal(v),0)})();
-  const lyIng=P.mes?byMprev[+P.mes-1]:vPrev.reduce((a,v)=>a+comTotal(v),0);
+  const prevIng=(()=>{if(P.trim){const q=+P.trim;const y=q===1?Y-1:Y,pq=q===1?4:q-1;return VN.filter(v=>yr(v)===y&&qo(v)===pq-1).reduce((a,v)=>a+comTotal(v),0)}return vPrev.reduce((a,v)=>a+comTotal(v),0)})();
+  const lyIng=P.trim?byMprev[+P.trim-1]:vPrev.reduce((a,v)=>a+comTotal(v),0);
   const delta=(a,b)=>b?((a-b)/b*100).toFixed(0)+"%":"—";
   const byUN={},byProy={};vP.forEach(v=>{const t=comTotal(v);byUN[v.un]=(byUN[v.un]||0)+t;byProy[v.proyecto]=(byProy[v.proyecto]||0)+t});
   const max=Math.max(...byM,...byMprev,1);
@@ -295,11 +300,11 @@ function renderEmpresa(){
     <div class="tile dark"><span class="l">Ingresos</span><span class="v">${fmtK(ingreso)}</span><span class="s">${vP.length} venta${vP.length===1?"":"s"} · ${periodoTxt()}</span></div>
     <div class="tile"><span class="l">Margen TRUST</span><span class="v">${fmtK(trust)}</span><span class="s">${pct(trust,ingreso)} después de dispersión</span></div>
     <div class="tile gold"><span class="l">A dispersar</span><span class="v">${fmtK(disp)}</span><span class="s">asesores, opcionadores y staff</span></div>
-    <div class="tile"><span class="l">vs periodo anterior</span><span class="v">${delta(ingreso,prevIng)}</span><span class="s">${fmtK(prevIng)} ${P.mes?"el mes anterior":"el año anterior"}</span></div>
+    <div class="tile"><span class="l">vs periodo anterior</span><span class="v">${delta(ingreso,prevIng)}</span><span class="s">${fmtK(prevIng)} ${P.trim?"el trimestre anterior":"el año anterior"}</span></div>
     <div class="tile"><span class="l">vs mismo periodo ${Y-1}</span><span class="v">${delta(ingreso,lyIng)}</span><span class="s">${fmtK(lyIng)} en ${Y-1}</span></div>
   </div>
-  <div class="card" style="margin-bottom:14px"><h3>Ingresos por mes · ${Y}</h3>
-    <div class="cols">${byM.map((v,i)=>`<div class="c" title="${MESES_L[i]}: ${fmt(v)} · ${Y-1}: ${fmt(byMprev[i])} · cobrado: ${fmt(cobM[i])}"><small>${v?fmtK(v).replace("$ ",""):""}</small><div style="display:flex;gap:2px;width:100%;align-items:flex-end;height:120px"><i style="height:${v/max*100}%"></i><i class="p" style="height:${byMprev[i]/max*100}%"></i></div><b>${MESES[i]}</b></div>`).join("")}</div>
+  <div class="card" style="margin-bottom:14px"><h3>Ingresos por trimestre · ${Y}</h3>
+    <div class="cols">${byM.map((v,i)=>`<div class="c" title="${QLL[i]}: ${fmt(v)} · ${Y-1}: ${fmt(byMprev[i])} · cobrado: ${fmt(cobM[i])}"><small>${v?fmtK(v).replace("$ ",""):""}</small><div style="display:flex;gap:2px;width:100%;align-items:flex-end;height:120px"><i style="height:${v/max*100}%"></i><i class="p" style="height:${byMprev[i]/max*100}%"></i></div><b>${QL[i]}</b></div>`).join("")}</div>
     <div class="legend"><span><i></i>${Y}</span><span><i class="p"></i>${Y-1}</span><span style="margin-left:auto">Ingresos ${Y}: <b>${fmtK(byM.reduce((a,b)=>a+b,0))}</b> · cobrado: <b>${fmtK(cobM.reduce((a,b)=>a+b,0))}</b> · cobrado del periodo: <b>${fmtK(cobP)}</b></span></div></div>
   <div class="grid2">
     <div class="card"><h3>Por unidad de negocio</h3><div class="bars">${bars(byUN,ingreso)}</div></div>
@@ -320,10 +325,10 @@ function renderAsesores(){
   const rows=Object.entries(st).filter(([n])=>ASESORES.includes(n)||st[n].ventas).sort((a,b)=>b[1].com-a[1].com);
   const totCom=rows.reduce((a,[,s])=>a+s.com,0);
   el.innerHTML=`<div class="card"><h3>Desempeño por asesor · ${periodoTxt()}</h3>
-    <div class="twrap" style="border:0"><table><thead><tr><th>#</th><th>Asesor</th><th class="num">Ventas</th><th class="num">Monto de ventas</th><th class="num">Ticket</th><th class="num">Ingresos</th><th class="num">% del total</th><th class="num">Le corresponde</th><th class="num">Pagado</th></tr></thead>
-    <tbody>${rows.map(([n,s],i)=>`<tr><td class="dim">${i+1}</td><td><b>${esc(n)}</b></td><td class="num">${s.ventas}</td><td class="num">${fmt(s.monto)}</td><td class="num dim">${s.ventas?fmt(s.monto/s.ventas):"—"}</td><td class="num com">${fmt(s.com)}</td><td class="num dim">${pct(s.com,totCom)}</td><td class="num">${fmt(s.gen_asesor)}</td><td class="num ${s.pagado?"paid":""}">${fmt(s.pagado)}</td></tr>`).join("")}</tbody></table>
+    <div class="twrap" style="border:0"><table><thead><tr><th>#</th><th>Asesor</th><th class="num">Ventas</th><th class="num">Monto de ventas</th><th class="num">Ticket</th><th class="num">Ingresos</th><th class="num">% del total</th><th class="num">Le corresponde</th></tr></thead>
+    <tbody>${rows.map(([n,s],i)=>`<tr><td class="dim">${i+1}</td><td><b>${esc(n)}</b></td><td class="num">${s.ventas}</td><td class="num">${fmt(s.monto)}</td><td class="num dim">${s.ventas?fmt(s.monto/s.ventas):"—"}</td><td class="num com">${fmt(s.com)}</td><td class="num dim">${pct(s.com,totCom)}</td><td class="num">${fmt(s.gen_asesor)}</td></tr>`).join("")}</tbody></table>
     ${rows.length?"":`<div class="empty">Sin ventas en el periodo.</div>`}</div>
-    <p class="hint" style="margin:10px 0 0">"Le corresponde" suma sus partidas como vendedor, opcionador o autogenerada sobre ventas cerradas en el periodo. Pagado = pagos registrados en el periodo.</p></div>
+    <p class="hint" style="margin:10px 0 0">"Le corresponde" suma sus partidas como vendedor, opcionador o autogenerada sobre ventas cerradas en el periodo.</p></div>
     <div class="card" style="margin-top:14px"><h3>Ingresos por asesor</h3><div class="bars">${bars(Object.fromEntries(rows.map(([n,s])=>[n,s.com])),totCom,1)}</div></div>`;
 }
 
