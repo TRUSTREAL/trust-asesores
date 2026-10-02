@@ -190,7 +190,7 @@ const uid=()=>"p"+Math.random().toString(36).slice(2,9);
 
 let VENTAS=[], PAGOS=[], REGLAS={...REGLAS_DEF}, PANE="ventas";
 let P={anio:new Date().getFullYear(),mes:"",trim:""}; // periodo: Ventas y Empresa por trimestre; el resto por mes
-const useQ=()=>PANE==="ventas"||PANE==="empresa";
+const useQ=()=>PANE==="ventas"||PANE==="empresa"||PANE==="asesores";
 let filt={q:"",un:"",asesor:"",estatus:""}, sort={k:"fecha",dir:"desc"};
 
 /* ---------- carga ---------- */
@@ -319,16 +319,12 @@ function renderAsesores(){
   const vP=VENTAS.filter(v=>inPeriodo(v.fecha));
   const st={};const add=(n,k,v)=>{if(!n)return;st[n]=st[n]||{ventas:0,monto:0,com:0,gen_asesor:0,pagado:0};st[n][k]+=v};
   vP.forEach(v=>{add(v.asesor,"ventas",1);add(v.asesor,"monto",+v.monto||0);add(v.asesor,"com",comTotal(v))});
-  // lo que le toca a cada persona sobre ventas del periodo
-  vP.forEach(v=>{const tot=comTotal(v);(v.dispersion||[]).forEach(p=>{if(p.rol==="Staff")return;add(p.nombre,"gen_asesor",partAmt(p,tot))})});
-  PAGOS.filter(p=>inPeriodo(p.fecha)).forEach(p=>add(p.beneficiario,"pagado",+p.monto||0));
   const rows=Object.entries(st).filter(([n])=>ASESORES.includes(n)||st[n].ventas).sort((a,b)=>b[1].com-a[1].com);
   const totCom=rows.reduce((a,[,s])=>a+s.com,0);
   el.innerHTML=`<div class="card"><h3>Desempeño por asesor · ${periodoTxt()}</h3>
-    <div class="twrap" style="border:0"><table><thead><tr><th>#</th><th>Asesor</th><th class="num">Ventas</th><th class="num">Monto de ventas</th><th class="num">Ticket</th><th class="num">Ingresos</th><th class="num">% del total</th><th class="num">Le corresponde</th></tr></thead>
-    <tbody>${rows.map(([n,s],i)=>`<tr><td class="dim">${i+1}</td><td><b>${esc(n)}</b></td><td class="num">${s.ventas}</td><td class="num">${fmt(s.monto)}</td><td class="num dim">${s.ventas?fmt(s.monto/s.ventas):"—"}</td><td class="num com">${fmt(s.com)}</td><td class="num dim">${pct(s.com,totCom)}</td><td class="num">${fmt(s.gen_asesor)}</td></tr>`).join("")}</tbody></table>
-    ${rows.length?"":`<div class="empty">Sin ventas en el periodo.</div>`}</div>
-    <p class="hint" style="margin:10px 0 0">"Le corresponde" suma sus partidas como vendedor, opcionador o autogenerada sobre ventas cerradas en el periodo.</p></div>
+    <div class="twrap" style="border:0"><table><thead><tr><th>#</th><th>Asesor</th><th class="num">Ventas</th><th class="num">Monto de ventas</th><th class="num">Ticket</th><th class="num">Ingresos</th><th class="num">% del total</th></tr></thead>
+    <tbody>${rows.map(([n,s],i)=>`<tr><td class="dim">${i+1}</td><td><b>${esc(n)}</b></td><td class="num">${s.ventas}</td><td class="num">${fmt(s.monto)}</td><td class="num dim">${s.ventas?fmt(s.monto/s.ventas):"—"}</td><td class="num com">${fmt(s.com)}</td><td class="num dim">${pct(s.com,totCom)}</td></tr>`).join("")}</tbody></table>
+    ${rows.length?"":`<div class="empty">Sin ventas en el periodo.</div>`}</div></div>
     <div class="card" style="margin-top:14px"><h3>Ingresos por asesor</h3><div class="bars">${bars(Object.fromEntries(rows.map(([n,s])=>[n,s.com])),totCom,1)}</div></div>`;
 }
 
