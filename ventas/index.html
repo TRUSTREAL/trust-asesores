@@ -267,34 +267,35 @@ function renderVentas(){
 function monthly(fn){const arr=Array.from({length:12},()=>0);fn(arr);return arr}
 function renderEmpresa(){
   const el=$("#pane-empresa");const Y=+P.anio;
-  const vmap0={};VENTAS.forEach(v=>vmap0[v.id]=v);const noCred=c=>!(vmap0[c.venta_id]&&esCredito(vmap0[c.venta_id]));
-  const cobY=COBROS.filter(c=>noCred(c)&&+String(c.fecha).slice(0,4)===Y),cobPrev=COBROS.filter(c=>noCred(c)&&+String(c.fecha).slice(0,4)===Y-1);
-  const byM=monthly(a=>cobY.forEach(c=>a[+String(c.fecha).slice(5,7)-1]+=+c.monto||0));
-  const byMprev=monthly(a=>cobPrev.forEach(c=>a[+String(c.fecha).slice(5,7)-1]+=+c.monto||0));
-  const genM=monthly(a=>VENTAS.filter(v=>!esCredito(v)&&+String(v.fecha).slice(0,4)===Y).forEach(v=>a[+String(v.fecha).slice(5,7)-1]+=comTotal(v)));
+  // Ingresos = comisión generada por venta (fecha de cierre), sin crédito hipotecario
+  const VN=VENTAS.filter(v=>!esCredito(v));
+  const yr=v=>+String(v.fecha).slice(0,4),mo=v=>+String(v.fecha).slice(5,7);
+  const vY=VN.filter(v=>yr(v)===Y),vPrev=VN.filter(v=>yr(v)===Y-1);
+  const byM=monthly(a=>vY.forEach(v=>a[mo(v)-1]+=comTotal(v)));
+  const byMprev=monthly(a=>vPrev.forEach(v=>a[mo(v)-1]+=comTotal(v)));
+  const vmap={};VENTAS.forEach(v=>vmap[v.id]=v);const noCred=c=>!(vmap[c.venta_id]&&esCredito(vmap[c.venta_id]));
+  const cobM=monthly(a=>COBROS.filter(c=>noCred(c)&&+String(c.fecha).slice(0,4)===Y).forEach(c=>a[+String(c.fecha).slice(5,7)-1]+=+c.monto||0));
   // periodo
-  const cobP=COBROS.filter(c=>noCred(c)&&inPeriodo(c.fecha));const ingreso=cobP.reduce((a,c)=>a+(+c.monto||0),0);
-  // margen TRUST sobre lo cobrado en periodo
-  let disp=0;const vmap={};VENTAS.forEach(v=>vmap[v.id]=v);
-  cobP.forEach(c=>{const v=vmap[c.venta_id];if(!v)return;const tot=comTotal(v);const parts=(v.dispersion||[]);const sum=parts.reduce((a,p)=>a+partAmt(p,tot),0);disp+=tot?(+c.monto||0)*(sum/tot):0});
+  const vP=VN.filter(v=>inPeriodo(v.fecha));const ingreso=vP.reduce((a,v)=>a+comTotal(v),0);
+  let disp=0;vP.forEach(v=>{const tot=comTotal(v);disp+=(v.dispersion||[]).reduce((a,p)=>a+partAmt(p,tot),0)});
   const trust=ingreso-disp;
-  const vP=VENTAS.filter(v=>!esCredito(v)&&inPeriodo(v.fecha));const gen=vP.reduce((a,v)=>a+comTotal(v),0);
-  const prevIng=(()=>{if(P.mes){const m=+P.mes;const y=m===1?Y-1:Y,pm=m===1?12:m-1;return COBROS.filter(c=>noCred(c)&&+String(c.fecha).slice(0,4)===y&&+String(c.fecha).slice(5,7)===pm).reduce((a,c)=>a+(+c.monto||0),0)}return cobPrev.reduce((a,c)=>a+(+c.monto||0),0)})();
-  const lyIng=P.mes?byMprev[+P.mes-1]:cobPrev.reduce((a,c)=>a+(+c.monto||0),0);
+  const cobP=COBROS.filter(c=>noCred(c)&&inPeriodo(c.fecha)).reduce((a,c)=>a+(+c.monto||0),0);
+  const prevIng=(()=>{if(P.mes){const m=+P.mes;const y=m===1?Y-1:Y,pm=m===1?12:m-1;return VN.filter(v=>yr(v)===y&&mo(v)===pm).reduce((a,v)=>a+comTotal(v),0)}return vPrev.reduce((a,v)=>a+comTotal(v),0)})();
+  const lyIng=P.mes?byMprev[+P.mes-1]:vPrev.reduce((a,v)=>a+comTotal(v),0);
   const delta=(a,b)=>b?((a-b)/b*100).toFixed(0)+"%":"—";
-  const byUN={},byProy={};cobP.forEach(c=>{const v=vmap[c.venta_id];if(!v)return;byUN[v.un]=(byUN[v.un]||0)+(+c.monto||0);byProy[v.proyecto]=(byProy[v.proyecto]||0)+(+c.monto||0)});
+  const byUN={},byProy={};vP.forEach(v=>{const t=comTotal(v);byUN[v.un]=(byUN[v.un]||0)+t;byProy[v.proyecto]=(byProy[v.proyecto]||0)+t});
   const max=Math.max(...byM,...byMprev,1);
   el.innerHTML=`
   <div class="tiles">
-    <div class="tile dark"><span class="l">Ingreso cobrado</span><span class="v">${fmtK(ingreso)}</span><span class="s">${periodoTxt()}</span></div>
+    <div class="tile dark"><span class="l">Ingresos</span><span class="v">${fmtK(ingreso)}</span><span class="s">${vP.length} venta${vP.length===1?"":"s"} · ${periodoTxt()}</span></div>
     <div class="tile"><span class="l">Margen TRUST</span><span class="v">${fmtK(trust)}</span><span class="s">${pct(trust,ingreso)} después de dispersión</span></div>
-    <div class="tile gold"><span class="l">Dispersado</span><span class="v">${fmtK(disp)}</span><span class="s">asesores, opcionadores y staff</span></div>
+    <div class="tile gold"><span class="l">A dispersar</span><span class="v">${fmtK(disp)}</span><span class="s">asesores, opcionadores y staff</span></div>
     <div class="tile"><span class="l">vs periodo anterior</span><span class="v">${delta(ingreso,prevIng)}</span><span class="s">${fmtK(prevIng)} ${P.mes?"el mes anterior":"el año anterior"}</span></div>
     <div class="tile"><span class="l">vs mismo periodo ${Y-1}</span><span class="v">${delta(ingreso,lyIng)}</span><span class="s">${fmtK(lyIng)} en ${Y-1}</span></div>
   </div>
-  <div class="card" style="margin-bottom:14px"><h3>Ingreso cobrado por mes · ${Y}</h3>
-    <div class="cols">${byM.map((v,i)=>`<div class="c" title="${MESES_L[i]}: ${fmt(v)} · ${Y-1}: ${fmt(byMprev[i])} · generado: ${fmt(genM[i])}"><small>${v?fmtK(v).replace("$ ",""):""}</small><div style="display:flex;gap:2px;width:100%;align-items:flex-end;height:120px"><i style="height:${v/max*100}%"></i><i class="p" style="height:${byMprev[i]/max*100}%"></i></div><b>${MESES[i]}</b></div>`).join("")}</div>
-    <div class="legend"><span><i></i>${Y}</span><span><i class="p"></i>${Y-1}</span><span style="margin-left:auto">Comisión generada ${Y}: <b>${fmtK(genM.reduce((a,b)=>a+b,0))}</b> · cobrada: <b>${fmtK(byM.reduce((a,b)=>a+b,0))}</b></span></div></div>
+  <div class="card" style="margin-bottom:14px"><h3>Ingresos por mes · ${Y}</h3>
+    <div class="cols">${byM.map((v,i)=>`<div class="c" title="${MESES_L[i]}: ${fmt(v)} · ${Y-1}: ${fmt(byMprev[i])} · cobrado: ${fmt(cobM[i])}"><small>${v?fmtK(v).replace("$ ",""):""}</small><div style="display:flex;gap:2px;width:100%;align-items:flex-end;height:120px"><i style="height:${v/max*100}%"></i><i class="p" style="height:${byMprev[i]/max*100}%"></i></div><b>${MESES[i]}</b></div>`).join("")}</div>
+    <div class="legend"><span><i></i>${Y}</span><span><i class="p"></i>${Y-1}</span><span style="margin-left:auto">Ingresos ${Y}: <b>${fmtK(byM.reduce((a,b)=>a+b,0))}</b> · cobrado: <b>${fmtK(cobM.reduce((a,b)=>a+b,0))}</b> · en el periodo cobrado: <b>${fmtK(cobP)}</b></span></div></div>
   <div class="grid2">
     <div class="card"><h3>Por unidad de negocio</h3><div class="bars">${bars(byUN,ingreso)}</div></div>
     <div class="card"><h3>Por proyecto</h3><div class="bars">${bars(byProy,ingreso)}</div></div>
