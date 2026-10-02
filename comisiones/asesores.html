@@ -57,8 +57,7 @@ tbody tr:nth-child(even) td{background:#FBFAF6}
 td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 td.dim{color:var(--muted)}td.money{font-weight:600}td.com{color:var(--gold-2);font-weight:600}
 .st{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
-.st.pend_cobro{background:var(--surface-2);color:var(--muted)}
-.st.por_pagar{background:var(--warn-bg);color:var(--warn)}
+.st.pendiente{background:var(--warn-bg);color:var(--warn)}
 .st.parcial{background:var(--info-bg);color:var(--info)}
 .st.pagada{background:var(--ok-bg);color:var(--ok)}
 .dd{display:inline-block;min-width:30px;text-align:center;border-radius:999px;padding:2px 8px;font-weight:600;font-size:12px;background:var(--surface-2);color:var(--muted)}
@@ -112,11 +111,11 @@ function lineas(){
   const out=[];
   VENTAS.forEach(v=>{const tot=comTotal(v),cob=cobradoDe(v.id);const mias=(v.dispersion||[]).filter(p=>p.nombre===ASESOR);if(!mias.length)return;
     const mia=mias.reduce((a,p)=>a+partAmt(p,tot),0);const lib=tot?cob*(mia/tot):0;const pag=PAGOS.filter(p=>p.venta_id===v.id).reduce((a,p)=>a+(+p.monto||0),0);
-    const e=pag+0.5>=mia&&mia>0?"pagada":pag>0.5?"parcial":lib>0.5?"por_pagar":"pend_cobro";
+    const e=pag+0.5>=mia&&mia>0?"pagada":pag>0.5?"parcial":"pendiente";
     out.push({v,rol:mias.map(p=>p.rol).join(" + "),tot,cob,mia,lib,pag,e})});
   return out;
 }
-const EST={pend_cobro:"Pendiente de cobro",por_pagar:"Por pagar",parcial:"Pago parcial",pagada:"Pagada"};
+const EST={pendiente:"Pendiente",parcial:"Pago parcial",pagada:"Pagada"};
 function render(){
   const m=$("#main");
   if(!ASESOR){$("#acts").hidden=true;m.innerHTML=`<div class="pick card"><h2>¿Quién eres?</h2><p>Elige tu nombre para ver tus comisiones.</p><div class="grid">${ASESORES.map(n=>`<button data-ase="${esc(n)}">${esc(n)}</button>`).join("")}</div></div>`;return}
@@ -128,16 +127,15 @@ function render(){
   <div class="filters"><select id="f-anio">${years.map(y=>`<option ${y===anio?"selected":""}>${y}</option>`).join("")}</select>
     <select id="f-est"><option value="">Todas</option>${Object.entries(EST).map(([k,v])=>`<option value="${k}" ${est===k?"selected":""}>${v}</option>`).join("")}</select>
     <span class="hint" style="margin-left:auto">${rows.length} operaci${rows.length===1?"ón":"ones"}</span></div>
-  <div class="tiles">
+  <div class="tiles" style="grid-template-columns:repeat(3,1fr)">
     <div class="tile dark"><span class="l">Generado ${anio}</span><span class="v">${fmt(gen)}</span><span class="s">${rowsY.length} operaciones</span></div>
     <div class="tile ok"><span class="l">Pagado</span><span class="v">${fmt(pag)}</span><span class="s">${pct(pag,gen)} de lo generado</span></div>
-    <div class="tile warn"><span class="l">Por pagar</span><span class="v">${fmt(porp)}</span><span class="s">TRUST ya cobró; pendiente de pagarte</span></div>
-    <div class="tile"><span class="l">Pendiente de cobro</span><span class="v">${fmt(pc)}</span><span class="s">el cliente aún no paga a TRUST</span></div>
+    <div class="tile warn"><span class="l">Pendiente</span><span class="v">${fmt(gen-pag)}</span><span class="s">por pagarte</span></div>
   </div>
-  <div class="twrap"><table><thead><tr><th>Cierre</th><th class="num">Días</th><th>Cliente</th><th>Proyecto</th><th>Rol</th><th class="num">Mi comisión</th><th>Cobro de la operación</th><th class="num">Liberado</th><th class="num">Pagado</th><th>Estatus</th></tr></thead>
-  <tbody>${rows.map(x=>`<tr><td class="dim">${fecha(x.v.fecha)}</td><td class="num"><span class="dd">${dias(x.v.fecha)}</span></td><td><b>${esc(x.v.cliente)}</b>${x.v.tipo==="Crédito hipotecario"?' <span class="st" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(x.v.proyecto||"")}${x.v.unidad?` <span class="dim">· ${esc(x.v.unidad)}</span>`:""}</td><td class="dim">${esc(x.rol)}</td><td class="num com">${fmt(x.mia)}</td><td><span class="prog"><i style="width:${x.tot?Math.min(100,x.cob/x.tot*100):0}%"></i></span> <span class="hint">${pct(x.cob,x.tot)}</span></td><td class="num">${fmt(x.lib)}</td><td class="num ${x.pag?"money":""}" style="${x.pag?"color:var(--ok)":""}">${fmt(x.pag)}</td><td><span class="st ${x.e}">${EST[x.e]}</span></td></tr>`).join("")}</tbody></table>
+  <div class="twrap"><table><thead><tr><th>Cierre</th><th class="num">Días</th><th>Cliente</th><th>Proyecto</th><th>Rol</th><th class="num">Mi comisión</th><th class="num">Pagado</th><th class="num">Pendiente</th><th>Estatus</th></tr></thead>
+  <tbody>${rows.map(x=>`<tr><td class="dim">${fecha(x.v.fecha)}</td><td class="num"><span class="dd">${dias(x.v.fecha)}</span></td><td><b>${esc(x.v.cliente)}</b>${x.v.tipo==="Crédito hipotecario"?' <span class="st" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(x.v.proyecto||"")}${x.v.unidad?` <span class="dim">· ${esc(x.v.unidad)}</span>`:""}</td><td class="dim">${esc(x.rol)}</td><td class="num com">${fmt(x.mia)}</td><td class="num ${x.pag?"money":""}" style="${x.pag?"color:var(--ok)":""}">${fmt(x.pag)}</td><td class="num">${fmt(Math.max(0,x.mia-x.pag))}</td><td><span class="st ${x.e}">${EST[x.e]}</span></td></tr>`).join("")}</tbody></table>
   ${rows.length?"":`<div class="empty">Sin comisiones registradas en ${anio}${est?" con ese estatus":""}.</div>`}</div>
-  <p class="hint" style="margin-top:12px">"Liberado" es la parte de tu comisión que ya se puede pagar porque TRUST ya recibió ese cobro del cliente. Si ves un dato que no cuadra, coméntalo en tu one-on-one.</p>`;
+  <p class="hint" style="margin-top:12px">Las comisiones se pagan conforme el cliente liquida la operación. Si ves un dato que no cuadra, coméntalo en tu one-on-one.</p>`;
   $("#f-anio").onchange=e=>{anio=+e.target.value;render()};$("#f-est").onchange=e=>{est=e.target.value;render()};
 }
 document.addEventListener("click",e=>{const t=e.target.closest("button");if(!t)return;
