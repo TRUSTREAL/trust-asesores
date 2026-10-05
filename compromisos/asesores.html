@@ -156,7 +156,7 @@ function weekHTML(o,sem,past){
   const c=items(o?.compromisos),d=c.filter(isDone).length;
   return `<div class="week ${past?"past":""}"><div class="wh"><h3>${semTxt(sem)}${past?"":"<small>semana en curso</small>"}</h3>${past?`<button class="btn sm" data-edit="${sem}">Editar</button>`:""}</div>
     ${o?`${misionHTML(o,past)}<div class="grid2"><div class="card"><div class="oo-h">Compromisos</div>${li(o.compromisos,"compromisos")}${c.length?`<div class="prog"><i style="width:${d/c.length*100}%"></i></div>`:""}</div><div class="card"><div class="oo-h">Solicitudes a dirección</div>${li(o.solicitudes,"solicitudes")}</div></div>`
-      :`<div class="empty">Todavía no hay compromisos registrados para esta semana. Se capturan en el one-on-one del lunes, o con <b>Editar esta semana</b>.</div>`}</div>`;
+      :`${past?"":misionHTML({},false)}<div class="empty">Todavía no hay compromisos registrados para esta semana. Se capturan en el one-on-one del lunes, o con <b>Editar esta semana</b>.</div>`}</div>`;
 }
 document.addEventListener("click",async e=>{
   const t=e.target.closest("button");if(!t)return;
