@@ -120,8 +120,9 @@ button{cursor:pointer}
 
 .filters:first-child{margin-top:18px}
 .tiles{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:18px}
-@media (max-width:820px){.tiles{grid-template-columns:repeat(3,1fr)}}
-@media (max-width:480px){.tiles{grid-template-columns:repeat(2,1fr)}}
+.tiles.t4{grid-template-columns:repeat(4,1fr)}
+@media (max-width:820px){.tiles,.tiles.t4{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:480px){.tiles,.tiles.t4{grid-template-columns:repeat(2,1fr)}}
 .tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;position:relative;overflow:hidden}
 .tile .l{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .tile .v{font-family:Lora,serif;font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}
@@ -513,13 +514,11 @@ function ventasHTML(p){
   const rows=[...all].sort((a,b)=>{const x=val(a),y=val(b);const d=vsort.dir==="asc"?1:-1;if(x===""&&y!=="")return 1;if(y===""&&x!=="")return -1;return (typeof x==="number"&&typeof y==="number"?x-y:String(x).localeCompare(String(y),"es",{numeric:true}))*d});
   const th=(k,l,num)=>`<th data-vk="${k}" ${vsort.k===k?`data-dir="${vsort.dir}"`:""} class="${num?"num":""}">${l}</th>`;
   if(!all.length) return `<div class="empty" style="margin-top:18px;border:1px dashed var(--line-2);border-radius:0"><b>Sin ${renta?"rentas":"ventas"} registradas</b>Cuando marques una unidad como ${renta?"Rentada":"Vendida"} en la pestaña Precios, aparecerá aquí para capturar el precio real de cierre.</div>`;
-  const tiles=`<div class="tiles">
-      <div class="tile vend"><span class="l">${renta?"Rentadas":"Vendidas"}</span><span class="v">${all.length}</span><span class="s">${p.units.length?Math.round(all.length/p.units.length*100)+"% del proyecto":""}</span></div>
-      <div class="tile"><span class="l">Monto cerrado</span><span class="v">${cap.length?fmtM(sumC):"—"}</span><span class="s">${cap.length} con precio capturado</span></div>
-      <div class="tile"><span class="l">Lista de esas unidades</span><span class="v">${cap.length?fmtM(sumL):"—"}</span><span class="s">precio de lista al venderse</span></div>
+  const tiles=`<div class="tiles t4">
+      <div class="tile vend"><span class="l">${renta?"Rentadas":"Vendidas"}</span><span class="v">${all.length}</span></div>
+      <div class="tile"><span class="l">Monto cerrado</span><span class="v">${cap.length?fmtM(sumC):"—"}</span></div>
       <div class="tile ${sumC<sumL?"bloq":"disp"}"><span class="l">Cierre vs lista</span><span class="v">${cap.length&&sumL?pctTxt(sumC,sumL):"—"}</span><span class="s">${cap.length?(sumC<sumL?"descuento promedio ponderado":"sobreprecio promedio ponderado"):""}</span></div>
-      <div class="tile"><span class="l">${renta?"Renta":"Precio"} / m² real</span><span class="v">${m2?fmt(sumC/m2):"—"}</span><span class="s">${cap.length?"vs "+fmt(sumL/m2)+" de lista":""}</span></div>
-      <div class="tile ${pend?"warn":""}"><span class="l">Sin precio</span><span class="v">${pend}</span><span class="s">${pend?"pendientes de capturar":"todo capturado"}</span></div>
+      <div class="tile"><span class="l">${renta?"Renta":"Precio"} / m² real</span><span class="v">${m2?fmt(sumC/m2):"—"}</span></div>
     </div>`;
   const table=`<div class="twrap"><table>
       <thead><tr>${th("fecha_cierre","Cierre")}${th("tipo","ID")}${th("torre","Torre")}${th("nivel","Nivel",1)}${th("m2tot","m² total",1)}${th("precio","Precio lista",1)}${th("precio_cierre",renta?"Renta real":"Precio cierre",1)}${th("dif","Dif.",1)}${th("pm2",(renta?"Renta":"Precio")+" / m² real",1)}${th("comprador",renta?"Inquilino":"Comprador")}${th("asesor_cierre","Asesor")}<th>Notas</th><th></th></tr></thead>
