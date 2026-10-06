@@ -209,8 +209,9 @@ td.m{color:var(--trust-gray)}
 .kan .kc .mt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kan .kc .mo,.kan .kc .rz,.kan .kc .lastn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kan .kc .rz{margin-top:3px}
-.kan .kc select{display:none}
-@media (hover:none){.kan .kc{height:auto}.kan .kc select{display:block}}
+#modalE{z-index:60}
+.lc-edit{border:1px solid var(--trust-gray-light);background:#fff;border-radius:999px;width:34px;height:34px;cursor:pointer;font-size:15px;color:var(--trust-green);line-height:1}
+.lc-edit:hover{background:var(--trust-green);color:#fff;border-color:var(--trust-green)}
 .kan .kc:active{cursor:grabbing}.kan .kc.drag{opacity:.4}
 .kan .kc .nm{font-weight:600;display:flex;justify-content:space-between;gap:6px;align-items:center}
 .kan .kc .nm .dd{margin:0}
@@ -376,7 +377,7 @@ th.sortable{cursor:pointer;user-select:none;white-space:nowrap}th.sortable:hover
 .x{display:none!important}
 .flag{cursor:default;pointer-events:none}
 .flag:not(.on){display:none}
-#modalL .addnote,#modalL .nx{display:none!important}
+#modalL .addnote,#modalL .nx,#modalL .lc-edit{display:none!important}
 .mini{display:none}
 #proy .asehead .btn2{display:none}
 .lnk{text-decoration:none;color:var(--ink);font-weight:500}
@@ -1466,7 +1467,7 @@ function drawLead(){
   box.innerHTML=`<div class="lc-h"><div><h3>${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}</h3>
       <div class="meta"><span>${esc(l.proyecto)}</span><span>·</span><span>${esc(canalTxt(l))}</span><span>·</span><span>${esc(l.asesor)}</span><span>·</span><span>registrado ${fmt(l.fecha)}/${String(l.fecha).slice(2,4)}</span>${diasDe(l)?`<span>·</span><span>${diasDe(l)} días</span>`:""}
       ${l.telefono?`<span style="flex-basis:100%"></span><a href="tel:${esc(l.telefono)}">📞 ${esc(l.telefono)}</a>${wa?`<a href="${wa}" target="_blank" rel="noopener">WhatsApp ↗</a>`:""}`:""}</div></div>
-      <button class="lc-x" onclick="closeLead()" aria-label="Cerrar">✕</button></div>
+      <div style="display:flex;gap:8px;align-items:center;flex:none"><button class="lc-edit" title="Editar nombre y datos" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="lc-x" onclick="closeLead()" aria-label="Cerrar">✕</button></div></div>
     <div class="lc-b">
       <div class="lc-sec" style="margin-top:0">Estatus</div>
       <div class="flags">${fl("nc","NC","n")}${fl("seguimiento","Seg.","s")}${fl("cita","Cita","c")}${fl("hot","Hot","h")}${fl("apartado","Apart.","a")}${fl("venta","Venta","v")}${fl("futuro","Fut.","f")}${fl("perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div>
@@ -1494,17 +1495,17 @@ document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&LEAD_OPEN&&!docume
 document.getElementById("modalL").addEventListener("click",e=>{ if(e.target.id==="modalL") closeLead(); });
 let aseView=localStorage.getItem("trust_ase_view")||"list";
 function setAseView(v){ aseView=v; localStorage.setItem("trust_ase_view",v); renderAse(); }
-const KAN_COLS=[["sin","Sin estatus","#97999B"],["nc","No contestó","var(--st-nc)"],["seguimiento","Seguimiento","var(--st-seg)"],["cita","Cita","var(--st-cita)"],["hot","Hot lead","var(--st-hot)"],["apartado","Apartado","#B8951D"],["venta","Venta","var(--st-venta)"],["futuro","Futuro","var(--st-fut)"],["perdido","Perdido","var(--st-perd)"]];
+const KAN_COLS=[["nc","No contestó","var(--st-nc)"],["seguimiento","Seguimiento","var(--st-seg)"],["cita","Cita","var(--st-cita)"],["hot","Hot lead","var(--st-hot)"],["apartado","Apartado","#B8951D"],["venta","Venta","var(--st-venta)"],["futuro","Futuro","var(--st-fut)"],["perdido","Perdido","var(--st-perd)"]];
 function renderKanban(rows){
   const box=document.getElementById("aKanban");
-  const by={}; KAN_COLS.forEach(([k])=>by[k]=[]); rows.forEach(l=>by[estatusDe(l)].push(l));
+  const by={}; KAN_COLS.forEach(([k])=>by[k]=[]); rows.forEach(l=>{ const k=estatusDe(l); if(by[k]) by[k].push(l); });
+  const sinN=rows.filter(l=>estatusDe(l)==="sin").length;
   const card=l=>`<div class="kc" draggable="true" data-id="${esc(l.id)}">
       <div class="nm"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}</span>${diasDe(l)}</div>
       <div class="mt">${esc(l.proyecto)} · ${esc(canalTxt(l))} · ${fmt(l.fecha)}</div>
       ${l.perdido&&l.razon_perdido?`<div class="rz">${esc(l.razon_perdido)}</div>`:(l.apartado||l.venta)&&l.monto?`<div class="mo">${money(l.monto)}${l.enganche?` · eng. ${money(l.enganche)}`:""}</div>`:lastNota(l)}
-      <select onchange="toggleFlag('${esc(l.id)}',this.value,true)" title="Mover a…"><option value="">Mover a…</option>${KAN_COLS.filter(([k])=>k!==estatusDe(l)).map(([k,lab])=>`<option value="${k}">${lab}</option>`).join("")}</select>
     </div>`;
-  box.innerHTML=`<div class="kan">${KAN_COLS.map(([k,lab,c])=>`<div class="col ${k==="futuro"||k==="perdido"?"off":""}" data-k="${k}" style="--c:${c}"><div class="ch"><span>${lab}</span><b>${by[k].length}</b></div><div class="cb">${by[k].length?by[k].map(card).join(""):`<div class="empty">—</div>`}</div></div>`).join("")}</div>`;
+  box.innerHTML=(sinN?`<p class="hint" style="margin:0 0 8px">${sinN} lead${sinN===1?"":"s"} sin estatus no aparece${sinN===1?"":"n"} aquí; márcales un estatus desde la Lista.</p>`:"")+`<div class="kan">${KAN_COLS.map(([k,lab,c])=>`<div class="col ${k==="futuro"||k==="perdido"?"off":""}" data-k="${k}" style="--c:${c}"><div class="ch"><span>${lab}</span><b>${by[k].length}</b></div><div class="cb">${by[k].length?by[k].map(card).join(""):`<div class="empty">—</div>`}</div></div>`).join("")}</div>`;
   let dragId=null;
   box.querySelectorAll(".kc").forEach(c=>{ c.ondragstart=e=>{ dragId=c.dataset.id; c.classList.add("drag"); e.dataTransfer.effectAllowed="move"; e.dataTransfer.setData("text/plain",dragId); }; c.ondragend=()=>c.classList.remove("drag"); });
   box.querySelectorAll(".col").forEach(col=>{ col.ondragover=e=>{ e.preventDefault(); col.classList.add("over"); }; col.ondragleave=()=>col.classList.remove("over");
