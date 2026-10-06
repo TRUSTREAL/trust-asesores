@@ -161,6 +161,11 @@ td.dim{color:var(--muted)}
 .st.Bloqueado{background:var(--st-bloq-bg);color:var(--st-bloq)}
 .st.Aportante{background:var(--st-apor-bg);color:var(--st-apor)}
 .tile.apor .v{color:var(--st-apor)}
+.tile.warn .v{color:var(--st-bloq)}
+td.dif.dn{color:var(--st-bloq)}td.dif.up{color:var(--st-disp)}
+td.sold{color:var(--muted);font-style:italic;font-size:12px}
+.vnote{font-size:12.5px;color:var(--muted);margin:10px 0 0}
+.pend{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--st-bloq);background:var(--st-bloq-bg);border-radius:999px;padding:4px 10px;margin-left:8px;font-weight:500}
 .tile.apor::after{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--st-apor)}
 select.st{padding-right:10px}
 .cot{display:inline-block;font-size:12px;font-weight:500;color:var(--green);text-decoration:none;border:1px solid var(--line-2);border-radius:999px;padding:3px 10px;margin-right:4px;background:var(--surface)}
@@ -366,7 +371,9 @@ function save(){ // modo local: todo; modo Supabase: solo la vista (categoría /
 }
 function restoreUI(){ try{const r=localStorage.getItem(KEY+"-ui");if(r){const u=JSON.parse(r);S.cat=u.cat||S.cat;S.sel=u.sel||S.sel}}catch(e){} }
 const rowP=p=>({id:p.id,nombre:p.nombre,cat:p.cat,giro:p.giro,desarrollador:p.desarrollador||"",ubicacion:p.ubicacion||"",lista:p.lista||"",notas:p.notas||"",enganche:p.enganche==null||p.enganche===""?5:+p.enganche,nota_lista:p.nota_lista||"",politica:p.politica||"",politicas:Array.isArray(p.politicas)?p.politicas:[]});
-const rowU=(u,pid)=>({id:u.id,proyecto_id:pid,estatus:u.estatus,tipo:u.tipo,torre:u.torre||"",nivel:u.nivel,vista:u.vista||"",m2int:u.m2int,m2terr:u.m2terr,m2desc:u.m2desc??null,m2tot:u.m2tot,parking:u.parking,precio:u.precio,recamaras:u.recamaras,banos:u.banos});
+const rowU=(u,pid)=>({id:u.id,proyecto_id:pid,estatus:u.estatus,tipo:u.tipo,torre:u.torre||"",nivel:u.nivel,vista:u.vista||"",m2int:u.m2int,m2terr:u.m2terr,m2desc:u.m2desc??null,m2tot:u.m2tot,parking:u.parking,precio:u.precio,recamaras:u.recamaras,banos:u.banos,
+  precio_cierre:u.precio_cierre??null,fecha_cierre:u.fecha_cierre||null,comprador:u.comprador||null,asesor_cierre:u.asesor_cierre||null,notas_cierre:u.notas_cierre||null});
+const ASESORES=["Ana Lu","Carlos","Fanny","María","Paola","Ramsés","Rodrigo","Álvaro","Majo","Berna"];
 async function loadAll(){
   if(!sb){ try{const r=localStorage.getItem(KEY);S=r?JSON.parse(r):seed();}catch(e){S=seed()} return; }
   const [{data:ps,error:e1},{data:us,error:e2}]=await Promise.all([
@@ -375,7 +382,8 @@ async function loadAll(){
   if(e1||e2){ setSync("Error al leer: "+(e1||e2).message); return; }
   S.projects=(ps||[]).map(p=>({...p,units:[]}));
   const byId=Object.fromEntries(S.projects.map(p=>[p.id,p]));
-  (us||[]).sort((a,b)=>nivKey(a.nivel)-nivKey(b.nivel)).forEach(u=>{const p=byId[u.proyecto_id];if(p)p.units.push({id:u.id,estatus:u.estatus,tipo:u.tipo,torre:u.torre,nivel:u.nivel,vista:u.vista,m2int:+u.m2int||0,m2terr:+u.m2terr||0,m2desc:u.m2desc!=null?+u.m2desc:null,m2tot:(+u.m2desc>0)?+((+u.m2int||0)+(+u.m2terr||0)+(+u.m2desc)).toFixed(2):(+u.m2tot||0),parking:u.parking,precio:+u.precio||0,recamaras:u.recamaras,banos:u.banos})});
+  (us||[]).sort((a,b)=>nivKey(a.nivel)-nivKey(b.nivel)).forEach(u=>{const p=byId[u.proyecto_id];if(p)p.units.push({id:u.id,estatus:u.estatus,tipo:u.tipo,torre:u.torre,nivel:u.nivel,vista:u.vista,m2int:+u.m2int||0,m2terr:+u.m2terr||0,m2desc:u.m2desc!=null?+u.m2desc:null,m2tot:(+u.m2desc>0)?+((+u.m2int||0)+(+u.m2terr||0)+(+u.m2desc)).toFixed(2):(+u.m2tot||0),parking:u.parking,precio:+u.precio||0,recamaras:u.recamaras,banos:u.banos,
+    precio_cierre:u.precio_cierre!=null?+u.precio_cierre:null,fecha_cierre:u.fecha_cierre||null,comprador:u.comprador||null,asesor_cierre:u.asesor_cierre||null,notas_cierre:u.notas_cierre||null})});
   lastSync=new Date(); setSync();
   S.projects.forEach(p=>{ if(!docs[p.id]) loadDocs(p.id).then(()=>{ if(p.id===S.sel && !$("#drawer-root").innerHTML && document.activeElement?.id!=="f-q") renderMain(); }); });
 }
@@ -404,7 +412,9 @@ function visibleRows(p){
 function counts(p){const c={Disponible:0,Apartado:0,Vendido:0,Bloqueado:0,Aportante:0,dispVal:0};p.units.forEach(u=>{c[u.estatus]=(c[u.estatus]||0)+1;if(u.estatus==="Disponible")c.dispVal+=u.precio||0});return c}
 let filt={q:"",estatus:"",torre:"",tipo:"",vista:""};
 let VENTAS=READONLY&&(()=>{try{return localStorage.getItem("inv_ventas")==="1"}catch(e){return false}})();
-let vista="precios"; // precios | politica | docs
+let vista="precios"; // precios | politica | docs | ventas (solo admin)
+let vsort={k:"fecha_cierre",dir:"desc"};
+const sold=u=>u.estatus==="Vendido";
 let docs={}; // proyecto_id -> [{name,url,size,updated}]
 let sort={k:null,dir:"asc"};
 
@@ -469,12 +479,13 @@ function renderMain(){
         ${VENTAS?"":`<td>${READONLY?`<span class="st ${u.estatus}">${u.estatus}</span>`:`<select class="st ${u.estatus}" data-id="${u.id}" aria-label="Estatus">${STATUSES.map(s=>`<option ${u.estatus===s?"selected":""}>${s}</option>`).join("")}</select>`}</td>`}
         <td class="type">${esc(u.tipo)}</td><td>${esc(u.torre)}</td><td class="num">${esc(u.nivel??"")}</td><td>${esc(u.vista)}</td><td class="num dim">${esc(u.recamaras??"")}</td><td class="num dim">${u.banos??""}</td>
         <td class="num dim">${u.m2int?.toFixed(2)??""}</td><td class="num dim">${u.m2terr?u.m2terr.toFixed(2):"–"}</td>${hasDesc?`<td class="num dim">${u.m2desc?(+u.m2desc).toFixed(2):"–"}</td>`:""}<td class="num tot">${u.m2tot?.toFixed(2)??""}</td>
-        <td class="num">${u.parking??""}</td><td class="num price">${fmt(u.precio)}</td><td class="num dim">${u.m2tot?fmt(u.precio/u.m2tot):"–"}</td>${renta?"":`<td class="num eng">${fmt(u.precio*eng/100)}</td>`}
+        <td class="num">${u.parking??""}</td>${sold(u)?`<td class="num sold">${renta?"Rentado":"Vendido"}</td><td class="num dim">–</td>${renta?"":`<td class="num eng">–</td>`}`:`<td class="num price">${fmt(u.precio)}</td><td class="num dim">${u.m2tot?fmt(u.precio/u.m2tot):"–"}</td>${renta?"":`<td class="num eng">${fmt(u.precio*eng/100)}</td>`}`}
         <td style="white-space:nowrap"><a class="cot ${u.estatus==="Disponible"?"":"off"}" href="${cotUrl(p,u)}" target="_blank" rel="noopener" title="Cotizar esta unidad">Cotizar</a>${READONLY?"":`<button class="ico edit-u" data-id="${u.id}" title="Editar">✎</button>`}</td></tr>`).join("")}</tbody>
     </table>${rows.length?"":`<div class="empty">Ninguna unidad coincide con los filtros.</div>`}</div>`
   :`<div class="empty" style="margin-top:18px;border:1px dashed var(--line-2);border-radius:0"><b>Sin unidades cargadas</b>${READONLY?"Aún no hay inventario capturado para este proyecto.":"Agrega las unidades desde la lista de precios o el Excel del desarrollador."}</div>`;
   if(renta&&vista==="politica")vista="precios";
-  const seg=`<div class="vseg" role="tablist" aria-label="Vista"><button data-vista="precios" aria-pressed="${vista==="precios"}">Precios</button>${renta?"":`<button data-vista="politica" aria-pressed="${vista==="politica"}">Política de venta</button>`}<button data-vista="docs" aria-pressed="${vista==="docs"}">Documentos${(docs[p.id]||[]).length?` · ${(docs[p.id]||[]).length}`:""}</button></div>`;
+  if(READONLY&&vista==="ventas")vista="precios";
+  const seg=`<div class="vseg" role="tablist" aria-label="Vista"><button data-vista="precios" aria-pressed="${vista==="precios"}">Precios</button>${renta?"":`<button data-vista="politica" aria-pressed="${vista==="politica"}">Política de venta</button>`}<button data-vista="docs" aria-pressed="${vista==="docs"}">Documentos${(docs[p.id]||[]).length?` · ${(docs[p.id]||[]).length}`:""}</button>${READONLY?"":`<button data-vista="ventas" aria-pressed="${vista==="ventas"}">${renta?"Rentas":"Ventas"}${c.Vendido?` · ${c.Vendido}`:""}</button>`}</div>`;
   const pols=Array.isArray(p.politicas)?p.politicas:[];
   const minP=Math.min(...p.units.filter(u=>u.estatus==="Disponible").map(u=>u.precio).concat([Infinity]));
   const pol=(pols.length?`<div class="pols">${pols.map(x=>polCard(x,isFinite(minP)?minP:null)).join("")}</div>`:`<div class="pol empty"><b>Sin políticas de venta</b>${READONLY?"Pronto estarán disponibles para este proyecto.":"Usa \"Editar políticas\" para capturarlas."}</div>`)+(p.politica?`<div class="polnote">${polHTML(p.politica)}</div>`:"");
@@ -485,8 +496,54 @@ function renderMain(){
       <div class="actions">${READONLY?`<button class="btn ${VENTAS?"primary":""}" id="btn-ventas" aria-pressed="${VENTAS}" title="${VENTAS?"Salir del modo ventas":"Oculta estatus y unidades no disponibles para mostrar a clientes"}">${VENTAS?"✓ Modo ventas":"Modo ventas"}</button>`:""}<button class="btn" id="btn-pdf" ${rows.length?"":"disabled"} title="Lista de precios de las unidades que se muestran en la tabla">⤓ Lista de precios (PDF)</button>${READONLY?"":`<button class="btn" id="btn-edit-project">Editar proyecto</button>${renta?"":`<button class="btn" id="btn-edit-pol">Editar políticas</button>`}<button class="btn" id="btn-import">⇪ Importar</button><button class="btn primary" id="btn-add-unit">+ Unidad</button>`}</div>
     </div>
     ${seg}
-    ${vista==="precios"?(VENTAS?"":tiles)+table+(p.notas?`<div class="notes"><span class="eyebrow">Notas</span><p>${esc(p.notas)}</p></div>`:""):vista==="politica"?pol:docsHTML(p)}`;
+    ${vista==="precios"?(VENTAS?"":tiles)+table+(p.notas?`<div class="notes"><span class="eyebrow">Notas</span><p>${esc(p.notas)}</p></div>`:""):vista==="politica"?pol:vista==="ventas"?ventasHTML(p):docsHTML(p)}`;
   if(vista==="docs"&&sb&&!docs[p.id])loadDocs(p.id).then(()=>{if(vista==="docs")renderMain()});
+}
+
+// ---------- ventas realizadas (solo admin) ----------
+const fmtF=d=>{if(!d)return "—";const [y,m,dd]=String(d).slice(0,10).split("-");return `${+dd} ${["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"][+m-1]} ${String(y).slice(2)}`};
+const pctTxt=(a,b)=>b?((a-b)/b*100).toLocaleString("es-MX",{maximumFractionDigits:1})+"%":"—";
+function ventasHTML(p){
+  const renta=isRenta(p), lab=renta?"renta":"venta";
+  const all=p.units.filter(sold);
+  const cap=all.filter(u=>u.precio_cierre>0);
+  const sumC=cap.reduce((a,u)=>a+u.precio_cierre,0), sumL=cap.reduce((a,u)=>a+(u.precio||0),0), m2=cap.reduce((a,u)=>a+(u.m2tot||0),0);
+  const pend=all.length-cap.length;
+  const val=u=>({fecha_cierre:u.fecha_cierre||"",tipo:u.tipo||"",torre:u.torre||"",nivel:nivKey(u.nivel),m2tot:u.m2tot||0,precio:u.precio||0,precio_cierre:u.precio_cierre||0,dif:u.precio&&u.precio_cierre?u.precio_cierre/u.precio:0,pm2:u.m2tot&&u.precio_cierre?u.precio_cierre/u.m2tot:0,comprador:u.comprador||"",asesor_cierre:u.asesor_cierre||""})[vsort.k];
+  const rows=[...all].sort((a,b)=>{const x=val(a),y=val(b);const d=vsort.dir==="asc"?1:-1;if(x===""&&y!=="")return 1;if(y===""&&x!=="")return -1;return (typeof x==="number"&&typeof y==="number"?x-y:String(x).localeCompare(String(y),"es",{numeric:true}))*d});
+  const th=(k,l,num)=>`<th data-vk="${k}" ${vsort.k===k?`data-dir="${vsort.dir}"`:""} class="${num?"num":""}">${l}</th>`;
+  if(!all.length) return `<div class="empty" style="margin-top:18px;border:1px dashed var(--line-2);border-radius:0"><b>Sin ${renta?"rentas":"ventas"} registradas</b>Cuando marques una unidad como ${renta?"Rentada":"Vendida"} en la pestaña Precios, aparecerá aquí para capturar el precio real de cierre.</div>`;
+  const tiles=`<div class="tiles">
+      <div class="tile vend"><span class="l">${renta?"Rentadas":"Vendidas"}</span><span class="v">${all.length}</span><span class="s">${p.units.length?Math.round(all.length/p.units.length*100)+"% del proyecto":""}</span></div>
+      <div class="tile"><span class="l">Monto cerrado</span><span class="v">${cap.length?fmtM(sumC):"—"}</span><span class="s">${cap.length} con precio capturado</span></div>
+      <div class="tile"><span class="l">Lista de esas unidades</span><span class="v">${cap.length?fmtM(sumL):"—"}</span><span class="s">precio de lista al venderse</span></div>
+      <div class="tile ${sumC<sumL?"bloq":"disp"}"><span class="l">Cierre vs lista</span><span class="v">${cap.length&&sumL?pctTxt(sumC,sumL):"—"}</span><span class="s">${cap.length?(sumC<sumL?"descuento promedio ponderado":"sobreprecio promedio ponderado"):""}</span></div>
+      <div class="tile"><span class="l">${renta?"Renta":"Precio"} / m² real</span><span class="v">${m2?fmt(sumC/m2):"—"}</span><span class="s">${cap.length?"vs "+fmt(sumL/m2)+" de lista":""}</span></div>
+      <div class="tile ${pend?"warn":""}"><span class="l">Sin precio</span><span class="v">${pend}</span><span class="s">${pend?"pendientes de capturar":"todo capturado"}</span></div>
+    </div>`;
+  const table=`<div class="twrap"><table>
+      <thead><tr>${th("fecha_cierre","Cierre")}${th("tipo","ID")}${th("torre","Torre")}${th("nivel","Nivel",1)}${th("m2tot","m² total",1)}${th("precio","Precio lista",1)}${th("precio_cierre",renta?"Renta real":"Precio cierre",1)}${th("dif","Dif.",1)}${th("pm2",(renta?"Renta":"Precio")+" / m² real",1)}${th("comprador",renta?"Inquilino":"Comprador")}${th("asesor_cierre","Asesor")}<th>Notas</th><th></th></tr></thead>
+      <tbody>${rows.map(u=>{const has=u.precio_cierre>0;const d=has&&u.precio?u.precio_cierre/u.precio-1:null;return `<tr data-id="${u.id}">
+        <td class="dim">${fmtF(u.fecha_cierre)}</td><td class="type">${esc(u.tipo)}</td><td>${esc(u.torre)}</td><td class="num">${esc(u.nivel??"")}</td><td class="num tot">${u.m2tot?.toFixed(2)??""}</td>
+        <td class="num dim">${fmt(u.precio)}</td><td class="num price">${has?fmt(u.precio_cierre):`<span class="pend" style="margin:0">Sin capturar</span>`}</td>
+        <td class="num dif ${d==null?"":d<-0.0005?"dn":d>0.0005?"up":""}">${d==null?"—":(d>0?"+":"")+(d*100).toLocaleString("es-MX",{maximumFractionDigits:1})+"%"}</td>
+        <td class="num dim">${has&&u.m2tot?fmt(u.precio_cierre/u.m2tot):"—"}</td><td>${esc(u.comprador||"—")}</td><td>${esc(u.asesor_cierre||"—")}</td><td class="dim" style="white-space:normal;max-width:260px;font-size:12px">${esc(u.notas_cierre||"")}</td>
+        <td><button class="ico edit-c" data-id="${u.id}" title="Capturar ${lab}">✎</button></td></tr>`}).join("")}</tbody></table></div>
+    <p class="vnote">Precio de cierre = lo que realmente pagó el cliente. Las unidades vendidas no muestran precio en la lista general ni en el PDF.</p>`;
+  return tiles+table;
+}
+function openCierre(u){
+  const p=S.projects.find(p=>p.id===S.sel), renta=isRenta(p);
+  drawer(`${renta?"Renta":"Venta"} · ${u.tipo}${u.torre?" · "+u.torre:""}${u.nivel!=null&&u.nivel!==""?" · nivel "+u.nivel:""}`,
+    fld("fecha_cierre","Fecha de cierre",u.fecha_cierre||"","type=date")+
+    fld("precio_cierre",renta?"Renta mensual real (MXN)":"Precio real de cierre (MXN)",u.precio_cierre??"","type=number step=1 min=0 placeholder='"+(u.precio||0)+"'")+
+    fld("comprador",renta?"Inquilino":"Comprador",u.comprador||"")+
+    `<div class="f"><label for="fx-asesor_cierre">Asesor</label><input id="fx-asesor_cierre" name="asesor_cierre" list="dl-ase" value="${esc(u.asesor_cierre||"")}" placeholder="Asesor TRUST, desarrollador, otro broker…"><datalist id="dl-ase">${ASESORES.map(a=>`<option value="${esc(a)}">`).join("")}<option value="Desarrollador"><option value="Otro broker"></datalist></div>`+
+    `<div class="f full"><label for="fx-notas_cierre">Notas</label><textarea id="fx-notas_cierre" name="notas_cierre" placeholder="Forma de pago, descuentos, condiciones…">${esc(u.notas_cierre||"")}</textarea></div>`+
+    `<p class="hint">Precio de lista: <b>${fmt(u.precio)}</b>${u.m2tot?` · ${fmt(u.precio/u.m2tot)} / m²`:""}.</p>`,
+    d=>{const v={precio_cierre:d.precio_cierre===""?null:+d.precio_cierre,fecha_cierre:d.fecha_cierre||null,comprador:d.comprador.trim()||null,asesor_cierre:d.asesor_cierre.trim()||null,notas_cierre:d.notas_cierre.trim()||null};
+      if(u.estatus!=="Vendido")v.estatus="Vendido";
+      Object.assign(u,v);db(()=>sb.from("unidades").update(v).eq("id",u.id))},null);
 }
 
 // ---------- events ----------
@@ -507,6 +564,7 @@ document.addEventListener("click",e=>{
   if(t.id==="btn-import")return openImport(S.projects.find(p=>p.id===S.sel));
   if(t.id==="btn-edit-pol")return openPolitica(S.projects.find(p=>p.id===S.sel));
   if(t.classList.contains("edit-u")){const p=S.projects.find(p=>p.id===S.sel);return openUnit(p.units.find(u=>u.id===t.dataset.id))}
+  if(t.classList.contains("edit-c")){const p=S.projects.find(p=>p.id===S.sel);return openCierre(p.units.find(u=>u.id===t.dataset.id))}
   if(t.id==="btn-reset"&&!sb&&confirm("¿Volver a los datos iniciales? Se perderán los cambios de este navegador.")){S=seed();save();render()}
   if(t.id==="btn-refresh"&&sb){loadAll().then(render)}
 });
@@ -518,11 +576,12 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){const pk=$("#picker
 document.addEventListener("change",e=>{
   const t=e.target;
   if(t.id==="doc-file"&&t.files.length){uploadDocs(S.sel,[...t.files]);return}
-  if(t.classList.contains("st")){const p=S.projects.find(p=>p.id===S.sel);const u=p.units.find(u=>u.id===t.dataset.id);u.estatus=t.value;save();render();db(()=>sb.from("unidades").update({estatus:u.estatus}).eq("id",u.id));return}
+  if(t.classList.contains("st")){const p=S.projects.find(p=>p.id===S.sel);const u=p.units.find(u=>u.id===t.dataset.id);u.estatus=t.value;save();render();db(()=>sb.from("unidades").update({estatus:u.estatus}).eq("id",u.id));if(u.estatus==="Vendido"&&!READONLY)openCierre(u);return}
   if(t.id&&t.id.startsWith("f-")&&t.dataset.k){filt[t.dataset.k]=t.value;renderMain()}
 });
 document.addEventListener("input",e=>{if(e.target.id==="f-q"){filt.q=e.target.value;const pos=e.target.selectionStart;renderMain();const i=$("#f-q");i.focus();i.setSelectionRange(pos,pos)}});
 document.addEventListener("click",e=>{const th=e.target.closest("th[data-k]");if(!th)return;const k=th.dataset.k;sort=sort.k===k?{k,dir:sort.dir==="asc"?"desc":"asc"}:{k,dir:"asc"};renderMain()});
+document.addEventListener("click",e=>{const th=e.target.closest("th[data-vk]");if(!th)return;const k=th.dataset.vk;vsort=vsort.k===k?{k,dir:vsort.dir==="asc"?"desc":"asc"}:{k,dir:k==="fecha_cierre"||k==="precio_cierre"||k==="precio"?"desc":"asc"};renderMain()});
 
 
 // ---------- lista de precios PDF ----------
@@ -541,7 +600,7 @@ function listaPDF(p){
   const n2=v=>v==null||v===""?"—":(+v).toFixed(2);
   const money=v=>"$ "+Math.round(v).toLocaleString("es-MX");
   const th=[mixed?["Estatus"]:null,["ID"],hasTorre?["Torre"]:null,["Nivel","num"],hasVista?["Vista"]:null,hasRec?["Rec.","num"]:null,hasBan?["Baños","num"]:null,["m² int.","num"],hasTerr?["m² terraza","num"]:null,hasDescP?["m² s/techar","num"]:null,["m² total","num"],hasPark?["Cajones","num"]:null,[renta?"Renta mensual":"Precio","num strong"],[renta?"Renta / m²":"Precio / m²","num"],!renta?[`Enganche mín. ${eng}%`,"num eng"]:null].filter(Boolean);
-  const tr=rows.map(u=>[mixed?[esc(u.estatus),"stc "+u.estatus]:null,[esc(u.tipo),"tipo"],hasTorre?[esc(u.torre)]:null,[esc(u.nivel??""),"num"],hasVista?[esc(u.vista)]:null,hasRec?[esc(u.recamaras??""),"num"]:null,hasBan?[u.banos??"","num"]:null,[n2(u.m2int),"num dim"],hasTerr?[u.m2terr?n2(u.m2terr):"–","num dim"]:null,hasDescP?[u.m2desc?n2(u.m2desc):"–","num dim"]:null,[n2(u.m2tot),"num tot"],hasPark?[u.parking??"","num"]:null,[money(u.precio),"num strong"],[u.m2tot?money(u.precio/u.m2tot):"–","num dim"],!renta?[money(u.precio*eng/100),"num eng"]:null].filter(Boolean));
+  const tr=rows.map(u=>[mixed?[esc(u.estatus),"stc "+u.estatus]:null,[esc(u.tipo),"tipo"],hasTorre?[esc(u.torre)]:null,[esc(u.nivel??""),"num"],hasVista?[esc(u.vista)]:null,hasRec?[esc(u.recamaras??""),"num"]:null,hasBan?[u.banos??"","num"]:null,[n2(u.m2int),"num dim"],hasTerr?[u.m2terr?n2(u.m2terr):"–","num dim"]:null,hasDescP?[u.m2desc?n2(u.m2desc):"–","num dim"]:null,[n2(u.m2tot),"num tot"],hasPark?[u.parking??"","num"]:null,...(sold(u)?[[renta?"Rentado":"Vendido","num dim"],["–","num dim"],!renta?["–","num eng"]:null]:[[money(u.precio),"num strong"],[u.m2tot?money(u.precio/u.m2tot):"–","num dim"],!renta?[money(u.precio*eng/100),"num eng"]:null])].filter(Boolean));
   const nota=renta?"":"Aparta tu unidad con $5,000 reembolsables.";
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Lista de precios · ${esc(p.nombre)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
@@ -811,6 +870,7 @@ loadAll().then(()=>{restoreUI();render();});
 if(sb){ setInterval(()=>{ if(!$("#drawer-root").innerHTML) loadAll().then(render); },60000);
   document.addEventListener("visibilitychange",()=>{ if(!document.hidden&&!$("#drawer-root").innerHTML) loadAll().then(render); }); }
 </script>
+
 
 </body>
 </html>
