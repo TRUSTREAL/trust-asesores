@@ -513,13 +513,17 @@ function ventasHTML(p){
   const val=u=>({fecha_cierre:u.fecha_cierre||"",tipo:u.tipo||"",torre:u.torre||"",nivel:nivKey(u.nivel),m2tot:u.m2tot||0,precio:u.precio||0,precio_cierre:u.precio_cierre||0,dif:u.precio&&u.precio_cierre?u.precio_cierre/u.precio:0,pm2:u.m2tot&&u.precio_cierre?u.precio_cierre/u.m2tot:0,comprador:u.comprador||"",asesor_cierre:u.asesor_cierre||""})[vsort.k];
   const rows=[...all].sort((a,b)=>{const x=val(a),y=val(b);const d=vsort.dir==="asc"?1:-1;if(x===""&&y!=="")return 1;if(y===""&&x!=="")return -1;return (typeof x==="number"&&typeof y==="number"?x-y:String(x).localeCompare(String(y),"es",{numeric:true}))*d});
   const th=(k,l,num)=>`<th data-vk="${k}" ${vsort.k===k?`data-dir="${vsort.dir}"`:""} class="${num?"num":""}">${l}</th>`;
-  if(!all.length) return `<div class="empty" style="margin-top:18px;border:1px dashed var(--line-2);border-radius:0"><b>Sin ${renta?"rentas":"ventas"} registradas</b>Cuando marques una unidad como ${renta?"Rentada":"Vendida"} en la pestaña Precios, aparecerá aquí para capturar el precio real de cierre.</div>`;
-  const tiles=`<div class="tiles t4">
+  const disp=p.units.filter(u=>u.estatus==="Disponible"), dispVal=disp.reduce((a,u)=>a+(u.precio||0),0);
+  const emptyMsg=`<div class="empty" style="margin-top:18px;border:1px dashed var(--line-2);border-radius:0"><b>Sin ${renta?"rentas":"ventas"} registradas</b>Cuando marques una unidad como ${renta?"Rentada":"Vendida"} en la pestaña Precios, aparecerá aquí para capturar el precio real de cierre.</div>`;
+  const tiles=`<div class="tiles">
       <div class="tile vend"><span class="l">${renta?"Rentadas":"Vendidas"}</span><span class="v">${all.length}</span></div>
       <div class="tile"><span class="l">Monto cerrado</span><span class="v">${cap.length?fmtM(sumC):"—"}</span></div>
       <div class="tile ${sumC<sumL?"bloq":"disp"}"><span class="l">Cierre vs lista</span><span class="v">${cap.length&&sumL?pctTxt(sumC,sumL):"—"}</span><span class="s">${cap.length?(sumC<sumL?"descuento promedio ponderado":"sobreprecio promedio ponderado"):""}</span></div>
       <div class="tile"><span class="l">${renta?"Renta":"Precio"} / m² real</span><span class="v">${m2?fmt(sumC/m2):"—"}</span></div>
+      <div class="tile disp"><span class="l">Disponibles</span><span class="v">${disp.length}</span></div>
+      <div class="tile disp"><span class="l">Monto disponible</span><span class="v">${disp.length?fmtM(dispVal):"—"}</span><span class="s">${renta?"renta mensual a precio de lista":"a precio de lista"}</span></div>
     </div>`;
+  if(!all.length) return tiles+emptyMsg;
   const table=`<div class="twrap"><table>
       <thead><tr>${th("fecha_cierre","Cierre")}${th("tipo","ID")}${th("torre","Torre")}${th("nivel","Nivel",1)}${th("m2tot","m² total",1)}${th("precio","Precio lista",1)}${th("precio_cierre",renta?"Renta real":"Precio cierre",1)}${th("dif","Dif.",1)}${th("pm2",(renta?"Renta":"Precio")+" / m² real",1)}${th("comprador",renta?"Inquilino":"Comprador")}${th("asesor_cierre","Asesor")}<th>Notas</th><th></th></tr></thead>
       <tbody>${rows.map(u=>{const has=u.precio_cierre>0;const d=has&&u.precio?u.precio_cierre/u.precio-1:null;return `<tr data-id="${u.id}">
