@@ -18,7 +18,7 @@
   --trust-gray:#97999B; --trust-gray-light:#E5E5E6; --trust-gray-bg:#F7F7F5;
   --trust-cream:#FAF8F3; --trust-accent:#C9A961;
   --ink:#1B1F1E; --ok:#2E7D5B; --err:#B3423A;
-  --st-nc:#97999B; --st-seg:#2F6FB5; --st-hot:#B5406B; --st-cita:#E07B2A; --st-apa:#E9C33A; --st-venta:#2E7D5B; --st-perd:#B3423A;
+  --st-nc:#97999B; --st-seg:#2F6FB5; --st-hot:#B5406B; --st-cita:#E07B2A; --st-apa:#E9C33A; --st-venta:#2E7D5B; --st-perd:#B3423A; --st-fut:#5B7C99;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
@@ -128,7 +128,7 @@ td.m{color:var(--trust-gray)}
 .kpi.apa{border-color:var(--st-apa)}.kpi.apa b{color:#B8901A}
 .kpi.kpibtn.sel{border-width:2px;background:#F6F3EC}
 .kpi.seg{border-color:var(--st-seg)}.kpi.seg b{color:var(--st-seg)}
-.kpis.k8a{grid-template-columns:repeat(8,1fr);gap:10px}
+.kpis.k8a{grid-template-columns:repeat(9,1fr);gap:10px}
 .kpis.k8a .kpi{padding:14px 12px}.kpis.k8a .kpi b{font-size:28px}.kpis.k8a .kpi b small{font-size:11px!important}.kpis.k8a .kpi span{font-size:11px}
 .kpi.gold{border-color:var(--trust-accent)}
 .kpi.gold b{color:var(--trust-accent)}
@@ -145,6 +145,11 @@ td.m{color:var(--trust-gray)}
 .flag.on.a{background:var(--st-apa);border-color:var(--st-apa);color:var(--ink)}
 .flag.on.v{background:var(--st-venta);border-color:var(--st-venta)}
 .flag.on.p{background:var(--st-perd);border-color:var(--st-perd)}
+.flag.on.f{background:var(--st-fut);border-color:var(--st-fut)}
+.kpi.fut{border-color:var(--st-fut)}.kpi.fut b{color:var(--st-fut)}
+.fo.f i{background:var(--st-fut)}.fo.f b{color:var(--st-fut)}
+.repnum.f b{color:var(--st-fut)}
+.fun.f{border-top-color:var(--st-fut);border-left-color:var(--st-fut)}.fun.f b{color:var(--st-fut)}
 .fun.n{border-top-color:var(--st-nc)}.fun.n b{color:var(--st-nc)}
 .fun.h{border-top-color:var(--st-hot)}.fun.h b{color:var(--st-hot)}
 .fun.s{border-top-color:var(--st-seg)}.fun.s b{color:var(--st-seg)}
@@ -187,6 +192,47 @@ td.m{color:var(--trust-gray)}
 .repbox h2{font-size:15px;margin-bottom:8px}
 .lhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
 .lhead h2{margin-bottom:6px}.lhead .sub{margin-bottom:12px}
+.vtog{display:inline-flex;border:1px solid var(--trust-gray-light);border-radius:999px;overflow:hidden;flex:0 0 auto}
+.vtog button{border:0;background:#fff;padding:8px 14px;font:inherit;font-size:13px;cursor:pointer;color:var(--trust-gray)}
+.vtog button+button{border-left:1px solid var(--trust-gray-light)}.vtog button.on{background:var(--trust-green);color:#fff}
+.kan{display:flex;gap:10px;overflow-x:auto;padding:4px 0 10px;align-items:flex-start;-webkit-overflow-scrolling:touch}
+.kan .col{flex:0 0 220px;background:#F4F3EF;border-radius:14px;padding:10px;min-height:120px;border-top:4px solid var(--c)}
+.kan .col.over{background:#E8EFEA;outline:2px dashed var(--trust-green)}
+.kan .col.off{flex-basis:170px;opacity:.75}
+.kan .ch{display:flex;justify-content:space-between;align-items:center;margin:0 2px 8px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--c)}
+.kan .ch b{background:#fff;border-radius:999px;padding:1px 8px;font-size:12px;color:var(--ink)}
+.kan .kc{background:#fff;border:1px solid #E5E5E6;border-radius:10px;padding:10px 10px 8px;margin-bottom:8px;cursor:grab;font-size:13px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.kan .kc:active{cursor:grabbing}.kan .kc.drag{opacity:.4}
+.kan .kc .nm{font-weight:600;display:flex;justify-content:space-between;gap:6px;align-items:center}
+.kan .kc .nm .dd{margin:0}
+.kan .kc .mt{color:var(--trust-gray);font-size:12px;margin-top:3px}
+.kan .kc .mo{font-size:12px;margin-top:4px;color:var(--trust-green);font-weight:600}
+.kan .kc .rz{font-size:11.5px;color:var(--trust-gray);margin-top:4px;font-style:italic}
+.kan .kc select{margin-top:6px;width:100%;font:inherit;font-size:11.5px;color:var(--trust-gray);border:1px solid #E5E5E6;border-radius:6px;padding:3px 6px;background:#fff}
+.kan .empty{font-size:12px;color:var(--trust-gray);text-align:center;padding:14px 4px}
+.lnm{cursor:pointer;text-decoration:underline dotted transparent;transition:.15s}.lnm:hover{text-decoration-color:var(--trust-green);color:var(--trust-green)}
+.lastn{font-size:11.5px;color:var(--trust-gray);margin-top:2px;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lastn b{font-weight:600;color:var(--trust-gray)}
+.kan .kc .lastn{white-space:normal;max-width:none;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-top:5px;font-style:italic}
+#modalL .modalbox{max-width:640px;padding:0;overflow:hidden;display:flex;flex-direction:column;max-height:calc(100vh - 40px)}
+.lc-h{padding:20px 24px 14px;border-bottom:1px solid #EFEEEA;display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.lc-h h3{font-family:Lora,serif;font-weight:500;font-size:22px;margin:0 0 4px;color:var(--trust-green)}
+.lc-h .meta{font-size:12.5px;color:var(--trust-gray);display:flex;flex-wrap:wrap;gap:4px 10px}
+.lc-h .meta a{color:var(--trust-green);font-weight:600;text-decoration:none}
+.lc-x{border:0;background:transparent;font-size:20px;cursor:pointer;color:var(--trust-gray);line-height:1;padding:4px}
+.lc-b{padding:14px 24px 20px;overflow:auto}
+.lc-sec{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--trust-gray);font-weight:600;margin:14px 0 8px}
+.lc-b .flags{margin:0}
+.lc-mo{display:flex;gap:18px;font-size:13px;margin-top:8px}.lc-mo b{display:block;font-family:Lora,serif;font-size:17px;color:var(--trust-green)}
+.notas{display:flex;flex-direction:column;gap:8px}
+.nota{background:#F7F6F2;border-radius:10px;padding:9px 12px;font-size:13.5px;position:relative}
+.nota .nh{font-size:11.5px;color:var(--trust-gray);margin-bottom:3px;display:flex;justify-content:space-between;gap:8px}
+.nota .nh b{color:var(--trust-green);font-weight:600}
+.nota .nx{border:0;background:transparent;color:var(--trust-gray-light);cursor:pointer;font-size:15px;line-height:1;padding:0 2px}.nota .nx:hover{color:var(--st-perd)}
+.addnote{display:flex;gap:8px;margin-top:10px;align-items:flex-end}
+.addnote textarea{flex:1;font:inherit;font-size:13.5px;padding:9px 12px;border:1px solid var(--trust-gray-light);border-radius:10px;resize:vertical;min-height:44px}
+.addnote .btn{white-space:nowrap}
+@media (max-width:900px){#modalL .modalbox{max-height:calc(100vh - 16px)}.lc-h,.lc-b{padding-left:16px;padding-right:16px}}
 .repfoot{margin-top:18px;font-size:11px;color:var(--trust-gray);border-top:1px solid var(--trust-gray-light);padding-top:8px}
 @media print{
   @page{margin:14mm}
@@ -321,6 +367,7 @@ th.sortable{cursor:pointer;user-select:none;white-space:nowrap}th.sortable:hover
 .x{display:none!important}
 .flag{cursor:default;pointer-events:none}
 .flag:not(.on){display:none}
+#modalL .addnote,#modalL .nx{display:none!important}
 .mini{display:none}
 #proy .asehead .btn2{display:none}
 .lnk{text-decoration:none;color:var(--ink);font-weight:500}
@@ -520,7 +567,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
       <select id="bTipoF" class="sbtn" onchange="basePage=0;renderBase()"><option value="">Tipo: todos</option><option>Directo</option><option>Broker</option></select>
       <input type="date" id="bD1" class="sbtn" style="background-image:none;padding-right:10px" onchange="basePage=0;renderBase()" title="Desde"> <span class="hint">a</span>
       <input type="date" id="bD2" class="sbtn" style="background-image:none;padding-right:10px" onchange="basePage=0;renderBase()" title="Hasta">
-      <select id="bEstF" class="sbtn" onchange="basePage=0;renderBase()"><option value="">Estatus: todos</option><option value="sin">Sin estatus</option><option value="nc">No contestó</option><option value="seguimiento">Seguimiento</option><option value="hot">Hot Lead</option><option value="cita">Cita realizada</option><option value="apartado">Apartado</option><option value="venta">Venta</option><option value="perdido">Perdido</option></select>
+      <select id="bEstF" class="sbtn" onchange="basePage=0;renderBase()"><option value="">Estatus: todos</option><option value="sin">Sin estatus</option><option value="nc">No contestó</option><option value="seguimiento">Seguimiento</option><option value="hot">Hot Lead</option><option value="cita">Cita realizada</option><option value="apartado">Apartado</option><option value="venta">Venta</option><option value="futuro">Futuro</option><option value="perdido">Perdido</option></select>
       <button class="btn2 clear" id="bClear" onclick="clearBase()">Quitar filtros</button>
     </div>
     <div class="card"><div id="baseList"></div></div>
@@ -597,21 +644,22 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
       <select id="aProyF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Proyecto: todos</option></select>
       <select id="aCanalF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Canal: todos</option></select>
       <select id="aTipoF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Tipo: todos</option><option>Directo</option><option>Broker</option></select>
-      <select id="aEstF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Estatus: todos</option><option value="activo">Activos (sin perdidos)</option><option value="sin">Sin estatus</option><option value="nc">No contestó</option><option value="seguimiento">Seguimiento</option><option value="hot">Hot Lead</option><option value="cita">Cita realizada</option><option value="apartado">Apartado</option><option value="venta">Venta</option><option value="perdido">Perdido</option></select>
+      <select id="aEstF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Estatus: todos</option><option value="activo">Activos (sin perdidos ni futuros)</option><option value="sin">Sin estatus</option><option value="nc">No contestó</option><option value="seguimiento">Seguimiento</option><option value="hot">Hot Lead</option><option value="cita">Cita realizada</option><option value="apartado">Apartado</option><option value="venta">Venta</option><option value="futuro">Futuro</option><option value="perdido">Perdido</option></select>
       <button class="btn2 clear" id="aClear" onclick="clearAseF()">Quitar filtros</button>
     </div>
     <div class="kpis k8a">
       <div class="kpi dark"><b id="aTotal">0</b><span>leads recibidos</span></div>
-      <div class="kpi kpibtn" id="aActBox" onclick="kpiFilt('activo')" title="Leads del periodo que no se han perdido"><b id="aAct">0</b><span>activos</span></div>
+      <div class="kpi kpibtn" id="aActBox" onclick="kpiFilt('activo')" title="Leads del periodo que no se han perdido ni pasado a futuro"><b id="aAct">0</b><span>activos</span></div>
       <div class="kpi kpibtn" id="aNcBox" onclick="kpiFilt('nc')" title="Ver solo los que no contestaron"><b id="aNc">0</b><span>no contestó</span></div>
       <div class="kpi kpibtn" id="aSegBox" onclick="kpiFilt('seguimiento')" title="Ver solo los leads en seguimiento"><b id="aSeg">0</b><span>seguimiento</span></div>
       <div class="kpi kpibtn" id="aHotBox" onclick="kpiFilt('hot')" title="Ver solo los hot leads"><b id="aHot">0</b><span>hot leads</span></div>
       <div class="kpi kpibtn" id="aApaBox" onclick="kpiFilt('apartado')" title="Ver solo los apartados"><b id="aApa">0</b><span>apartados</span></div>
       <div class="kpi kpibtn" id="aSinBox" onclick="kpiFilt('sin')" title="Ver solo los leads sin estatus"><b id="aSin">0</b><span>sin estatus</span></div>
+      <div class="kpi kpibtn" id="aFutBox" onclick="kpiFilt('futuro')" title="Leads que no es el momento; se retoman después"><b id="aFut">0</b><span>futuros</span></div>
       <div class="kpi kpibtn" id="aPerdBox" onclick="kpiFilt('perdido')" title="Ver solo los leads perdidos"><b id="aShare">0</b><span>perdidos</span></div>
     </div>
     <div class="card" style="margin-bottom:16px"><h2>Conversión</h2><div id="aFunnel"></div></div>
-    <div class="card" style="margin-bottom:16px"><div class="lhead"><div><h2>Leads del periodo</h2><p class="sub">Marca el estatus de cada lead.</p></div><input type="text" id="aQ" class="sbtn" style="background-image:none;padding-right:14px;width:260px;flex:0 0 auto" placeholder="Buscar nombre o teléfono" oninput="asePage=0;renderAse()"></div><div id="aList"></div></div>
+    <div class="card" style="margin-bottom:16px"><div class="lhead"><div><h2>Leads del periodo</h2><p class="sub">Marca el estatus de cada lead.</p></div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div class="vtog"><button id="vList" class="on" onclick="setAseView('list')">Lista</button><button id="vKan" onclick="setAseView('kanban')">Etapas</button></div><input type="text" id="aQ" class="sbtn" style="background-image:none;padding-right:14px;width:260px;flex:0 0 auto" placeholder="Buscar nombre o teléfono" oninput="asePage=0;renderAse()"></div></div><div id="aList"></div><div id="aKanban" style="display:none"></div></div>
     <div class="card" style="margin-bottom:16px"><h2>Proyección contra estándar</h2><div id="aProj"></div></div>
     <div class="card" style="margin-bottom:16px"><h2>Citas del periodo</h2><p class="sub">Leads que llegaron a cita (incluye los que después se apartaron, vendieron o perdieron).</p><div id="aCitas"></div></div>
     <div class="grid2">
@@ -664,6 +712,8 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
     <div class="modalact"><button class="btn2" id="modalRNo">Cancelar</button><button class="btn" id="modalRYes">Marcar perdido</button></div>
   </div>
 </div>
+
+<div class="modal" id="modalL"><div class="modalbox" id="modalLBox"></div></div>
 
 <div class="modal" id="modalM">
   <div class="modalbox">
@@ -718,9 +768,14 @@ function setSync(t, local){
   s.querySelector("span").textContent = t;
   s.classList.toggle("local", local);
 }
+let NOTAS=[]; const LSN="trust_lead_notas";
+async function loadNotas(){ if(sb){ const r=await sb.from("lead_notas").select("*").order("fecha",{ascending:false}); if(!r.error) NOTAS=r.data||[]; } else NOTAS=JSON.parse(localStorage.getItem(LSN)||"[]"); }
+const notasDe=id=>NOTAS.filter(n=>String(n.lead_id)===String(id)).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
+function lastNota(l){ const n=notasDe(l.id)[0]; return n?`<div class="lastn" title="${esc(n.texto)}"><b>${esc(fmtNota(n.fecha))}</b> · ${esc(n.texto)}</div>`:""; }
+function fmtNota(d){ const x=new Date(d); if(isNaN(x)) return ""; return `${x.getDate()}/${String(x.getMonth()+1).padStart(2,"0")} ${String(x.getHours()).padStart(2,"0")}:${String(x.getMinutes()).padStart(2,"0")}`; }
 async function load(){
   if (sb){
-    const {data, error} = await sb.from("leads").select("*").order("fecha",{ascending:false}).order("created_at",{ascending:false});
+    const [{data, error}]=await Promise.all([sb.from("leads").select("*").order("fecha",{ascending:false}).order("created_at",{ascending:false}), loadNotas()]);
     if (error){ toast("No se pudo leer Supabase: "+error.message, true); leads=[]; }
     else leads = data;
   } else {
@@ -747,18 +802,20 @@ async function patch(id, fields){
   if (fields.fecha) leads.sort((a,b)=> (b.fecha+(b.created_at||"")).localeCompare(a.fecha+(a.created_at||"")));
   if (!sb) localStorage.setItem(LS, JSON.stringify(leads));
 }
-const ESTATUS=["nc","hot","cita","apartado","venta","seguimiento","perdido","razon_perdido"];
-async function toggleFlag(id, k){
-  const l=leads.find(x=>x.id===id); if(!l) return;
+const ESTATUS=["nc","hot","cita","apartado","venta","seguimiento","perdido","futuro","razon_perdido"];
+async function toggleFlag(id, k, force){
+  const l=leads.find(x=>String(x.id)===String(id)); if(!l) return; id=l.id;
   const f={}; ESTATUS.forEach(e=> f[e]=false);
-  if(!l[k]) f[k]=true;                       // clic en el activo lo quita; clic en otro lo sustituye
-  const CIERRES=["hot","apartado","venta","perdido"];  // pasos posteriores a la cita: conviven con "cita"
+  if(k==="sin"){ if(estatusDe(l)==="sin") return; f.razon_perdido=null; try{ await patch(id,f); render(); }catch(e){ toast("No se guardó: "+e.message,true); } return; }
+  if(force && l[k] && estatusDe(l)===k) return;   // ya está ahí
+  if(!l[k] || force) f[k]=true;                       // clic en el activo lo quita; clic en otro lo sustituye
+  const CIERRES=["hot","apartado","venta","perdido","futuro"];  // pasos posteriores a la cita: conviven con "cita"
   if(f[k] && CIERRES.includes(k) && l.cita) f.cita=true;          // la cita se conserva al cerrar
   if(k==="cita") CIERRES.forEach(e=>{ if(l[e]) f[e]=true; });      // marcar/quitar cita no toca el cierre
   if(k==="apartado" && f.apartado){ const r=await askMontos(l); if(!r) return; Object.assign(f, r); }
   if(k==="perdido" && f.perdido){ const r=await askRazon(l); if(r===null) return; f.razon_perdido=r; }
   if(l.perdido && !f.perdido) f.razon_perdido=null;
-  try{ await patch(id, f); render(); if(f.perdido) toast("Lead marcado como perdido"); }catch(e){ toast("No se guardó: "+e.message, true); }
+  try{ await patch(id, f); render(); if(f.perdido) toast("Lead marcado como perdido"); else if(f.futuro) toast("Lead guardado como futuro"); }catch(e){ toast("No se guardó: "+e.message, true); }
 }
 function askRazon(l){
   return new Promise(res=>{
@@ -798,7 +855,7 @@ function pick(id, v){
   if (id==="proyecto"){ const o=document.getElementById("proyOtro"); o.classList.toggle("on", v==="Otro"); if(v==="Otro") document.getElementById("proyOtroTxt").focus(); }
   if (id==="asesor"){ const o=document.getElementById("aseOtro"); o.classList.toggle("on", v==="Otro"); if(v==="Otro") document.getElementById("aseOtroTxt").focus(); }
 }
-function diasDe(l){ if(l.perdido||l.venta||!l.fecha) return ""; const d=Math.max(0,Math.round((new Date(todayISO())-new Date(l.fecha))/86400000)); const c=d<=3?"g":d<=7?"y":"r"; return `<span class="dd ${c}" title="Días desde el registro">${d}</span>`; }
+function diasDe(l){ if(l.perdido||l.futuro||l.venta||!l.fecha) return ""; const d=Math.max(0,Math.round((new Date(todayISO())-new Date(l.fecha))/86400000)); const c=d<=3?"g":d<=7?"y":"r"; return `<span class="dd ${c}" title="Días desde el registro">${d}</span>`; }
 function todayISO(){ const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
 function resetForm(){
   ["nombre","telefono","proyOtroTxt","aseOtroTxt","canalOtroTxt"].forEach(i=> document.getElementById(i).value="");
@@ -954,7 +1011,7 @@ async function del(id){
 }
 
 /* ===== Render ===== */
-function render(){ fillProySel(); renderRecent(); renderBoard(); renderAse(); renderProy(); renderBase(); }
+function render(){ fillProySel(); renderRecent(); renderBoard(); renderAse(); renderProy(); renderBase(); if(LEAD_OPEN) drawLead(); }
 function fillProySel(){
   const extra=[...new Set(leads.map(l=>l.proyecto))].filter(x=> !PROYECTOS.includes(x)).sort();
   document.getElementById("proySel").innerHTML=`<option value="">Por Proyecto</option>`+PROYECTOS.filter(a=>a!=="Otro").concat(extra).map(a=>`<option>${esc(a)}</option>`).join("");
@@ -966,7 +1023,7 @@ function renderRecent(){
   const r = leads.slice(0,5);
   if(!r.length){ box.innerHTML=`<p class="empty">Todavía no hay leads. El primero que registres aparece aquí.</p>`; return; }
   box.innerHTML = `<table><tr><th>Fecha</th><th>Nombre</th><th>Canal</th><th>Proyecto</th><th>Asesor</th></tr>`+
-    r.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td class="n">${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}<br><span class="m" style="font-weight:400">${esc(l.telefono)}</span></td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td><button class="lnk" onclick="openAse(this.dataset.a,'reg')" data-a="${esc(l.asesor)}">${esc(l.asesor)}</button></td></tr>`).join("")+`</table>`;
+    r.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span>${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}<br><span class="m" style="font-weight:400">${esc(l.telefono)}</span></td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td><button class="lnk" onclick="openAse(this.dataset.a,'reg')" data-a="${esc(l.asesor)}">${esc(l.asesor)}</button></td></tr>`).join("")+`</table>`;
 }
 
 /* ===== Tablero ===== */
@@ -1010,7 +1067,7 @@ function renderBoard(){
   funnelViz("funnel",rows); convAse(rows); convTipo("convTipo",rows); proj("proj",rows);
 }
 function esCita(l){ return !!(l.cita||l.apartado||l.venta); }   // apartado y venta pasaron por cita
-const PRIORIDAD=["venta","apartado","perdido","hot","cita","seguimiento","nc"];
+const PRIORIDAD=["venta","apartado","perdido","futuro","hot","cita","seguimiento","nc"];
 function estatusDe(l){ return PRIORIDAD.find(k=>l[k]) || "sin"; }
 function tipoDe(l){ return l.tipo || (l.broker ? "Broker" : "Directo"); }
 function pct(n,d){ return d? Math.round(n/d*100)+"%" : "—"; }
@@ -1023,7 +1080,8 @@ function funnel(id, rows){
     `<div class="fun c"><b>${pct(c,n)}</b><span>lead → cita</span><em>${c} de ${n}</em></div>`+
     `<div class="fun a"><b>${pct(a,n)}</b><span>lead → apartado</span><em>${a} de ${n}</em></div>`+
     `<div class="fun v"><b>${pct(v,n)}</b><span>lead → venta</span><em>${v} de ${n}</em></div>`+
-    `<div class="fun p"><b>${pct(pd,n)}</b><span>lead → perdido</span><em>${pd} de ${n}</em></div>`;
+    `<div class="fun p"><b>${pct(pd,n)}</b><span>lead → perdido</span><em>${pd} de ${n}</em></div>`+
+    `<div class="fun f"><b>${pct(rows.filter(l=>l.futuro).length,n)}</b><span>lead → futuro</span><em>${rows.filter(l=>l.futuro).length} de ${n}</em></div>`;
 }
 function proj(id, rows){
   const n=rows.length;
@@ -1034,7 +1092,7 @@ function proj(id, rows){
       return `<tr><td>${lab}</td><td class="std">${Math.round(st*100)}%</td><td>${exp.toFixed(1).replace(/\.0$/,"")}</td><td class="big">${real}</td><td class="${d>=0?"up":"dn"}">${d>=0?"+":""}${d.toFixed(1).replace(/\.0$/,"")}</td><td class="${r>=st?"up":"dn"}">${pct(real,n)}</td></tr>`; }).join("")+
     `</table><p class="hint" style="margin-top:10px">Sobre ${n} leads del periodo. Real acumula el embudo: una venta cuenta también como apartado y cita.</p>`;
 }
-const ST_META={sin:["Sin estatus","var(--trust-gray-light)"],nc:["No contestó","var(--st-nc)"],seguimiento:["Seguimiento","var(--st-seg)"],hot:["Hot lead","var(--st-hot)"],cita:["Cita realizada","var(--st-cita)"],apartado:["Apartado","var(--st-apa)"],venta:["Venta","var(--st-venta)"],perdido:["Perdido","var(--st-perd)"]};
+const ST_META={sin:["Sin estatus","var(--trust-gray-light)"],nc:["No contestó","var(--st-nc)"],seguimiento:["Seguimiento","var(--st-seg)"],hot:["Hot lead","var(--st-hot)"],cita:["Cita realizada","var(--st-cita)"],apartado:["Apartado","var(--st-apa)"],venta:["Venta","var(--st-venta)"],perdido:["Perdido","var(--st-perd)"],futuro:["Futuro","var(--st-fut)"]};
 function funnelViz(id, rows){
   const n=rows.length;
   // Embudo por estatus actual: cada tramo cuenta solo los leads que están hoy en ese estatus. Perdidos y sin estatus quedan fuera.
@@ -1042,7 +1100,7 @@ function funnelViz(id, rows){
   const rank={}; ORDER.forEach(([k],i)=>rank[k]=i);
   const cur=rows.map(l=>estatusDe(l));
   const vals=ORDER.map(([k])=> k==="cita" ? rows.filter(esCita).length : cur.filter(x=>x===k).length);
-  const perd=cur.filter(k=>k==="perdido").length, sin=cur.filter(k=>k==="sin").length;
+  const perd=cur.filter(k=>k==="perdido").length, fut=cur.filter(k=>k==="futuro").length, sin=cur.filter(k=>k==="sin").length;
   let left;
   if(!n){ left=`<p class="empty">Sin leads en este periodo.</p>`; }
   else{
@@ -1063,10 +1121,11 @@ function funnelViz(id, rows){
     svg+=`</svg>`;
     left=svg+`<div class="fout">
       <div class="fo p"><i></i><div><b>${perd}</b> perdidos <small>${pct(perd,n)} de los leads · salieron del embudo</small></div></div>
+      <div class="fo f"><i></i><div><b>${fut}</b> futuros <small>${pct(fut,n)} de los leads · no es el momento, se retoman después</small></div></div>
       <div class="fo g"><i></i><div><b>${sin}</b> sin estatus <small>${pct(sin,n)} de los leads · aún no entran al embudo</small></div></div>
     </div>`;
   }
-  const order=["venta","apartado","hot","cita","seguimiento","nc","perdido","sin"];
+  const order=["venta","apartado","hot","cita","seguimiento","nc","futuro","perdido","sin"];
   const cnt={}; order.forEach(k=>cnt[k]=0); rows.forEach(l=>cnt[estatusDe(l)]++);
   const right = !n ? "" : `<div class="fstack">${order.map(k=> cnt[k]?`<i style="width:${cnt[k]/n*100}%;background:${ST_META[k][1]}" title="${ST_META[k][0]}: ${cnt[k]}"></i>`:"").join("")}</div>
     <div class="fleg">${order.map(k=>`<div><i style="background:${ST_META[k][1]}"></i>${ST_META[k][0]}<b>${cnt[k]}</b><small>${pct(cnt[k],n)}</small></div>`).join("")}</div>`;
@@ -1101,12 +1160,12 @@ function paged(key, rows, renderFn, emptyMsg){
 }
 function listaSimple(rows){
   return `<table><tr><th>Fecha</th><th>Nombre</th><th>Teléfono</th><th>Canal</th><th>Asesor</th><th>Tipo</th></tr>`+
-    rows.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td class="n">${esc(l.nombre)}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.asesor)}</td><td>${esc(tipoDe(l))}</td></tr>`).join("")+`</table>`;
+    rows.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span></td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.asesor)}</td><td>${esc(tipoDe(l))}</td></tr>`).join("")+`</table>`;
 }
 function listaMontos(rows, editable){
   const tm=rows.reduce((a,l)=>a+(Number(l.monto)||0),0), te=rows.reduce((a,l)=>a+(Number(l.enganche)||0),0);
   return `<table><tr><th>Fecha</th><th>Nombre</th><th>Teléfono</th><th>Canal</th><th>Asesor</th><th style="text-align:right">Monto venta</th><th style="text-align:right">Enganche</th>${editable?"<th></th>":""}</tr>`+
-    rows.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td class="n">${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.asesor)}</td><td style="text-align:right;font-variant-numeric:tabular-nums">${money(l.monto)}</td><td style="text-align:right;font-variant-numeric:tabular-nums">${money(l.enganche)}</td>${editable?`<td><button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button></td>`:""}</tr>`).join("")+
+    rows.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span>${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.asesor)}</td><td style="text-align:right;font-variant-numeric:tabular-nums">${money(l.monto)}</td><td style="text-align:right;font-variant-numeric:tabular-nums">${money(l.enganche)}</td>${editable?`<td><button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button></td>`:""}</tr>`).join("")+
     `<tr><td colspan="5" style="font-weight:700;color:var(--trust-green)">Proyectado</td><td style="text-align:right;font-weight:700;color:var(--trust-green);font-variant-numeric:tabular-nums">${money(tm)}</td><td style="text-align:right;font-weight:700;color:var(--trust-green);font-variant-numeric:tabular-nums">${money(te)}</td>${editable?"<td></td>":""}</tr></table>`;
 }
 
@@ -1177,7 +1236,7 @@ function reporteProy(){
   const fa=document.getElementById("pAseF").value, fc=document.getElementById("pCanalF").value, ft=document.getElementById("pTipoF").value;
   const all=leads.filter(l=> l.fecha>=a && l.fecha<=b);
   const rows=all.filter(l=> l.proyecto===proyCur && (!fa||l.asesor===fa) && canalMatch(l,fc) && (!ft||tipoDe(l)===ft));
-  const n=rows.length, nc=rows.filter(l=>l.nc).length, sg=rows.filter(l=>l.seguimiento).length, ht=rows.filter(l=>l.hot).length, c=rows.filter(esCita).length, ap=rows.filter(l=>l.apartado).length, v=rows.filter(l=>l.venta).length, pd=rows.filter(l=>l.perdido).length;
+  const n=rows.length, nc=rows.filter(l=>l.nc).length, sg=rows.filter(l=>l.seguimiento).length, ht=rows.filter(l=>l.hot).length, c=rows.filter(esCita).length, ap=rows.filter(l=>l.apartado).length, v=rows.filter(l=>l.venta).length, pd=rows.filter(l=>l.perdido).length, fu=rows.filter(l=>l.futuro).length;
   const first = n ? rows.reduce((m,l)=> l.fecha<m?l.fecha:m, rows[0].fecha) : todayISO();
   const days = proyPeriod==="todo" ? Math.max(1, Math.round((new Date(todayISO())-new Date(first))/86400000)+1) : Math.max(1, Math.round((new Date(b)-new Date(a))/86400000)+1);
   const periodo = proyPeriod==="todo" ? "Todo el historial" : `${fmtLong(a)} – ${fmtLong(b)}`;
@@ -1205,6 +1264,7 @@ function reporteProy(){
       <div class="repnum c"><b>${c}</b><span>citas realizadas</span></div>
       <div class="repnum a"><b>${ap}</b><span>apartados</span></div>
       <div class="repnum v"><b>${v}</b><span>ventas</span></div>
+      <div class="repnum f"><b>${fu}</b><span>futuros</span></div>
       <div class="repnum p"><b>${pd}</b><span>perdidos</span></div>
     </div>
     <div class="repbox" style="margin-bottom:16px"><h2>Conversión</h2><div class="funnel" style="gap:10px">
@@ -1277,13 +1337,13 @@ function renderBase(){
   const page=rows.slice(basePage*PER, basePage*PER+PER);
   const fl=(l,k,lab,cls)=>`<button class="flag ${l[k]?"on":""} ${cls||""}" onclick="toggleFlag(${JSON.stringify(l.id)},'${k}')">${lab}</button>`;
   box.innerHTML=`<table><tr><th><button class="lnk" style="font-size:11px;color:var(--trust-gray)" onclick="baseAsc=!baseAsc;renderBase()">Fecha ${baseAsc?"↑":"↓"}</button></th><th>Días</th><th>Nombre</th><th>Teléfono</th><th>Canal</th><th>Proyecto</th><th>Asesor</th><th>Estatus</th><th></th></tr>`+
-    page.map(l=>`<tr><td class="m">${fmt(l.fecha)}/${l.fecha.slice(2,4)}</td><td>${diasDe(l)}</td><td class="n">${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td>${asesorSel(l)}</td><td><div class="flags">${fl(l,"nc","NC","n")}${fl(l,"seguimiento","Seg.","s")}${fl(l,"cita","Cita","c")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div></td><td style="white-space:nowrap"><button class="x" title="Editar" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="x" title="Borrar este lead" onclick="del(${JSON.stringify(l.id)})">×</button></td></tr>`).join("")+`</table>`+
+    page.map(l=>`<tr><td class="m">${fmt(l.fecha)}/${l.fecha.slice(2,4)}</td><td>${diasDe(l)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span>${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}${lastNota(l)}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td>${asesorSel(l)}</td><td><div class="flags">${fl(l,"nc","NC","n")}${fl(l,"seguimiento","Seg.","s")}${fl(l,"cita","Cita","c")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"futuro","Fut.","f")}${fl(l,"perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div></td><td style="white-space:nowrap"><button class="x" title="Editar" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="x" title="Borrar este lead" onclick="del(${JSON.stringify(l.id)})">×</button></td></tr>`).join("")+`</table>`+
     (pages>1?`<div class="pager"><span>${basePage*PER+1}–${Math.min(rows.length,(basePage+1)*PER)} de ${rows.length}</span><div><button ${basePage===0?"disabled":""} onclick="basePage--;renderBase()">Anteriores</button><button ${basePage>=pages-1?"disabled":""} onclick="basePage++;renderBase()">Siguientes</button></div></div>`:"");
 }
 function exportBase(){
   const rows=baseRows(); if(!rows.length){ toast("No hay leads que exportar", true); return; }
   const head=["fecha","nombre","telefono","canal","marketplace","proyecto","asesor","tipo","estatus"];
-  const est={sin:"",nc:"No contestó",hot:"Hot Lead",seguimiento:"Seguimiento",cita:"Cita realizada",apartado:"Apartado",venta:"Venta",perdido:"Perdido"};
+  const est={sin:"",nc:"No contestó",hot:"Hot Lead",seguimiento:"Seguimiento",cita:"Cita realizada",apartado:"Apartado",venta:"Venta",perdido:"Perdido",futuro:"Futuro"};
   const csv=[head.join(",")].concat(rows.map(l=> head.map(h=> `"${String(h==="tipo"?tipoDe(l):h==="estatus"?est[estatusDe(l)]:(l[h]??"")).replace(/"/g,'""')}"`).join(","))).join("\n");
   const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"})); a.download=`leads_base_${todayISO()}.csv`; a.click();
 }
@@ -1316,9 +1376,9 @@ function repBars(entries){
 }
 function repAsesor(name, a, b, lbl){
   const rows=leads.filter(l=> l.asesor===name && l.fecha>=a && l.fecha<=b);
-  const n=rows.length, nc=rows.filter(l=>l.nc).length, sg=rows.filter(l=>l.seguimiento).length, ht=rows.filter(l=>l.hot).length, c=rows.filter(esCita).length, ap=rows.filter(l=>l.apartado).length, v=rows.filter(l=>l.venta).length, pd=rows.filter(l=>l.perdido).length;
-  const pend=leads.filter(l=> l.asesor===name && !l.venta && !l.perdido && !l.apartado && l.fecha>=a && l.fecha<=b).sort((x,y)=>x.fecha.localeCompare(y.fecha));
-  const estado=l=> l.nc?"No contestó": l.seguimiento?"Seguimiento": l.hot?(l.cita?"Cita · Hot Lead":"Hot Lead"): l.cita?"Cita realizada":"Sin estatus";
+  const n=rows.length, nc=rows.filter(l=>l.nc).length, sg=rows.filter(l=>l.seguimiento).length, ht=rows.filter(l=>l.hot).length, c=rows.filter(esCita).length, ap=rows.filter(l=>l.apartado).length, v=rows.filter(l=>l.venta).length, pd=rows.filter(l=>l.perdido).length, fu=rows.filter(l=>l.futuro).length;
+  const pend=leads.filter(l=> l.asesor===name && !l.venta && !l.perdido && !l.futuro && !l.apartado && l.fecha>=a && l.fecha<=b).sort((x,y)=>x.fecha.localeCompare(y.fecha));
+  const estado=l=> l.futuro?"Futuro": l.nc?"No contestó": l.seguimiento?"Seguimiento": l.hot?(l.cita?"Cita · Hot Lead":"Hot Lead"): l.cita?"Cita realizada":"Sin estatus";
   return `<div class="rep">
     <div class="rephead">
       <div><h1>${esc(name)}</h1><p class="sub">${lbl||"Cierre de semana"} · ${a<"1900"?"hasta":fmtLong(a)+" –"} ${b>"9000"?fmtLong(todayISO()):fmtLong(b)}</p></div>
@@ -1332,6 +1392,7 @@ function repAsesor(name, a, b, lbl){
       <div class="repnum c"><b>${c}</b><span>citas realizadas</span></div>
       <div class="repnum a"><b>${ap}</b><span>apartados</span></div>
       <div class="repnum v"><b>${v}</b><span>ventas</span></div>
+      <div class="repnum f"><b>${fu}</b><span>futuros</span></div>
       <div class="repnum p"><b>${pd}</b><span>perdidos</span></div>
     </div>
     <div class="repgrid">
@@ -1340,7 +1401,7 @@ function repAsesor(name, a, b, lbl){
     </div>
     <div class="repbox"><h2>Pendientes del periodo</h2>
       ${pend.length? `<table><tr><th>Fecha</th><th>Nombre</th><th>Teléfono</th><th>Proyecto</th><th>Canal</th><th>Estado</th></tr>`+
-        pend.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td class="n">${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(l.proyecto)}</td><td>${esc(canalTxt(l))}</td><td>${estado(l)}</td></tr>`).join("")+`</table>`
+        pend.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span>${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(l.proyecto)}</td><td>${esc(canalTxt(l))}</td><td>${estado(l)}</td></tr>`).join("")+`</table>`
         : `<p class="empty" style="padding:6px 0">Sin pendientes: todos los leads del periodo tienen cierre.</p>`}
     </div>
     <div class="repfoot">Generado el ${fmtLong(todayISO())} · Lead Management TRUST</div>
@@ -1383,6 +1444,65 @@ async function reasignar(id, asesor, el){
   if(!await ask(`¿Reasignar el lead de ${l.nombre} de ${l.asesor} a ${asesor}?`, "Reasignar")){ if(el) el.value=l.asesor; return; }
   try{ await patch(id,{asesor}); render(); toast(`Reasignado a ${asesor}`); }catch(e){ toast("No se guardó: "+e.message, true); }
 }
+/* ===== Tarjeta del lead + bitácora ===== */
+let LEAD_OPEN=null;
+const AUTOR=()=> (typeof LOCK_ASE!=="undefined"&&LOCK_ASE) || "Dirección";
+function openLead(id){ const l=leads.find(x=>String(x.id)===String(id)); if(!l) return; LEAD_OPEN=l.id; drawLead(); document.getElementById("modalL").classList.add("on"); }
+function closeLead(){ LEAD_OPEN=null; document.getElementById("modalL").classList.remove("on"); }
+function drawLead(){
+  const l=leads.find(x=>x.id===LEAD_OPEN); const box=document.getElementById("modalLBox"); if(!l){ closeLead(); return; }
+  const tel=(l.telefono||"").replace(/\D/g,""); const wa=tel?`https://wa.me/${tel.length===10?"52"+tel:tel}`:"";
+  const fl=(k,lab,cls)=>`<button class="flag ${l[k]?"on":""} ${cls||""}" onclick="toggleFlag('${esc(l.id)}','${k}')">${lab}</button>`;
+  const ns=notasDe(l.id);
+  box.innerHTML=`<div class="lc-h"><div><h3>${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}</h3>
+      <div class="meta"><span>${esc(l.proyecto)}</span><span>·</span><span>${esc(canalTxt(l))}</span><span>·</span><span>${esc(l.asesor)}</span><span>·</span><span>registrado ${fmt(l.fecha)}/${String(l.fecha).slice(2,4)}</span>${diasDe(l)?`<span>·</span><span>${diasDe(l)} días</span>`:""}
+      ${l.telefono?`<span style="flex-basis:100%"></span><a href="tel:${esc(l.telefono)}">📞 ${esc(l.telefono)}</a>${wa?`<a href="${wa}" target="_blank" rel="noopener">WhatsApp ↗</a>`:""}`:""}</div></div>
+      <button class="lc-x" onclick="closeLead()" aria-label="Cerrar">✕</button></div>
+    <div class="lc-b">
+      <div class="lc-sec" style="margin-top:0">Estatus</div>
+      <div class="flags">${fl("nc","NC","n")}${fl("seguimiento","Seg.","s")}${fl("cita","Cita","c")}${fl("hot","Hot","h")}${fl("apartado","Apart.","a")}${fl("venta","Venta","v")}${fl("futuro","Fut.","f")}${fl("perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div>
+      ${l.perdido&&l.razon_perdido?`<div class="razon" style="margin-top:8px">Perdido: ${esc(l.razon_perdido)}</div>`:""}
+      ${(l.monto||l.enganche)?`<div class="lc-mo"><div><span class="hint">Venta esperada</span><b>${money(l.monto)}</b></div><div><span class="hint">Enganche</span><b>${money(l.enganche)}</b></div></div>`:""}
+      <div class="lc-sec">Bitácora · ${ns.length} comentario${ns.length===1?"":"s"}</div>
+      <div class="notas">${ns.length?ns.map(n=>`<div class="nota"><div class="nh"><span><b>${esc(n.autor||"")}</b> · ${esc(fmtNota(n.fecha))}</span><button class="nx" title="Borrar comentario" onclick="delNota('${esc(n.id)}')">×</button></div><div>${esc(n.texto)}</div></div>`).join(""):`<p class="empty" style="margin:0">Sin comentarios todavía. Anota aquí llamadas, acuerdos y siguientes pasos.</p>`}</div>
+      <div class="addnote"><textarea id="nTxt" rows="2" placeholder="Escribe un comentario… (Ctrl+Enter para guardar)"></textarea><button class="btn" onclick="addNota()">Agregar</button></div>
+    </div>`;
+  const ta=document.getElementById("nTxt"); if(ta) ta.onkeydown=e=>{ if((e.ctrlKey||e.metaKey)&&e.key==="Enter") addNota(); };
+}
+async function addNota(){
+  const l=leads.find(x=>x.id===LEAD_OPEN); const ta=document.getElementById("nTxt"); const texto=(ta.value||"").trim(); if(!l||!texto) return;
+  const row={lead_id:l.id, autor:AUTOR(), texto, fecha:new Date().toISOString()};
+  if(sb){ const r=await sb.from("lead_notas").insert(row).select().single(); if(r.error){ toast("No se guardó: "+r.error.message,true); return; } NOTAS.unshift(r.data); }
+  else { NOTAS.unshift({id:"n"+Date.now(),...row}); localStorage.setItem(LSN,JSON.stringify(NOTAS)); }
+  ta.value=""; drawLead(); render(); toast("Comentario guardado");
+}
+async function delNota(id){
+  if(!confirm("¿Borrar este comentario?")) return;
+  if(sb){ const r=await sb.from("lead_notas").delete().eq("id",id); if(r.error){ toast(r.error.message,true); return; } }
+  NOTAS=NOTAS.filter(n=>n.id!==id); if(!sb) localStorage.setItem(LSN,JSON.stringify(NOTAS)); drawLead(); render();
+}
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&LEAD_OPEN&&!document.querySelector(".modal.on:not(#modalL)")) closeLead(); });
+document.getElementById("modalL").addEventListener("click",e=>{ if(e.target.id==="modalL") closeLead(); });
+let aseView=localStorage.getItem("trust_ase_view")||"list";
+function setAseView(v){ aseView=v; localStorage.setItem("trust_ase_view",v); renderAse(); }
+const KAN_COLS=[["sin","Sin estatus","#97999B"],["nc","No contestó","var(--st-nc)"],["seguimiento","Seguimiento","var(--st-seg)"],["cita","Cita","var(--st-cita)"],["hot","Hot lead","var(--st-hot)"],["apartado","Apartado","#B8951D"],["venta","Venta","var(--st-venta)"],["futuro","Futuro","var(--st-fut)"],["perdido","Perdido","var(--st-perd)"]];
+function renderKanban(rows){
+  const box=document.getElementById("aKanban");
+  const by={}; KAN_COLS.forEach(([k])=>by[k]=[]); rows.forEach(l=>by[estatusDe(l)].push(l));
+  const card=l=>`<div class="kc" draggable="true" data-id="${esc(l.id)}">
+      <div class="nm"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}</span>${diasDe(l)}</div>
+      <div class="mt">${esc(l.proyecto)} · ${esc(canalTxt(l))} · ${fmt(l.fecha)}</div>
+      ${(l.apartado||l.venta)&&l.monto?`<div class="mo">${money(l.monto)}${l.enganche?` · eng. ${money(l.enganche)}`:""}</div>`:""}
+      ${l.perdido&&l.razon_perdido?`<div class="rz">${esc(l.razon_perdido)}</div>`:""}
+      ${lastNota(l)}
+      <select onchange="toggleFlag('${esc(l.id)}',this.value,true)" title="Mover a…"><option value="">Mover a…</option>${KAN_COLS.filter(([k])=>k!==estatusDe(l)).map(([k,lab])=>`<option value="${k}">${lab}</option>`).join("")}</select>
+    </div>`;
+  box.innerHTML=`<div class="kan">${KAN_COLS.map(([k,lab,c])=>`<div class="col ${k==="futuro"||k==="perdido"?"off":""}" data-k="${k}" style="--c:${c}"><div class="ch"><span>${lab}</span><b>${by[k].length}</b></div>${by[k].length?by[k].map(card).join(""):`<div class="empty">—</div>`}</div>`).join("")}</div>`;
+  let dragId=null;
+  box.querySelectorAll(".kc").forEach(c=>{ c.ondragstart=e=>{ dragId=c.dataset.id; c.classList.add("drag"); e.dataTransfer.effectAllowed="move"; e.dataTransfer.setData("text/plain",dragId); }; c.ondragend=()=>c.classList.remove("drag"); });
+  box.querySelectorAll(".col").forEach(col=>{ col.ondragover=e=>{ e.preventDefault(); col.classList.add("over"); }; col.ondragleave=()=>col.classList.remove("over");
+    col.ondrop=e=>{ e.preventDefault(); col.classList.remove("over"); const id=dragId||e.dataTransfer.getData("text/plain"); dragId=null; if(id) toggleFlag(id, col.dataset.k, true); }; });
+}
 function kpiFilt(k){ const e=document.getElementById("aEstF"); e.value= e.value===k ? "" : k; asePage=0; renderAse(); }
 function clearAseF(){ document.getElementById("aQ").value=""; document.getElementById("aProyF").value=""; document.getElementById("aCanalF").value=""; document.getElementById("aTipoF").value=""; document.getElementById("aEstF").value=""; asePage=0; renderAse(); }
 function openAse(name, from){ aseCur=name; aseBack=from; asePage=0; fillAseF(); clearAseF(); document.getElementById("aseName").textContent=name; go("ase"); renderAse(); window.scrollTo(0,0); }
@@ -1394,7 +1514,7 @@ function citasList(id, src){
   if(!cl.length){ el.innerHTML=`<p class="empty">Sin citas en este periodo.</p>`; return; }
   const fl=(l,k,lab,cls)=>`<button class="flag ${l[k]?"on":""} ${cls||""}" onclick="toggleFlag(${JSON.stringify(l.id)},'${k}')">${lab}</button>`;
   el.innerHTML=`<table><tr><th>Fecha</th><th>Días</th><th>Nombre</th><th>Teléfono</th><th>Canal</th><th>Proyecto</th><th>Estatus</th></tr>`+
-    cl.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td>${diasDe(l)}</td><td class="n">${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td><div class="flags">${fl(l,"cita","Cita","c")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"perdido","Perd.","p")}</div></td></tr>`).join("")+`</table>`;
+    cl.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td>${diasDe(l)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span>${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}${lastNota(l)}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td><div class="flags">${fl(l,"cita","Cita","c")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"futuro","Fut.","f")}${fl(l,"perdido","Perd.","p")}</div></td></tr>`).join("")+`</table>`;
 }
 function renderAse(){
   if(!aseCur) return;
@@ -1403,7 +1523,7 @@ function renderAse(){
   const q=(document.getElementById("aQ")?.value||"").trim().toLowerCase();
   const fp=document.getElementById("aProyF").value, fc=document.getElementById("aCanalF").value, ft=document.getElementById("aTipoF").value, fe=document.getElementById("aEstF").value;
   const base=all.filter(l=> l.asesor===aseCur && (!q || (l.nombre||"").toLowerCase().includes(q) || (l.telefono||"").toLowerCase().includes(q)) && (!fp||l.proyecto===fp) && canalMatch(l,fc) && (!ft||tipoDe(l)===ft));
-  const rows=base.filter(l=> !fe || (fe==="activo" ? estatusDe(l)!=="perdido" : estatusDe(l)===fe));
+  const rows=base.filter(l=> !fe || (fe==="activo" ? !["perdido","futuro"].includes(estatusDe(l)) : estatusDe(l)===fe));
   document.getElementById("aClear").classList.toggle("on", !!(q||fp||fc||ft||fe));
   const sinEst=base.filter(l=>estatusDe(l)==="sin").length;
   document.getElementById("aSin").textContent=sinEst;
@@ -1412,8 +1532,9 @@ function renderAse(){
   document.getElementById("aTotal").textContent=base.length;
   const nPerd=base.filter(l=>estatusDe(l)==="perdido").length; document.getElementById("aShare").innerHTML=`${nPerd} <small style="font-family:Montserrat;font-size:13px">${pct(nPerd,base.length)}</small>`; document.getElementById("aPerdBox").classList.toggle("lost", nPerd>0);
   const sm=v=>` <small style="font-family:Montserrat;font-size:13px">${v}</small>`;
-  [["activo","aActBox"],["perdido","aPerdBox"],["nc","aNcBox"],["seguimiento","aSegBox"],["hot","aHotBox"],["sin","aSinBox"],["apartado","aApaBox"]].forEach(([k,id])=>document.getElementById(id).classList.toggle("sel", fe===k));
-  const nAct=base.filter(l=>estatusDe(l)!=="perdido").length; document.getElementById("aAct").innerHTML=nAct+sm(pct(nAct,base.length));
+  [["activo","aActBox"],["perdido","aPerdBox"],["futuro","aFutBox"],["nc","aNcBox"],["seguimiento","aSegBox"],["hot","aHotBox"],["sin","aSinBox"],["apartado","aApaBox"]].forEach(([k,id])=>document.getElementById(id).classList.toggle("sel", fe===k));
+  const nAct=base.filter(l=>!["perdido","futuro"].includes(estatusDe(l))).length;
+  const nFut=base.filter(l=>estatusDe(l)==="futuro").length; document.getElementById("aFut").innerHTML=nFut+sm(pct(nFut,base.length)); document.getElementById("aFutBox").classList.toggle("fut", nFut>0); document.getElementById("aAct").innerHTML=nAct+sm(pct(nAct,base.length));
   const nNc=base.filter(l=>estatusDe(l)==="nc").length; document.getElementById("aNc").innerHTML=nNc+sm(pct(nNc,base.length));
   const nSeg=base.filter(l=>estatusDe(l)==="seguimiento").length; document.getElementById("aSeg").innerHTML=nSeg+sm(pct(nSeg,base.length)); document.getElementById("aSegBox").classList.toggle("seg", nSeg>0);
   const nHot=base.filter(l=>l.hot).length; document.getElementById("aHot").innerHTML=nHot+sm(pct(nHot,base.length)); document.getElementById("aHotBox").classList.toggle("hot", nHot>0);
@@ -1432,21 +1553,25 @@ function renderAse(){
       `<tr><td class="tot">Total</td>${cols.map(k=>`<td class="tot">${colTot[k]}</td>`).join("")}<td class="tot">${rows.length}</td></tr></table>`;
   }
   funnelViz("aFunnel",rows); proj("aProj",rows); citasList("aCitas",base);
+  // vista: lista o etapas
+  document.getElementById("vList").classList.toggle("on",aseView==="list"); document.getElementById("vKan").classList.toggle("on",aseView==="kanban");
+  document.getElementById("aList").style.display= aseView==="kanban"?"none":""; document.getElementById("aKanban").style.display= aseView==="kanban"?"":"none";
+  if(aseView==="kanban"){ renderKanban(rows); return; }
   // list (paginada de 10)
   const list=document.getElementById("aList");
-  const lrows= fe==="perdido" ? rows : rows.filter(l=>estatusDe(l)!=="perdido");
+  const lrows= fe==="perdido" ? rows : rows.filter(l=>estatusDe(l)!=="perdido");  // futuros sí se muestran (se retoman)
   if(!lrows.length){ list.innerHTML=`<p class="empty">${rows.length?"Sin leads activos en este periodo (los perdidos se ocultan; usa el filtro Estatus: Perdido para verlos).":"Sin leads en este periodo."}</p>`; return; }
   const PER=10, pages=Math.ceil(lrows.length/PER); if(asePage>=pages) asePage=pages-1; if(asePage<0) asePage=0;
   const page=aseSorted(lrows).slice(asePage*PER, asePage*PER+PER);
   const fl=(l,k,lab,cls)=>`<button class="flag ${l[k]?"on":""} ${cls||""}" onclick="toggleFlag(${JSON.stringify(l.id)},'${k}')">${lab}</button>`;
   list.innerHTML=`<table><tr>${aseTh("fecha","Fecha")}${aseTh("dias","Días")}${aseTh("nombre","Nombre")}${aseTh("telefono","Teléfono")}${aseTh("canal","Canal")}${aseTh("proyecto","Proyecto")}${aseTh("estatus","Estatus")}<th></th></tr>`+
-    page.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td>${diasDe(l)}</td><td class="n">${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td><div class="flags">${fl(l,"nc","NC","n")}${fl(l,"seguimiento","Seg.","s")}${fl(l,"cita","Cita","c")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div></td><td style="white-space:nowrap"><button class="x" title="Editar" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="x" title="Borrar este lead" onclick="del(${JSON.stringify(l.id)})">×</button></td></tr>`).join("")+`</table>`+
+    page.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td>${diasDe(l)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span>${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}${lastNota(l)}</td><td class="m">${esc(l.telefono||"—")}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td><div class="flags">${fl(l,"nc","NC","n")}${fl(l,"seguimiento","Seg.","s")}${fl(l,"cita","Cita","c")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"futuro","Fut.","f")}${fl(l,"perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div></td><td style="white-space:nowrap"><button class="x" title="Editar" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="x" title="Borrar este lead" onclick="del(${JSON.stringify(l.id)})">×</button></td></tr>`).join("")+`</table>`+
     (pages>1?`<div class="pager"><span>${asePage*PER+1}–${Math.min(lrows.length,(asePage+1)*PER)} de ${lrows.length}</span><div><button ${asePage===0?"disabled":""} onclick="asePage--;renderAse()">Anteriores</button><button ${asePage>=pages-1?"disabled":""} onclick="asePage++;renderAse()">Siguientes</button></div></div>`:"");
 }
 
 function exportCSV(){
   const rows=inPeriod(); if(!rows.length){ toast("No hay leads en el periodo", true); return; }
-  const head=["fecha","nombre","telefono","canal","proyecto","asesor","tipo","marketplace","monto","enganche","nc","hot","cita","apartado","venta","seguimiento","perdido","razon_perdido"];
+  const head=["fecha","nombre","telefono","canal","proyecto","asesor","tipo","marketplace","monto","enganche","nc","hot","cita","apartado","venta","seguimiento","perdido","futuro","razon_perdido"];
   const csv=[head.join(",")].concat(rows.map(l=> head.map(h=> `"${String(h==="tipo" ? tipoDe(l) : typeof l[h]==="boolean" ? (l[h]?"sí":"") : (l[h]??"")).replace(/"/g,'""')}"`).join(","))).join("\n");
   const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"})); a.download=`leads_${range().join("_")}.csv`; a.click();
 }
@@ -1475,9 +1600,10 @@ document.addEventListener("keydown", e=>{
 /* ===== Actualización automática (cada 60 s) ===== */
 let afterLoad=null;   // las variantes (Tanhia, asesores) pueden filtrar aquí
 async function refresh(){
-  if(!sb || document.hidden || document.querySelector(".modal.on")) return;
+  if(!sb || document.hidden || document.querySelector(".modal.on:not(#modalL)")) return;
   const {data, error} = await sb.from("leads").select("*").order("fecha",{ascending:false}).order("created_at",{ascending:false});
   if(error) return;
+  await loadNotas();
   leads=data; if(afterLoad) afterLoad(); render();
   const h=new Date(); setSync(`Supabase · ${String(h.getHours()).padStart(2,"0")}:${String(h.getMinutes()).padStart(2,"0")}`, false);
 }
