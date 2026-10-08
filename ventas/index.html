@@ -274,12 +274,13 @@ function renderVentas(){
     <span class="count">${rows.length} de ${all.length}</span>
   </div>
   <div class="twrap"><table><thead><tr>${th("fecha","Mes")}${th("cliente","Cliente")}<th>UN</th>${th("proyecto","Proyecto")}<th>Unidad</th>${th("asesor","Asesor")}<th>Opcionador</th>${th("monto","Monto",1)}<th class="num">%</th>${th("comision","Comisión",1)}${th("estatus","Cobranza")}<th></th></tr></thead>
-  <tbody>${rows.map(v=>{const e=estatusDe(v);return `<tr data-id="${v.id}"><td class="dim">${fechaM(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${v.autogenerada?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">AG</span>':""}</td><td><span class="un ${v.un}">${esc(v.un)}</span>${esCredito(v)?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(v.proyecto)}</td><td class="dim">${esc(v.unidad||"")}</td><td>${esc(v.asesor)}</td><td class="dim">${esc(v.opcionador||"—")}</td><td class="num money">${fmt(v.monto)}</td><td class="num dim">${v.comision_monto!=null?"fijo":(+v.comision_pct||0).toLocaleString("es-MX",{maximumFractionDigits:2})+"%"}</td><td class="num com">${fmt(comTotal(v))}</td><td><span class="st ${e}">${EST_LABEL[e]}</span></td><td><button class="ico edit" data-id="${v.id}" title="Abrir">✎</button></td></tr>`}).join("")}</tbody></table>
+  <tbody>${rows.map(v=>{const e=estatusDe(v);return `<tr data-id="${v.id}"><td class="dim">${fechaM(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${v.autogenerada?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">AG</span>':""}</td><td><span class="un ${v.un}">${esc(v.un)}</span>${esCredito(v)?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(v.proyecto)}</td><td class="dim">${esc(v.unidad||"")}</td><td>${esc(v.asesor)}</td><td class="dim">${esc(v.opcionador||"—")}</td><td class="num money">${fmt(v.monto)}</td><td class="num dim">${v.comision_monto!=null?"fijo":(+v.comision_pct||0).toLocaleString("es-MX",{maximumFractionDigits:2})+"%"}</td><td class="num com">${fmt(comTotal(v))}</td><td><button class="st ${e} cobs" data-id="${v.id}" title="Ver / registrar cobros" style="border:0;cursor:pointer;font:inherit">${EST_LABEL[e]}</button></td><td><button class="ico edit" data-id="${v.id}" title="Abrir">✎</button></td></tr>`}).join("")}</tbody></table>
   ${rows.length?"":`<div class="empty"><b>Sin ventas</b>No hay operaciones registradas en ${periodoTxt().toLowerCase()}${filt.q||filt.un||filt.asesor||filt.estatus?" con esos filtros":""}.</div>`}</div>`;
   $("#f-q").oninput=e=>{filt.q=e.target.value;renderVentas();const i=$("#f-q");i.focus();i.setSelectionRange(i.value.length,i.value.length)};
   ["un","asesor","estatus"].forEach(k=>$("#f-"+k).onchange=e=>{filt[k]=e.target.value;renderVentas()});
   el.querySelectorAll("th.sortable").forEach(t=>t.onclick=()=>{const k=t.dataset.k;sort=sort.k===k?{k,dir:sort.dir==="asc"?"desc":"asc"}:{k,dir:k==="fecha"||k==="monto"||k==="comision"?"desc":"asc"};renderVentas()});
   el.querySelectorAll(".edit").forEach(b=>b.onclick=()=>openVenta(VENTAS.find(v=>v.id===b.dataset.id)));
+  el.querySelectorAll(".cobs").forEach(b=>b.onclick=()=>openCobro(VENTAS.find(v=>v.id===b.dataset.id)));
 }
 
 /* ---------- empresa ---------- */
@@ -354,14 +355,20 @@ function renderCobranza(){
     <div class="tile"><span class="l">Cobrado en el periodo</span><span class="v">${fmtK(cobP)}</span><span class="s">por fecha de cobro</span></div>
   </div>
   <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Cobranza · ${periodoTxt()}</h3><label class="chk" style="padding:0"><input type="checkbox" id="cb-all" ${verCobradas?"checked":""} style="width:auto"> Ver cobradas</label></div>
-    <p class="hint" style="margin:6px 0 10px">Lo que el desarrollador / cliente nos ha pagado por cada venta. "Pago parcial" registra un cobro con monto; "Pagada" liquida el resto. Independiente del pago a asesores.</p>
+    <p class="hint" style="margin:6px 0 10px">Lo que el desarrollador / cliente nos ha pagado por cada venta. "Pago parcial" registra un cobro con monto (también sirve para corregir una venta marcada como pagada); "Pagada" liquida el resto. Independiente del pago a asesores.</p>
     <div class="twrap" style="border:0"><table><thead><tr><th>Mes</th><th>Cliente</th><th>Proyecto</th><th>Asesor</th><th class="num">Comisión</th><th class="num">Cobrado</th><th class="num">Pendiente</th><th>Estatus de cobro</th></tr></thead>
     <tbody>${rows.map(v=>{const tot=comTotal(v),cob=cobradoDe(v.id),pd=Math.max(0,tot-cob),n=cobrosDe(v.id).length;return `<tr class="${estatusDe(v)==="pagada"?"dimrow":""}"><td class="dim">${fechaM(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${esCredito(v)?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(v.proyecto)}${v.unidad?` <span class="dim">· ${esc(v.unidad)}</span>`:""}</td><td>${esc(v.asesor)}</td><td class="num com">${fmt(tot)}</td><td class="num ${cob?"paid":""}">${fmt(cob)}${n?` <button class="ico cobs" data-id="${v.id}" title="Ver cobros">${n}</button>`:""}</td><td class="num money" style="color:${pd>0.5?"var(--bad)":"var(--ok)"}">${fmt(pd)}</td><td>${seg(v)}</td></tr>`}).join("")}</tbody></table>
     ${rows.length?"":`<div class="empty"><b>Todo cobrado</b>No hay ventas por cobrar en ${periodoTxt().toLowerCase()}.</div>`}</div></div>`;
   $("#cb-all").onchange=e=>{verCobradas=e.target.checked;renderCobranza()};
   el.querySelectorAll(".cobs").forEach(b=>b.onclick=()=>openCobro(VENTAS.find(x=>x.id===b.dataset.id)));
   el.querySelectorAll(".segc button").forEach(b=>b.onclick=async()=>{const id=b.closest(".segc").dataset.id,k=b.dataset.k;const v=VENTAS.find(x=>x.id===id);
-    if(k==="parcial"){openCobro(v);return}
+    if(k==="parcial"){
+      if(estatusDe(v)==="pagada"){const auto=cobrosDe(v.id).filter(c=>(c.concepto||"")==="Liquidación");
+        if(auto.length){if(!confirm("Esta venta está marcada como cobrada por completo. ¿En realidad fue un pago parcial? Se quita la liquidación automática para que captures el monto real."))return;
+          const r=await sb.from("ventas_cobros").delete().in("id",auto.map(c=>c.id));if(r.error){toast(r.error.message,true);return}COBROS=COBROS.filter(c=>!auto.some(a=>a.id===c.id));}
+        if(!cobrosDe(v.id).length){const r=await sb.from("ventas").update({cobro_estatus:"pendiente"}).eq("id",v.id);if(!r.error)v.cobro_estatus="pendiente";}
+        renderCobranza();}
+      openCobro(v);return}
     if(estatusDe(v)===k)return;
     if(k==="pagada"){const falta=comTotal(v)-cobradoDe(v.id);if(falta>0.5){const r=await sb.from("ventas_cobros").insert({venta_id:v.id,fecha:todayISO(),monto:falta,concepto:"Liquidación"}).select().single();if(r.error){toast("No se guardó: "+r.error.message,true);return}COBROS.push(r.data)}}
     if(k==="pendiente"&&cobrosDe(v.id).length){if(!confirm("¿Regresar a pendiente? Se borran los cobros registrados de esta venta."))return;const r=await sb.from("ventas_cobros").delete().eq("venta_id",v.id);if(r.error){toast(r.error.message,true);return}COBROS=COBROS.filter(c=>c.venta_id!==v.id)}
@@ -375,13 +382,13 @@ function openCobro(v){
     <div class="body">
       <p style="margin:0 0 12px"><b>${esc(v.proyecto||"")}</b>${v.unidad?" · "+esc(v.unidad):""} · ${fechaM(v.fecha)}<br><span class="dim">Comisión ${fmt(tot)} · cobrado ${fmt(cob)} · <b style="color:${falta>0.5?"var(--bad)":"var(--ok)"}">pendiente ${fmt(falta)}</b></span></p>
       ${list.length?`<table class="disp" style="margin-bottom:12px"><thead><tr><th>Fecha</th><th>Concepto</th><th class="num">Monto</th><th></th></tr></thead><tbody>${list.map(c=>`<tr><td class="dim">${fecha(c.fecha)}</td><td>${esc(c.concepto||"")}</td><td class="num">${fmt(c.monto)}</td><td><button class="ico delcob" data-id="${c.id}" title="Eliminar cobro">×</button></td></tr>`).join("")}</tbody></table>`:""}
-      ${falta>0.5?`<div class="fg">
+      ${falta>0.5||true?`<div class="fg">
         <div class="f c6"><label>Fecha del cobro</label><input type="date" id="cb-fecha" value="${todayISO()}"></div>
-        <div class="f c6"><label>Monto cobrado</label><input id="cb-m" inputmode="numeric" value="${Math.round(falta).toLocaleString("es-MX")}"></div>
+        <div class="f c6"><label>Monto cobrado</label><input id="cb-m" inputmode="numeric" value="${falta>0.5?Math.round(falta).toLocaleString("es-MX"):""}"></div>
         <div class="f c12"><label>Concepto</label><input id="cb-nota" placeholder="Anticipo, firma, escritura…"></div>
       </div>
-      <p class="hint" style="margin-top:10px">Si el monto es menor al pendiente queda como pago parcial; si lo cubre, la venta pasa a cobrada.</p>`:`<p class="hint">Esta venta ya está cobrada por completo.</p>`}</div>
-    <footer><span></span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cerrar</button>${falta>0.5?`<button class="btn primary" id="d-save">Registrar cobro</button>`:""}</span></footer></div>`;
+      <p class="hint" style="margin-top:10px">${falta>0.5?"Si el monto es menor al pendiente queda como pago parcial; si lo cubre, la venta pasa a cobrada.":"Esta venta ya está cobrada por completo. Si fue parcial, borra el cobro que sobra con × y registra el monto real."}</p>`:""}</div>
+    <footer><span></span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cerrar</button><button class="btn primary" id="d-save">Registrar cobro</button></span></footer></div>`;
   const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
   root.querySelectorAll(".delcob").forEach(b=>b.onclick=async()=>{if(!confirm("¿Eliminar este cobro?"))return;const r=await sb.from("ventas_cobros").delete().eq("id",b.dataset.id);if(r.error){toast(r.error.message,true);return}COBROS=COBROS.filter(c=>c.id!==b.dataset.id);
     const k=cobradoDe(v.id)<=0?"pendiente":cobradoDe(v.id)+0.5>=tot?"pagada":"parcial";await sb.from("ventas").update({cobro_estatus:k}).eq("id",v.id);v.cobro_estatus=k;openCobro(v);render()});
