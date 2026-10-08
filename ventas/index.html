@@ -302,7 +302,7 @@ function renderEmpresa(){
   const vP=VN.filter(v=>inPeriodo(v.fecha));const ingreso=vP.reduce((a,v)=>a+comTotal(v),0);
   const vVen=vP.filter(v=>v.tipo==="Venta"),vRen=vP.filter(v=>v.tipo==="Renta");
   const objetivo=P.trims.length?P.trims.reduce((a,q)=>a+objQ(q-1),0):byMprev.reduce((a,b)=>a+b,0);const falta=objetivo-ingreso;
-  const byUN={},byProy={};vP.forEach(v=>{const t=comTotal(v);byUN[v.un]=(byUN[v.un]||0)+t;byProy[v.proyecto]=(byProy[v.proyecto]||0)+t});
+  const byUN={},byProy={},byAse={};vP.forEach(v=>{const t=comTotal(v);byUN[v.un]=(byUN[v.un]||0)+t;byProy[v.proyecto]=(byProy[v.proyecto]||0)+t;const a=v.asesor||"Sin asesor";byAse[a]=(byAse[a]||0)+t});
   const max=Math.max(...byM,...byMprev,1);
   el.innerHTML=`
   <div class="tiles">
@@ -316,9 +316,10 @@ function renderEmpresa(){
   <div class="card" style="margin-bottom:14px"><h3>Ingresos vs objetivo por trimestre · ${Y}</h3>
     <div class="cols">${byM.map((v,i)=>{const ok=v+0.5>=byMprev[i];return `<div class="c" title="${QLL[i]}"><small>${fmtK(v).replace("$ ","")} <span class="dim">/ ${fmtK(byMprev[i]).replace("$ ","")}</span></small><div style="display:flex;gap:2px;width:100%;align-items:flex-end;height:120px;justify-content:center"><i style="height:${v/max*100}%"></i><i class="p" style="height:${byMprev[i]/max*100}%"></i></div><b style="color:${ok?"var(--ok)":"var(--bad)"}">${QL[i]} · ${pct(v,byMprev[i])}</b></div>`}).join("")}${(()=>{const t=byM.reduce((a,b)=>a+b,0),o=byMprev.reduce((a,b)=>a+b,0),ok=t+0.5>=o;return `<div class="c acum"><small>${fmtK(t).replace("$ ","")} <span class="dim">/ ${fmtK(o).replace("$ ","")}</span></small><div style="display:flex;gap:2px;width:100%;align-items:flex-end;height:120px;justify-content:center"><i style="height:${t/Math.max(t,o,1)*100}%"></i><i class="p" style="height:${o/Math.max(t,o,1)*100}%"></i></div><b style="color:${ok?"var(--ok)":"var(--bad)"}">Acumulado ${Y} · ${pct(t,o)}</b></div>`})()}</div>
     <div class="legend"><span><i></i>Ingresos ${Y}</span><span><i class="p"></i>Objetivo</span><span style="margin-left:auto">Ingresos ${Y}: <b>${fmtK(byM.reduce((a,b)=>a+b,0))}</b> de <b>${fmtK(byMprev.reduce((a,b)=>a+b,0))}</b></span></div></div>
-  <div class="grid2">
+  <div class="grid3">
     <div class="card"><h3>Por unidad de negocio</h3><div class="bars">${bars(byUN,ingreso)}</div></div>
     <div class="card"><h3>Por proyecto</h3><div class="bars">${bars(byProy,ingreso)}</div></div>
+    <div class="card"><h3>Por asesor</h3><div class="bars">${bars(byAse,ingreso,1)}</div></div>
   </div>`;
 }
 function bars(obj,total,g){const e=Object.entries(obj).sort((a,b)=>b[1]-a[1]);if(!e.length)return `<p class="hint">Sin datos en el periodo.</p>`;const max=e[0][1]||1;return e.map(([k,v])=>`<div class="bar"><span>${esc(k)}</span><div class="trk"><div class="fil ${g?"g":""}" style="width:${v/max*100}%"></div></div><span class="val">${fmt(v)} <small style="color:var(--muted);font-weight:400">${pct(v,total)}</small></span></div>`).join("")}
