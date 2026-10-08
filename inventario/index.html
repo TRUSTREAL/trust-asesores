@@ -239,7 +239,7 @@ select.st{padding-right:10px}
 .drawer{position:fixed;top:0;right:0;bottom:0;width:min(520px,100%);background:var(--surface);z-index:21;box-shadow:var(--shadow);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
 .drawer header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line)}
 .drawer header h3{font-size:20px;color:var(--green)}
-.drawer form{padding:16px 20px;overflow:auto;display:grid;gap:12px;grid-template-columns:1fr 1fr;flex:1}
+.drawer form{padding:16px 20px;overflow:auto;display:grid;gap:12px;grid-template-columns:1fr 1fr;flex:1;align-content:start}
 .f{display:flex;flex-direction:column;gap:4px}
 .f.full{grid-column:1/-1}
 .f label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
@@ -539,12 +539,13 @@ function openCierre(u){
   const p=S.projects.find(p=>p.id===S.sel), renta=isRenta(p);
   drawer(`${renta?"Renta":"Venta"} · ${u.tipo}${u.torre?" · "+u.torre:""}${u.nivel!=null&&u.nivel!==""?" · nivel "+u.nivel:""}`,
     fld("fecha_cierre","Fecha de cierre",u.fecha_cierre||"","type=date")+
-    fld("precio_cierre",renta?"Renta mensual real (MXN)":"Precio real de cierre (MXN)",u.precio_cierre??"","type=number step=1 min=0 placeholder='"+(u.precio||0)+"'")+
+    fld("precio",renta?"Renta de lista (MXN)":"Precio de lista (MXN)",u.precio??"","type=number step=1 min=0 required")+
+    fld("precio_cierre",renta?"Renta mensual real (MXN)":"Precio real de cierre (MXN)",u.precio_cierre??"","type=number step=1 min=0 placeholder='"+(u.precio||0)+"'",true)+
     fld("comprador",renta?"Inquilino":"Comprador",u.comprador||"")+
     `<div class="f"><label for="fx-asesor_cierre">Asesor</label><input id="fx-asesor_cierre" name="asesor_cierre" list="dl-ase" value="${esc(u.asesor_cierre||"")}" placeholder="Asesor TRUST, desarrollador, otro broker…"><datalist id="dl-ase">${ASESORES.map(a=>`<option value="${esc(a)}">`).join("")}<option value="Desarrollador"><option value="Otro broker"></datalist></div>`+
     `<div class="f full"><label for="fx-notas_cierre">Notas</label><textarea id="fx-notas_cierre" name="notas_cierre" placeholder="Forma de pago, descuentos, condiciones…">${esc(u.notas_cierre||"")}</textarea></div>`+
-    `<p class="hint">Precio de lista: <b>${fmt(u.precio)}</b>${u.m2tot?` · ${fmt(u.precio/u.m2tot)} / m²`:""}.</p>`,
-    d=>{const v={precio_cierre:d.precio_cierre===""?null:+d.precio_cierre,fecha_cierre:d.fecha_cierre||null,comprador:d.comprador.trim()||null,asesor_cierre:d.asesor_cierre.trim()||null,notas_cierre:d.notas_cierre.trim()||null};
+    `<p class="hint">Si el precio de lista cambió para esta venta, corrígelo aquí mismo; se actualiza también en la pestaña Precios.${u.m2tot?` Lista actual: ${fmt(u.precio)} · ${fmt(u.precio/u.m2tot)} / m².`:""}</p>`,
+    d=>{const v={precio:+d.precio||0,precio_cierre:d.precio_cierre===""?null:+d.precio_cierre,fecha_cierre:d.fecha_cierre||null,comprador:d.comprador.trim()||null,asesor_cierre:d.asesor_cierre.trim()||null,notas_cierre:d.notas_cierre.trim()||null};
       if(u.estatus!=="Vendido")v.estatus="Vendido";
       Object.assign(u,v);db(()=>sb.from("unidades").update(v).eq("id",u.id))},null);
 }
