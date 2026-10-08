@@ -374,7 +374,7 @@ function restoreUI(){ try{const r=localStorage.getItem(KEY+"-ui");if(r){const u=
 const rowP=p=>({id:p.id,nombre:p.nombre,cat:p.cat,giro:p.giro,desarrollador:p.desarrollador||"",ubicacion:p.ubicacion||"",lista:p.lista||"",notas:p.notas||"",enganche:p.enganche==null||p.enganche===""?5:+p.enganche,nota_lista:p.nota_lista||"",politica:p.politica||"",politicas:Array.isArray(p.politicas)?p.politicas:[]});
 const rowU=(u,pid)=>({id:u.id,proyecto_id:pid,estatus:u.estatus,tipo:u.tipo,torre:u.torre||"",nivel:u.nivel,vista:u.vista||"",m2int:u.m2int,m2terr:u.m2terr,m2desc:u.m2desc??null,m2tot:u.m2tot,parking:u.parking,precio:u.precio,recamaras:u.recamaras,banos:u.banos,
   precio_cierre:u.precio_cierre??null,fecha_cierre:u.fecha_cierre||null,comprador:u.comprador||null,asesor_cierre:u.asesor_cierre||null,notas_cierre:u.notas_cierre||null});
-const ASESORES=["Ana Lu","Carlos","Fanny","María","Paola","Ramsés","Rodrigo","Álvaro","Majo","Berna"];
+const ASESORES=["Ana Lu","Carlos","Fanny","María","Paola","Ramsés","Rodrigo","Álvaro","Majo","Berna","EX"];
 async function loadAll(){
   if(!sb){ try{const r=localStorage.getItem(KEY);S=r?JSON.parse(r):seed();}catch(e){S=seed()} return; }
   const [{data:ps,error:e1},{data:us,error:e2}]=await Promise.all([
