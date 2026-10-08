@@ -195,7 +195,7 @@ const fecha=d=>d?(()=>{const [y,m,dd]=String(d).slice(0,10).split("-");return `$
 const fechaM=d=>d?(()=>{const [y,m]=String(d).slice(0,7).split("-");return `${MESES_L[+m-1]} ${y}`})():"—";
 const uid=()=>"p"+Math.random().toString(36).slice(2,9);
 
-let VENTAS=[], PAGOS=[], REGLAS={...REGLAS_DEF}, PANE="ventas";
+let VENTAS=[], PAGOS=[], COBROS=[], REGLAS={...REGLAS_DEF}, PANE="ventas";
 let P={anio:new Date().getFullYear(),mes:"",trims:[]}; // periodo: Ventas y Empresa por trimestre; el resto por mes
 const useQ=()=>PANE==="empresa"||PANE==="asesores";
 let filt={q:"",un:"",asesor:"",estatus:""}, sort={k:"fecha",dir:"desc"};
@@ -203,18 +203,21 @@ let filt={q:"",un:"",asesor:"",estatus:""}, sort={k:"fecha",dir:"desc"};
 /* ---------- carga ---------- */
 async function loadAll(){
   if(!sb){toast("Sin conexión a Supabase",true);return}
-  const [v,p,r]=await Promise.all([sb.from("ventas").select("*").order("fecha",{ascending:false}),sb.from("ventas_pagos").select("*").order("fecha"),sb.from("ventas_reglas").select("*").eq("id",1).maybeSingle()]);
+  const [v,p,c,r]=await Promise.all([sb.from("ventas").select("*").order("fecha",{ascending:false}),sb.from("ventas_pagos").select("*").order("fecha"),sb.from("ventas_cobros").select("*").order("fecha"),sb.from("ventas_reglas").select("*").eq("id",1).maybeSingle()]);
   if(v.error){toast("Error: "+v.error.message,true);return}
-  VENTAS=v.data||[];PAGOS=p.data||[];
+  VENTAS=v.data||[];PAGOS=p.data||[];COBROS=c.error?[]:(c.data||[]);
   if(r.data&&r.data.reglas)REGLAS={...REGLAS_DEF,...r.data.reglas};
   render();
 }
 const comTotal=v=>v.comision_monto!=null?+v.comision_monto:(+v.monto||0)*(+v.comision_pct||0)/100;
 // Cobranza: estatus manual por venta (independiente del pago a asesores)
-const estatusDe=v=>v.cobro_estatus||"pendiente";
+const estatusDe=v=>{const cob=typeof cobradoDe==="function"?cobradoDe(v.id):0;if(cob>0)return cob+0.5>=comTotal(v)?"pagada":"parcial";return v.cobro_estatus||"pendiente"};
 const EST_LABEL={pendiente:"Pendiente",parcial:"Pago parcial",pagada:"Pagada"};
 // Pagos a beneficiarios por venta
 const pagadoDe=(n,vid)=>PAGOS.filter(p=>p.beneficiario===n&&p.venta_id===vid).reduce((a,p)=>a+(+p.monto||0),0);
+// Cobros (lo que nos ha pagado el cliente / desarrollador por cada venta)
+const cobrosDe=vid=>COBROS.filter(c=>c.venta_id===vid).sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));
+const cobradoDe=vid=>cobrosDe(vid).reduce((a,c)=>a+(+c.monto||0),0);
 
 /* ---------- dispersión ---------- */
 function dispDefault(v){
@@ -338,23 +341,54 @@ function renderCobranza(){
   const all=VENTAS.filter(v=>inPeriodo(v.fecha)).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
   const pend=all.filter(v=>estatusDe(v)==="pendiente"),parc=all.filter(v=>estatusDe(v)==="parcial"),pag=all.filter(v=>estatusDe(v)==="pagada");
   const rows=verCobradas?all:all.filter(v=>estatusDe(v)!=="pagada");
-  const sum=l=>l.reduce((a,v)=>a+comTotal(v),0);
-  const seg=v=>`<div class="segc" data-id="${v.id}">${Object.entries(EST_LABEL).map(([k,l])=>`<button class="${k} ${estatusDe(v)===k?"on":""}" data-k="${k}">${l}</button>`).join("")}</div>`;
+  const sum=l=>l.reduce((a,v)=>a+comTotal(v),0), sumCob=l=>l.reduce((a,v)=>a+cobradoDe(v.id),0);
+  const porCobrar=[...pend,...parc].reduce((a,v)=>a+Math.max(0,comTotal(v)-cobradoDe(v.id)),0);
+  const cobP=COBROS.filter(c=>inPeriodo(c.fecha)).reduce((a,c)=>a+(+c.monto||0),0);
+  const seg=v=>`<div class="segc" data-id="${v.id}">${Object.entries(EST_LABEL).map(([k,l])=>`<button class="${k} ${estatusDe(v)===k?"on":""}" data-k="${k}" title="${k==="parcial"?"Registrar un cobro parcial":k==="pagada"?"Marcar como cobrada por completo":"Regresar a pendiente"}">${l}</button>`).join("")}</div>`;
   el.innerHTML=`
   <div class="tiles">
-    <div class="tile dark"><span class="l">Por cobrar</span><span class="v">${pend.length+parc.length}</span><span class="s">${fmtK(sum(pend)+sum(parc))} · ${periodoTxt()}</span></div>
-    <div class="tile"><span class="l">Pendientes</span><span class="v">${pend.length}</span><span class="s">${fmtK(sum(pend))}</span></div>
-    <div class="tile gold"><span class="l">Pago parcial</span><span class="v">${parc.length}</span><span class="s">${fmtK(sum(parc))}</span></div>
+    <div class="tile dark"><span class="l">Por cobrar</span><span class="v">${fmtK(porCobrar)}</span><span class="s">${pend.length+parc.length} venta${pend.length+parc.length===1?"":"s"} · ${periodoTxt()}</span></div>
+    <div class="tile"><span class="l">Pendientes</span><span class="v">${pend.length}</span><span class="s">${fmtK(sum(pend))} sin ningún cobro</span></div>
+    <div class="tile gold"><span class="l">Pago parcial</span><span class="v">${parc.length}</span><span class="s">${fmtK(sumCob(parc))} de ${fmtK(sum(parc))} cobrado</span></div>
     <div class="tile"><span class="l">Cobradas</span><span class="v">${pag.length}</span><span class="s">${fmtK(sum(pag))}</span></div>
+    <div class="tile"><span class="l">Cobrado en el periodo</span><span class="v">${fmtK(cobP)}</span><span class="s">por fecha de cobro</span></div>
   </div>
   <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Cobranza · ${periodoTxt()}</h3><label class="chk" style="padding:0"><input type="checkbox" id="cb-all" ${verCobradas?"checked":""} style="width:auto"> Ver cobradas</label></div>
-    <p class="hint" style="margin:6px 0 10px">Control de lo que el desarrollador / cliente nos ha pagado. Independiente del pago a asesores.</p>
-    <div class="twrap" style="border:0"><table><thead><tr><th>Mes</th><th>Cliente</th><th>Proyecto</th><th>Asesor</th><th class="num">Monto</th><th class="num">Comisión</th><th>Estatus de cobro</th></tr></thead>
-    <tbody>${rows.map(v=>`<tr class="${estatusDe(v)==="pagada"?"dimrow":""}"><td class="dim">${fechaM(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${esCredito(v)?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(v.proyecto)}${v.unidad?` <span class="dim">· ${esc(v.unidad)}</span>`:""}</td><td>${esc(v.asesor)}</td><td class="num money">${fmt(v.monto)}</td><td class="num com">${fmt(comTotal(v))}</td><td>${seg(v)}</td></tr>`).join("")}</tbody></table>
+    <p class="hint" style="margin:6px 0 10px">Lo que el desarrollador / cliente nos ha pagado por cada venta. "Pago parcial" registra un cobro con monto; "Pagada" liquida el resto. Independiente del pago a asesores.</p>
+    <div class="twrap" style="border:0"><table><thead><tr><th>Mes</th><th>Cliente</th><th>Proyecto</th><th>Asesor</th><th class="num">Comisión</th><th class="num">Cobrado</th><th class="num">Pendiente</th><th>Estatus de cobro</th></tr></thead>
+    <tbody>${rows.map(v=>{const tot=comTotal(v),cob=cobradoDe(v.id),pd=Math.max(0,tot-cob),n=cobrosDe(v.id).length;return `<tr class="${estatusDe(v)==="pagada"?"dimrow":""}"><td class="dim">${fechaM(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${esCredito(v)?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(v.proyecto)}${v.unidad?` <span class="dim">· ${esc(v.unidad)}</span>`:""}</td><td>${esc(v.asesor)}</td><td class="num com">${fmt(tot)}</td><td class="num ${cob?"paid":""}">${fmt(cob)}${n?` <button class="ico cobs" data-id="${v.id}" title="Ver cobros">${n}</button>`:""}</td><td class="num money" style="color:${pd>0.5?"var(--bad)":"var(--ok)"}">${fmt(pd)}</td><td>${seg(v)}</td></tr>`}).join("")}</tbody></table>
     ${rows.length?"":`<div class="empty"><b>Todo cobrado</b>No hay ventas por cobrar en ${periodoTxt().toLowerCase()}.</div>`}</div></div>`;
   $("#cb-all").onchange=e=>{verCobradas=e.target.checked;renderCobranza()};
-  el.querySelectorAll(".segc button").forEach(b=>b.onclick=async()=>{const id=b.closest(".segc").dataset.id,k=b.dataset.k;const v=VENTAS.find(x=>x.id===id);if(estatusDe(v)===k)return;
+  el.querySelectorAll(".cobs").forEach(b=>b.onclick=()=>openCobro(VENTAS.find(x=>x.id===b.dataset.id)));
+  el.querySelectorAll(".segc button").forEach(b=>b.onclick=async()=>{const id=b.closest(".segc").dataset.id,k=b.dataset.k;const v=VENTAS.find(x=>x.id===id);
+    if(k==="parcial"){openCobro(v);return}
+    if(estatusDe(v)===k)return;
+    if(k==="pagada"){const falta=comTotal(v)-cobradoDe(v.id);if(falta>0.5){const r=await sb.from("ventas_cobros").insert({venta_id:v.id,fecha:todayISO(),monto:falta,concepto:"Liquidación"}).select().single();if(r.error){toast("No se guardó: "+r.error.message,true);return}COBROS.push(r.data)}}
+    if(k==="pendiente"&&cobrosDe(v.id).length){if(!confirm("¿Regresar a pendiente? Se borran los cobros registrados de esta venta."))return;const r=await sb.from("ventas_cobros").delete().eq("venta_id",v.id);if(r.error){toast(r.error.message,true);return}COBROS=COBROS.filter(c=>c.venta_id!==v.id)}
     const r=await sb.from("ventas").update({cobro_estatus:k}).eq("id",id);if(r.error){toast("No se guardó: "+r.error.message,true);return}v.cobro_estatus=k;toast(k==="pagada"?"Marcada como cobrada":"Estatus actualizado");renderCobranza()});
+}
+function openCobro(v){
+  const tot=comTotal(v),cob=cobradoDe(v.id),falta=Math.max(0,tot-cob);const root=$("#drawer-root");
+  const list=cobrosDe(v.id);
+  root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(480px,100%)">
+    <header><h3>Cobro · ${esc(v.cliente)}</h3><button class="ico" id="d-close">✕</button></header>
+    <div class="body">
+      <p style="margin:0 0 12px"><b>${esc(v.proyecto||"")}</b>${v.unidad?" · "+esc(v.unidad):""} · ${fechaM(v.fecha)}<br><span class="dim">Comisión ${fmt(tot)} · cobrado ${fmt(cob)} · <b style="color:${falta>0.5?"var(--bad)":"var(--ok)"}">pendiente ${fmt(falta)}</b></span></p>
+      ${list.length?`<table class="disp" style="margin-bottom:12px"><thead><tr><th>Fecha</th><th>Concepto</th><th class="num">Monto</th><th></th></tr></thead><tbody>${list.map(c=>`<tr><td class="dim">${fecha(c.fecha)}</td><td>${esc(c.concepto||"")}</td><td class="num">${fmt(c.monto)}</td><td><button class="ico delcob" data-id="${c.id}" title="Eliminar cobro">×</button></td></tr>`).join("")}</tbody></table>`:""}
+      ${falta>0.5?`<div class="fg">
+        <div class="f c6"><label>Fecha del cobro</label><input type="date" id="cb-fecha" value="${todayISO()}"></div>
+        <div class="f c6"><label>Monto cobrado</label><input id="cb-m" inputmode="numeric" value="${Math.round(falta).toLocaleString("es-MX")}"></div>
+        <div class="f c12"><label>Concepto</label><input id="cb-nota" placeholder="Anticipo, firma, escritura…"></div>
+      </div>
+      <p class="hint" style="margin-top:10px">Si el monto es menor al pendiente queda como pago parcial; si lo cubre, la venta pasa a cobrada.</p>`:`<p class="hint">Esta venta ya está cobrada por completo.</p>`}</div>
+    <footer><span></span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cerrar</button>${falta>0.5?`<button class="btn primary" id="d-save">Registrar cobro</button>`:""}</span></footer></div>`;
+  const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
+  root.querySelectorAll(".delcob").forEach(b=>b.onclick=async()=>{if(!confirm("¿Eliminar este cobro?"))return;const r=await sb.from("ventas_cobros").delete().eq("id",b.dataset.id);if(r.error){toast(r.error.message,true);return}COBROS=COBROS.filter(c=>c.id!==b.dataset.id);
+    const k=cobradoDe(v.id)<=0?"pendiente":cobradoDe(v.id)+0.5>=tot?"pagada":"parcial";await sb.from("ventas").update({cobro_estatus:k}).eq("id",v.id);v.cobro_estatus=k;openCobro(v);render()});
+  const sv=$("#d-save");if(sv)sv.onclick=async()=>{const m=num($("#cb-m").value);if(!m||m<=0){toast("Falta el monto",true);return}
+    const r=await sb.from("ventas_cobros").insert({venta_id:v.id,fecha:$("#cb-fecha").value||todayISO(),monto:m,concepto:$("#cb-nota").value.trim()||null}).select().single();if(r.error){toast("No se guardó: "+r.error.message,true);return}
+    COBROS.push(r.data);const k=cobradoDe(v.id)+0.5>=tot?"pagada":"parcial";const r2=await sb.from("ventas").update({cobro_estatus:k}).eq("id",v.id);if(!r2.error)v.cobro_estatus=k;
+    close();toast(k==="pagada"?"Cobro registrado · venta cobrada":"Cobro parcial registrado");render()};
 }
 
 /* ---------- comisiones (pago a beneficiarios) ---------- */
@@ -395,16 +429,18 @@ function renderComisiones(){
 }
 function openPago(L){
   const pend=L.mia-L.pag;const root=$("#drawer-root");
+  const tot=comTotal(L.v),cob=cobradoDe(L.v.id),frac=tot?Math.min(1,cob/tot):0;const prop=Math.max(0,Math.min(pend,L.mia*frac-L.pag));
+  const sug=cob>0&&prop>0.5?prop:pend;
   root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(480px,100%)">
     <header><h3>Pagar a ${esc(L.n)}</h3><button class="ico" id="d-close">✕</button></header>
     <div class="body">
       <p style="margin:0 0 12px"><b>${esc(L.v.cliente)}</b> · ${esc(L.v.proyecto||"")} · ${fechaM(L.v.fecha)}<br><span class="dim">${esc(L.roles.join(" + "))} · comisión ${fmt(L.mia)} · pagado ${fmt(L.pag)}</span></p>
       <div class="fg">
         <div class="f c6"><label>Fecha de pago</label><input type="date" id="pg-fecha" value="${todayISO()}"></div>
-        <div class="f c6"><label>Monto</label><input id="pg-m" inputmode="numeric" value="${Math.round(pend).toLocaleString("es-MX")}"></div>
+        <div class="f c6"><label>Monto</label><input id="pg-m" inputmode="numeric" value="${Math.round(sug).toLocaleString("es-MX")}"></div>
         <div class="f c12"><label>Nota</label><input id="pg-nota" placeholder="Transferencia, efectivo…"></div>
       </div>
-      <p class="hint" style="margin-top:10px">Pendiente: ${fmt(pend)}. Si pagas menos queda como pago parcial.</p></div>
+      <p class="hint" style="margin-top:10px">Pendiente de pagarle: <b>${fmt(pend)}</b>.${cob>0?` De esta venta hemos cobrado el ${Math.round(frac*100)}% (${fmt(cob)} de ${fmt(tot)}); la parte proporcional que le toca es <b>${fmt(prop)}</b>${prop>0.5?" (sugerido)":" (ya está cubierta)"}.`:" Aún no hemos cobrado nada de esta venta."} Si pagas menos del pendiente queda como pago parcial.</p></div>
     <footer><span></span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cancelar</button><button class="btn primary" id="d-save">Registrar pago</button></span></footer></div>`;
   const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
   $("#d-save").onclick=async()=>{const m=num($("#pg-m").value);if(!m||m<=0){toast("Falta el monto",true);return}
