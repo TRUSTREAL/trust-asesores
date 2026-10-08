@@ -218,6 +218,8 @@ const pagadoDe=(n,vid)=>PAGOS.filter(p=>p.beneficiario===n&&p.venta_id===vid).re
 // Cobros (lo que nos ha pagado el cliente / desarrollador por cada venta)
 const cobrosDe=vid=>COBROS.filter(c=>c.venta_id===vid).sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));
 const cobradoDe=vid=>cobrosDe(vid).reduce((a,c)=>a+(+c.monto||0),0);
+// Cobrado efectivo: una venta marcada "pagada" sin cobros registrados (versiones anteriores) cuenta como cobrada por completo
+const cobradoFx=v=>{const c=cobradoDe(v.id);return (c<=0&&(v.cobro_estatus||"")==="pagada")?comTotal(v):c};
 
 /* ---------- dispersión ---------- */
 function dispDefault(v){
@@ -342,8 +344,8 @@ function renderCobranza(){
   const all=VENTAS.filter(v=>inPeriodo(v.fecha)).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
   const pend=all.filter(v=>estatusDe(v)==="pendiente"),parc=all.filter(v=>estatusDe(v)==="parcial"),pag=all.filter(v=>estatusDe(v)==="pagada");
   const rows=cobView==="pag"?pag:all.filter(v=>estatusDe(v)!=="pagada");
-  const sum=l=>l.reduce((a,v)=>a+comTotal(v),0), sumCob=l=>l.reduce((a,v)=>a+cobradoDe(v.id),0);
-  const porCobrar=[...pend,...parc].reduce((a,v)=>a+Math.max(0,comTotal(v)-cobradoDe(v.id)),0);
+  const sum=l=>l.reduce((a,v)=>a+comTotal(v),0), sumCob=l=>l.reduce((a,v)=>a+cobradoFx(v),0);
+  const porCobrar=[...pend,...parc].reduce((a,v)=>a+Math.max(0,comTotal(v)-cobradoFx(v)),0);
   const cobP=COBROS.filter(c=>inPeriodo(c.fecha)).reduce((a,c)=>a+(+c.monto||0),0);
   const seg=v=>`<div class="segc" data-id="${v.id}">${Object.entries(EST_LABEL).map(([k,l])=>`<button class="${k} ${estatusDe(v)===k?"on":""}" data-k="${k}" title="${k==="parcial"?"Registrar un cobro parcial":k==="pagada"?"Marcar como cobrada por completo":"Regresar a pendiente"}">${l}</button>`).join("")}</div>`;
   el.innerHTML=`
@@ -357,7 +359,7 @@ function renderCobranza(){
   <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Cobranza · ${periodoTxt()}</h3><div class="qseg" id="cb-seg"><button data-v="pend" class="${cobView==="pend"?"on":""}">Pendientes · ${pend.length+parc.length}</button><button data-v="pag" class="${cobView==="pag"?"on":""}">Cobradas · ${pag.length}</button></div></div>
     <p class="hint" style="margin:6px 0 10px">Lo que el desarrollador / cliente nos ha pagado por cada venta. "Pago parcial" registra un cobro con monto (en Cobradas sirve para corregir una venta que en realidad fue parcial); "Pagada" liquida el resto. Independiente del pago a asesores.</p>
     <div class="twrap" style="border:0"><table><thead><tr><th>Mes</th><th>Cliente</th><th>Proyecto</th><th>Asesor</th><th class="num">Comisión</th><th class="num">Cobrado</th><th class="num">Pendiente</th><th>Estatus de cobro</th></tr></thead>
-    <tbody>${rows.map(v=>{const tot=comTotal(v),cob=cobradoDe(v.id),pd=Math.max(0,tot-cob),n=cobrosDe(v.id).length;return `<tr class="${estatusDe(v)==="pagada"?"dimrow":""}"><td class="dim">${fechaM(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${esCredito(v)?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(v.proyecto)}${v.unidad?` <span class="dim">· ${esc(v.unidad)}</span>`:""}</td><td>${esc(v.asesor)}</td><td class="num com">${fmt(tot)}</td><td class="num ${cob?"paid":""}">${fmt(cob)}${n?` <button class="ico cobs" data-id="${v.id}" title="Ver cobros">${n}</button>`:""}</td><td class="num money" style="color:${pd>0.5?"var(--bad)":"var(--ok)"}">${fmt(pd)}</td><td>${seg(v)}</td></tr>`}).join("")}</tbody></table>
+    <tbody>${rows.map(v=>{const tot=comTotal(v),cob=cobradoFx(v),pd=Math.max(0,tot-cob),n=cobrosDe(v.id).length;return `<tr class="${estatusDe(v)==="pagada"?"dimrow":""}"><td class="dim">${fechaM(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${esCredito(v)?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(v.proyecto)}${v.unidad?` <span class="dim">· ${esc(v.unidad)}</span>`:""}</td><td>${esc(v.asesor)}</td><td class="num com">${fmt(tot)}</td><td class="num ${cob?"paid":""}">${fmt(cob)}${n?` <button class="ico cobs" data-id="${v.id}" title="Ver cobros">${n}</button>`:""}</td><td class="num money" style="color:${pd>0.5?"var(--bad)":"var(--ok)"}">${fmt(pd)}</td><td>${seg(v)}</td></tr>`}).join("")}</tbody></table>
     ${rows.length?"":`<div class="empty">${cobView==="pag"?`<b>Sin cobradas</b>Todavía no hay ventas cobradas por completo en ${periodoTxt().toLowerCase()}.`:`<b>Todo cobrado</b>No hay ventas por cobrar en ${periodoTxt().toLowerCase()}.`}</div>`}</div></div>`;
   el.querySelectorAll("#cb-seg button").forEach(b=>b.onclick=()=>{cobView=b.dataset.v;renderCobranza()});
   el.querySelectorAll(".cobs").forEach(b=>b.onclick=()=>openCobro(VENTAS.find(x=>x.id===b.dataset.id)));
@@ -375,7 +377,7 @@ function renderCobranza(){
     const r=await sb.from("ventas").update({cobro_estatus:k}).eq("id",id);if(r.error){toast("No se guardó: "+r.error.message,true);return}v.cobro_estatus=k;toast(k==="pagada"?"Marcada como cobrada":"Estatus actualizado");renderCobranza()});
 }
 function openCobro(v){
-  const tot=comTotal(v),cob=cobradoDe(v.id),falta=Math.max(0,tot-cob);const root=$("#drawer-root");
+  const tot=comTotal(v),cob=cobradoFx(v),falta=Math.max(0,tot-cob);const root=$("#drawer-root");
   const list=cobrosDe(v.id);
   root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(480px,100%)">
     <header><h3>Cobro · ${esc(v.cliente)}</h3><button class="ico" id="d-close">✕</button></header>
@@ -436,7 +438,7 @@ function renderComisiones(){
 }
 function openPago(L){
   const pend=L.mia-L.pag;const root=$("#drawer-root");
-  const tot=comTotal(L.v),cob=cobradoDe(L.v.id),frac=tot?Math.min(1,cob/tot):0;const prop=Math.max(0,Math.min(pend,L.mia*frac-L.pag));
+  const tot=comTotal(L.v),cob=cobradoFx(L.v),frac=tot?Math.min(1,cob/tot):0;const prop=Math.max(0,Math.min(pend,L.mia*frac-L.pag));
   const sug=cob>0&&prop>0.5?prop:pend;
   root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(480px,100%)">
     <header><h3>Pagar a ${esc(L.n)}</h3><button class="ico" id="d-close">✕</button></header>
