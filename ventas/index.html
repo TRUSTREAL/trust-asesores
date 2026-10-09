@@ -115,7 +115,8 @@ table .trk{height:8px;background:var(--surface-2);border-radius:4px;overflow:hid
 .f input,.f select,.f textarea{border:1px solid var(--line-2);background:var(--bg);border-radius:10px;padding:9px 12px;width:100%}
 .f input:focus,.f select:focus,.f textarea:focus{outline:2px solid var(--green);outline-offset:1px;border-color:var(--green)}
 .f .ro{background:var(--surface-2);color:var(--muted)}
-.c12{grid-column:span 12}.c6{grid-column:span 6}.c4{grid-column:span 4}.c3{grid-column:span 3}.c2{grid-column:span 2}
+.c12{grid-column:span 12}.c6{grid-column:span 6}
+.c8{grid-column:span 8}.c4{grid-column:span 4}.c3{grid-column:span 3}.c2{grid-column:span 2}
 .sect{margin-top:20px;padding-top:14px;border-top:1px solid var(--line)}
 .sect h4{font-family:Lora,serif;font-weight:500;font-size:16px;margin:0 0 10px;color:var(--green)}
 .disp{width:100%;border-collapse:collapse;font-size:13px}
@@ -132,7 +133,7 @@ table .trk{height:8px;background:var(--surface-2);border-radius:4px;overflow:hid
 .segc{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden}
 .segc button{border:0;background:var(--bg);padding:5px 10px;font:inherit;font-size:12px;cursor:pointer;color:var(--muted)}
 .segc button+button{border-left:1px solid var(--line-2)}
-.segc button.on.pendiente{background:#FBEDEA;color:var(--bad)}.segc button.on.parcial{background:#FBF3E0;color:var(--gold-2)}.segc button.on.pagada{background:#E6F2EC;color:var(--ok)}
+.segc button.on.bad,.segc button.on.pendiente{background:#FBEDEA;color:var(--bad)}.segc button.on.ok{background:#E6F2EC;color:var(--ok)}.segc button.on.info{background:var(--info-bg);color:var(--info)}.segc button.on.mute{background:var(--surface-2);color:var(--muted)}.segc button.on.parcial{background:#FBF3E0;color:var(--gold-2)}.segc button.on.pagada{background:#E6F2EC;color:var(--ok)}
 tr.dimrow td{opacity:.55}
 tbody tr.subt td,tbody tr.subt:hover td{background:var(--surface-2);font-weight:600;border-bottom:2px solid var(--line-2)}
 tr.subt td.lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
@@ -145,19 +146,21 @@ tr.gtot td.money,tr.gtot td.com,tr.gtot td.paid{color:#fff}
 .rules .r.staff{grid-template-columns:1fr 120px 36px}
 .rules .r.staff input.name{text-align:left}
 .paid{color:var(--ok);font-weight:600}
-@media (max-width:860px){.tiles,.tiles.t5{grid-template-columns:repeat(2,1fr)}.grid2,.grid3,.grid4{grid-template-columns:1fr}.c6,.c4,.c3,.c2{grid-column:span 12}.cobros .row{grid-template-columns:1fr 1fr}}
+@media (max-width:860px){.tiles,.tiles.t5{grid-template-columns:repeat(2,1fr)}.grid2,.grid3,.grid4{grid-template-columns:1fr}.c8,.c6,.c4,.c3,.c2{grid-column:span 12}.cobros .row{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header class="top">
-    <div class="brand"><img class="logo" id="logo-img" alt="TRUST realtor"><h1>Ventas</h1><p>Registro de ventas, cobranza y comisiones</p></div>
+    <div class="brand"><img class="logo" id="logo-img" alt="TRUST realtor"><h1>Ventas</h1><p>Ventas, apartados, cobranza, comisiones y gastos</p></div>
     <div class="topright"><a class="home-link" href="../admin/">← Inicio</a><button class="btn primary" id="btn-new">+ Registrar venta</button></div>
   </header>
   <div class="vseg" role="tablist">
     <button data-pane="ventas" aria-pressed="true">Ventas</button>
+    <button data-pane="apartados" aria-pressed="false">Apartados</button>
     <button data-pane="cobranza" aria-pressed="false">Cobranza</button>
     <button data-pane="comisiones" aria-pressed="false">Comisiones</button>
+    <button data-pane="gastos" aria-pressed="false">Gastos</button>
     <button data-pane="empresa" aria-pressed="false">Empresa</button>
     <button data-pane="asesores" aria-pressed="false">Asesores</button>
     <button data-pane="reglas" aria-pressed="false">Reglas</button>
@@ -169,8 +172,10 @@ tr.gtot td.money,tr.gtot td.com,tr.gtot td.paid{color:#fff}
     <span class="hint" id="period-txt"></span>
   </div>
   <section class="pane on" id="pane-ventas"></section>
+  <section class="pane" id="pane-apartados"></section>
   <section class="pane" id="pane-cobranza"></section>
   <section class="pane" id="pane-comisiones"></section>
+  <section class="pane" id="pane-gastos"></section>
   <section class="pane" id="pane-empresa"></section>
   <section class="pane" id="pane-asesores"></section>
   <section class="pane" id="pane-reglas"></section>
@@ -209,6 +214,7 @@ const fechaM=d=>d?(()=>{const [y,m]=String(d).slice(0,7).split("-");return `${ME
 const uid=()=>"p"+Math.random().toString(36).slice(2,9);
 
 let VENTAS=[], PAGOS=[], COBROS=[], REGLAS={...REGLAS_DEF}, PANE="ventas";
+let OTROS=[], GASTOS=[], APARTADOS=[], TABLAS_OK={otros:true,gastos:true,apartados:true};
 let P={anio:new Date().getFullYear(),mes:"",trims:[]}; // periodo: Ventas y Empresa por trimestre; el resto por mes
 const useQ=()=>PANE==="empresa"||PANE==="asesores";
 let filt={q:"",un:"",asesor:"",estatus:""}, sort={k:"fecha",dir:"desc"};
@@ -216,9 +222,10 @@ let filt={q:"",un:"",asesor:"",estatus:""}, sort={k:"fecha",dir:"desc"};
 /* ---------- carga ---------- */
 async function loadAll(){
   if(!sb){toast("Sin conexión a Supabase",true);return}
-  const [v,p,c,r]=await Promise.all([sb.from("ventas").select("*").order("fecha",{ascending:false}),sb.from("ventas_pagos").select("*").order("fecha"),sb.from("ventas_cobros").select("*").order("fecha"),sb.from("ventas_reglas").select("*").eq("id",1).maybeSingle()]);
+  const [v,p,c,r,o,g,ap]=await Promise.all([sb.from("ventas").select("*").order("fecha",{ascending:false}),sb.from("ventas_pagos").select("*").order("fecha"),sb.from("ventas_cobros").select("*").order("fecha"),sb.from("ventas_reglas").select("*").eq("id",1).maybeSingle(),sb.from("otros_ingresos").select("*").order("fecha",{ascending:false}),sb.from("gastos").select("*").order("fecha",{ascending:false}),sb.from("apartados").select("*").order("fecha",{ascending:false})]);
   if(v.error){toast("Error: "+v.error.message,true);return}
   VENTAS=v.data||[];PAGOS=p.data||[];COBROS=c.error?[]:(c.data||[]);
+  OTROS=o.error?[]:(o.data||[]);GASTOS=g.error?[]:(g.data||[]);APARTADOS=ap.error?[]:(ap.data||[]);TABLAS_OK={otros:!o.error,gastos:!g.error,apartados:!ap.error};
   if(r.data&&r.data.reglas)REGLAS={...REGLAS_DEF,...r.data.reglas};
   render();
 }
@@ -255,7 +262,7 @@ function partPct(p,base){return p.monto!=null&&p.monto!==""?(base?+p.monto/base*
 function inPeriodo(d){if(!d)return false;const [y,m]=String(d).slice(0,7).split("-");if(+y!==+P.anio)return false;return useQ()?(!P.trims.length||P.trims.includes(Math.ceil(+m/3))):(!P.mes||+m===+P.mes)}
 function periodoTxt(){return useQ()?(P.trims.length?P.trims.map(q=>"Q"+q).join("+")+` ${P.anio}`:`Año ${P.anio}`):(P.mes?`${MESES_L[+P.mes-1]} ${P.anio}`:`Año ${P.anio}`)}
 function renderPeriodBar(){
-  const years=[...new Set(VENTAS.map(v=>+String(v.fecha).slice(0,4)).concat(PAGOS.map(c=>+String(c.fecha).slice(0,4))).concat([new Date().getFullYear()]))].sort((a,b)=>b-a);
+  const years=[...new Set(VENTAS.map(v=>+String(v.fecha).slice(0,4)).concat(PAGOS.map(c=>+String(c.fecha).slice(0,4))).concat(GASTOS.concat(APARTADOS,OTROS).map(x=>+String(x.fecha).slice(0,4))).concat([new Date().getFullYear()]).filter(y=>y>2000))].sort((a,b)=>b-a);
   $("#p-anio").innerHTML=years.map(y=>`<option ${y===+P.anio?"selected":""}>${y}</option>`).join("");
   const ms=$("#p-mes");if(ms.options.length===1)MESES_L.forEach((m,i)=>{const o=document.createElement("option");o.value=i+1;o.textContent=m;ms.appendChild(o)});ms.value=P.mes;
   ms.style.display=useQ()?"none":"";const ts=$("#p-trim");ts.style.display=useQ()?"":"none";ts.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.q?P.trims.includes(+b.dataset.q):!P.trims.length));
@@ -264,7 +271,7 @@ function renderPeriodBar(){
 $("#p-anio").onchange=e=>{P.anio=+e.target.value;render()};$("#p-mes").onchange=e=>{P.mes=e.target.value;render()};$$("#p-trim button").forEach(b=>b.onclick=()=>{const q=+b.dataset.q;if(!q)P.trims=[];else P.trims=P.trims.includes(q)?P.trims.filter(x=>x!==q):P.trims.concat([q]).sort();render()});
 
 /* ---------- render ---------- */
-function render(){renderPeriodBar();({ventas:renderVentas,cobranza:renderCobranza,comisiones:renderComisiones,empresa:renderEmpresa,asesores:renderAsesores,reglas:renderReglas})[PANE]();}
+function render(){renderPeriodBar();({ventas:renderVentas,apartados:renderApartados,cobranza:renderCobranza,comisiones:renderComisiones,gastos:renderGastos,empresa:renderEmpresa,asesores:renderAsesores,reglas:renderReglas})[PANE]();}
 $$(".vseg button").forEach(b=>b.onclick=()=>{PANE=b.dataset.pane;$$(".vseg button").forEach(x=>x.setAttribute("aria-pressed",x===b));$$(".pane").forEach(p=>p.classList.toggle("on",p.id==="pane-"+PANE));$("#period-bar").style.display=PANE==="reglas"?"none":"";render()});
 
 function renderVentas(){
@@ -474,23 +481,27 @@ function renderCobranza(){
   const sum=l=>l.reduce((a,v)=>a+comTotal(v),0), sumCob=l=>l.reduce((a,v)=>a+cobradoFx(v),0);
   const porCobrar=[...pend,...parc].reduce((a,v)=>a+Math.max(0,comTotal(v)-cobradoFx(v)),0);
   const cobP=COBROS.filter(c=>inPeriodo(c.fecha)).reduce((a,c)=>a+(+c.monto||0),0);
+  const oAll=OTROS.filter(o=>inPeriodo(o.fecha)),oPend=OTROS.filter(o=>!o.cobrado),oPagP=OTROS.filter(o=>o.cobrado&&inPeriodo(o.fecha_cobro||o.fecha));
   const seg=v=>`<div class="segc" data-id="${v.id}">${Object.entries(EST_LABEL).map(([k,l])=>`<button class="${k} ${estatusDe(v)===k?"on":""}" data-k="${k}" title="${k==="parcial"?"Registrar un cobro parcial":k==="pagada"?"Marcar como cobrada por completo":"Regresar a pendiente"}">${l}</button>`).join("")}</div>`;
   el.innerHTML=`
   <div class="tiles">
-    <div class="tile dark"><span class="l">Por cobrar</span><span class="v">${fmtK(porCobrar)}</span><span class="s">${pend.length+parc.length} venta${pend.length+parc.length===1?"":"s"} · ${periodoTxt()}</span></div>
+    <div class="tile dark"><span class="l">Por cobrar</span><span class="v">${fmtK(porCobrar+sumM(oPend))}</span><span class="s">${pend.length+parc.length} venta${pend.length+parc.length===1?"":"s"} · ${periodoTxt()}${oPend.length?` + ${oPend.length} otro${oPend.length===1?"":"s"} (${fmtK(sumM(oPend))})`:""}</span></div>
     <div class="tile"><span class="l">Pendientes</span><span class="v">${pend.length}</span><span class="s">${fmtK(sum(pend))} sin ningún cobro</span></div>
     <div class="tile gold"><span class="l">Pago parcial</span><span class="v">${parc.length}</span><span class="s">${fmtK(sumCob(parc))} de ${fmtK(sum(parc))} cobrado</span></div>
     <div class="tile"><span class="l">Cobradas</span><span class="v">${pag.length}</span><span class="s">${fmtK(sum(pag))}</span></div>
-    <div class="tile"><span class="l">Cobrado en el periodo</span><span class="v">${fmtK(cobP)}</span><span class="s">por fecha de cobro</span></div>
+    <div class="tile gold"><span class="l">Otros conceptos</span><span class="v">${fmtK(sumM(oAll))}</span><span class="s">${oAll.length} en ${periodoTxt().toLowerCase()} · ${fmtK(sumM(oAll.filter(o=>o.cobrado)))} cobrado</span></div>
+    <div class="tile"><span class="l">Cobrado en el periodo</span><span class="v">${fmtK(cobP+sumM(oPagP))}</span><span class="s">por fecha de cobro · ventas${oPagP.length?" + otros "+fmtK(sumM(oPagP)):""}</span></div>
   </div>
   <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Cobranza · ${periodoTxt()}</h3><div class="qseg" id="cb-seg"><button data-v="pend" class="${cobView==="pend"?"on":""}">Pendientes · ${pend.length+parc.length}</button><button data-v="pag" class="${cobView==="pag"?"on":""}">Cobradas · ${pag.length}</button></div></div>
     <p class="hint" style="margin:6px 0 10px">Lo que el desarrollador / cliente nos ha pagado por cada venta. "Pago parcial" registra un cobro con monto (en Cobradas sirve para corregir una venta que en realidad fue parcial); "Pagada" liquida el resto. Independiente del pago a asesores.</p>
     <div class="twrap" style="border:0"><table><thead><tr><th>Mes</th><th>Cliente</th><th>Proyecto</th><th>Asesor</th><th class="num">Comisión</th><th class="num">Cobrado</th><th class="num">Pendiente</th><th>Estatus de cobro</th></tr></thead>
     <tbody>${rows.map(v=>{const tot=comTotal(v),cob=cobradoFx(v),pd=Math.max(0,tot-cob),n=cobrosDe(v.id).length;return `<tr class="${estatusDe(v)==="pagada"?"dimrow":""}"><td class="dim">${fechaM(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${esCredito(v)?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(v.proyecto)}${v.unidad?` <span class="dim">· ${esc(v.unidad)}</span>`:""}</td><td>${esc(v.asesor)}</td><td class="num com">${fmt(tot)}</td><td class="num ${cob?"paid":""}">${fmt(cob)}${n?` <button class="ico cobs" data-id="${v.id}" title="Ver cobros">${n}</button>`:""}</td><td class="num money" style="color:${pd>0.5?"var(--bad)":"var(--ok)"}">${fmt(pd)}</td><td>${seg(v)}</td></tr>`}).join("")}</tbody></table>
-    ${rows.length?"":`<div class="empty">${cobView==="pag"?`<b>Sin cobradas</b>Todavía no hay ventas cobradas por completo en ${periodoTxt().toLowerCase()}.`:`<b>Todo cobrado</b>No hay ventas por cobrar en ${periodoTxt().toLowerCase()}.`}</div>`}</div></div>`;
+    ${rows.length?"":`<div class="empty">${cobView==="pag"?`<b>Sin cobradas</b>Todavía no hay ventas cobradas por completo en ${periodoTxt().toLowerCase()}.`:`<b>Todo cobrado</b>No hay ventas por cobrar en ${periodoTxt().toLowerCase()}.`}</div>`}</div></div>
+  ${otrosHTML()}`;
+  wireOtros(el);
   el.querySelectorAll("#cb-seg button").forEach(b=>b.onclick=()=>{cobView=b.dataset.v;renderCobranza()});
   el.querySelectorAll(".cobs").forEach(b=>b.onclick=()=>openCobro(VENTAS.find(x=>x.id===b.dataset.id)));
-  el.querySelectorAll(".segc button").forEach(b=>b.onclick=async()=>{const id=b.closest(".segc").dataset.id,k=b.dataset.k;const v=VENTAS.find(x=>x.id===id);
+  el.querySelectorAll(".segc:not(.so) button").forEach(b=>b.onclick=async()=>{const id=b.closest(".segc").dataset.id,k=b.dataset.k;const v=VENTAS.find(x=>x.id===id);
     if(k==="parcial"){
       if(estatusDe(v)==="pagada"){const auto=cobrosDe(v.id).filter(c=>(c.concepto||"")==="Liquidación");
         if(auto.length){if(!confirm("Esta venta está marcada como cobrada por completo. ¿En realidad fue un pago parcial? Se quita la liquidación automática para que captures el monto real."))return;
@@ -641,9 +652,198 @@ function renderReglas(){
   };
 }
 
+/* ---------- otros conceptos · gastos · apartados (v6) ---------- */
+const OTROS_CAT=["Marketing","Pauta digital","Asesoría","Administración","Avalúo","Otro"];
+const GASTOS_CAT=["Nómina","Renta de oficina","Marketing","Pauta digital","Software","Servicios","Impuestos","Honorarios","Comisiones externas","Viáticos","Otro"];
+const METODOS=["Transferencia","Efectivo","Tarjeta","Depósito","Cheque","Domiciliado"];
+const AP_EST={vigente:"Vigente",venta:"Venta",devuelto:"Devuelto",cancelado:"Cancelado"};
+const AP_CLS={vigente:"info",venta:"ok",devuelto:"mute",cancelado:"bad"};
+const sumM=l=>l.reduce((a,x)=>a+(+x.monto||0),0);
+const segG=(id,opts,cur,cls)=>`<div class="segc ${cls||""}" data-id="${id}">${opts.map(o=>`<button class="${o.cls} ${cur===o.k?"on":""}" data-k="${o.k}"${o.t?` title="${esc(o.t)}"`:""}>${o.l}</button>`).join("")}</div>`;
+const faltaTabla=t=>`<div class="empty"><b>Falta activar esta sección</b>Corre <code>ventas_v6.sql</code> en Supabase → SQL Editor (crea la tabla <code>${t}</code>) y recarga la página.</div>`;
+const trustDe=v=>{const t=comTotal(v);return t-(v.dispersion||[]).reduce((a,p)=>a+partAmt(p,t),0)};
+const dsel=(id,list,cur,blank)=>`<select id="${id}">${blank?`<option value="">${blank}</option>`:""}${list.map(x=>`<option ${x===cur?"selected":""}>${esc(x)}</option>`).join("")}</select>`;
+const dlist=(id,list)=>`<datalist id="${id}">${list.map(x=>`<option value="${esc(x)}">`).join("")}</datalist>`;
+const mesSig=d=>{const [y,m,dd]=String(d).slice(0,10).split("-").map(Number);const n=new Date(Date.UTC(y,m,1));const last=new Date(Date.UTC(n.getUTCFullYear(),n.getUTCMonth()+1,0)).getUTCDate();return `${n.getUTCFullYear()}-${String(n.getUTCMonth()+1).padStart(2,"0")}-${String(Math.min(dd,last)).padStart(2,"0")}`};
+
+/* ----- otros conceptos (cobranza) ----- */
+function otrosHTML(){
+  const oAll=OTROS.filter(o=>inPeriodo(o.fecha)),oPend=OTROS.filter(o=>!o.cobrado).sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha))),oPag=oAll.filter(o=>o.cobrado).sort((a,b)=>String(b.fecha_cobro||b.fecha).localeCompare(String(a.fecha_cobro||a.fecha)));
+  const rows=cobView==="pag"?oPag:oPend;
+  return `<div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Otros conceptos · ${cobView==="pag"?"cobrados en "+periodoTxt():"pendientes de cobro"}</h3><button class="btn sm primary" id="btn-otro">+ Otro concepto</button></div>
+    <p class="hint" style="margin:6px 0 10px">Cobros que no vienen de una venta: servicios de marketing, pauta digital, asesorías, avalúos… No generan comisiones ni entran a los indicadores de Empresa.</p>
+    ${TABLAS_OK.otros?`<div class="twrap" style="border:0"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Concepto</th><th>Categoría</th><th class="num">Monto</th><th>Cobrado el</th><th>Estatus</th><th></th></tr></thead>
+    <tbody>${rows.map(o=>`<tr class="${o.cobrado?"dimrow":""}"><td class="dim">${fecha(o.fecha)}</td><td><b>${esc(o.cliente||"—")}</b></td><td>${esc(o.concepto)}${o.notas?`<br><small class="dim">${esc(o.notas)}</small>`:""}</td><td class="dim">${esc(o.categoria||"—")}</td><td class="num money">${fmt(o.monto)}</td><td class="dim">${o.cobrado?fecha(o.fecha_cobro):"—"}</td><td>${segG(o.id,[{k:"pend",l:"Pendiente",cls:"bad"},{k:"cob",l:"Cobrado",cls:"ok",t:"Marcar como cobrado hoy"}],o.cobrado?"cob":"pend","so")}</td><td><button class="ico edit-otro" data-id="${o.id}" title="Editar">✎</button></td></tr>`).join("")}</tbody></table>
+    ${rows.length?"":`<div class="empty">${cobView==="pag"?`<b>Sin cobros</b>No hay otros conceptos cobrados en ${periodoTxt().toLowerCase()}.`:`<b>Todo cobrado</b>No hay otros conceptos pendientes.`}</div>`}</div>`:faltaTabla("otros_ingresos")}</div>`;
+}
+function wireOtros(el){
+  const b=el.querySelector("#btn-otro");if(b)b.onclick=()=>openOtro(null);
+  el.querySelectorAll(".edit-otro").forEach(b=>b.onclick=()=>openOtro(OTROS.find(o=>o.id===b.dataset.id)));
+  el.querySelectorAll(".segc.so button").forEach(b=>{b.onclick=async()=>{const o=OTROS.find(x=>x.id===b.closest(".segc").dataset.id);const k=b.dataset.k;if((k==="cob")===!!o.cobrado)return;
+    const upd=k==="cob"?{cobrado:true,fecha_cobro:todayISO()}:{cobrado:false,fecha_cobro:null};const r=await sb.from("otros_ingresos").update(upd).eq("id",o.id);if(r.error){toast("No se guardó: "+r.error.message,true);return}Object.assign(o,upd);toast(k==="cob"?"Marcado como cobrado":"Regresado a pendiente");renderCobranza()}});
+}
+function openOtro(o){
+  const isNew=!o;o=o?{...o}:{fecha:todayISO(),cliente:"",concepto:"",categoria:"Marketing",monto:null,cobrado:false,fecha_cobro:null,notas:""};
+  const root=$("#drawer-root");
+  root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(560px,100%)">
+    <header><h3>${isNew?"Otro concepto por cobrar":"Concepto · "+esc(o.concepto)}</h3><button class="ico" id="d-close">✕</button></header>
+    <div class="body"><div class="fg">
+      <div class="f c6"><label>Fecha</label><input type="date" id="o-fecha" value="${esc(o.fecha||"")}"></div>
+      <div class="f c6"><label>Categoría</label><input id="o-cat" list="dl-ocat" value="${esc(o.categoria||"")}" placeholder="Marketing, Pauta digital…">${dlist("dl-ocat",OTROS_CAT)}</div>
+      <div class="f c12"><label>Cliente / quién paga</label><input id="o-cliente" value="${esc(o.cliente||"")}" placeholder="Desarrollador, cliente, empresa…"></div>
+      <div class="f c12"><label>Concepto</label><input id="o-conc" value="${esc(o.concepto||"")}" placeholder="Ej. Pauta digital Tanhia octubre, asesoría de valuación…"></div>
+      <div class="f c6"><label>Monto</label><input id="o-monto" inputmode="numeric" value="${o.monto!=null?fmt(o.monto):""}" placeholder="$ 0"></div>
+      <div class="f c6"><label class="chk" style="padding:0;margin-top:22px"><input type="checkbox" id="o-cob" ${o.cobrado?"checked":""} style="width:auto"> Ya se cobró</label></div>
+      <div class="f c6" id="o-fc-box" style="${o.cobrado?"":"display:none"}"><label>Fecha de cobro</label><input type="date" id="o-fc" value="${esc(o.fecha_cobro||todayISO())}"></div>
+      <div class="f c12"><label>Notas</label><textarea id="o-notas" rows="2">${esc(o.notas||"")}</textarea></div>
+    </div></div>
+    <footer><span>${isNew?"":`<button class="btn danger" id="d-del">Eliminar</button>`}</span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cancelar</button><button class="btn primary" id="d-save">${isNew?"Registrar":"Guardar"}</button></span></footer></div>`;
+  const g=i=>$("#"+i);const close=()=>root.innerHTML="";g("scrim").onclick=close;g("d-close").onclick=close;g("d-cancel").onclick=close;
+  g("o-cob").onchange=()=>g("o-fc-box").style.display=g("o-cob").checked?"":"none";
+  g("o-monto").onchange=()=>{const x=num(g("o-monto").value);g("o-monto").value=x==null?"":fmt(x)};
+  if(!isNew)g("d-del").onclick=async()=>{if(!confirm("¿Eliminar este concepto?"))return;const r=await sb.from("otros_ingresos").delete().eq("id",o.id);if(r.error){toast(r.error.message,true);return}OTROS=OTROS.filter(x=>x.id!==o.id);close();render();toast("Eliminado")};
+  g("d-save").onclick=async()=>{
+    const row={fecha:g("o-fecha").value||todayISO(),cliente:g("o-cliente").value.trim()||null,concepto:g("o-conc").value.trim(),categoria:g("o-cat").value.trim()||null,monto:num(g("o-monto").value),cobrado:g("o-cob").checked,fecha_cobro:g("o-cob").checked?(g("o-fc").value||todayISO()):null,notas:g("o-notas").value.trim()||null};
+    if(!row.concepto){toast("Falta el concepto",true);return}if(!row.monto){toast("Falta el monto",true);return}
+    const r=isNew?await sb.from("otros_ingresos").insert(row).select().single():await sb.from("otros_ingresos").update(row).eq("id",o.id).select().single();
+    if(r.error){toast("No se guardó: "+r.error.message,true);return}
+    if(isNew)OTROS.unshift(r.data);else OTROS[OTROS.findIndex(x=>x.id===o.id)]=r.data;
+    close();render();toast(isNew?"Concepto registrado":"Guardado")};
+}
+
+/* ----- gastos ----- */
+let gView="pend";
+function renderGastos(){
+  const el=$("#pane-gastos");const hoy=todayISO();
+  const gP=GASTOS.filter(g=>inPeriodo(g.fecha));
+  const pend=GASTOS.filter(g=>!g.pagado).sort((a,b)=>String(a.vence||a.fecha).localeCompare(String(b.vence||b.fecha)));
+  const venc=pend.filter(g=>g.vence&&g.vence<hoy);
+  const pagP=GASTOS.filter(g=>g.pagado&&inPeriodo(g.fecha_pago||g.fecha)).sort((a,b)=>String(b.fecha_pago||b.fecha).localeCompare(String(a.fecha_pago||a.fecha)));
+  const rows=gView==="pend"?pend:pagP;
+  const byCat={};gP.forEach(g=>{const k=g.categoria||"Sin categoría";byCat[k]=(byCat[k]||0)+(+g.monto||0)});
+  const vP=VENTAS.filter(v=>!esCredito(v)&&inPeriodo(v.fecha));const ingT=vP.reduce((a,v)=>a+trustDe(v),0),otrosP=sumM(OTROS.filter(o=>inPeriodo(o.fecha)));const res=ingT+otrosP-sumM(gP);
+  el.innerHTML=`
+  <div class="tiles">
+    <div class="tile dark"><span class="l">Gastos del periodo</span><span class="v">${fmtK(sumM(gP))}</span><span class="s">${gP.length} gasto${gP.length===1?"":"s"} · ${periodoTxt()}</span></div>
+    <div class="tile"><span class="l">Por pagar</span><span class="v" style="color:${pend.length?"var(--bad)":"var(--ok)"}">${fmtK(sumM(pend))}</span><span class="s">${pend.length} pendiente${pend.length===1?"":"s"} · cualquier fecha</span></div>
+    <div class="tile"><span class="l">Vencidos</span><span class="v" style="color:${venc.length?"var(--bad)":"var(--ok)"}">${venc.length}</span><span class="s">${venc.length?fmtK(sumM(venc))+" con fecha de pago vencida":"nada vencido"}</span></div>
+    <div class="tile"><span class="l">Pagado en el periodo</span><span class="v">${fmtK(sumM(pagP))}</span><span class="s">${pagP.length} pago${pagP.length===1?"":"s"} · por fecha de pago</span></div>
+    <div class="tile gold"><span class="l">Resultado aprox.</span><span class="v" style="color:${res<0?"var(--bad)":""}">${fmtK(res)}</span><span class="s">lo que queda en TRUST ${fmtK(ingT)} + otros ${fmtK(otrosP)} − gastos</span></div>
+  </div>
+  <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Gastos de la empresa</h3><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="qseg" id="g-seg"><button data-v="pend" class="${gView==="pend"?"on":""}">Por pagar · ${pend.length}</button><button data-v="pag" class="${gView==="pag"?"on":""}">Pagados · ${pagP.length}</button></div><button class="btn sm primary" id="btn-gasto">+ Gasto</button></div></div>
+    <p class="hint" style="margin:6px 0 10px">Gastos propios de la empresa (nómina, renta, pauta, software…), no comisiones a asesores. Registra el gasto con su fecha de pago y márcalo como pagado cuando salga el dinero.</p>
+    ${TABLAS_OK.gastos?`<div class="twrap" style="border:0"><table><thead><tr><th>Fecha</th><th>Vence</th><th>Concepto</th><th>Proveedor</th><th>Categoría</th><th class="num">Monto</th><th>Pagado el</th><th>Estatus</th><th></th></tr></thead>
+    <tbody>${rows.map(g=>{const vencido=!g.pagado&&g.vence&&g.vence<hoy;return `<tr class="${g.pagado?"dimrow":""}"><td class="dim">${fecha(g.fecha)}</td><td style="color:${vencido?"var(--bad)":"inherit"};font-weight:${vencido?600:400}">${g.vence?fecha(g.vence):"—"}${vencido?" ⚠":""}</td><td><b>${esc(g.concepto)}</b>${g.notas?`<br><small class="dim">${esc(g.notas)}</small>`:""}</td><td>${esc(g.proveedor||"—")}</td><td class="dim">${esc(g.categoria||"—")}</td><td class="num money">${fmt(g.monto)}</td><td class="dim">${g.pagado?fecha(g.fecha_pago)+(g.metodo?" · "+esc(g.metodo):""):"—"}</td><td>${segG(g.id,[{k:"pend",l:"Por pagar",cls:"bad"},{k:"pag",l:"Pagado",cls:"ok",t:"Marcar como pagado hoy"}],g.pagado?"pag":"pend")}</td><td><button class="ico edit-gasto" data-id="${g.id}" title="Editar">✎</button></td></tr>`}).join("")}</tbody></table>
+    ${rows.length?"":`<div class="empty">${gView==="pag"?`<b>Sin pagos</b>No hay gastos pagados en ${periodoTxt().toLowerCase()}.`:`<b>Nada por pagar</b>No hay gastos pendientes.`}</div>`}</div>`:faltaTabla("gastos")}</div>
+  <div class="grid2" style="margin-top:14px"><div class="card"><h3>Por categoría · ${periodoTxt()}</h3><div class="bars">${bars(byCat,sumM(gP))}</div></div>
+  <div class="card"><h3>Por mes · ${P.anio}</h3><div class="cols mo">${(()=>{const arr=Array.from({length:12},()=>0);GASTOS.filter(g=>+String(g.fecha).slice(0,4)===+P.anio).forEach(g=>arr[+String(g.fecha).slice(5,7)-1]+=+g.monto||0);const mx=Math.max(...arr,1);const fmtS=v=>v>=1e6?(v/1e6).toFixed(1).replace(/\.0$/,"")+" M":v>=1e3?Math.round(v/1e3)+" k":v?Math.round(v):"–";return arr.map((v,i)=>`<div class="c" title="${MESES_L[i]}: ${fmt(v)}"><small class="${v?"":"dim"}">${fmtS(v)}</small><div style="display:flex;width:100%;align-items:flex-end;height:90px;justify-content:center"><i style="height:${v/mx*100}%;background:var(--gold-2)"></i></div><b>${MESES[i]}</b></div>`).join("")})()}</div></div></div>`;
+  el.querySelectorAll("#g-seg button").forEach(b=>b.onclick=()=>{gView=b.dataset.v;renderGastos()});
+  const nb=el.querySelector("#btn-gasto");if(nb)nb.onclick=()=>openGasto(null);
+  el.querySelectorAll(".edit-gasto").forEach(b=>b.onclick=()=>openGasto(GASTOS.find(g=>g.id===b.dataset.id)));
+  el.querySelectorAll(".segc button").forEach(b=>b.onclick=async()=>{const g=GASTOS.find(x=>x.id===b.closest(".segc").dataset.id);const k=b.dataset.k;if((k==="pag")===!!g.pagado)return;
+    const upd=k==="pag"?{pagado:true,fecha_pago:todayISO()}:{pagado:false,fecha_pago:null};const r=await sb.from("gastos").update(upd).eq("id",g.id);if(r.error){toast("No se guardó: "+r.error.message,true);return}Object.assign(g,upd);toast(k==="pag"?"Marcado como pagado":"Regresado a por pagar");renderGastos()});
+}
+function openGasto(g){
+  const isNew=!g;g=g?{...g}:{fecha:todayISO(),vence:null,concepto:"",proveedor:"",categoria:"",monto:null,pagado:false,fecha_pago:null,metodo:"Transferencia",notas:""};
+  const root=$("#drawer-root");
+  root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(600px,100%)">
+    <header><h3>${isNew?"Registrar gasto":"Gasto · "+esc(g.concepto)}</h3><button class="ico" id="d-close">✕</button></header>
+    <div class="body"><div class="fg">
+      <div class="f c4"><label>Fecha del gasto</label><input type="date" id="g-fecha" value="${esc(g.fecha||"")}"></div>
+      <div class="f c4"><label>Fecha límite de pago</label><input type="date" id="g-vence" value="${esc(g.vence||"")}"></div>
+      <div class="f c4"><label>Categoría</label><input id="g-cat" list="dl-gcat" value="${esc(g.categoria||"")}" placeholder="Nómina, Renta…">${dlist("dl-gcat",GASTOS_CAT)}</div>
+      <div class="f c12"><label>Concepto</label><input id="g-conc" value="${esc(g.concepto||"")}" placeholder="Ej. Renta oficina octubre, Meta Ads Tanhia, Canva…"></div>
+      <div class="f c4"><label>Proveedor / a quién se paga</label><input id="g-prov" value="${esc(g.proveedor||"")}"></div>
+      <div class="f c4"><label>Monto</label><input id="g-monto" inputmode="numeric" value="${g.monto!=null?fmt(g.monto):""}" placeholder="$ 0"></div>
+      <div class="f c4"><label>Método</label>${dsel("g-met",METODOS,g.metodo||"Transferencia")}</div>
+      <div class="f c6"><label class="chk" style="padding:0;margin-top:22px"><input type="checkbox" id="g-pag" ${g.pagado?"checked":""} style="width:auto"> Ya está pagado</label></div>
+      <div class="f c6" id="g-fp-box" style="${g.pagado?"":"display:none"}"><label>Fecha de pago</label><input type="date" id="g-fp" value="${esc(g.fecha_pago||todayISO())}"></div>
+      <div class="f c12"><label>Notas</label><textarea id="g-notas" rows="2">${esc(g.notas||"")}</textarea></div>
+    </div></div>
+    <footer><span style="display:flex;gap:8px">${isNew?"":`<button class="btn danger" id="d-del">Eliminar</button><button class="btn" id="d-dup" title="Crea una copia pendiente con las fechas un mes después (renta, nómina, software…)">Duplicar al mes siguiente</button>`}</span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cancelar</button><button class="btn primary" id="d-save">${isNew?"Registrar":"Guardar"}</button></span></footer></div>`;
+  const q=i=>$("#"+i);const close=()=>root.innerHTML="";q("scrim").onclick=close;q("d-close").onclick=close;q("d-cancel").onclick=close;
+  q("g-pag").onchange=()=>q("g-fp-box").style.display=q("g-pag").checked?"":"none";
+  q("g-monto").onchange=()=>{const x=num(q("g-monto").value);q("g-monto").value=x==null?"":fmt(x)};
+  const leer=()=>({fecha:q("g-fecha").value||todayISO(),vence:q("g-vence").value||null,concepto:q("g-conc").value.trim(),proveedor:q("g-prov").value.trim()||null,categoria:q("g-cat").value.trim()||null,monto:num(q("g-monto").value),metodo:q("g-met").value||null,pagado:q("g-pag").checked,fecha_pago:q("g-pag").checked?(q("g-fp").value||todayISO()):null,notas:q("g-notas").value.trim()||null});
+  if(!isNew){
+    q("d-del").onclick=async()=>{if(!confirm("¿Eliminar este gasto?"))return;const r=await sb.from("gastos").delete().eq("id",g.id);if(r.error){toast(r.error.message,true);return}GASTOS=GASTOS.filter(x=>x.id!==g.id);close();render();toast("Gasto eliminado")};
+    q("d-dup").onclick=async()=>{const row=leer();if(!row.concepto||!row.monto){toast("Completa concepto y monto",true);return}const dup={...row,fecha:mesSig(row.fecha),vence:row.vence?mesSig(row.vence):null,pagado:false,fecha_pago:null};const r=await sb.from("gastos").insert(dup).select().single();if(r.error){toast("No se guardó: "+r.error.message,true);return}GASTOS.unshift(r.data);close();render();toast("Copia creada para "+fechaM(dup.fecha))};
+  }
+  q("d-save").onclick=async()=>{const row=leer();if(!row.concepto){toast("Falta el concepto",true);return}if(!row.monto){toast("Falta el monto",true);return}
+    const r=isNew?await sb.from("gastos").insert(row).select().single():await sb.from("gastos").update(row).eq("id",g.id).select().single();
+    if(r.error){toast("No se guardó: "+r.error.message,true);return}
+    if(isNew)GASTOS.unshift(r.data);else GASTOS[GASTOS.findIndex(x=>x.id===g.id)]=r.data;
+    close();render();toast(isNew?"Gasto registrado":"Guardado")};
+}
+
+/* ----- apartados ----- */
+let apView="vig";
+function renderApartados(){
+  const el=$("#pane-apartados");
+  const desc=(a,b)=>String(b.fecha).localeCompare(String(a.fecha));
+  const vig=APARTADOS.filter(a=>(a.estatus||"vigente")==="vigente").sort(desc),aP=APARTADOS.filter(a=>inPeriodo(a.fecha)).sort(desc);
+  const conv=aP.filter(a=>a.estatus==="venta"),caidos=aP.filter(a=>a.estatus==="devuelto"||a.estatus==="cancelado");
+  const rows=apView==="vig"?vig:aP;
+  const vmap={};VENTAS.forEach(v=>vmap[v.id]=v);
+  el.innerHTML=`
+  <div class="tiles">
+    <div class="tile dark"><span class="l">Apartados vigentes</span><span class="v">${vig.length}</span><span class="s">${fmtK(sumM(vig))} recibido · sin cerrar todavía</span></div>
+    <div class="tile"><span class="l">Apartados del periodo</span><span class="v">${aP.length}</span><span class="s">${fmtK(sumM(aP))} · ${periodoTxt()}</span></div>
+    <div class="tile gold"><span class="l">Convertidos en venta</span><span class="v">${conv.length}</span><span class="s">${aP.length?pct(conv.length,aP.length)+" de los del periodo":"—"}</span></div>
+    <div class="tile"><span class="l">Caídos</span><span class="v" style="color:${caidos.length?"var(--bad)":"var(--ok)"}">${caidos.length}</span><span class="s">devueltos o cancelados · ${periodoTxt()}</span></div>
+  </div>
+  <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Apartados</h3><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="qseg" id="ap-seg"><button data-v="vig" class="${apView==="vig"?"on":""}">Vigentes · ${vig.length}</button><button data-v="per" class="${apView==="per"?"on":""}">${periodoTxt()} · ${aP.length}</button></div><button class="btn sm primary" id="btn-ap">+ Apartado</button></div></div>
+    <p class="hint" style="margin:6px 0 10px">Lo que el prospecto deja para apartar una unidad o propiedad. Cuando se firme, usa <b>→ Venta</b>: abre el registro de venta ya con sus datos y deja el apartado como convertido.</p>
+    ${TABLAS_OK.apartados?`<div class="twrap" style="border:0"><table><thead><tr><th>Fecha</th><th>Prospecto</th><th>Proyecto / propiedad</th><th>Asesor</th><th>Método de pago</th><th class="num">Monto</th><th>Estatus</th><th></th></tr></thead>
+    <tbody>${rows.map(a=>{const e=a.estatus||"vigente";return `<tr class="${e==="vigente"?"":"dimrow"}"><td class="dim">${fecha(a.fecha)}</td><td><b>${esc(a.prospecto)}</b>${a.notas?`<br><small class="dim">${esc(a.notas)}</small>`:""}</td><td>${esc(a.proyecto||"—")}${a.unidad?` <span class="dim">· ${esc(a.unidad)}</span>`:""}</td><td>${esc(a.asesor||"—")}</td><td class="dim">${esc(a.metodo||"—")}</td><td class="num money">${fmt(a.monto)}</td><td>${segG(a.id,Object.entries(AP_EST).map(([k,l])=>({k,l,cls:AP_CLS[k],t:k==="venta"&&e!=="venta"?"Registrar la venta con estos datos":""})),e)}${e==="venta"&&a.venta_id&&vmap[a.venta_id]?`<br><small class="dim">venta de ${esc(vmap[a.venta_id].cliente)} · ${fechaM(vmap[a.venta_id].fecha)}</small>`:""}</td><td style="white-space:nowrap">${e==="vigente"?`<button class="btn sm primary ap-venta" data-id="${a.id}">→ Venta</button> `:""}<button class="ico edit-ap" data-id="${a.id}" title="Editar">✎</button></td></tr>`}).join("")}</tbody></table>
+    ${rows.length?"":`<div class="empty">${apView==="vig"?`<b>Sin apartados vigentes</b>Registra el siguiente con “+ Apartado”.`:`<b>Sin apartados</b>No hay apartados registrados en ${periodoTxt().toLowerCase()}.`}</div>`}</div>`:faltaTabla("apartados")}</div>`;
+  el.querySelectorAll("#ap-seg button").forEach(b=>b.onclick=()=>{apView=b.dataset.v;renderApartados()});
+  const nb=el.querySelector("#btn-ap");if(nb)nb.onclick=()=>openApartado(null);
+  el.querySelectorAll(".edit-ap").forEach(b=>b.onclick=()=>openApartado(APARTADOS.find(a=>a.id===b.dataset.id)));
+  el.querySelectorAll(".ap-venta").forEach(b=>b.onclick=()=>apartadoAVenta(APARTADOS.find(a=>a.id===b.dataset.id)));
+  el.querySelectorAll(".segc button").forEach(b=>b.onclick=async()=>{const a=APARTADOS.find(x=>x.id===b.closest(".segc").dataset.id);const k=b.dataset.k;if((a.estatus||"vigente")===k)return;
+    if(k==="venta"){apartadoAVenta(a);return}
+    const upd={estatus:k,venta_id:null};const r=await sb.from("apartados").update(upd).eq("id",a.id);if(r.error){toast("No se guardó: "+r.error.message,true);return}Object.assign(a,upd);toast("Apartado "+AP_EST[k].toLowerCase());renderApartados()});
+}
+function apartadoAVenta(a){
+  const pre={fecha:String(a.fecha||todayISO()).slice(0,7)+"-01",cliente:a.prospecto||"",proyecto:a.proyecto||"",unidad:a.unidad||"",asesor:a.asesor||"",un:(a.proyecto||"").toLowerCase()==="corretaje"?"Corretaje":"Proyectos",notas:a.monto?`Apartado de ${fmt(a.monto)} el ${fecha(a.fecha)}${a.metodo?" ("+a.metodo+")":""}.`:""};
+  openVenta(null,pre,async venta=>{const upd={estatus:"venta",venta_id:venta.id};const r=await sb.from("apartados").update(upd).eq("id",a.id);if(r.error){toast("La venta se registró, pero el apartado no se actualizó: "+r.error.message,true);return}Object.assign(a,upd)});
+}
+function openApartado(a){
+  const isNew=!a;a=a?{...a}:{fecha:todayISO(),prospecto:"",metodo:"Transferencia",proyecto:"",unidad:"",asesor:"",monto:null,estatus:"vigente",notas:""};
+  const root=$("#drawer-root");
+  root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(600px,100%)">
+    <header><h3>${isNew?"Registrar apartado":"Apartado · "+esc(a.prospecto)}</h3><button class="ico" id="d-close">✕</button></header>
+    <div class="body"><div class="fg">
+      <div class="f c4"><label>Fecha</label><input type="date" id="a-fecha" value="${esc(a.fecha||"")}"></div>
+      <div class="f c8"><label>Nombre del prospecto</label><input id="a-pros" value="${esc(a.prospecto||"")}" placeholder="Nombre completo"></div>
+      <div class="f c6"><label>Proyecto / propiedad</label><input id="a-proy" list="dl-aproy" value="${esc(a.proyecto||"")}">${dlist("dl-aproy",PROYECTOS)}</div>
+      <div class="f c6"><label>Unidad / ID</label><input id="a-uni" value="${esc(a.unidad||"")}" placeholder="Depto 402, Casa 12…"></div>
+      <div class="f c4"><label>Método de pago</label>${dsel("a-met",METODOS,a.metodo||"Transferencia")}</div>
+      <div class="f c4"><label>Monto del apartado</label><input id="a-monto" inputmode="numeric" value="${a.monto!=null?fmt(a.monto):""}" placeholder="$ 0"></div>
+      <div class="f c4"><label>Asesor</label>${dsel("a-ase",ASESORES.filter(x=>x!==EX),a.asesor||"","Elegir…")}</div>
+      ${isNew?"":`<div class="f c12"><label>Estatus</label>${dsel("a-est",Object.keys(AP_EST),a.estatus||"vigente")}</div>`}
+      <div class="f c12"><label>Notas</label><textarea id="a-notas" rows="2">${esc(a.notas||"")}</textarea></div>
+    </div></div>
+    <footer><span>${isNew?"":`<button class="btn danger" id="d-del">Eliminar</button>`}</span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cancelar</button><button class="btn primary" id="d-save">${isNew?"Registrar":"Guardar"}</button></span></footer></div>`;
+  const q=i=>$("#"+i);const close=()=>root.innerHTML="";q("scrim").onclick=close;q("d-close").onclick=close;q("d-cancel").onclick=close;
+  q("a-monto").onchange=()=>{const x=num(q("a-monto").value);q("a-monto").value=x==null?"":fmt(x)};
+  if(!isNew){const es=q("a-est");if(es){[...es.options].forEach(o=>o.textContent=AP_EST[o.value])}
+    q("d-del").onclick=async()=>{if(!confirm("¿Eliminar este apartado?"))return;const r=await sb.from("apartados").delete().eq("id",a.id);if(r.error){toast(r.error.message,true);return}APARTADOS=APARTADOS.filter(x=>x.id!==a.id);close();render();toast("Apartado eliminado")}}
+  q("d-save").onclick=async()=>{
+    const row={fecha:q("a-fecha").value||todayISO(),prospecto:q("a-pros").value.trim(),metodo:q("a-met").value||null,proyecto:q("a-proy").value.trim()||null,unidad:q("a-uni").value.trim()||null,asesor:q("a-ase").value||null,monto:num(q("a-monto").value),notas:q("a-notas").value.trim()||null};
+    if(!isNew){row.estatus=q("a-est").value;if(row.estatus!=="venta")row.venta_id=null}
+    if(!row.prospecto){toast("Falta el nombre del prospecto",true);return}
+    const r=isNew?await sb.from("apartados").insert(row).select().single():await sb.from("apartados").update(row).eq("id",a.id).select().single();
+    if(r.error){toast("No se guardó: "+r.error.message,true);return}
+    if(isNew)APARTADOS.unshift(r.data);else APARTADOS[APARTADOS.findIndex(x=>x.id===a.id)]=r.data;
+    close();render();toast(isNew?"Apartado registrado":"Guardado")};
+}
+
 /* ---------- alta / edición de venta ---------- */
-function openVenta(v){
-  const isNew=!v;v=v?JSON.parse(JSON.stringify(v)):{fecha:todayISO(),un:"Proyectos",tipo:"Venta",proyecto:"",unidad:"",cliente:"",asesor:"",opcionador:"Álvaro",autogenerada:false,top_realtor:false,propiedad_trust:true,monto:null,comision_pct:null,comision_monto:null,notas:"",dispersion:null};
+function openVenta(v,pre,onSaved){
+  const isNew=!v;v=v?JSON.parse(JSON.stringify(v)):{fecha:todayISO(),un:"Proyectos",tipo:"Venta",proyecto:"",unidad:"",cliente:"",asesor:"",opcionador:"Álvaro",autogenerada:false,top_realtor:false,propiedad_trust:true,monto:null,comision_pct:null,comision_monto:null,notas:"",dispersion:null,...(pre||{})};
+  if(isNew&&pre&&pre.asesor)v.top_realtor=topDe(v.fecha).includes(pre.asesor);
   const opt=(list,cur,blank)=>(blank?`<option value="">${blank}</option>`:"")+list.map(x=>`<option ${x===cur?"selected":""}>${esc(x)}</option>`).join("");
   const root=$("#drawer-root");
   root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog">
@@ -704,6 +904,7 @@ function openVenta(v){
     const r=isNew?await sb.from("ventas").insert(row).select().single():await sb.from("ventas").update(row).eq("id",v.id).select().single();
     if(r.error){toast("No se guardó: "+r.error.message,true);return}
     if(isNew)VENTAS.unshift(r.data);else VENTAS[VENTAS.findIndex(x=>x.id===v.id)]=r.data;
+    if(isNew&&onSaved)await onSaved(r.data);
     toast(isNew?"Venta registrada. Las comisiones ya aparecen en Comisiones.":"Guardado");close();render();
   };
 }
