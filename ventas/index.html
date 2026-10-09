@@ -381,8 +381,7 @@ h2{font-family:Lora,serif;font-weight:500;font-size:14px;color:#173F35;margin:12
 @media print{body{background:#FAF8F2}.page{margin:0;min-height:auto}}
 </style></head><body><div class="page">
   <div class="top"><div><img class="logo" src="data:image/png;base64,${LOGO_B64}" alt="TRUST realtor"></div><div class="right">Periodo<b>${periodoTxt()}</b>Emitido<b>${fecha}</b></div></div>
-  <div class="title">Reporte de <em>ingresos</em></div>
-  <div class="sub">Ingresos = comisión generada por operación cerrada (sin crédito hipotecario) · Promotora de Inmuebles TRUST</div>
+  <div class="title" style="margin-bottom:14px">Reporte de <em>ingresos</em></div>
   <div class="kpis">
     ${kpi("Ingresos",fmtK(E.ingreso),periodoTxt(),"dark")}
     ${kpi("Operaciones",E.vP.length,`${E.vVen.length} venta${E.vVen.length===1?"":"s"} · ${E.vRen.length} renta${E.vRen.length===1?"":"s"}${E.nCred?` · ${E.nCred} crédito${E.nCred===1?"":"s"} aparte`:""}`)}
@@ -404,7 +403,7 @@ h2{font-family:Lora,serif;font-weight:500;font-size:14px;color:#173F35;margin:12
     <div class="card"><h3>Por asesor</h3>${barsP(E.byAse,E.ingreso,10)}</div>
     <div class="card"><h3>Por tipo de inmueble</h3>${barsP(E.byInm,E.vP.length,0,true)}<p class="dim" style="margin:4px 0 0">% de las operaciones del periodo</p></div>
   </div>
-  <div class="foot"><div>Reporte interno · ${periodoTxt()} · generado el ${fecha}</div><div><img src="data:image/png;base64,${LOGO_B64}" alt="TRUST"></div></div>
+  <div class="foot"><div><b style="color:#173F35;letter-spacing:.14em;text-transform:uppercase">Confidencial</b> · Reporte interno · ${periodoTxt()} · generado el ${fecha}</div><div><img src="data:image/png;base64,${LOGO_B64}" alt="TRUST"></div></div>
 </div>
 <script>window.addEventListener("load",()=>{const p=document.querySelector(".page");const fit=()=>{p.style.zoom="";const h=p.scrollHeight,avail=p.clientHeight;if(h>avail+1)p.style.zoom=(avail/h*0.995).toFixed(3)};fit();setTimeout(()=>{fit();window.print()},700)});<\/script>
 </body></html>`;
