@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FAF8F2">
-<title>Ventas | TRUST · Admin</title>
+<title>Administración | TRUST · Admin</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap">
 <style>
@@ -152,7 +152,7 @@ tr.gtot td.money,tr.gtot td.com,tr.gtot td.paid{color:#fff}
 <body>
 <div class="wrap">
   <header class="top">
-    <div class="brand"><img class="logo" id="logo-img" alt="TRUST realtor"><h1>Ventas</h1><p>Ventas, apartados, cobranza, comisiones y gastos</p></div>
+    <div class="brand"><img class="logo" id="logo-img" alt="TRUST realtor"><h1>Administración</h1><p>Ventas, apartados, cobranza, comisiones y gastos</p></div>
     <div class="topright"><a class="home-link" href="../admin/">← Inicio</a><button class="btn primary" id="btn-new">+ Registrar venta</button></div>
   </header>
   <div class="vseg" role="tablist">
@@ -214,7 +214,7 @@ const fechaM=d=>d?(()=>{const [y,m]=String(d).slice(0,7).split("-");return `${ME
 const uid=()=>"p"+Math.random().toString(36).slice(2,9);
 
 let VENTAS=[], PAGOS=[], COBROS=[], REGLAS={...REGLAS_DEF}, PANE="ventas";
-let OTROS=[], GASTOS=[], APARTADOS=[], TABLAS_OK={otros:true,gastos:true,apartados:true};
+let OTROS=[], GASTOS=[], GPAGOS=[], APARTADOS=[], TABLAS_OK={otros:true,gastos:true,gpagos:true,apartados:true};
 let P={anio:new Date().getFullYear(),mes:"",trims:[]}; // periodo: Ventas y Empresa por trimestre; el resto por mes
 const useQ=()=>PANE==="empresa"||PANE==="asesores";
 let filt={q:"",un:"",asesor:"",estatus:""}, sort={k:"fecha",dir:"desc"};
@@ -222,10 +222,10 @@ let filt={q:"",un:"",asesor:"",estatus:""}, sort={k:"fecha",dir:"desc"};
 /* ---------- carga ---------- */
 async function loadAll(){
   if(!sb){toast("Sin conexión a Supabase",true);return}
-  const [v,p,c,r,o,g,ap]=await Promise.all([sb.from("ventas").select("*").order("fecha",{ascending:false}),sb.from("ventas_pagos").select("*").order("fecha"),sb.from("ventas_cobros").select("*").order("fecha"),sb.from("ventas_reglas").select("*").eq("id",1).maybeSingle(),sb.from("otros_ingresos").select("*").order("fecha",{ascending:false}),sb.from("gastos").select("*").order("fecha",{ascending:false}),sb.from("apartados").select("*").order("fecha",{ascending:false})]);
+  const [v,p,c,r,o,g,ap,gp]=await Promise.all([sb.from("ventas").select("*").order("fecha",{ascending:false}),sb.from("ventas_pagos").select("*").order("fecha"),sb.from("ventas_cobros").select("*").order("fecha"),sb.from("ventas_reglas").select("*").eq("id",1).maybeSingle(),sb.from("otros_ingresos").select("*").order("fecha",{ascending:false}),sb.from("gastos").select("*").order("fecha",{ascending:false}),sb.from("apartados").select("*").order("fecha",{ascending:false}),sb.from("gastos_pagos").select("*").order("fecha")]);
   if(v.error){toast("Error: "+v.error.message,true);return}
   VENTAS=v.data||[];PAGOS=p.data||[];COBROS=c.error?[]:(c.data||[]);
-  OTROS=o.error?[]:(o.data||[]);GASTOS=g.error?[]:(g.data||[]);APARTADOS=ap.error?[]:(ap.data||[]);TABLAS_OK={otros:!o.error,gastos:!g.error,apartados:!ap.error};
+  OTROS=o.error?[]:(o.data||[]);GASTOS=g.error?[]:(g.data||[]);APARTADOS=ap.error?[]:(ap.data||[]);GPAGOS=gp.error?[]:(gp.data||[]);TABLAS_OK={otros:!o.error,gastos:!g.error,apartados:!ap.error,gpagos:!gp.error};
   if(r.data&&r.data.reglas)REGLAS={...REGLAS_DEF,...r.data.reglas};
   render();
 }
@@ -711,40 +711,88 @@ function openOtro(o){
     close();render();toast(isNew?"Concepto registrado":"Guardado")};
 }
 
-/* ----- gastos ----- */
+/* ----- gastos (con pagos parciales) ----- */
 let gView="pend";
+const gPagosDe=id=>GPAGOS.filter(p=>p.gasto_id===id).sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));
+const gPagadoDe=g=>{const l=gPagosDe(g.id);return l.length?l.reduce((a,p)=>a+(+p.monto||0),0):(g.pagado?(+g.monto||0):0)};
+const gEst=g=>{const pag=gPagadoDe(g),m=+g.monto||0;return pag+0.5>=m&&m>0?"pagado":pag>0.5?"parcial":"pendiente"};
+const G_LABEL={pendiente:"Por pagar",parcial:"Pago parcial",pagado:"Pagado"};
+const gFechaPago=g=>{const l=gPagosDe(g.id);return l.length?l[l.length-1].fecha:g.fecha_pago};
+async function gSync(g){ // mantiene pagado / fecha_pago alineados con los pagos registrados
+  const e=gEst(g),upd={pagado:e==="pagado",fecha_pago:e==="pagado"?(gFechaPago(g)||todayISO()):null};
+  if(upd.pagado===!!g.pagado&&(upd.fecha_pago||null)===(g.fecha_pago||null))return;
+  const r=await sb.from("gastos").update(upd).eq("id",g.id);if(!r.error)Object.assign(g,upd);
+}
 function renderGastos(){
   const el=$("#pane-gastos");const hoy=todayISO();
   const gP=GASTOS.filter(g=>inPeriodo(g.fecha));
-  const pend=GASTOS.filter(g=>!g.pagado).sort((a,b)=>String(a.vence||a.fecha).localeCompare(String(b.vence||b.fecha)));
+  const pend=GASTOS.filter(g=>gEst(g)!=="pagado").sort((a,b)=>String(a.vence||"9999").localeCompare(String(b.vence||"9999"))||String(a.fecha).localeCompare(String(b.fecha)));
+  const falta=g=>Math.max(0,(+g.monto||0)-gPagadoDe(g));
+  const porPagar=pend.reduce((a,g)=>a+falta(g),0);
   const venc=pend.filter(g=>g.vence&&g.vence<hoy);
-  const pagP=GASTOS.filter(g=>g.pagado&&inPeriodo(g.fecha_pago||g.fecha)).sort((a,b)=>String(b.fecha_pago||b.fecha).localeCompare(String(a.fecha_pago||a.fecha)));
+  const pagP=GASTOS.filter(g=>gEst(g)==="pagado"&&inPeriodo(gFechaPago(g)||g.fecha)).sort((a,b)=>String(gFechaPago(b)||b.fecha).localeCompare(String(gFechaPago(a)||a.fecha)));
+  const pagadoP=GPAGOS.filter(p=>inPeriodo(p.fecha)).reduce((a,p)=>a+(+p.monto||0),0)+GASTOS.filter(g=>g.pagado&&!gPagosDe(g.id).length&&inPeriodo(g.fecha_pago||g.fecha)).reduce((a,g)=>a+(+g.monto||0),0);
   const rows=gView==="pend"?pend:pagP;
   const byCat={};gP.forEach(g=>{const k=g.categoria||"Sin categoría";byCat[k]=(byCat[k]||0)+(+g.monto||0)});
   const vP=VENTAS.filter(v=>!esCredito(v)&&inPeriodo(v.fecha));const ingT=vP.reduce((a,v)=>a+trustDe(v),0),otrosP=sumM(OTROS.filter(o=>inPeriodo(o.fecha)));const res=ingT+otrosP-sumM(gP);
+  const seg=g=>segG(g.id,[{k:"pendiente",l:"Por pagar",cls:"bad",t:"Regresar a por pagar"},{k:"parcial",l:"Pago parcial",cls:"parcial",t:"Registrar un pago parcial"},{k:"pagado",l:"Pagado",cls:"ok",t:"Liquidar hoy lo que falta"}],gEst(g));
   el.innerHTML=`
   <div class="tiles">
     <div class="tile dark"><span class="l">Gastos del periodo</span><span class="v">${fmtK(sumM(gP))}</span><span class="s">${gP.length} gasto${gP.length===1?"":"s"} · ${periodoTxt()}</span></div>
-    <div class="tile"><span class="l">Por pagar</span><span class="v" style="color:${pend.length?"var(--bad)":"var(--ok)"}">${fmtK(sumM(pend))}</span><span class="s">${pend.length} pendiente${pend.length===1?"":"s"} · cualquier fecha</span></div>
-    <div class="tile"><span class="l">Vencidos</span><span class="v" style="color:${venc.length?"var(--bad)":"var(--ok)"}">${venc.length}</span><span class="s">${venc.length?fmtK(sumM(venc))+" con fecha de pago vencida":"nada vencido"}</span></div>
-    <div class="tile"><span class="l">Pagado en el periodo</span><span class="v">${fmtK(sumM(pagP))}</span><span class="s">${pagP.length} pago${pagP.length===1?"":"s"} · por fecha de pago</span></div>
+    <div class="tile"><span class="l">Por pagar</span><span class="v" style="color:${pend.length?"var(--bad)":"var(--ok)"}">${fmtK(porPagar)}</span><span class="s">${pend.length} pendiente${pend.length===1?"":"s"} · cualquier fecha</span></div>
+    <div class="tile"><span class="l">Vencidos</span><span class="v" style="color:${venc.length?"var(--bad)":"var(--ok)"}">${venc.length}</span><span class="s">${venc.length?fmtK(venc.reduce((a,g)=>a+falta(g),0))+" con fecha límite vencida":"nada vencido"}</span></div>
+    <div class="tile"><span class="l">Pagado en el periodo</span><span class="v">${fmtK(pagadoP)}</span><span class="s">por fecha de pago</span></div>
     <div class="tile gold"><span class="l">Resultado aprox.</span><span class="v" style="color:${res<0?"var(--bad)":""}">${fmtK(res)}</span><span class="s">lo que queda en TRUST ${fmtK(ingT)} + otros ${fmtK(otrosP)} − gastos</span></div>
   </div>
-  <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Gastos de la empresa</h3><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="qseg" id="g-seg"><button data-v="pend" class="${gView==="pend"?"on":""}">Por pagar · ${pend.length}</button><button data-v="pag" class="${gView==="pag"?"on":""}">Pagados · ${pagP.length}</button></div><button class="btn sm primary" id="btn-gasto">+ Gasto</button></div></div>
-    <p class="hint" style="margin:6px 0 10px">Gastos propios de la empresa (nómina, renta, pauta, software…), no comisiones a asesores. Registra el gasto con su fecha de pago y márcalo como pagado cuando salga el dinero.</p>
-    ${TABLAS_OK.gastos?`<div class="twrap" style="border:0"><table><thead><tr><th>Fecha</th><th>Vence</th><th>Concepto</th><th>Proveedor</th><th>Categoría</th><th class="num">Monto</th><th>Pagado el</th><th>Estatus</th><th></th></tr></thead>
-    <tbody>${rows.map(g=>{const vencido=!g.pagado&&g.vence&&g.vence<hoy;return `<tr class="${g.pagado?"dimrow":""}"><td class="dim">${fecha(g.fecha)}</td><td style="color:${vencido?"var(--bad)":"inherit"};font-weight:${vencido?600:400}">${g.vence?fecha(g.vence):"—"}${vencido?" ⚠":""}</td><td><b>${esc(g.concepto)}</b>${g.notas?`<br><small class="dim">${esc(g.notas)}</small>`:""}</td><td>${esc(g.proveedor||"—")}</td><td class="dim">${esc(g.categoria||"—")}</td><td class="num money">${fmt(g.monto)}</td><td class="dim">${g.pagado?fecha(g.fecha_pago)+(g.metodo?" · "+esc(g.metodo):""):"—"}</td><td>${segG(g.id,[{k:"pend",l:"Por pagar",cls:"bad"},{k:"pag",l:"Pagado",cls:"ok",t:"Marcar como pagado hoy"}],g.pagado?"pag":"pend")}</td><td><button class="ico edit-gasto" data-id="${g.id}" title="Editar">✎</button></td></tr>`}).join("")}</tbody></table>
+  <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Gastos de la empresa</h3><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="qseg" id="g-seg"><button data-v="pend" class="${gView==="pend"?"on":""}">Por pagar · ${pend.length}</button><button data-v="pag" class="${gView==="pag"?"on":""}">Pagados · ${pagP.length}</button></div><button class="btn sm" id="btn-gpdf" title="PDF con todos los gastos pendientes de pago">⤓ Pagos pendientes PDF</button><button class="btn sm primary" id="btn-gasto">+ Gasto</button></div></div>
+    <p class="hint" style="margin:6px 0 10px">Gastos propios de la empresa (nómina, renta, pauta, software…), no comisiones a asesores. "Pago parcial" registra un abono con monto; "Pagado" liquida lo que falta con fecha de hoy. El número junto a lo pagado abre el detalle de pagos.</p>
+    ${TABLAS_OK.gastos?`<div class="twrap" style="border:0"><table><thead><tr><th>Fecha</th><th>Vence</th><th>Concepto</th><th>Proveedor</th><th>Categoría</th><th class="num">Monto</th><th class="num">Pagado</th><th class="num">Pendiente</th><th>Estatus</th><th></th></tr></thead>
+    <tbody>${rows.map(g=>{const e=gEst(g),pag=gPagadoDe(g),pd=falta(g),n=gPagosDe(g.id).length,vencido=e!=="pagado"&&g.vence&&g.vence<hoy;return `<tr class="${e==="pagado"?"dimrow":""}"><td class="dim">${fecha(g.fecha)}</td><td style="color:${vencido?"var(--bad)":"inherit"};font-weight:${vencido?600:400}">${g.vence?fecha(g.vence):"—"}${vencido?" ⚠":""}</td><td><b>${esc(g.concepto)}</b>${g.notas?`<br><small class="dim">${esc(g.notas)}</small>`:""}</td><td>${esc(g.proveedor||"—")}</td><td class="dim">${esc(g.categoria||"—")}</td><td class="num money">${fmt(g.monto)}</td><td class="num ${pag?"paid":""}">${fmt(pag)}${n?` <button class="ico gpagos" data-id="${g.id}" title="Ver pagos">${n}</button>`:""}</td><td class="num money" style="color:${pd>0.5?"var(--bad)":"var(--ok)"}">${fmt(pd)}</td><td>${seg(g)}${e==="pagado"?`<br><small class="dim">pagado el ${fecha(gFechaPago(g))}${g.metodo?" · "+esc(g.metodo):""}</small>`:""}</td><td><button class="ico edit-gasto" data-id="${g.id}" title="Editar">✎</button></td></tr>`}).join("")}</tbody></table>
     ${rows.length?"":`<div class="empty">${gView==="pag"?`<b>Sin pagos</b>No hay gastos pagados en ${periodoTxt().toLowerCase()}.`:`<b>Nada por pagar</b>No hay gastos pendientes.`}</div>`}</div>`:faltaTabla("gastos")}</div>
   <div class="grid2" style="margin-top:14px"><div class="card"><h3>Por categoría · ${periodoTxt()}</h3><div class="bars">${bars(byCat,sumM(gP))}</div></div>
   <div class="card"><h3>Por mes · ${P.anio}</h3><div class="cols mo">${(()=>{const arr=Array.from({length:12},()=>0);GASTOS.filter(g=>+String(g.fecha).slice(0,4)===+P.anio).forEach(g=>arr[+String(g.fecha).slice(5,7)-1]+=+g.monto||0);const mx=Math.max(...arr,1);const fmtS=v=>v>=1e6?(v/1e6).toFixed(1).replace(/\.0$/,"")+" M":v>=1e3?Math.round(v/1e3)+" k":v?Math.round(v):"–";return arr.map((v,i)=>`<div class="c" title="${MESES_L[i]}: ${fmt(v)}"><small class="${v?"":"dim"}">${fmtS(v)}</small><div style="display:flex;width:100%;align-items:flex-end;height:90px;justify-content:center"><i style="height:${v/mx*100}%;background:var(--gold-2)"></i></div><b>${MESES[i]}</b></div>`).join("")})()}</div></div></div>`;
   el.querySelectorAll("#g-seg button").forEach(b=>b.onclick=()=>{gView=b.dataset.v;renderGastos()});
   const nb=el.querySelector("#btn-gasto");if(nb)nb.onclick=()=>openGasto(null);
+  const pb=el.querySelector("#btn-gpdf");if(pb)pb.onclick=reporteGastosPDF;
   el.querySelectorAll(".edit-gasto").forEach(b=>b.onclick=()=>openGasto(GASTOS.find(g=>g.id===b.dataset.id)));
-  el.querySelectorAll(".segc button").forEach(b=>b.onclick=async()=>{const g=GASTOS.find(x=>x.id===b.closest(".segc").dataset.id);const k=b.dataset.k;if((k==="pag")===!!g.pagado)return;
-    const upd=k==="pag"?{pagado:true,fecha_pago:todayISO()}:{pagado:false,fecha_pago:null};const r=await sb.from("gastos").update(upd).eq("id",g.id);if(r.error){toast("No se guardó: "+r.error.message,true);return}Object.assign(g,upd);toast(k==="pag"?"Marcado como pagado":"Regresado a por pagar");renderGastos()});
+  el.querySelectorAll(".gpagos").forEach(b=>b.onclick=()=>openGastoPago(GASTOS.find(g=>g.id===b.dataset.id)));
+  el.querySelectorAll(".segc button").forEach(b=>b.onclick=async()=>{const g=GASTOS.find(x=>x.id===b.closest(".segc").dataset.id);const k=b.dataset.k,e=gEst(g);
+    if(k==="parcial"){
+      if(e==="pagado"){const auto=gPagosDe(g.id).filter(p=>(p.nota||"")==="Liquidación");
+        if(!confirm("Este gasto está marcado como pagado por completo. ¿En realidad fue un pago parcial? Se quita la liquidación automática para que captures el monto real."))return;
+        if(auto.length){const r=await sb.from("gastos_pagos").delete().in("id",auto.map(p=>p.id));if(r.error){toast(r.error.message,true);return}GPAGOS=GPAGOS.filter(p=>!auto.some(a=>a.id===p.id))}
+        if(!gPagosDe(g.id).length){const r=await sb.from("gastos").update({pagado:false,fecha_pago:null}).eq("id",g.id);if(!r.error){g.pagado=false;g.fecha_pago=null}}
+        renderGastos()}
+      openGastoPago(g);return}
+    if(e===k)return;
+    if(k==="pagado"){const f=falta(g);if(f>0.5){const r=await sb.from("gastos_pagos").insert({gasto_id:g.id,fecha:todayISO(),monto:f,metodo:g.metodo||null,nota:"Liquidación"}).select().single();if(r.error){toast("No se guardó: "+r.error.message,true);return}GPAGOS.push(r.data)}}
+    if(k==="pendiente"&&gPagosDe(g.id).length){if(!confirm("¿Regresar a por pagar? Se borran los pagos registrados de este gasto."))return;const r=await sb.from("gastos_pagos").delete().eq("gasto_id",g.id);if(r.error){toast(r.error.message,true);return}GPAGOS=GPAGOS.filter(p=>p.gasto_id!==g.id)}
+    const upd={pagado:k==="pagado",fecha_pago:k==="pagado"?todayISO():null};const r=await sb.from("gastos").update(upd).eq("id",g.id);if(r.error){toast("No se guardó: "+r.error.message,true);return}Object.assign(g,upd);toast(k==="pagado"?"Marcado como pagado":"Regresado a por pagar");renderGastos()});
+}
+function openGastoPago(g){
+  const tot=+g.monto||0,pag=gPagadoDe(g),f=Math.max(0,tot-pag);const root=$("#drawer-root");const list=gPagosDe(g.id);
+  root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(500px,100%)">
+    <header><h3>Pagos · ${esc(g.concepto)}</h3><button class="ico" id="d-close">✕</button></header>
+    <div class="body">
+      <p style="margin:0 0 12px"><b>${esc(g.proveedor||"")}</b>${g.proveedor?" · ":""}${esc(g.categoria||"")}${g.vence?" · vence "+fecha(g.vence):""}<br><span class="dim">Monto ${fmt(tot)} · pagado ${fmt(pag)} · <b style="color:${f>0.5?"var(--bad)":"var(--ok)"}">pendiente ${fmt(f)}</b></span></p>
+      ${list.length?`<table class="disp" style="margin-bottom:12px"><thead><tr><th>Fecha</th><th>Método</th><th>Nota</th><th class="num">Monto</th><th></th></tr></thead><tbody>${list.map(p=>`<tr><td class="dim">${fecha(p.fecha)}</td><td class="dim">${esc(p.metodo||"")}</td><td>${esc(p.nota||"")}</td><td class="num">${fmt(p.monto)}</td><td><button class="ico delgp" data-id="${p.id}" title="Eliminar pago">×</button></td></tr>`).join("")}</tbody></table>`:(g.pagado?`<p class="hint" style="margin:0 0 10px">Marcado como pagado el ${fecha(g.fecha_pago)} sin detalle de pagos.</p>`:"")}
+      ${TABLAS_OK.gpagos?`<div class="fg">
+        <div class="f c4"><label>Fecha del pago</label><input type="date" id="gp-fecha" value="${todayISO()}"></div>
+        <div class="f c4"><label>Monto pagado</label><input id="gp-m" inputmode="numeric" value="${f>0.5?Math.round(f).toLocaleString("es-MX"):""}"></div>
+        <div class="f c4"><label>Método</label>${dsel("gp-met",METODOS,g.metodo||"Transferencia")}</div>
+        <div class="f c12"><label>Nota</label><input id="gp-nota" placeholder="Anticipo, segunda parte, factura…"></div>
+      </div>
+      <p class="hint" style="margin-top:10px">${f>0.5?"Si el monto es menor al pendiente queda como pago parcial; si lo cubre, el gasto pasa a pagado.":"Este gasto ya está pagado por completo. Si fue parcial, borra el pago que sobra con × y registra el monto real."}</p>`:faltaTabla("gastos_pagos").replace("ventas_v6.sql","ventas_v7.sql")}</div>
+    <footer><span></span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cerrar</button>${TABLAS_OK.gpagos?`<button class="btn primary" id="d-save">Registrar pago</button>`:""}</span></footer></div>`;
+  const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
+  root.querySelectorAll(".delgp").forEach(b=>b.onclick=async()=>{if(!confirm("¿Eliminar este pago?"))return;const r=await sb.from("gastos_pagos").delete().eq("id",b.dataset.id);if(r.error){toast(r.error.message,true);return}GPAGOS=GPAGOS.filter(p=>p.id!==b.dataset.id);await gSync(g);openGastoPago(g);render()});
+  const sv=$("#d-save");if(sv)sv.onclick=async()=>{const m=num($("#gp-m").value);if(!m||m<=0){toast("Falta el monto",true);return}
+    const r=await sb.from("gastos_pagos").insert({gasto_id:g.id,fecha:$("#gp-fecha").value||todayISO(),monto:m,metodo:$("#gp-met").value||null,nota:$("#gp-nota").value.trim()||null}).select().single();if(r.error){toast("No se guardó: "+r.error.message,true);return}
+    GPAGOS.push(r.data);await gSync(g);const e=gEst(g);toast(e==="pagado"?"Gasto pagado por completo":"Pago parcial registrado");openGastoPago(g);render()};
 }
 function openGasto(g){
   const isNew=!g;g=g?{...g}:{fecha:todayISO(),vence:null,concepto:"",proveedor:"",categoria:"",monto:null,pagado:false,fecha_pago:null,metodo:"Transferencia",notas:""};
+  const conPagos=!isNew&&gPagosDe(g.id).length>0;
   const root=$("#drawer-root");
   root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(600px,100%)">
     <header><h3>${isNew?"Registrar gasto":"Gasto · "+esc(g.concepto)}</h3><button class="ico" id="d-close">✕</button></header>
@@ -756,17 +804,19 @@ function openGasto(g){
       <div class="f c4"><label>Proveedor / a quién se paga</label><input id="g-prov" value="${esc(g.proveedor||"")}"></div>
       <div class="f c4"><label>Monto</label><input id="g-monto" inputmode="numeric" value="${g.monto!=null?fmt(g.monto):""}" placeholder="$ 0"></div>
       <div class="f c4"><label>Método</label>${dsel("g-met",METODOS,g.metodo||"Transferencia")}</div>
-      <div class="f c6"><label class="chk" style="padding:0;margin-top:22px"><input type="checkbox" id="g-pag" ${g.pagado?"checked":""} style="width:auto"> Ya está pagado</label></div>
-      <div class="f c6" id="g-fp-box" style="${g.pagado?"":"display:none"}"><label>Fecha de pago</label><input type="date" id="g-fp" value="${esc(g.fecha_pago||todayISO())}"></div>
+      ${conPagos?`<div class="f c12"><label>Pagos</label><p class="hint" style="margin:0">${fmt(gPagadoDe(g))} pagado de ${fmt(g.monto)} en ${gPagosDe(g.id).length} pago${gPagosDe(g.id).length===1?"":"s"}. Edítalos desde la lista (número junto a lo pagado) o con “Pago parcial”.</p></div>`:`
+      <div class="f c6"><label class="chk" style="padding:0;margin-top:22px"><input type="checkbox" id="g-pag" ${g.pagado?"checked":""} style="width:auto"> Ya está pagado por completo</label></div>
+      <div class="f c6" id="g-fp-box" style="${g.pagado?"":"display:none"}"><label>Fecha de pago</label><input type="date" id="g-fp" value="${esc(g.fecha_pago||todayISO())}"></div>`}
       <div class="f c12"><label>Notas</label><textarea id="g-notas" rows="2">${esc(g.notas||"")}</textarea></div>
     </div></div>
     <footer><span style="display:flex;gap:8px">${isNew?"":`<button class="btn danger" id="d-del">Eliminar</button><button class="btn" id="d-dup" title="Crea una copia pendiente con las fechas un mes después (renta, nómina, software…)">Duplicar al mes siguiente</button>`}</span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cancelar</button><button class="btn primary" id="d-save">${isNew?"Registrar":"Guardar"}</button></span></footer></div>`;
   const q=i=>$("#"+i);const close=()=>root.innerHTML="";q("scrim").onclick=close;q("d-close").onclick=close;q("d-cancel").onclick=close;
-  q("g-pag").onchange=()=>q("g-fp-box").style.display=q("g-pag").checked?"":"none";
+  if(q("g-pag"))q("g-pag").onchange=()=>q("g-fp-box").style.display=q("g-pag").checked?"":"none";
   q("g-monto").onchange=()=>{const x=num(q("g-monto").value);q("g-monto").value=x==null?"":fmt(x)};
-  const leer=()=>({fecha:q("g-fecha").value||todayISO(),vence:q("g-vence").value||null,concepto:q("g-conc").value.trim(),proveedor:q("g-prov").value.trim()||null,categoria:q("g-cat").value.trim()||null,monto:num(q("g-monto").value),metodo:q("g-met").value||null,pagado:q("g-pag").checked,fecha_pago:q("g-pag").checked?(q("g-fp").value||todayISO()):null,notas:q("g-notas").value.trim()||null});
+  const leer=()=>{const row={fecha:q("g-fecha").value||todayISO(),vence:q("g-vence").value||null,concepto:q("g-conc").value.trim(),proveedor:q("g-prov").value.trim()||null,categoria:q("g-cat").value.trim()||null,monto:num(q("g-monto").value),metodo:q("g-met").value||null,notas:q("g-notas").value.trim()||null};
+    if(!conPagos){row.pagado=q("g-pag").checked;row.fecha_pago=row.pagado?(q("g-fp").value||todayISO()):null}return row};
   if(!isNew){
-    q("d-del").onclick=async()=>{if(!confirm("¿Eliminar este gasto?"))return;const r=await sb.from("gastos").delete().eq("id",g.id);if(r.error){toast(r.error.message,true);return}GASTOS=GASTOS.filter(x=>x.id!==g.id);close();render();toast("Gasto eliminado")};
+    q("d-del").onclick=async()=>{if(!confirm("¿Eliminar este gasto? Se borran también sus pagos."))return;const r=await sb.from("gastos").delete().eq("id",g.id);if(r.error){toast(r.error.message,true);return}GASTOS=GASTOS.filter(x=>x.id!==g.id);GPAGOS=GPAGOS.filter(p=>p.gasto_id!==g.id);close();render();toast("Gasto eliminado")};
     q("d-dup").onclick=async()=>{const row=leer();if(!row.concepto||!row.monto){toast("Completa concepto y monto",true);return}const dup={...row,fecha:mesSig(row.fecha),vence:row.vence?mesSig(row.vence):null,pagado:false,fecha_pago:null};const r=await sb.from("gastos").insert(dup).select().single();if(r.error){toast("No se guardó: "+r.error.message,true);return}GASTOS.unshift(r.data);close();render();toast("Copia creada para "+fechaM(dup.fecha))};
   }
   q("d-save").onclick=async()=>{const row=leer();if(!row.concepto){toast("Falta el concepto",true);return}if(!row.monto){toast("Falta el monto",true);return}
@@ -774,6 +824,59 @@ function openGasto(g){
     if(r.error){toast("No se guardó: "+r.error.message,true);return}
     if(isNew)GASTOS.unshift(r.data);else GASTOS[GASTOS.findIndex(x=>x.id===g.id)]=r.data;
     close();render();toast(isNew?"Gasto registrado":"Guardado")};
+}
+function reporteGastosPDF(){
+  const hoy=new Date(),hoyISO=todayISO();const fechaTxt=hoy.toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"});
+  const falta=g=>Math.max(0,(+g.monto||0)-gPagadoDe(g));
+  const pend=GASTOS.filter(g=>gEst(g)!=="pagado").sort((a,b)=>String(a.vence||"9999").localeCompare(String(b.vence||"9999"))||String(a.fecha).localeCompare(String(b.fecha)));
+  if(!pend.length){toast("No hay gastos pendientes de pago");return}
+  const lim=new Date(hoy.getTime()+7*86400000);const limISO=new Date(lim.getTime()-lim.getTimezoneOffset()*60000).toISOString().slice(0,10);
+  const venc=pend.filter(g=>g.vence&&g.vence<hoyISO),sem=pend.filter(g=>g.vence&&g.vence>=hoyISO&&g.vence<=limISO),sinF=pend.filter(g=>!g.vence),desp=pend.filter(g=>g.vence&&g.vence>limISO);
+  const tot=pend.reduce((a,g)=>a+falta(g),0),sum=l=>l.reduce((a,g)=>a+falta(g),0);
+  const kpi=(l,v,s,c)=>`<div class="k ${c||""}"><span class="l">${l}</span><span class="v">${v}</span><span class="s">${s||""}</span></div>`;
+  const fila=g=>{const e=gEst(g),pag=gPagadoDe(g),vencido=g.vence&&g.vence<hoyISO,semana=!vencido&&g.vence&&g.vence<=limISO;return `<tr class="${vencido?"venc":""}"><td class="v">${g.vence?fecha(g.vence):"—"}${vencido?`<span class="tag bad">Vencido</span>`:semana?`<span class="tag warn">Esta semana</span>`:""}</td><td><b>${esc(g.concepto)}</b>${g.notas?`<br><small>${esc(g.notas)}</small>`:""}</td><td>${esc(g.proveedor||"—")}</td><td class="d">${esc(g.categoria||"—")}</td><td class="d">${esc(g.metodo||"—")}</td><td class="n">${fmt(g.monto)}</td><td class="n d">${pag?fmt(pag)+(e==="parcial"?"<br><small>parcial</small>":""):"—"}</td><td class="n b">${fmt(falta(g))}</td></tr>`};
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Pagos pendientes · ${fechaTxt}</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+@page{size:letter;margin:.5in .55in}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{margin:0;font-family:Poppins,"Segoe UI",sans-serif;color:#1E241F;background:#FAF8F2;font-size:10px}
+.page{width:8.5in;min-height:11in;margin:0 auto;padding:.45in .55in .4in;background:#FAF8F2}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}.logo{width:110px}
+.right{text-align:right;font-size:10.5px;color:#6F726B;line-height:1.5}.right b{display:block;font-family:Lora,serif;font-size:13px;color:#173F35;font-weight:500}
+.title{margin:14px 0 2px;font-family:Lora,Georgia,serif;font-size:28px;line-height:1.1;font-weight:500;color:#173F35}.title em{font-style:italic;color:#B8956A}
+.sub{font-size:11px;color:#6F726B;margin-bottom:14px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.k{background:#fff;border:1px solid #E3DDD0;border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:1px}
+.k .l{font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:#6F726B;font-weight:600}.k .v{font-family:Lora,serif;font-size:18px;color:#1E241F;font-variant-numeric:tabular-nums}.k .s{font-size:8.5px;color:#6F726B}
+.k.dark{background:#173F35;border-color:#173F35}.k.dark .l,.k.dark .s{color:#D9C9A8}.k.dark .v{color:#fff}
+.k.bad .v{color:#A8342A}.k.warn .v{color:#B27A0F}
+table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #E3DDD0;border-radius:8px;overflow:hidden}
+thead{display:table-header-group}th{background:#EFEAE0;color:#4F534E;text-align:left;font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;padding:7px 8px;border-bottom:1px solid #E3DDD0}
+td{padding:6px 8px;border-bottom:1px solid #EEE9DE;vertical-align:top;font-size:9.5px}tr{page-break-inside:avoid}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}td.d{color:#6F726B}td.b{font-weight:600;color:#A8342A}td.v{white-space:nowrap;font-weight:500}
+td small{color:#6F726B;font-size:8.5px}tr.venc td.v{color:#A8342A;font-weight:600}
+.tag{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;font-size:7.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;vertical-align:middle}.tag.bad{background:#F8E1DE;color:#A8342A}.tag.warn{background:#FBF0D6;color:#B27A0F}
+tr.tot td{background:#173F35;color:#fff;font-weight:600;border-bottom:0}tr.tot td.b{color:#fff}
+.foot{margin-top:18px;display:flex;justify-content:space-between;align-items:flex-end;font-size:9px;color:#6F726B}.foot img{width:64px}
+@media print{body{background:#FAF8F2}.page{margin:0;min-height:auto;padding:0}}
+</style></head><body><div class="page">
+  <div class="top"><div><img class="logo" src="data:image/png;base64,${LOGO_B64}" alt="TRUST realtor"></div><div class="right">Corte al<b>${fechaTxt}</b>Pendientes<b>${pend.length} · ${fmt(tot)}</b></div></div>
+  <div class="title">Pagos <em>pendientes</em></div>
+  <div class="sub">Gastos de la empresa por pagar, ordenados por fecha límite. Incluye los pagos parciales con lo que falta por cubrir.</div>
+  <div class="kpis">
+    ${kpi("Total por pagar",fmtK(tot),`${pend.length} gasto${pend.length===1?"":"s"} pendiente${pend.length===1?"":"s"}`,"dark")}
+    ${kpi("Vencidos",fmtK(sum(venc)),`${venc.length} con fecha límite pasada`,venc.length?"bad":"")}
+    ${kpi("Vencen esta semana",fmtK(sum(sem)),`${sem.length} en los próximos 7 días`,sem.length?"warn":"")}
+    ${kpi("Después / sin fecha",fmtK(sum(desp)+sum(sinF)),`${desp.length} posteriores · ${sinF.length} sin fecha límite`)}
+  </div>
+  <table><thead><tr><th>Vence</th><th>Concepto</th><th>Proveedor</th><th>Categoría</th><th>Método</th><th class="n">Monto</th><th class="n">Pagado</th><th class="n">Por pagar</th></tr></thead>
+  <tbody>${pend.map(fila).join("")}<tr class="tot"><td colspan="5">Total por pagar · ${pend.length} gasto${pend.length===1?"":"s"}</td><td class="n">${fmt(pend.reduce((a,g)=>a+(+g.monto||0),0))}</td><td class="n">${fmt(pend.reduce((a,g)=>a+gPagadoDe(g),0))}</td><td class="n b">${fmt(tot)}</td></tr></tbody></table>
+  <div class="foot"><div><b style="color:#173F35;letter-spacing:.14em;text-transform:uppercase">Confidencial</b> · Reporte interno · pagos pendientes al ${fechaTxt}</div><div><img src="data:image/png;base64,${LOGO_B64}" alt="TRUST"></div></div>
+</div>
+<script>window.addEventListener("load",()=>setTimeout(()=>window.print(),600));<\/script>
+</body></html>`;
+  const w=window.open("","_blank");if(!w){toast("Permite las ventanas emergentes para generar el PDF",true);return}
+  w.document.open();w.document.write(html);w.document.close();
 }
 
 /* ----- apartados ----- */
