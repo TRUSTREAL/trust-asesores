@@ -76,6 +76,8 @@ td.com{color:var(--gold-2);font-weight:600}
 .st.pagada{background:var(--ok-bg);color:var(--ok)}
 .un{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
 .un.Proyectos{background:var(--ok-bg);color:var(--ok)}.un.Corretaje{background:var(--info-bg);color:var(--info)}
+.un.P,.un.C{min-width:22px;text-align:center;padding:2px 7px}.un.P{background:var(--ok-bg);color:var(--ok)}.un.C{background:var(--info-bg);color:var(--info)}
+.tp{font-size:12px;font-weight:600}.tp.Renta{color:var(--info)}.tp.Venta{color:var(--ok)}.tp.Cr{color:var(--gold-2)}
 .ico{border:0;background:transparent;color:var(--faint);font-size:15px;padding:2px 6px;border-radius:6px}.ico:hover{color:var(--green);background:var(--surface-2)}
 .bars .bar{display:grid;grid-template-columns:150px 1fr 110px;gap:10px;align-items:center;padding:5px 0;font-size:13px}
 .bars .trk{height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden}
@@ -97,7 +99,7 @@ td.com{color:var(--gold-2);font-weight:600}
 
 /* drawer */
 .scrim{position:fixed;inset:0;background:rgba(14,42,35,.45);z-index:20}
-.drawer{position:fixed;top:0;right:0;bottom:0;width:min(720px,100%);background:var(--surface);z-index:21;box-shadow:var(--shadow);display:flex;flex-direction:column}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(800px,100%);background:var(--surface);z-index:21;box-shadow:var(--shadow);display:flex;flex-direction:column}
 .drawer header{display:flex;justify-content:space-between;align-items:center;padding:16px 22px;border-bottom:1px solid var(--line)}
 .drawer header h3{font-size:20px;color:var(--green)}
 .drawer .body{padding:16px 22px;overflow:auto;flex:1}
@@ -108,7 +110,7 @@ td.com{color:var(--gold-2);font-weight:600}
 .f input,.f select,.f textarea{border:1px solid var(--line-2);background:var(--bg);border-radius:10px;padding:9px 12px;width:100%}
 .f input:focus,.f select:focus,.f textarea:focus{outline:2px solid var(--green);outline-offset:1px;border-color:var(--green)}
 .f .ro{background:var(--surface-2);color:var(--muted)}
-.c12{grid-column:span 12}.c6{grid-column:span 6}.c4{grid-column:span 4}.c3{grid-column:span 3}
+.c12{grid-column:span 12}.c6{grid-column:span 6}.c4{grid-column:span 4}.c3{grid-column:span 3}.c2{grid-column:span 2}
 .sect{margin-top:20px;padding-top:14px;border-top:1px solid var(--line)}
 .sect h4{font-family:Lora,serif;font-weight:500;font-size:16px;margin:0 0 10px;color:var(--green)}
 .disp{width:100%;border-collapse:collapse;font-size:13px}
@@ -134,7 +136,7 @@ tr.dimrow td{opacity:.55}
 .rules .r.staff{grid-template-columns:1fr 120px 36px}
 .rules .r.staff input.name{text-align:left}
 .paid{color:var(--ok);font-weight:600}
-@media (max-width:860px){.tiles{grid-template-columns:repeat(2,1fr)}.grid2,.grid3{grid-template-columns:1fr}.c6,.c4,.c3{grid-column:span 12}.cobros .row{grid-template-columns:1fr 1fr}}
+@media (max-width:860px){.tiles{grid-template-columns:repeat(2,1fr)}.grid2,.grid3{grid-template-columns:1fr}.c6,.c4,.c3,.c2{grid-column:span 12}.cobros .row{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -175,7 +177,8 @@ const LOGO_B64="iVBORw0KGgoAAAANSUhEUgAAAtAAAACTCAYAAACnBC53AABDfklEQVR42u2de3yc
 const ASESORES=["Ana Lu","Carlos","Fanny","María","Paola","Ramsés","Rodrigo","Álvaro","Majo","Berna","EX"];
 const EX="EX"; // asesores que ya no están en la empresa (ventas anteriores); sus comisiones se consideran ya liquidadas
 const PROYECTOS=["Tanhia","Balcana","Epicentria","Luciana Providencia","Luciana Colomos","Lázaro","Neza","Union Square","VIM Tower","NAGU","Epika","Via Aurora","Sao Paulo Urbano","Corretaje","Otro"];
-const UN=["Proyectos","Corretaje"], TIPO=["Venta","Renta","Crédito hipotecario"];
+const UN=["Proyectos","Corretaje"], TIPO=["Venta","Renta","Crédito hipotecario"], INMUEBLES=["Departamento","Casa","Local","Oficina","Terreno","Bodega"];
+const TIPO_ABR={"Venta":"Venta","Renta":"Renta","Crédito hipotecario":"Crédito"};
 const esCredito=v=>v.tipo==="Crédito hipotecario";
 const MESES=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 const MESES_L=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -254,8 +257,8 @@ $$(".vseg button").forEach(b=>b.onclick=()=>{PANE=b.dataset.pane;$$(".vseg butto
 
 function renderVentas(){
   const el=$("#pane-ventas");
-  let rows=VENTAS.filter(v=>inPeriodo(v.fecha)&&(!filt.un||v.un===filt.un)&&(!filt.asesor||v.asesor===filt.asesor||v.opcionador===filt.asesor)&&(!filt.estatus||estatusDe(v)===filt.estatus)&&(!filt.q||[v.cliente,v.proyecto,v.unidad,v.asesor,v.notas].join(" ").toLowerCase().includes(filt.q.toLowerCase())));
-  const d=sort.dir==="asc"?1:-1;const val=v=>({fecha:v.fecha,cliente:v.cliente||"",proyecto:v.proyecto||"",asesor:v.asesor||"",monto:+v.monto||0,comision:comTotal(v),estatus:estatusDe(v)})[sort.k];
+  let rows=VENTAS.filter(v=>inPeriodo(v.fecha)&&(!filt.un||v.un===filt.un)&&(!filt.asesor||v.asesor===filt.asesor||v.opcionador===filt.asesor)&&(!filt.estatus||estatusDe(v)===filt.estatus)&&(!filt.q||[v.cliente,v.proyecto,v.unidad,v.asesor,v.notas,v.inmueble,v.tipo].join(" ").toLowerCase().includes(filt.q.toLowerCase())));
+  const d=sort.dir==="asc"?1:-1;const val=v=>({fecha:v.fecha,cliente:v.cliente||"",proyecto:v.proyecto||"",asesor:v.asesor||"",tipo:v.tipo||"",inmueble:v.inmueble||"",monto:+v.monto||0,comision:comTotal(v),estatus:estatusDe(v)})[sort.k];
   rows=[...rows].sort((a,b)=>{const x=val(a),y=val(b);return (typeof x==="number"?x-y:String(x).localeCompare(String(y),"es"))*d});
   const all=VENTAS.filter(v=>inPeriodo(v.fecha));
   const tot=all.reduce((a,v)=>a+comTotal(v),0),op=all.filter(v=>!esCredito(v)).reduce((a,v)=>a+(+v.monto||0),0);
@@ -276,8 +279,8 @@ function renderVentas(){
     <select id="f-estatus"><option value="">Estatus de cobro</option>${Object.entries(EST_LABEL).map(([k,v])=>`<option value="${k}" ${filt.estatus===k?"selected":""}>${v}</option>`).join("")}</select>
     <span class="count">${rows.length} de ${all.length}</span>
   </div>
-  <div class="twrap"><table><thead><tr>${th("fecha","Mes")}${th("cliente","Cliente")}<th>UN</th>${th("proyecto","Proyecto")}<th>Unidad</th>${th("asesor","Asesor")}<th>Opcionador</th>${th("monto","Monto",1)}<th class="num">%</th>${th("comision","Comisión",1)}${th("estatus","Cobranza")}<th></th></tr></thead>
-  <tbody>${rows.map(v=>{const e=estatusDe(v);return `<tr data-id="${v.id}"><td class="dim">${fechaM(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${v.autogenerada?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">AG</span>':""}</td><td><span class="un ${v.un}">${esc(v.un)}</span>${esCredito(v)?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(v.proyecto)}</td><td class="dim">${esc(v.unidad||"")}</td><td>${esc(v.asesor)}</td><td class="dim">${esc(v.opcionador||"—")}</td><td class="num money">${fmt(v.monto)}</td><td class="num dim">${v.comision_monto!=null?"fijo":(+v.comision_pct||0).toLocaleString("es-MX",{maximumFractionDigits:2})+"%"}</td><td class="num com">${fmt(comTotal(v))}</td><td><button class="st ${e} cobs" data-id="${v.id}" title="Ver / registrar cobros" style="border:0;cursor:pointer;font:inherit">${EST_LABEL[e]}</button></td><td><button class="ico edit" data-id="${v.id}" title="Abrir">✎</button></td></tr>`}).join("")}</tbody></table>
+  <div class="twrap"><table><thead><tr>${th("fecha","Mes")}${th("cliente","Cliente")}<th title="Unidad de negocio: P = Proyectos · C = Corretaje">UN</th>${th("tipo","Tipo")}${th("inmueble","Inmueble")}${th("proyecto","Proyecto")}<th>Unidad</th>${th("asesor","Asesor")}<th>Opcionador</th>${th("monto","Monto",1)}<th class="num">%</th>${th("comision","Comisión",1)}${th("estatus","Cobranza")}<th></th></tr></thead>
+  <tbody>${rows.map(v=>{const e=estatusDe(v);return `<tr data-id="${v.id}"><td class="dim">${fechaM(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${v.autogenerada?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">AG</span>':""}</td><td><span class="un ${v.un==="Proyectos"?"P":"C"}" title="${esc(v.un)}">${v.un==="Proyectos"?"P":"C"}</span></td><td><span class="tp ${esCredito(v)?"Cr":esc(v.tipo||"Venta")}">${esc(TIPO_ABR[v.tipo]||v.tipo||"Venta")}</span></td><td class="dim">${esc(v.inmueble||"—")}</td><td>${esc(v.proyecto)}</td><td class="dim">${esc(v.unidad||"")}</td><td>${esc(v.asesor)}</td><td class="dim">${esc(v.opcionador||"—")}</td><td class="num money">${fmt(v.monto)}</td><td class="num dim">${v.comision_monto!=null?"fijo":(+v.comision_pct||0).toLocaleString("es-MX",{maximumFractionDigits:2})+"%"}</td><td class="num com">${fmt(comTotal(v))}</td><td><button class="st ${e} cobs" data-id="${v.id}" title="Ver / registrar cobros" style="border:0;cursor:pointer;font:inherit">${EST_LABEL[e]}</button></td><td><button class="ico edit" data-id="${v.id}" title="Abrir">✎</button></td></tr>`}).join("")}</tbody></table>
   ${rows.length?"":`<div class="empty"><b>Sin ventas</b>No hay operaciones registradas en ${periodoTxt().toLowerCase()}${filt.q||filt.un||filt.asesor||filt.estatus?" con esos filtros":""}.</div>`}</div>`;
   $("#f-q").oninput=e=>{filt.q=e.target.value;renderVentas();const i=$("#f-q");i.focus();i.setSelectionRange(i.value.length,i.value.length)};
   ["un","asesor","estatus"].forEach(k=>$("#f-"+k).onchange=e=>{filt[k]=e.target.value;renderVentas()});
@@ -500,9 +503,10 @@ function openVenta(v){
     <div class="body">
       <div class="fg">
         <div class="f c3"><label>Mes de la venta</label><input type="month" id="v-fecha" value="${String(v.fecha||"").slice(0,7)}"></div>
-        <div class="f c3"><label>Unidad de negocio</label><select id="v-un">${opt(UN,v.un)}</select></div>
-        <div class="f c3"><label>Tipo</label><select id="v-tipo">${opt(TIPO,v.tipo)}</select></div>
-        <div class="f c3" id="v-prop-box" style="${v.un==="Corretaje"?"":"visibility:hidden"}"><label>Propiedad</label><select id="v-prop"><option value="true" ${v.propiedad_trust!==false?"selected":""}>De TRUST</option><option value="false" ${v.propiedad_trust===false?"selected":""}>Otra inmobiliaria</option></select></div>
+        <div class="f c2"><label>Unidad neg.</label><select id="v-un">${opt(UN,v.un)}</select></div>
+        <div class="f c2"><label>Tipo</label><select id="v-tipo">${opt(TIPO,v.tipo)}</select></div>
+        <div class="f c3"><label>Tipo de inmueble</label><select id="v-inm">${opt(INMUEBLES,v.inmueble||"","Elegir…")}</select></div>
+        <div class="f c2" id="v-prop-box" style="${v.un==="Corretaje"?"":"visibility:hidden"}"><label>Propiedad</label><select id="v-prop"><option value="true" ${v.propiedad_trust!==false?"selected":""}>De TRUST</option><option value="false" ${v.propiedad_trust===false?"selected":""}>Otra inmobiliaria</option></select></div>
         <div class="f c6"><label>Cliente</label><input id="v-cliente" value="${esc(v.cliente)}" placeholder="Nombre del comprador"></div>
         <div class="f c3"><label>Proyecto / propiedad</label><input id="v-proyecto" list="dl-proy" value="${esc(v.proyecto)}"><datalist id="dl-proy">${PROYECTOS.map(p=>`<option value="${esc(p)}">`).join("")}</datalist></div>
         <div class="f c3"><label>Unidad / ID</label><input id="v-unidad" value="${esc(v.unidad||"")}" placeholder="Depto 402, Casa 12…"></div>
@@ -525,7 +529,7 @@ function openVenta(v){
   const g=i=>$("#"+i);const close=()=>root.innerHTML="";
   g("scrim").onclick=close;g("d-close").onclick=close;g("d-cancel").onclick=close;
   let DISP=v.dispersion?v.dispersion.map(p=>({...p,id:p.id||uid()})):null;
-  const cur=()=>({fecha:(g("v-fecha").value||todayISO().slice(0,7))+"-01",un:g("v-un").value,tipo:g("v-tipo").value,propiedad_trust:g("v-prop").value==="true",cliente:g("v-cliente").value.trim(),proyecto:g("v-proyecto").value.trim(),unidad:g("v-unidad").value.trim(),asesor:g("v-asesor").value,opcionador:g("v-opc").value||null,autogenerada:g("v-ag").checked,monto:num(g("v-monto").value),comision_pct:num(g("v-pct").value),comision_monto:num(g("v-cmonto").value),notas:g("v-notas").value.trim()});
+  const cur=()=>({fecha:(g("v-fecha").value||todayISO().slice(0,7))+"-01",un:g("v-un").value,tipo:g("v-tipo").value,inmueble:g("v-inm").value||null,propiedad_trust:g("v-prop").value==="true",cliente:g("v-cliente").value.trim(),proyecto:g("v-proyecto").value.trim(),unidad:g("v-unidad").value.trim(),asesor:g("v-asesor").value,opcionador:g("v-opc").value||null,autogenerada:g("v-ag").checked,monto:num(g("v-monto").value),comision_pct:num(g("v-pct").value),comision_monto:num(g("v-cmonto").value),notas:g("v-notas").value.trim()});
   const total=()=>{const c=cur();return c.comision_monto!=null?c.comision_monto:(c.monto||0)*(c.comision_pct||0)/100};
   function drawDisp(){
     const tot=total();g("v-ctotal").value=fmt(tot)+(cur().comision_monto!=null?" (monto fijo)":"");
