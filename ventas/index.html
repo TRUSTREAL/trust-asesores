@@ -52,6 +52,9 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
 .qseg button.on{background:var(--green);color:#fff}
 .count{color:var(--muted);font-size:12px;margin-left:auto}
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:16px}
+.tiles.t5{grid-template-columns:repeat(5,1fr)}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.grid4 .card{min-width:0}.grid4 .bars .bar{grid-template-columns:minmax(70px,1fr) minmax(50px,1.2fr) auto;gap:8px;font-size:12.5px}.grid4 .bars .bar>span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.grid4 .bars .val{white-space:nowrap}
 .tile{background:var(--surface);border:1px solid var(--line-2);border-radius:14px;padding:12px 14px}
 .tile .l{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .tile .v{display:block;font-family:Lora,serif;font-size:26px;color:var(--green);line-height:1.15}
@@ -137,7 +140,7 @@ tr.dimrow td{opacity:.55}
 .rules .r.staff{grid-template-columns:1fr 120px 36px}
 .rules .r.staff input.name{text-align:left}
 .paid{color:var(--ok);font-weight:600}
-@media (max-width:860px){.tiles{grid-template-columns:repeat(2,1fr)}.grid2,.grid3{grid-template-columns:1fr}.c6,.c4,.c3,.c2{grid-column:span 12}.cobros .row{grid-template-columns:1fr 1fr}}
+@media (max-width:860px){.tiles,.tiles.t5{grid-template-columns:repeat(2,1fr)}.grid2,.grid3,.grid4{grid-template-columns:1fr}.c6,.c4,.c3,.c2{grid-column:span 12}.cobros .row{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -305,27 +308,34 @@ function renderEmpresa(){
   // periodo
   const vP=VN.filter(v=>inPeriodo(v.fecha));const ingreso=vP.reduce((a,v)=>a+comTotal(v),0);
   const vVen=vP.filter(v=>v.tipo==="Venta"),vRen=vP.filter(v=>v.tipo==="Renta");
+  const montoVen=vVen.reduce((a,v)=>a+(+v.monto||0),0),montoRen=vRen.reduce((a,v)=>a+(+v.monto||0),0),ingVen=vVen.reduce((a,v)=>a+comTotal(v),0);
+  const nCred=VENTAS.filter(v=>esCredito(v)&&inPeriodo(v.fecha)).length;
   const objetivo=P.trims.length?P.trims.reduce((a,q)=>a+objQ(q-1),0):byMprev.reduce((a,b)=>a+b,0);const falta=objetivo-ingreso;
-  const byUN={},byProy={},byAse={};vP.forEach(v=>{const t=comTotal(v);byUN[v.un]=(byUN[v.un]||0)+t;byProy[v.proyecto]=(byProy[v.proyecto]||0)+t;const a=v.asesor||"Sin asesor";byAse[a]=(byAse[a]||0)+t});
+  const byUN={},byProy={},byAse={},byInm={};vP.forEach(v=>{const t=comTotal(v);byUN[v.un]=(byUN[v.un]||0)+t;byProy[v.proyecto]=(byProy[v.proyecto]||0)+t;const a=v.asesor||"Sin asesor";byAse[a]=(byAse[a]||0)+t;const im=v.inmueble||"Sin tipo";byInm[im]=(byInm[im]||0)+1});
   const max=Math.max(...byM,...byMprev,1);
   el.innerHTML=`
-  <div class="tiles">
-    <div class="tile dark"><span class="l">Ingresos</span><span class="v">${fmtK(ingreso)}</span><span class="s">${vP.length} venta${vP.length===1?"":"s"} · ${periodoTxt()}</span></div>
-    <div class="tile"><span class="l">Objetivo</span><span class="v">${fmtK(objetivo)}</span><span class="s">${periodoTxt()}</span></div>
-    <div class="tile"><span class="l">Avance vs objetivo</span><span class="v" style="color:${falta>0?"var(--bad)":"var(--ok)"}">${pct(ingreso,objetivo)}</span><span class="s">${falta>0?"faltan "+fmtK(falta):"objetivo superado por "+fmtK(-falta)}</span></div>
-    <div class="tile"><span class="l">Venta promedio</span><span class="v">${vVen.length?fmtK(vVen.reduce((a,v)=>a+(+v.monto||0),0)/vVen.length):"—"}</span><span class="s">${vVen.length} venta${vVen.length===1?"":"s"}</span></div>
-    <div class="tile"><span class="l">Renta promedio</span><span class="v">${vRen.length?fmtK(vRen.reduce((a,v)=>a+(+v.monto||0),0)/vRen.length):"—"}</span><span class="s">${vRen.length} renta${vRen.length===1?"":"s"}</span></div>
-    <div class="tile gold"><span class="l">Comisión promedio</span><span class="v">${vP.length?fmtK(ingreso/vP.length):"—"}</span><span class="s">${(()=>{const op=vP.reduce((a,v)=>a+(+v.monto||0),0);return op?(ingreso/op*100).toFixed(2)+"% del monto":""})()}</span></div>
+  <div class="tiles t5">
+    <div class="tile dark"><span class="l">Ingresos</span><span class="v">${fmtK(ingreso)}</span><span class="s">${periodoTxt()}</span></div>
+    <div class="tile"><span class="l">Operaciones</span><span class="v">${vP.length}</span><span class="s">${vVen.length} venta${vVen.length===1?"":"s"} · ${vRen.length} renta${vRen.length===1?"":"s"}${nCred?` · ${nCred} crédito${nCred===1?"":"s"} aparte`:""}</span></div>
+    <div class="tile"><span class="l">Avance vs objetivo</span><span class="v" style="color:${falta>0?"var(--bad)":"var(--ok)"}">${pct(ingreso,objetivo)}</span><span class="s">${falta>0?"faltan "+fmtK(falta)+" de "+fmtK(objetivo):"objetivo de "+fmtK(objetivo)+" superado por "+fmtK(-falta)}</span></div>
+    <div class="tile gold"><span class="l">Ingreso promedio</span><span class="v">${vP.length?fmtK(ingreso/vP.length):"—"}</span><span class="s">por operación</span></div>
+    <div class="tile gold"><span class="l">% de comisión</span><span class="v">${montoVen?(ingVen/montoVen*100).toFixed(2)+"%":"—"}</span><span class="s">ingresos de ventas ÷ monto de ventas</span></div>
+    <div class="tile"><span class="l">Ventas</span><span class="v">${vVen.length}</span><span class="s">${fmtK(montoVen)} operado</span></div>
+    <div class="tile"><span class="l">Venta promedio</span><span class="v">${vVen.length?fmtK(montoVen/vVen.length):"—"}</span><span class="s">monto por venta</span></div>
+    <div class="tile"><span class="l">Rentas</span><span class="v">${vRen.length}</span><span class="s">${fmtK(montoRen)} en rentas mensuales</span></div>
+    <div class="tile"><span class="l">Renta promedio</span><span class="v">${vRen.length?fmtK(montoRen/vRen.length):"—"}</span><span class="s">renta mensual por operación</span></div>
   </div>
   <div class="card" style="margin-bottom:14px"><h3>Ingresos vs objetivo por trimestre · ${Y}</h3>
     <div class="cols">${byM.map((v,i)=>{const ok=v+0.5>=byMprev[i];return `<div class="c" title="${QLL[i]}"><small>${fmtK(v).replace("$ ","")} <span class="dim">/ ${fmtK(byMprev[i]).replace("$ ","")}</span></small><div style="display:flex;gap:2px;width:100%;align-items:flex-end;height:120px;justify-content:center"><i style="height:${v/max*100}%"></i><i class="p" style="height:${byMprev[i]/max*100}%"></i></div><b style="color:${ok?"var(--ok)":"var(--bad)"}">${QL[i]} · ${pct(v,byMprev[i])}</b></div>`}).join("")}${(()=>{const t=byM.reduce((a,b)=>a+b,0),o=byMprev.reduce((a,b)=>a+b,0),ok=t+0.5>=o;return `<div class="c acum"><small>${fmtK(t).replace("$ ","")} <span class="dim">/ ${fmtK(o).replace("$ ","")}</span></small><div style="display:flex;gap:2px;width:100%;align-items:flex-end;height:120px;justify-content:center"><i style="height:${t/Math.max(t,o,1)*100}%"></i><i class="p" style="height:${o/Math.max(t,o,1)*100}%"></i></div><b style="color:${ok?"var(--ok)":"var(--bad)"}">Acumulado ${Y} · ${pct(t,o)}</b></div>`})()}</div>
     <div class="legend"><span><i></i>Ingresos ${Y}</span><span><i class="p"></i>Objetivo</span><span style="margin-left:auto">Ingresos ${Y}: <b>${fmtK(byM.reduce((a,b)=>a+b,0))}</b> de <b>${fmtK(byMprev.reduce((a,b)=>a+b,0))}</b></span></div></div>
-  <div class="grid3">
+  <div class="grid4">
     <div class="card"><h3>Por unidad de negocio</h3><div class="bars">${bars(byUN,ingreso)}</div></div>
     <div class="card"><h3>Por proyecto</h3><div class="bars">${bars(byProy,ingreso)}</div></div>
     <div class="card"><h3>Por asesor</h3><div class="bars">${bars(byAse,ingreso,1)}</div></div>
+    <div class="card"><h3>Por tipo de inmueble</h3><div class="bars">${barsN(byInm,vP.length)}</div><p class="hint" style="margin:8px 0 0">% de las operaciones del periodo.</p></div>
   </div>`;
 }
+function barsN(obj,total){const e=Object.entries(obj).sort((a,b)=>b[1]-a[1]);if(!e.length)return `<p class="hint">Sin datos en el periodo.</p>`;const max=e[0][1]||1;return e.map(([k,v])=>`<div class="bar"><span>${esc(k)}</span><div class="trk"><div class="fil" style="width:${v/max*100}%"></div></div><span class="val">${pct(v,total)} <small style="color:var(--muted);font-weight:400">${v}</small></span></div>`).join("")}
 function bars(obj,total,g){const e=Object.entries(obj).sort((a,b)=>b[1]-a[1]);if(!e.length)return `<p class="hint">Sin datos en el periodo.</p>`;const max=e[0][1]||1;return e.map(([k,v])=>`<div class="bar"><span>${esc(k)}</span><div class="trk"><div class="fil ${g?"g":""}" style="width:${v/max*100}%"></div></div><span class="val">${fmt(v)} <small style="color:var(--muted);font-weight:400">${pct(v,total)}</small></span></div>`).join("")}
 
 /* ---------- asesores ---------- */
