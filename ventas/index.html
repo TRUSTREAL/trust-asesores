@@ -313,7 +313,9 @@ function renderEmpresa(){
   const objetivo=P.trims.length?P.trims.reduce((a,q)=>a+objQ(q-1),0):byMprev.reduce((a,b)=>a+b,0);const falta=objetivo-ingreso;
   const byUN={},byProy={},byAse={},byInm={};vP.forEach(v=>{const t=comTotal(v);byUN[v.un]=(byUN[v.un]||0)+t;byProy[v.proyecto]=(byProy[v.proyecto]||0)+t;const a=v.asesor||"Sin asesor";byAse[a]=(byAse[a]||0)+t;const im=v.inmueble||"Sin tipo";byInm[im]=(byInm[im]||0)+1});
   const max=Math.max(...byM,...byMprev,1);
+  EMP={Y,ingreso,vP,vVen,vRen,montoVen,montoRen,ingVen,nCred,objetivo,falta,byM,byMprev,byUN,byProy,byAse,byInm,QL,QLL};
   el.innerHTML=`
+  <div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn" id="btn-emp-pdf" title="Reporte de esta sección en PDF">⤓ Reporte PDF</button></div>
   <div class="tiles t5">
     <div class="tile dark"><span class="l">Ingresos</span><span class="v">${fmtK(ingreso)}</span><span class="s">${periodoTxt()}</span></div>
     <div class="tile"><span class="l">Operaciones</span><span class="v">${vP.length}</span><span class="s">${vVen.length} venta${vVen.length===1?"":"s"} · ${vRen.length} renta${vRen.length===1?"":"s"}${nCred?` · ${nCred} crédito${nCred===1?"":"s"} aparte`:""}</span></div>
@@ -324,6 +326,10 @@ function renderEmpresa(){
     <div class="tile"><span class="l">Venta promedio</span><span class="v">${vVen.length?fmtK(montoVen/vVen.length):"—"}</span><span class="s">monto por venta</span></div>
     <div class="tile"><span class="l">Rentas</span><span class="v">${vRen.length}</span><span class="s">${fmtK(montoRen)} en rentas mensuales</span></div>
     <div class="tile"><span class="l">Renta promedio</span><span class="v">${vRen.length?fmtK(montoRen/vRen.length):"—"}</span><span class="s">renta mensual por operación</span></div>
+    ${(()=>{const hoy=new Date(),cy=hoy.getFullYear(),cm=hoy.getMonth()+1;const objA=byMprev.reduce((a,b)=>a+b,0),ingA=byM.reduce((a,b)=>a+b,0),faltaA=objA-ingA;
+      if(Y<cy)return `<div class="tile"><span class="l">Necesario por mes</span><span class="v">—</span><span class="s">año cerrado · ${faltaA>0?"faltaron "+fmtK(faltaA):"objetivo cumplido"}</span></div>`;
+      const rest=Y>cy?12:12-cm+1;if(faltaA<=0)return `<div class="tile"><span class="l">Necesario por mes</span><span class="v" style="color:var(--ok)">✓</span><span class="s">objetivo anual cumplido (${fmtK(ingA)} de ${fmtK(objA)})</span></div>`;
+      return `<div class="tile"><span class="l">Necesario por mes</span><span class="v" style="color:var(--bad)">${fmtK(faltaA/rest)}</span><span class="s">para llegar a ${fmtK(objA)} en ${Y} · faltan ${fmtK(faltaA)} en ${rest} mes${rest===1?"":"es"} (${MESES[Y>cy?0:cm-1].toLowerCase()}–dic)</span></div>`})()}
   </div>
   <div class="card" style="margin-bottom:14px"><h3>Ingresos vs objetivo por trimestre · ${Y}</h3>
     <div class="cols">${byM.map((v,i)=>{const ok=v+0.5>=byMprev[i];return `<div class="c" title="${QLL[i]}"><small>${fmtK(v).replace("$ ","")} <span class="dim">/ ${fmtK(byMprev[i]).replace("$ ","")}</span></small><div style="display:flex;gap:2px;width:100%;align-items:flex-end;height:120px;justify-content:center"><i style="height:${v/max*100}%"></i><i class="p" style="height:${byMprev[i]/max*100}%"></i></div><b style="color:${ok?"var(--ok)":"var(--bad)"}">${QL[i]} · ${pct(v,byMprev[i])}</b></div>`}).join("")}${(()=>{const t=byM.reduce((a,b)=>a+b,0),o=byMprev.reduce((a,b)=>a+b,0),ok=t+0.5>=o;return `<div class="c acum"><small>${fmtK(t).replace("$ ","")} <span class="dim">/ ${fmtK(o).replace("$ ","")}</span></small><div style="display:flex;gap:2px;width:100%;align-items:flex-end;height:120px;justify-content:center"><i style="height:${t/Math.max(t,o,1)*100}%"></i><i class="p" style="height:${o/Math.max(t,o,1)*100}%"></i></div><b style="color:${ok?"var(--ok)":"var(--bad)"}">Acumulado ${Y} · ${pct(t,o)}</b></div>`})()}</div>
@@ -334,6 +340,76 @@ function renderEmpresa(){
     <div class="card"><h3>Por asesor</h3><div class="bars">${bars(byAse,ingreso,1)}</div></div>
     <div class="card"><h3>Por tipo de inmueble</h3><div class="bars">${barsN(byInm,vP.length)}</div><p class="hint" style="margin:8px 0 0">% de las operaciones del periodo.</p></div>
   </div>`;
+  $("#btn-emp-pdf").onclick=reporteEmpresaPDF;
+}
+let EMP=null;
+function reporteEmpresaPDF(){
+  if(!EMP)return;const E=EMP,Y=E.Y;const hoy=new Date(),cy=hoy.getFullYear(),cm=hoy.getMonth()+1;
+  const objA=E.byMprev.reduce((a,b)=>a+b,0),ingA=E.byM.reduce((a,b)=>a+b,0),faltaA=objA-ingA,rest=Y<cy?0:Y>cy?12:12-cm+1;
+  const fecha=hoy.toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"});
+  const kpi=(l,v,s,c)=>`<div class="k ${c||""}"><span class="l">${l}</span><span class="v">${v}</span><span class="s">${s||""}</span></div>`;
+  const barsP=(obj,total,top,count)=>{let e=Object.entries(obj).sort((a,b)=>b[1]-a[1]);if(!e.length)return `<p class="dim">Sin datos.</p>`;const extra=top&&e.length>top?e.length-top:0;if(extra)e=e.slice(0,top);const max=e[0][1]||1;return (extra?`<p class="dim" style="margin:0 0 4px">Top ${top} de ${e.length+extra}</p>`:"")+e.map(([k,v])=>`<div class="b"><span>${esc(k)}</span><i><b style="width:${v/max*100}%"></b></i><span class="n">${count?pct(v,total)+" <small>"+v+"</small>":fmt(v)+" <small>"+pct(v,total)+"</small>"}</span></div>`).join("")};
+  const max=Math.max(...E.byM,...E.byMprev,1);
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Reporte de ingresos · ${periodoTxt()}</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+@page{size:letter;margin:0}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{margin:0;font-family:Poppins,"Segoe UI",sans-serif;color:#1E241F;background:#FAF8F2}
+.page{width:8.5in;min-height:11in;margin:0 auto;padding:.5in .6in .45in;background:#FAF8F2;display:flex;flex-direction:column}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}.logo{width:120px}
+.right{text-align:right;font-size:10.5px;color:#6F726B;line-height:1.5}.right b{display:block;font-family:Lora,serif;font-size:13px;color:#173F35;font-weight:500}
+.title{margin:14px 0 2px;font-family:Lora,Georgia,serif;font-size:28px;line-height:1.1;font-weight:500;color:#173F35}.title em{font-style:italic;color:#B8956A}
+.sub{font-size:11px;color:#6F726B;margin-bottom:14px}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px}
+.k{background:#fff;border:1px solid #E3DDD0;border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:1px}
+.k .l{font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:#6F726B;font-weight:600}.k .v{font-family:Lora,serif;font-size:17px;color:#1E241F;font-variant-numeric:tabular-nums}.k .s{font-size:8.5px;color:#6F726B}
+.k.dark{background:#173F35;border-color:#173F35}.k.dark .l,.k.dark .s{color:#D9C9A8}.k.dark .v{color:#fff}
+.k.gold .v{color:#9C7A4E}.k.bad .v{color:#A8342A}.k.ok .v{color:#2E7D5B}
+h2{font-family:Lora,serif;font-weight:500;font-size:14px;color:#173F35;margin:12px 0 6px}
+.chart{background:#fff;border:1px solid #E3DDD0;border-radius:8px;padding:10px 12px}
+.cols{display:flex;gap:14px;align-items:flex-end;height:120px;justify-content:space-evenly}
+.c{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px;max-width:150px}
+.c small{font-size:8.5px;font-weight:600;white-space:nowrap}.c small span{color:#6F726B;font-weight:400}
+.c .bars{display:flex;gap:2px;width:100%;align-items:flex-end;height:80px;justify-content:center}.c i{display:block;width:34px;background:#173F35;border-radius:4px 4px 0 0;min-height:2px}.c i.p{background:#B8956A}
+.c b{font-size:8.5px;font-weight:600}.c.acum{border-left:1px dashed #E3DDD0;padding-left:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card{background:#fff;border:1px solid #E3DDD0;border-radius:8px;padding:10px 12px}.card h3{font-family:Lora,serif;font-weight:500;font-size:12.5px;margin:0 0 6px;color:#173F35}
+.b{display:grid;grid-template-columns:90px 1fr 92px;gap:8px;align-items:center;font-size:9.5px;padding:3px 0}.b>span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.b i{display:block;height:6px;background:#F1EDE3;border-radius:3px;overflow:hidden}.b i b{display:block;height:100%;background:#173F35;border-radius:3px}.b .n{text-align:right;font-weight:600;white-space:nowrap}.b .n small{color:#6F726B;font-weight:400}
+.dim{color:#6F726B;font-size:9px}
+.foot{margin-top:auto;padding-top:14px;display:flex;justify-content:space-between;align-items:flex-end;font-size:9px;color:#6F726B}.foot img{width:64px}
+@media print{body{background:#FAF8F2}.page{margin:0;min-height:auto}}
+</style></head><body><div class="page">
+  <div class="top"><div><img class="logo" src="data:image/png;base64,${LOGO_B64}" alt="TRUST realtor"></div><div class="right">Periodo<b>${periodoTxt()}</b>Emitido<b>${fecha}</b></div></div>
+  <div class="title">Reporte de <em>ingresos</em></div>
+  <div class="sub">Ingresos = comisión generada por operación cerrada (sin crédito hipotecario) · Promotora de Inmuebles TRUST</div>
+  <div class="kpis">
+    ${kpi("Ingresos",fmtK(E.ingreso),periodoTxt(),"dark")}
+    ${kpi("Operaciones",E.vP.length,`${E.vVen.length} venta${E.vVen.length===1?"":"s"} · ${E.vRen.length} renta${E.vRen.length===1?"":"s"}${E.nCred?` · ${E.nCred} crédito${E.nCred===1?"":"s"} aparte`:""}`)}
+    ${kpi("Avance vs objetivo",pct(E.ingreso,E.objetivo),E.falta>0?"faltan "+fmtK(E.falta)+" de "+fmtK(E.objetivo):"objetivo de "+fmtK(E.objetivo)+" superado",E.falta>0?"bad":"ok")}
+    ${kpi("Ingreso promedio",E.vP.length?fmtK(E.ingreso/E.vP.length):"—","por operación","gold")}
+    ${kpi("% de comisión",E.montoVen?(E.ingVen/E.montoVen*100).toFixed(2)+"%":"—","ingresos de ventas ÷ monto de ventas","gold")}
+    ${kpi("Ventas",E.vVen.length,fmtK(E.montoVen)+" operado")}
+    ${kpi("Venta promedio",E.vVen.length?fmtK(E.montoVen/E.vVen.length):"—","monto por venta")}
+    ${kpi("Rentas",E.vRen.length,fmtK(E.montoRen)+" en rentas mensuales")}
+    ${kpi("Renta promedio",E.vRen.length?fmtK(E.montoRen/E.vRen.length):"—","renta mensual por operación")}
+    ${Y<cy?kpi("Necesario por mes","—","año cerrado"):faltaA<=0?kpi("Necesario por mes","✓","objetivo anual cumplido","ok"):kpi("Necesario por mes",fmtK(faltaA/rest),`para ${fmtK(objA)} en ${Y} · ${rest} mes${rest===1?"":"es"} restantes`,"bad")}
+  </div>
+  <h2>Ingresos vs objetivo por trimestre · ${Y}</h2>
+  <div class="chart"><div class="cols">${E.byM.map((v,i)=>{const ok=v+0.5>=E.byMprev[i];return `<div class="c"><small>${fmtK(v).replace("$ ","")} <span>/ ${fmtK(E.byMprev[i]).replace("$ ","")}</span></small><div class="bars"><i style="height:${v/max*100}%"></i><i class="p" style="height:${E.byMprev[i]/max*100}%"></i></div><b style="color:${ok?"#2E7D5B":"#A8342A"}">${E.QL[i]} · ${pct(v,E.byMprev[i])}</b></div>`}).join("")}${(()=>{const t=ingA,o=objA,ok=t+0.5>=o;return `<div class="c acum"><small>${fmtK(t).replace("$ ","")} <span>/ ${fmtK(o).replace("$ ","")}</span></small><div class="bars"><i style="height:${t/Math.max(t,o,1)*100}%"></i><i class="p" style="height:${o/Math.max(t,o,1)*100}%"></i></div><b style="color:${ok?"#2E7D5B":"#A8342A"}">Acumulado ${Y} · ${pct(t,o)}</b></div>`})()}</div>
+  <div class="dim" style="margin-top:6px">Verde: ingresos · Dorado: objetivo</div></div>
+  <div class="grid" style="margin-top:10px">
+    <div class="card"><h3>Por unidad de negocio</h3>${barsP(E.byUN,E.ingreso)}</div>
+    <div class="card"><h3>Por proyecto</h3>${barsP(E.byProy,E.ingreso,10)}</div>
+    <div class="card"><h3>Por asesor</h3>${barsP(E.byAse,E.ingreso)}</div>
+    <div class="card"><h3>Por tipo de inmueble</h3>${barsP(E.byInm,E.vP.length,0,true)}<p class="dim" style="margin:4px 0 0">% de las operaciones del periodo</p></div>
+  </div>
+  <div class="foot"><div>Reporte interno · ${periodoTxt()} · generado el ${fecha}</div><div><img src="data:image/png;base64,${LOGO_B64}" alt="TRUST"></div></div>
+</div>
+<script>window.addEventListener("load",()=>setTimeout(()=>window.print(),600));<\/script>
+</body></html>`;
+  const w=window.open("","_blank");if(!w){toast("Permite las ventanas emergentes para generar el PDF",true);return}
+  w.document.open();w.document.write(html);w.document.close();
 }
 function barsN(obj,total){const e=Object.entries(obj).sort((a,b)=>b[1]-a[1]);if(!e.length)return `<p class="hint">Sin datos en el periodo.</p>`;const max=e[0][1]||1;return e.map(([k,v])=>`<div class="bar"><span>${esc(k)}</span><div class="trk"><div class="fil" style="width:${v/max*100}%"></div></div><span class="val">${pct(v,total)} <small style="color:var(--muted);font-weight:400">${v}</small></span></div>`).join("")}
 function bars(obj,total,g,top){let e=Object.entries(obj).sort((a,b)=>b[1]-a[1]);if(!e.length)return `<p class="hint">Sin datos en el periodo.</p>`;const extra=top&&e.length>top?e.length-top:0;if(extra)e=e.slice(0,top);const max=e[0][1]||1;return (extra?`<p class="hint" style="margin:0 0 6px">Top ${top} de ${e.length+extra}</p>`:"")+e.map(([k,v])=>`<div class="bar"><span>${esc(k)}</span><div class="trk"><div class="fil ${g?"g":""}" style="width:${v/max*100}%"></div></div><span class="val">${fmt(v)} <small style="color:var(--muted);font-weight:400">${pct(v,total)}</small></span></div>`).join("")}
