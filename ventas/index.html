@@ -97,6 +97,7 @@ table .trk{height:8px;background:var(--surface-2);border-radius:4px;overflow:hid
 .cols .c b{font-size:10.5px;font-weight:500;color:var(--muted);white-space:nowrap}
 .cols .c small{font-size:10px;color:var(--text);font-weight:600;white-space:nowrap}
 .cols .c.acum{border-left:1px dashed var(--line-2);padding-left:14px;margin-left:8px;max-width:240px}
+.cols.mo{gap:4px}.cols.mo .c{max-width:none}.cols.mo .c i{max-width:48px;background:var(--green)}.cols.mo .c i.cur{background:var(--gold)}.cols.mo .c small{font-size:12px;font-weight:700}.cols.mo .c small.dim{color:var(--muted);font-weight:400}
 .legend{display:flex;gap:14px;font-size:11.5px;color:var(--muted);margin-top:6px}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--green);vertical-align:-1px;margin-right:4px}
 .legend i.p{background:var(--gold)}
@@ -302,6 +303,8 @@ function renderEmpresa(){
   const yr=v=>+String(v.fecha).slice(0,4),mo=v=>+String(v.fecha).slice(5,7);
   const vY=VN.filter(v=>yr(v)===Y),vPrev=VN.filter(v=>yr(v)===Y-1);
   const qo=v=>Math.ceil(mo(v)/3)-1;const quarterly=fn=>{const a=[0,0,0,0];fn(a);return a};
+  const byMo=monthly(a=>vY.forEach(v=>a[mo(v)-1]+=comTotal(v)));
+  const fmtS=v=>v>=1e6?(v/1e6).toFixed(v>=1e7?0:1).replace(/\.0$/,"")+" M":v>=1e3?Math.round(v/1e3)+" k":v?Math.round(v):"–";
   const byM=quarterly(a=>vY.forEach(v=>a[qo(v)]+=comTotal(v)));
   const byMprev=[0,1,2,3].map(objQ); // objetivo por trimestre
   const QL=["Q1","Q2","Q3","Q4"],QLL=["Q1 · Ene–Mar","Q2 · Abr–Jun","Q3 · Jul–Sep","Q4 · Oct–Dic"];
@@ -313,7 +316,7 @@ function renderEmpresa(){
   const objetivo=P.trims.length?P.trims.reduce((a,q)=>a+objQ(q-1),0):byMprev.reduce((a,b)=>a+b,0);const falta=objetivo-ingreso;
   const byUN={},byProy={},byAse={},byInm={};vP.forEach(v=>{const t=comTotal(v);byUN[v.un]=(byUN[v.un]||0)+t;byProy[v.proyecto]=(byProy[v.proyecto]||0)+t;const a=v.asesor||"Sin asesor";byAse[a]=(byAse[a]||0)+t;const im=v.inmueble||"Sin tipo";byInm[im]=(byInm[im]||0)+1});
   const max=Math.max(...byM,...byMprev,1);
-  EMP={Y,ingreso,vP,vVen,vRen,montoVen,montoRen,ingVen,nCred,objetivo,falta,byM,byMprev,byUN,byProy,byAse,byInm,QL,QLL};
+  EMP={Y,ingreso,vP,vVen,vRen,montoVen,montoRen,ingVen,nCred,objetivo,falta,byM,byMprev,byUN,byProy,byAse,byInm,QL,QLL,byMo,fmtS};
   el.innerHTML=`
   <div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn" id="btn-emp-pdf" title="Reporte de esta sección en PDF">⤓ Reporte PDF</button></div>
   <div class="tiles t5">
@@ -334,6 +337,8 @@ function renderEmpresa(){
   <div class="card" style="margin-bottom:14px"><h3>Ingresos vs objetivo por trimestre · ${Y}</h3>
     <div class="cols">${byM.map((v,i)=>{const ok=v+0.5>=byMprev[i];return `<div class="c" title="${QLL[i]}"><small>${fmtK(v).replace("$ ","")} <span class="dim">/ ${fmtK(byMprev[i]).replace("$ ","")}</span></small><div style="display:flex;gap:2px;width:100%;align-items:flex-end;height:120px;justify-content:center"><i style="height:${v/max*100}%"></i><i class="p" style="height:${byMprev[i]/max*100}%"></i></div><b style="color:${ok?"var(--ok)":"var(--bad)"}">${QL[i]} · ${pct(v,byMprev[i])}</b></div>`}).join("")}${(()=>{const t=byM.reduce((a,b)=>a+b,0),o=byMprev.reduce((a,b)=>a+b,0),ok=t+0.5>=o;return `<div class="c acum"><small>${fmtK(t).replace("$ ","")} <span class="dim">/ ${fmtK(o).replace("$ ","")}</span></small><div style="display:flex;gap:2px;width:100%;align-items:flex-end;height:120px;justify-content:center"><i style="height:${t/Math.max(t,o,1)*100}%"></i><i class="p" style="height:${o/Math.max(t,o,1)*100}%"></i></div><b style="color:${ok?"var(--ok)":"var(--bad)"}">Acumulado ${Y} · ${pct(t,o)}</b></div>`})()}</div>
     <div class="legend"><span><i></i>Ingresos ${Y}</span><span><i class="p"></i>Objetivo</span><span style="margin-left:auto">Ingresos ${Y}: <b>${fmtK(byM.reduce((a,b)=>a+b,0))}</b> de <b>${fmtK(byMprev.reduce((a,b)=>a+b,0))}</b></span></div></div>
+  <div class="card" style="margin-bottom:14px"><h3>Ingresos por mes · ${Y}</h3>
+    <div class="cols mo">${(()=>{const mx=Math.max(...byMo,1);const cm=new Date().getMonth(),cy=new Date().getFullYear();return byMo.map((v,i)=>`<div class="c" title="${MESES_L[i]}: ${fmt(v)}"><small class="${v?"":"dim"}">${fmtS(v)}</small><div style="display:flex;width:100%;align-items:flex-end;height:120px;justify-content:center"><i class="${Y===cy&&i===cm?"cur":""}" style="height:${v/mx*100}%"></i></div><b>${MESES[i]}</b></div>`).join("")})()}</div></div>
   <div class="grid4">
     <div class="card"><h3>Por unidad de negocio</h3><div class="bars">${bars(byUN,ingreso)}</div></div>
     <div class="card"><h3>Por proyecto</h3><div class="bars">${bars(byProy,ingreso,0,10)}</div></div>
@@ -373,6 +378,8 @@ h2{font-family:Lora,serif;font-weight:500;font-size:14px;color:#173F35;margin:12
 .c .bars{display:flex;gap:2px;width:100%;align-items:flex-end;height:64px;justify-content:center}.c i{display:block;width:34px;background:#173F35;border-radius:4px 4px 0 0;min-height:2px}.c i.p{background:#B8956A}
 .c b{font-size:8.5px;font-weight:600}.c.acum{border-left:1px dashed #E3DDD0;padding-left:12px}
 .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.mo{display:flex;gap:6px;align-items:flex-end;height:150px}.m{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px}
+.m small{font-size:10px;font-weight:700;color:#173F35;white-space:nowrap}.m small.z{color:#B4B1A8;font-weight:400}.m .bx{display:flex;width:100%;align-items:flex-end;justify-content:center;height:104px}.m i{display:block;width:100%;max-width:40px;background:#173F35;border-radius:5px 5px 0 0;min-height:2px}.m i.cur{background:#B8956A}.m b{font-size:9px;font-weight:600;color:#6F726B}
 .card{background:#fff;border:1px solid #E3DDD0;border-radius:8px;padding:10px 12px}.card h3{font-family:Lora,serif;font-weight:500;font-size:12.5px;margin:0 0 6px;color:#173F35}
 .b{display:grid;grid-template-columns:minmax(40px,1fr) minmax(30px,1fr) auto;gap:6px;align-items:center;font-size:8.5px;padding:2px 0}.b>span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .b i{display:block;height:6px;background:#F1EDE3;border-radius:3px;overflow:hidden}.b i b{display:block;height:100%;background:#173F35;border-radius:3px}.b .n{text-align:right;font-weight:600;white-space:nowrap}.b .n small{color:#6F726B;font-weight:400}
@@ -403,6 +410,8 @@ h2{font-family:Lora,serif;font-weight:500;font-size:14px;color:#173F35;margin:12
     <div class="card"><h3>Por asesor</h3>${barsP(E.byAse,E.ingreso,10)}</div>
     <div class="card"><h3>Por tipo de inmueble</h3>${barsP(E.byInm,E.vP.length,0,true)}<p class="dim" style="margin:4px 0 0">% de las operaciones del periodo</p></div>
   </div>
+  <h2>Ingresos por mes · ${Y}</h2>
+  <div class="chart"><div class="mo">${(()=>{const mx=Math.max(...E.byMo,1);const cm=hoy.getMonth();return E.byMo.map((v,i)=>`<div class="m"><small class="${v?"":"z"}">${E.fmtS(v)}</small><div class="bx"><i class="${Y===cy&&i===cm?"cur":""}" style="height:${v/mx*100}%"></i></div><b>${MESES[i]}</b></div>`).join("")})()}</div></div>
   <div class="foot"><div><b style="color:#173F35;letter-spacing:.14em;text-transform:uppercase">Confidencial</b> · Reporte interno · ${periodoTxt()} · generado el ${fecha}</div><div><img src="data:image/png;base64,${LOGO_B64}" alt="TRUST"></div></div>
 </div>
 <script>window.addEventListener("load",()=>{const p=document.querySelector(".page");const fit=()=>{p.style.zoom="";const h=p.scrollHeight,avail=p.clientHeight;if(h>avail+1)p.style.zoom=(avail/h*0.995).toFixed(3)};fit();setTimeout(()=>{fit();window.print()},700)});<\/script>
