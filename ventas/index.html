@@ -477,6 +477,10 @@ function renderReglas(){
       ${["Q1 · Ene–Mar","Q2 · Abr–Jun","Q3 · Jul–Sep","Q4 · Oct–Dic"].map((l,i)=>`<div class="r"><span>${l}</span><input data-obj="${i}" value="${Math.round(objQ(i)).toLocaleString("es-MX")}" inputmode="numeric"></div>`).join("")}
       <p class="hint" style="margin-top:10px">Se comparan contra los ingresos (comisión generada) de cada trimestre en Empresa.</p>
     </div>
+    <div class="card rules"><h3>Fecha de ingreso de asesores</h3>
+      ${ASESORES.filter(a=>a!==EX).map(a=>`<div class="r"><span>${esc(a)}</span><input type="month" data-ing="${esc(a)}" value="${esc((REGLAS.ingresos||{})[a]||"")}"></div>`).join("")}
+      <p class="hint" style="margin-top:10px">Se usa en Mis comisiones para calcular el promedio mensual de cada asesor solo sobre los meses que lleva en TRUST. Si se deja vacío, se cuenta desde su primera venta registrada.</p>
+    </div>
     <div class="card rules"><h3>Staff sobre ingresos</h3>
       <div id="staff-rows">${(R.staff||[]).map((s,i)=>`<div class="r staff"><input class="name" data-si="${i}" data-f="nombre" value="${esc(s.nombre)}" placeholder="Nombre"><input data-si="${i}" data-f="pct" value="${s.pct}" inputmode="decimal"><button class="ico" data-del="${i}" title="Quitar">×</button></div>`).join("")}</div>
       <button class="btn sm" id="staff-add" style="margin-top:10px">+ Agregar persona</button>
@@ -488,6 +492,7 @@ function renderReglas(){
   $("#rules-save").onclick=async()=>{
     el.querySelectorAll("input[data-k]").forEach(i=>REGLAS[i.dataset.k]=num(i.value)||0);
     REGLAS.objetivos=[0,1,2,3].map(i=>num(el.querySelector(`input[data-obj="${i}"]`).value)||0);
+    const ing={};el.querySelectorAll("input[data-ing]").forEach(i=>{if(i.value)ing[i.dataset.ing]=i.value});REGLAS.ingresos=ing;
     const staff=[];el.querySelectorAll("#staff-rows .r").forEach(row=>{const n=row.querySelector('[data-f=nombre]').value.trim(),p=num(row.querySelector('[data-f=pct]').value)||0;if(n)staff.push({nombre:n,pct:p})});REGLAS.staff=staff;
     const r=await sb.from("ventas_reglas").upsert({id:1,reglas:REGLAS,updated_at:new Date().toISOString()});if(r.error){toast("No se guardó: "+r.error.message,true);return}toast("Reglas guardadas");renderReglas();
   };
