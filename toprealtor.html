@@ -83,7 +83,7 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
 <div class="wrap">
   <header class="top">
     <div class="brand"><img class="logo" id="logo-img" alt="TRUST realtor"><h1>TOP Realtor <em>Program</em></h1><p>La carrera del trimestre por el reconocimiento y el 5% adicional.</p></div>
-    <div class="topright"><span class="sync" id="sync"></span><a class="home-link" href="./">← Inicio</a></div>
+    <div class="topright"><span class="sync" id="sync"></span><button class="home-link" id="btn-pdf" title="Reporte de la carrera en PDF, para compartir">⤓ Reporte PDF</button><a class="home-link" href="./">← Inicio</a></div>
   </header>
   <div id="main"><div class="empty">Cargando…</div></div>
   <p class="foot">Se miden los ingresos generados a TRUST (comisión de las operaciones cerradas) por asesor vendedor en el trimestre. No incluye créditos hipotecarios. Se actualiza solo.</p>
@@ -109,7 +109,7 @@ const qTxt=k=>`${k.slice(5)} ${k.slice(0,4)}`;
 const qStart=new Date(Y,(Q-1)*3,1), qEnd=new Date(Y,Q*3,0);
 const diasQ=Math.round((qEnd-qStart)/86400000)+1, diasPas=Math.min(diasQ,Math.max(1,Math.round((hoy-qStart)/86400000)+1)), diasRest=Math.max(0,diasQ-diasPas);
 const MES=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-let VENTAS=[], REG={};
+let VENTAS=[], REG={}, LAST=null;
 let PROG={min:250000,pct:5,n:2};
 async function load(){
   if(!sb){$("#main").innerHTML=`<div class="empty">Sin conexión.</div>`;return}
@@ -129,6 +129,7 @@ function render(){
   const minPct=PROG.min/scaleMax*100;
   const ganando=rows.filter(r=>r.g>=PROG.min).slice(0,PROG.n).map(r=>r.n);
   const ini=n=>n.split(/\s+/).map(x=>x[0]).join("").slice(0,2).toUpperCase();
+  LAST={rows,ganando,scaleMax,minPct,reinan};
   const lane=(r,i)=>{const win=ganando.includes(r.n);const pct=Math.min(100,r.g/scaleMax*100);const falta=PROG.min-r.g;const ritmo=diasPas?r.g/diasPas*diasQ:0;
     const st=r.g<=0?`sin operaciones aún`:win?`en zona de premio`:i<PROG.n?`va ${i+1}° pero le faltan ${fmtK(falta)} para el mínimo`:r.g<PROG.min?`faltan ${fmtK(falta)} para el mínimo`:`a ${fmtK(rows[PROG.n-1].g-r.g+1)} del ${PROG.n}° lugar`;
     return `<div class="lane ${win?"win":""} ${r.g<=0?"zero":""}"><div class="pos">${i+1}</div>
@@ -153,6 +154,58 @@ function render(){
     <div class="legend"><span><i style="background:linear-gradient(90deg,#E3C68E,#B8956A)"></i>En zona de premio (top ${PROG.n} y arriba del mínimo)</span><span><i style="background:#173F35"></i>En carrera</span><span class="minlbl"><i></i>Mínimo ${fmt(PROG.min)}</span></div>
   </div>`;
 }
+function reportePDF(){
+  if(!LAST)return;const {rows,ganando,scaleMax,minPct,reinan}=LAST;
+  const fecha=hoy.toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"});
+  const lane=(r,i)=>{const win=ganando.includes(r.n);const pct=Math.min(100,r.g/scaleMax*100);const falta=PROG.min-r.g;
+    const st=r.g<=0?"sin operaciones aún":win?"en zona de premio":r.g<PROG.min?`faltan ${fmtK(falta)} para el mínimo`:`a ${fmtK(rows[PROG.n-1].g-r.g+1)} del ${PROG.n}° lugar`;
+    return `<div class="ln ${win?"win":""}"><div class="pos">${i+1}</div><div class="nm">${esc(r.n)}<small>${r.c} operaci${r.c===1?"ón":"ones"}</small></div><div class="bar"><i class="min" style="left:${minPct}%"></i><b style="width:${pct}%"></b>${r.g>0?`<span class="mk" style="left:${pct}%">${win?"🏆":"🏃"}</span>`:""}</div><div class="amt"><b>${fmt(r.g)}</b><small class="${win?"ok":r.g>=PROG.min?"":"no"}">${st}</small></div></div>`};
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>TOP Realtor Program · ${qTxt(QKEY)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+@page{size:letter;margin:0}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{margin:0;font-family:Poppins,"Segoe UI",sans-serif;color:#1E241F;background:#FAF8F2}
+.page{width:8.5in;height:11in;overflow:hidden;margin:0 auto;padding:.45in .55in .4in;background:#FAF8F2;display:flex;flex-direction:column}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}.logo{width:110px}
+.right{text-align:right;font-size:10.5px;color:#6F726B;line-height:1.5}.right b{display:block;font-family:Lora,serif;font-size:13px;color:#173F35;font-weight:500}
+.title{margin:10px 0 0;font-family:Lora,Georgia,serif;font-size:26px;line-height:1.1;font-weight:500;color:#173F35}.title em{font-style:italic;color:#B8956A}
+.hero{margin-top:10px;background:#173F35;color:#fff;border:1px solid #B8956A;border-radius:12px;padding:12px 16px;display:grid;grid-template-columns:1.5fr 1fr;gap:14px}
+.hero .ey{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#E3C68E;font-weight:600}
+.hero h2{font-family:Lora,serif;font-weight:500;font-size:17px;margin:3px 0 6px;line-height:1.2}.hero h2 span{color:#E3C68E}
+.hero p{margin:0;font-size:10px;color:#D9C9A8;line-height:1.45}
+.hero .meta{display:flex;gap:16px;margin-top:10px}.hero .meta div{display:flex;flex-direction:column}.hero .meta b{font-family:Lora,serif;font-size:17px;line-height:1.1}.hero .meta span{font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:#D9C9A8}
+.reign{background:rgba(255,255,255,.08);border:1px solid rgba(227,198,142,.5);border-radius:10px;padding:10px 12px}.reign .names{font-family:Lora,serif;font-size:16px;margin:3px 0}.reign .names span+span::before{content:" · ";color:#B8956A}.reign small{font-size:9.5px;color:#D9C9A8}
+.rules{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 10px}
+.rule{background:#fff;border:1px solid #E3DDD0;border-radius:8px;padding:8px 10px}.rule b{display:block;font-family:Lora,serif;font-size:15px;color:#173F35;line-height:1.1;margin-bottom:2px}.rule span{font-size:8.5px;color:#6F726B}
+h3{font-family:Lora,serif;font-weight:500;font-size:14px;color:#173F35;margin:0 0 2px}.sub{font-size:9.5px;color:#6F726B;margin:0 0 8px}
+.card{background:#fff;border:1px solid #E3DDD0;border-radius:10px;padding:10px 14px}
+.ln{display:grid;grid-template-columns:22px 130px 1fr 150px;gap:10px;align-items:center;padding:3px 0;border-bottom:1px solid #EEE9DD}.ln:last-child{border-bottom:0}
+.ln .pos{font-family:Lora,serif;font-size:15px;color:#9C9F9A;text-align:center}.ln.win .pos{color:#9C7A4E}
+.ln .nm{font-weight:600;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ln .nm small{display:block;font-weight:400;color:#6F726B;font-size:9px}
+.ln .bar{position:relative;height:16px;background:#F1EDE3;border-radius:999px}.ln .bar b{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:#173F35}.ln.win .bar b{background:linear-gradient(90deg,#E3C68E,#B8956A)}
+.ln .bar .min{position:absolute;top:-4px;bottom:-4px;width:2px;background:#A8342A;opacity:.6}.ln .bar .mk{position:absolute;top:50%;transform:translate(-50%,-50%);font-size:13px;background:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border:2px solid #173F35}.ln.win .bar .mk{border-color:#9C7A4E}
+.ln .amt{text-align:right}.ln .amt b{display:block;font-family:Lora,serif;font-size:13px;color:#173F35}.ln.win .amt b{color:#9C7A4E}.ln .amt small{font-size:8.5px;color:#6F726B}.ln .amt small.ok{color:#2E7D5B;font-weight:600}.ln .amt small.no{color:#A8342A}
+.leg{display:flex;gap:14px;font-size:8.5px;color:#6F726B;margin-top:8px}.leg i{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:-1px;margin-right:4px}
+.foot{margin-top:auto;padding-top:12px;display:flex;justify-content:space-between;align-items:flex-end;font-size:9px;color:#6F726B}.foot img{width:64px}
+@media print{body{background:#FAF8F2}.page{margin:0}}
+</style></head><body><div class="page">
+  <div class="top"><div><img class="logo" src="data:image/png;base64,${LOGO_B64}" alt="TRUST realtor"></div><div class="right">Carrera<b>${qTxt(QKEY)}</b>Corte<b>${fecha}</b></div></div>
+  <div class="title">TOP Realtor <em>Program</em></div>
+  <div class="hero"><div><div class="ey">Carrera · ${qTxt(QKEY)}</div><h2>Los ${PROG.n} mejores del trimestre ganan <span>+${PROG.pct}% de comisión</span> todo ${qTxt(NEXT)}.</h2>
+      <p>Cuenta el ingreso generado a TRUST con los cierres del trimestre. Mínimo para ganar: <b style="color:#fff">${fmt(PROG.min)}</b>; si nadie llega, no hay TOP Realtor. El ${PROG.pct}% no se acumula y aplica aunque la operación no sea autogenerada.</p>
+      <div class="meta"><div><b>${diasRest}</b><span>días restantes</span></div><div><b>${Math.round(diasPas/diasQ*100)}%</b><span>del trimestre</span></div><div><b>${rows.filter(r=>r.g>=PROG.min).length}</b><span>con el mínimo</span></div><div><b>${rows.reduce((a,r)=>a+r.c,0)}</b><span>operaciones</span></div></div></div>
+    <div class="reign"><div class="ey">TOP Realtor vigentes · ${qTxt(QKEY)}</div>${reinan.length?`<div class="names">${reinan.map(n=>`<span>${esc(n)}</span>`).join("")}</div><small>Tienen el +${PROG.pct}% durante ${qTxt(QKEY)}.</small>`:`<div class="names" style="font-size:13px;color:#D9C9A8">Nadie este trimestre</div>`}</div></div>
+  <div class="rules"><div class="rule"><b>Top ${PROG.n}</b><span>mayores ingresos generados a TRUST en el trimestre</span></div><div class="rule"><b>${fmt(PROG.min)}</b><span>mínimo en el trimestre para poder ganar</span></div><div class="rule"><b>+${PROG.pct}%</b><span>de comisión adicional en el siguiente trimestre</span></div><div class="rule"><b>${MES[(Q-1)*3]} – ${MES[Q*3-1]}</b><span>cierre el ${qEnd.getDate()} de ${["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"][qEnd.getMonth()]} · premio en ${qTxt(NEXT)}</span></div></div>
+  <div class="card"><h3>¿Cómo van?</h3><p class="sub">Ingresos generados a TRUST en ${qTxt(QKEY)} por asesor vendedor · corte al ${fecha}.</p>${rows.map(lane).join("")}
+    <div class="leg"><span><i style="background:linear-gradient(90deg,#E3C68E,#B8956A)"></i>En zona de premio</span><span><i style="background:#173F35"></i>En carrera</span><span><i style="background:#A8342A;width:2px"></i>Mínimo ${fmt(PROG.min)}</span></div></div>
+  <div class="foot"><div><b style="color:#173F35;letter-spacing:.14em;text-transform:uppercase">Confidencial</b> · uso interno TRUST · generado el ${fecha}</div><div><img src="data:image/png;base64,${LOGO_B64}" alt="TRUST"></div></div>
+</div>
+<script>window.addEventListener("load",()=>{const p=document.querySelector(".page");const fit=()=>{p.style.zoom="";const h=p.scrollHeight,a=p.clientHeight;if(h>a+1)p.style.zoom=(a/h*0.995).toFixed(3)};fit();setTimeout(()=>{fit();window.print()},700)});<\/script>
+</body></html>`;
+  const w=window.open("","_blank");if(!w){alert("Permite las ventanas emergentes para generar el PDF.");return}
+  w.document.open();w.document.write(html);w.document.close();
+}
+$("#btn-pdf").onclick=reportePDF;
 load();
 setInterval(()=>{if(!document.hidden)load()},60000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)load()});
