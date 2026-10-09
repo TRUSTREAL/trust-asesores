@@ -67,6 +67,9 @@ td.dim{color:var(--muted)}td.money{font-weight:600}td.com{color:var(--gold-2);fo
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--green);color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:99}
 .toast.show{opacity:1;transform:translateX(-50%)}.toast.err{background:var(--bad)}
 @media (max-width:760px){.tiles{grid-template-columns:repeat(2,1fr)}}
+.topb{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#B8956A,#E3C68E);color:#173F35;border-radius:999px;padding:2px 10px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;vertical-align:middle;box-shadow:0 1px 2px rgba(23,63,53,.15)}
+.chip.top,button.top{border-color:#B8956A!important;box-shadow:0 0 0 2px rgba(184,149,106,.25)}
+.chip.top::after,button.top::after{content:" ★";color:#B8956A}
 </style>
 </head>
 <body>
@@ -115,6 +118,14 @@ function lineas(){
     out.push({v,rol:mias.map(p=>p.rol).join(" + "),tot,cob,mia,lib,pag,e})});
   return out;
 }
+
+/* ===== TOP Realtor (reconocimiento trimestral) ===== */
+const TOP_Q=(()=>{const d=new Date();return d.getFullYear()+"-Q"+(Math.floor(d.getMonth()/3)+1)})();
+let TOP={key:"",names:[]};
+const topTxt=k=>k?`${k.slice(5)} ${k.slice(0,4)}`:"";
+async function loadTop(){ if(!sb)return; try{ const r=await sb.from("ventas_reglas").select("reglas").eq("id",1).maybeSingle(); const t=(r.data&&r.data.reglas&&r.data.reglas.top)||{}; const keys=Object.keys(t).filter(k=>k<=TOP_Q&&Array.isArray(t[k])&&t[k].length).sort(); const k=keys[keys.length-1]; TOP=k?{key:k,names:t[k]}:{key:"",names:[]}; }catch(e){} }
+const isTop=n=>TOP.names.includes(n);
+const topBadge=n=>isTop(n)?` <span class="topb" title="TOP Realtor · ${topTxt(TOP.key)}">★ TOP Realtor</span>`:"";
 const EST={pendiente:"Pendiente",parcial:"Pago parcial",pagada:"Pagada"};
 const MESES_L=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 // Meses que cuentan para el promedio en un año: desde la fecha de ingreso (o la primera venta) hasta el mes en curso (o diciembre si el año ya terminó)
@@ -130,8 +141,8 @@ function mesesBase(y){
 }
 function render(){
   const m=$("#main");
-  if(!ASESOR){$("#acts").hidden=true;m.innerHTML=`<div class="pick card"><h2>¿Quién eres?</h2><p>Elige tu nombre para ver tus comisiones.</p><div class="grid">${ASESORES.map(n=>`<button data-ase="${esc(n)}">${esc(n)}</button>`).join("")}</div></div>`;return}
-  $("#acts").hidden=false;$("#sub").textContent=ASESOR+" · comisiones generadas en tus operaciones";
+  if(!ASESOR){$("#acts").hidden=true;m.innerHTML=`<div class="pick card"><h2>¿Quién eres?</h2><p>Elige tu nombre para ver tus comisiones.</p><div class="grid">${ASESORES.map(n=>`<button class="${isTop(n)?"top":""}" data-ase="${esc(n)}">${esc(n)}</button>`).join("")}</div></div>`;return}
+  $("#acts").hidden=false;$("#sub").innerHTML=esc(ASESOR)+topBadge(ASESOR)+" · comisiones generadas en tus operaciones";
   const all=lineas();const years=[...new Set(all.map(x=>+String(x.v.fecha).slice(0,4)).concat([new Date().getFullYear()]))].sort((a,b)=>b-a);
   const rowsY=all.filter(x=>+String(x.v.fecha).slice(0,4)===anio);const rows=rowsY.filter(x=>!est||x.e===est);
   const gen=rowsY.reduce((a,x)=>a+x.mia,0),pag=rowsY.reduce((a,x)=>a+x.pag,0),porp=rowsY.reduce((a,x)=>a+Math.max(0,x.lib-x.pag),0),pc=rowsY.reduce((a,x)=>a+Math.max(0,x.mia-x.lib),0);
@@ -154,7 +165,7 @@ function render(){
 document.addEventListener("click",e=>{const t=e.target.closest("button");if(!t)return;
   if(t.dataset.ase){ASESOR=t.dataset.ase;localStorage.setItem(KEY,ASESOR);render();load();return}
   if(t.id==="btn-switch"){ASESOR="";localStorage.removeItem(KEY);VENTAS=[];render();return}});
-render();load();
+loadTop().then(render);render();load();
 </script>
 </body>
 </html>
