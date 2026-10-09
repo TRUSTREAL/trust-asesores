@@ -287,7 +287,7 @@ function renderVentas(){
   <div class="tiles">
     <div class="tile dark"><span class="l">Operaciones</span><span class="v">${all.length}</span><span class="s">${periodoTxt()}</span></div>
     <div class="tile"><span class="l">Monto de ventas</span><span class="v">${fmtK(op)}</span><span class="s">ticket ${all.length?fmtK(op/all.length):"—"}</span></div>
-    <div class="tile gold"><span class="l">Ingresos</span><span class="v">${fmtK(tot)}</span><span class="s">${op?(tot/op*100).toFixed(2)+"% promedio":""}</span></div>
+    <div class="tile gold"><span class="l">Ingresos</span><span class="v">${fmt(tot)}</span><span class="s">${op?(tot/op*100).toFixed(2)+"% promedio":""}</span></div>
     <div class="tile"><span class="l">Cobradas</span><span class="v">${cobradas.length}</span><span class="s">${fmtK(cobradas.reduce((a,v)=>a+comTotal(v),0))}</span></div>
     <div class="tile"><span class="l">Por cobrar</span><span class="v">${porCob.length}</span><span class="s">${fmtK(porCob.reduce((a,v)=>a+comTotal(v),0))}</span></div>
   </div>
@@ -334,7 +334,7 @@ function renderEmpresa(){
   el.innerHTML=`
   <div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn" id="btn-emp-pdf" title="Reporte de esta sección en PDF">⤓ Reporte PDF</button></div>
   <div class="tiles t5">
-    <div class="tile dark"><span class="l">Ingresos</span><span class="v">${fmtK(ingreso)}</span><span class="s">${periodoTxt()}</span></div>
+    <div class="tile dark"><span class="l">Ingresos</span><span class="v">${fmt(ingreso)}</span><span class="s">${periodoTxt()}</span></div>
     <div class="tile"><span class="l">Operaciones</span><span class="v">${vP.length}</span><span class="s">${vVen.length} venta${vVen.length===1?"":"s"} · ${vRen.length} renta${vRen.length===1?"":"s"}${nCred?` · ${nCred} crédito${nCred===1?"":"s"} aparte`:""}</span></div>
     <div class="tile"><span class="l">Avance vs objetivo</span><span class="v" style="color:${falta>0?"var(--bad)":"var(--ok)"}">${pct(ingreso,objetivo)}</span><span class="s">${falta>0?"faltan "+fmtK(falta)+" de "+fmtK(objetivo):"objetivo de "+fmtK(objetivo)+" superado por "+fmtK(-falta)}</span></div>
     <div class="tile gold"><span class="l">Ingreso promedio</span><span class="v">${vP.length?fmtK(ingreso/vP.length):"—"}</span><span class="s">por operación</span></div>
@@ -404,7 +404,7 @@ h2{font-family:Lora,serif;font-weight:500;font-size:14px;color:#173F35;margin:12
   <div class="top"><div><img class="logo" src="data:image/png;base64,${LOGO_B64}" alt="TRUST realtor"></div><div class="right">Periodo<b>${periodoTxt()}</b>Emitido<b>${fecha}</b></div></div>
   <div class="title" style="margin-bottom:14px">Reporte de <em>ingresos</em></div>
   <div class="kpis">
-    ${kpi("Ingresos",fmtK(E.ingreso),periodoTxt(),"dark")}
+    ${kpi("Ingresos",fmt(E.ingreso),periodoTxt(),"dark")}
     ${kpi("Operaciones",E.vP.length,`${E.vVen.length} venta${E.vVen.length===1?"":"s"} · ${E.vRen.length} renta${E.vRen.length===1?"":"s"}${E.nCred?` · ${E.nCred} crédito${E.nCred===1?"":"s"} aparte`:""}`)}
     ${kpi("Avance vs objetivo",pct(E.ingreso,E.objetivo),E.falta>0?"faltan "+fmtK(E.falta)+" de "+fmtK(E.objetivo):"objetivo de "+fmtK(E.objetivo)+" superado",E.falta>0?"bad":"ok")}
     ${kpi("Ingreso promedio",E.vP.length?fmtK(E.ingreso/E.vP.length):"—","por operación","gold")}
