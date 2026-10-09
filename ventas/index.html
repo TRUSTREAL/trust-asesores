@@ -83,6 +83,7 @@ td.com{color:var(--gold-2);font-weight:600}
 .bars .trk{height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden}
 .bars .fil{height:100%;background:var(--green);border-radius:4px}
 .bars .fil.g{background:var(--gold)}
+table .trk{height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden;min-width:120px}table .trk .fil{height:100%;background:var(--green);border-radius:4px}table .trk .fil.g{background:var(--gold)}
 .bars .val{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
@@ -339,7 +340,27 @@ function renderAsesores(){
     <div class="twrap" style="border:0"><table><thead><tr><th>#</th><th>Asesor</th><th class="num">Ventas</th><th class="num">Monto de ventas</th><th class="num">Ticket</th><th class="num">Ingresos</th><th class="num">% del total</th></tr></thead>
     <tbody>${rows.map(([n,s],i)=>`<tr><td class="dim">${i+1}</td><td><b>${esc(n)}</b>${n===EX?' <span class="dim" style="font-weight:400">· asesores que ya no están</span>':""}</td><td class="num">${s.ventas}</td><td class="num">${fmt(s.monto)}</td><td class="num dim">${s.ventas?fmt(s.monto/s.ventas):"—"}</td><td class="num com">${fmt(s.com)}</td><td class="num dim">${pct(s.com,totCom)}</td></tr>`).join("")}</tbody></table>
     ${rows.length?"":`<div class="empty">Sin ventas en el periodo.</div>`}</div></div>
-    <div class="card" style="margin-top:14px"><h3>Ingresos por asesor</h3><div class="bars">${bars(Object.fromEntries(rows.map(([n,s])=>[n,s.com])),totCom,1)}</div></div>`;
+    <div class="card" style="margin-top:14px"><h3>Ingresos por asesor</h3><div class="bars">${bars(Object.fromEntries(rows.map(([n,s])=>[n,s.com])),totCom,1)}</div></div>
+    ${rankingHTML(+P.anio)}`;
+}
+// ---- ranking de comisión promedio mensual por asesor (mismo cálculo que ve cada asesor en Mis comisiones) ----
+const MESES_LL=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+function mesesBaseDe(n,y){
+  const hoy=new Date(),cy=hoy.getFullYear(),cm=hoy.getMonth()+1;if(y>cy)return {n:0};
+  let ini=(REGLAS.ingresos||{})[n]||"";
+  if(!ini){const fs=VENTAS.filter(v=>(v.dispersion||[]).some(p=>p.nombre===n)).map(v=>String(v.fecha).slice(0,7)).sort();ini=fs[0]||""}
+  let start=1,desde="";if(ini){const [iy,im]=ini.split("-").map(Number);if(iy>y)return {n:0};if(iy===y){start=im;desde=`${MESES_LL[im-1]}`}}
+  return {n:Math.max(0,(y===cy?cm:12)-start+1),desde};
+}
+function rankingHTML(y){
+  const gen={};VENTAS.filter(v=>+String(v.fecha).slice(0,4)===y).forEach(v=>{const tot=comTotal(v);(v.dispersion||[]).forEach(p=>{if(!p.nombre||p.rol==="Staff"||p.nombre===EX)return;gen[p.nombre]=(gen[p.nombre]||0)+partAmt(p,tot)})});
+  const names=[...new Set(ASESORES.filter(a=>a!==EX).concat(Object.keys(gen)))];
+  const rows=names.map(n=>{const mb=mesesBaseDe(n,y);const g=gen[n]||0;return {n,g,m:mb.n,desde:mb.desde,prom:mb.n?g/mb.n:0}}).filter(r=>r.g>0||r.m>0).sort((a,b)=>b.prom-a.prom);
+  const max=Math.max(...rows.map(r=>r.prom),1);
+  return `<div class="card" style="margin-top:14px"><h3>Ranking · comisión promedio mensual · ${y}</h3>
+    <p class="hint" style="margin:0 0 10px">Lo que cada asesor se lleva (vendedor, opcionador y autogenerada) entre los meses que lleva en TRUST en ${y}, contando el mes en curso. Es el mismo número que ve cada uno en Mis comisiones. Siempre por año completo, sin importar el trimestre elegido.</p>
+    ${rows.length?`<div class="twrap" style="border:0"><table><thead><tr><th>#</th><th>Asesor</th><th style="width:34%"></th><th class="num">Promedio mensual</th><th class="num">Comisión ${y}</th><th class="num">Meses</th><th>Desde</th></tr></thead>
+    <tbody>${rows.map((r,i)=>`<tr><td class="dim">${i+1}</td><td><b>${esc(r.n)}</b></td><td><div class="trk"><div class="fil g" style="width:${r.prom/max*100}%"></div></div></td><td class="num com">${r.m?fmt(r.prom):"—"}</td><td class="num">${fmt(r.g)}</td><td class="num dim">${r.m}</td><td class="dim">${r.desde?r.desde+" "+y:"enero "+y}</td></tr>`).join("")}</tbody></table></div>`:`<div class="empty">Sin comisiones de asesores en ${y}.</div>`}</div>`;
 }
 
 /* ---------- cobranza ---------- */
