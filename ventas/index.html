@@ -355,8 +355,8 @@ function reporteEmpresaPDF(){
 <style>
 @page{size:letter;margin:0}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 body{margin:0;font-family:Poppins,"Segoe UI",sans-serif;color:#1E241F;background:#FAF8F2}
-.page{width:8.5in;min-height:11in;margin:0 auto;padding:.5in .6in .45in;background:#FAF8F2;display:flex;flex-direction:column}
-.top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}.logo{width:120px}
+.page{width:8.5in;height:11in;overflow:hidden;margin:0 auto;padding:.45in .55in .4in;background:#FAF8F2;display:flex;flex-direction:column}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}.logo{width:110px}
 .right{text-align:right;font-size:10.5px;color:#6F726B;line-height:1.5}.right b{display:block;font-family:Lora,serif;font-size:13px;color:#173F35;font-weight:500}
 .title{margin:14px 0 2px;font-family:Lora,Georgia,serif;font-size:28px;line-height:1.1;font-weight:500;color:#173F35}.title em{font-style:italic;color:#B8956A}
 .sub{font-size:11px;color:#6F726B;margin-bottom:14px}
@@ -367,14 +367,14 @@ body{margin:0;font-family:Poppins,"Segoe UI",sans-serif;color:#1E241F;background
 .k.gold .v{color:#9C7A4E}.k.bad .v{color:#A8342A}.k.ok .v{color:#2E7D5B}
 h2{font-family:Lora,serif;font-weight:500;font-size:14px;color:#173F35;margin:12px 0 6px}
 .chart{background:#fff;border:1px solid #E3DDD0;border-radius:8px;padding:10px 12px}
-.cols{display:flex;gap:14px;align-items:flex-end;height:120px;justify-content:space-evenly}
+.cols{display:flex;gap:14px;align-items:flex-end;height:100px;justify-content:space-evenly}
 .c{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px;max-width:150px}
 .c small{font-size:8.5px;font-weight:600;white-space:nowrap}.c small span{color:#6F726B;font-weight:400}
-.c .bars{display:flex;gap:2px;width:100%;align-items:flex-end;height:80px;justify-content:center}.c i{display:block;width:34px;background:#173F35;border-radius:4px 4px 0 0;min-height:2px}.c i.p{background:#B8956A}
+.c .bars{display:flex;gap:2px;width:100%;align-items:flex-end;height:64px;justify-content:center}.c i{display:block;width:34px;background:#173F35;border-radius:4px 4px 0 0;min-height:2px}.c i.p{background:#B8956A}
 .c b{font-size:8.5px;font-weight:600}.c.acum{border-left:1px dashed #E3DDD0;padding-left:12px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .card{background:#fff;border:1px solid #E3DDD0;border-radius:8px;padding:10px 12px}.card h3{font-family:Lora,serif;font-weight:500;font-size:12.5px;margin:0 0 6px;color:#173F35}
-.b{display:grid;grid-template-columns:90px 1fr 92px;gap:8px;align-items:center;font-size:9.5px;padding:3px 0}.b>span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.b{display:grid;grid-template-columns:minmax(40px,1fr) minmax(30px,1fr) auto;gap:6px;align-items:center;font-size:8.5px;padding:2px 0}.b>span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .b i{display:block;height:6px;background:#F1EDE3;border-radius:3px;overflow:hidden}.b i b{display:block;height:100%;background:#173F35;border-radius:3px}.b .n{text-align:right;font-weight:600;white-space:nowrap}.b .n small{color:#6F726B;font-weight:400}
 .dim{color:#6F726B;font-size:9px}
 .foot{margin-top:auto;padding-top:14px;display:flex;justify-content:space-between;align-items:flex-end;font-size:9px;color:#6F726B}.foot img{width:64px}
@@ -401,12 +401,12 @@ h2{font-family:Lora,serif;font-weight:500;font-size:14px;color:#173F35;margin:12
   <div class="grid" style="margin-top:10px">
     <div class="card"><h3>Por unidad de negocio</h3>${barsP(E.byUN,E.ingreso)}</div>
     <div class="card"><h3>Por proyecto</h3>${barsP(E.byProy,E.ingreso,10)}</div>
-    <div class="card"><h3>Por asesor</h3>${barsP(E.byAse,E.ingreso)}</div>
+    <div class="card"><h3>Por asesor</h3>${barsP(E.byAse,E.ingreso,10)}</div>
     <div class="card"><h3>Por tipo de inmueble</h3>${barsP(E.byInm,E.vP.length,0,true)}<p class="dim" style="margin:4px 0 0">% de las operaciones del periodo</p></div>
   </div>
   <div class="foot"><div>Reporte interno · ${periodoTxt()} · generado el ${fecha}</div><div><img src="data:image/png;base64,${LOGO_B64}" alt="TRUST"></div></div>
 </div>
-<script>window.addEventListener("load",()=>setTimeout(()=>window.print(),600));<\/script>
+<script>window.addEventListener("load",()=>{const p=document.querySelector(".page");const fit=()=>{p.style.zoom="";const h=p.scrollHeight,avail=p.clientHeight;if(h>avail+1)p.style.zoom=(avail/h*0.995).toFixed(3)};fit();setTimeout(()=>{fit();window.print()},700)});<\/script>
 </body></html>`;
   const w=window.open("","_blank");if(!w){toast("Permite las ventanas emergentes para generar el PDF",true);return}
   w.document.open();w.document.write(html);w.document.close();
