@@ -231,6 +231,8 @@ const cobradoDe=vid=>cobrosDe(vid).reduce((a,c)=>a+(+c.monto||0),0);
 const cobradoFx=v=>{const c=cobradoDe(v.id);return (c<=0&&(v.cobro_estatus||"")==="pagada")?comTotal(v):c};
 
 /* ---------- dispersión ---------- */
+const topPct=()=>+((REGLAS.programa||{}).pct??5)||5;
+const topDe=f=>{const [y,m]=String(f||"").slice(0,7).split("-");return ((REGLAS.top||{})[y+"-Q"+Math.ceil(+m/3)])||[]};
 function dispDefault(v){
   const R=REGLAS,d=[];
   if(esCredito(v)) return [{id:uid(),nombre:v.asesor||"",rol:"Crédito hipotecario",pct:100,monto:null}];
@@ -238,6 +240,7 @@ function dispDefault(v){
   else if(v.propiedad_trust!==false){d.push({id:uid(),nombre:v.opcionador||"",rol:"Opcionador",pct:R.corr_trust_opcionador});d.push({id:uid(),nombre:v.asesor||"",rol:"Vendedor",pct:R.corr_trust_vendedor})}
   else d.push({id:uid(),nombre:v.asesor||"",rol:"Vendedor",pct:R.corr_otra_vendedor});
   if(v.autogenerada)d.push({id:uid(),nombre:v.asesor||"",rol:"Autogenerada",pct:R.autogenerada});
+  if(v.top_realtor)d.push({id:uid(),nombre:v.asesor||"",rol:"TOP Realtor",pct:topPct()});
   (R.staff||[]).forEach(s=>{if(s.nombre&&+s.pct)d.push({id:uid(),nombre:s.nombre,rol:"Staff",pct:+s.pct})});
   return d.map(x=>({...x,monto:null}));  // monto null = se calcula por %
 }
@@ -285,7 +288,7 @@ function renderVentas(){
     <span class="count">${rows.length} de ${all.length}</span>
   </div>
   <div class="twrap"><table><thead><tr>${th("fecha","Mes")}${th("cliente","Cliente")}<th title="Unidad de negocio: P = Proyectos · C = Corretaje">UN</th>${th("tipo","Tipo")}${th("inmueble","Inmueble")}${th("proyecto","Proyecto")}<th>Unidad</th>${th("asesor","Asesor")}<th>Opcionador</th>${th("monto","Monto",1)}<th class="num">%</th>${th("comision","Comisión",1)}${th("estatus","Cobranza")}<th></th></tr></thead>
-  <tbody>${rows.map(v=>{const e=estatusDe(v);return `<tr data-id="${v.id}"><td class="dim">${fechaM(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${v.autogenerada?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">AG</span>':""}</td><td><span class="un ${v.un==="Proyectos"?"P":"C"}" title="${esc(v.un)}">${v.un==="Proyectos"?"P":"C"}</span></td><td><span class="tp ${esCredito(v)?"Cr":esc(v.tipo||"Venta")}">${esc(TIPO_ABR[v.tipo]||v.tipo||"Venta")}</span></td><td class="dim">${esc(v.inmueble||"—")}</td><td>${esc(v.proyecto)}</td><td class="dim">${esc(v.unidad||"")}</td><td>${esc(v.asesor)}</td><td class="dim">${esc(v.opcionador||"—")}</td><td class="num money">${fmt(v.monto)}</td><td class="num dim">${v.comision_monto!=null?"fijo":(+v.comision_pct||0).toLocaleString("es-MX",{maximumFractionDigits:2})+"%"}</td><td class="num com">${fmt(comTotal(v))}</td><td><button class="st ${e} cobs" data-id="${v.id}" title="Ver / registrar cobros" style="border:0;cursor:pointer;font:inherit">${EST_LABEL[e]}</button></td><td><button class="ico edit" data-id="${v.id}" title="Abrir">✎</button></td></tr>`}).join("")}</tbody></table>
+  <tbody>${rows.map(v=>{const e=estatusDe(v);return `<tr data-id="${v.id}"><td class="dim">${fechaM(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${v.autogenerada?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">AG</span>':""}${v.top_realtor?' <span class="un" style="background:var(--gold-2);color:#fff" title="Bono TOP Realtor">TOP</span>':""}</td><td><span class="un ${v.un==="Proyectos"?"P":"C"}" title="${esc(v.un)}">${v.un==="Proyectos"?"P":"C"}</span></td><td><span class="tp ${esCredito(v)?"Cr":esc(v.tipo||"Venta")}">${esc(TIPO_ABR[v.tipo]||v.tipo||"Venta")}</span></td><td class="dim">${esc(v.inmueble||"—")}</td><td>${esc(v.proyecto)}</td><td class="dim">${esc(v.unidad||"")}</td><td>${esc(v.asesor)}</td><td class="dim">${esc(v.opcionador||"—")}</td><td class="num money">${fmt(v.monto)}</td><td class="num dim">${v.comision_monto!=null?"fijo":(+v.comision_pct||0).toLocaleString("es-MX",{maximumFractionDigits:2})+"%"}</td><td class="num com">${fmt(comTotal(v))}</td><td><button class="st ${e} cobs" data-id="${v.id}" title="Ver / registrar cobros" style="border:0;cursor:pointer;font:inherit">${EST_LABEL[e]}</button></td><td><button class="ico edit" data-id="${v.id}" title="Abrir">✎</button></td></tr>`}).join("")}</tbody></table>
   ${rows.length?"":`<div class="empty"><b>Sin ventas</b>No hay operaciones registradas en ${periodoTxt().toLowerCase()}${filt.q||filt.un||filt.asesor||filt.estatus?" con esos filtros":""}.</div>`}</div>`;
   $("#f-q").oninput=e=>{filt.q=e.target.value;renderVentas();const i=$("#f-q");i.focus();i.setSelectionRange(i.value.length,i.value.length)};
   ["un","asesor","estatus"].forEach(k=>$("#f-"+k).onchange=e=>{filt[k]=e.target.value;renderVentas()});
@@ -632,7 +635,7 @@ function renderReglas(){
 
 /* ---------- alta / edición de venta ---------- */
 function openVenta(v){
-  const isNew=!v;v=v?JSON.parse(JSON.stringify(v)):{fecha:todayISO(),un:"Proyectos",tipo:"Venta",proyecto:"",unidad:"",cliente:"",asesor:"",opcionador:"Álvaro",autogenerada:false,propiedad_trust:true,monto:null,comision_pct:null,comision_monto:null,notas:"",dispersion:null};
+  const isNew=!v;v=v?JSON.parse(JSON.stringify(v)):{fecha:todayISO(),un:"Proyectos",tipo:"Venta",proyecto:"",unidad:"",cliente:"",asesor:"",opcionador:"Álvaro",autogenerada:false,top_realtor:false,propiedad_trust:true,monto:null,comision_pct:null,comision_monto:null,notas:"",dispersion:null};
   const opt=(list,cur,blank)=>(blank?`<option value="">${blank}</option>`:"")+list.map(x=>`<option ${x===cur?"selected":""}>${esc(x)}</option>`).join("");
   const root=$("#drawer-root");
   root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog">
@@ -649,7 +652,7 @@ function openVenta(v){
         <div class="f c3"><label>Unidad / ID</label><input id="v-unidad" value="${esc(v.unidad||"")}" placeholder="Depto 402, Casa 12…"></div>
         <div class="f c4"><label>Asesor vendedor <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted)">· EX = ya no está</span></label><select id="v-asesor">${opt(ASESORES,v.asesor,"Elegir…")}</select></div>
         <div class="f c4"><label>Opcionador</label><select id="v-opc">${opt(ASESORES,v.opcionador,"— Sin opcionador —")}</select></div>
-        <div class="f c4"><label class="chk" style="padding:0"><input type="checkbox" id="v-ag" ${v.autogenerada?"checked":""} style="width:auto"> Operación autogenerada (+${REGLAS.autogenerada}% vendedor)</label></div>
+        <div class="f c4"><label>Extras del vendedor</label><label class="chk" style="padding:0"><input type="checkbox" id="v-ag" ${v.autogenerada?"checked":""} style="width:auto"> Autogenerada (+${REGLAS.autogenerada}%)</label><label class="chk" style="padding:0"><input type="checkbox" id="v-top" ${v.top_realtor?"checked":""} style="width:auto"> TOP Realtor (+${topPct()}%)</label></div>
         <div class="f c4"><label id="lbl-monto">Monto de la operación</label><input id="v-monto" inputmode="numeric" value="${v.monto!=null?fmt(v.monto):""}" placeholder="$ 0"></div>
         <div class="f c4"><label>Comisión %</label><input id="v-pct" inputmode="decimal" value="${v.comision_pct??""}" placeholder="ej. 4"></div>
         <div class="f c4"><label>o comisión en monto fijo</label><input id="v-cmonto" inputmode="numeric" value="${v.comision_monto!=null?fmt(v.comision_monto):""}" placeholder="$ (opcional)"></div>
@@ -666,7 +669,7 @@ function openVenta(v){
   const g=i=>$("#"+i);const close=()=>root.innerHTML="";
   g("scrim").onclick=close;g("d-close").onclick=close;g("d-cancel").onclick=close;
   let DISP=v.dispersion?v.dispersion.map(p=>({...p,id:p.id||uid()})):null;
-  const cur=()=>({fecha:(g("v-fecha").value||todayISO().slice(0,7))+"-01",un:g("v-un").value,tipo:g("v-tipo").value,inmueble:g("v-inm").value||null,propiedad_trust:g("v-prop").value==="true",cliente:g("v-cliente").value.trim(),proyecto:g("v-proyecto").value.trim(),unidad:g("v-unidad").value.trim(),asesor:g("v-asesor").value,opcionador:g("v-opc").value||null,autogenerada:g("v-ag").checked,monto:num(g("v-monto").value),comision_pct:num(g("v-pct").value),comision_monto:num(g("v-cmonto").value),notas:g("v-notas").value.trim()});
+  const cur=()=>({fecha:(g("v-fecha").value||todayISO().slice(0,7))+"-01",un:g("v-un").value,tipo:g("v-tipo").value,inmueble:g("v-inm").value||null,propiedad_trust:g("v-prop").value==="true",cliente:g("v-cliente").value.trim(),proyecto:g("v-proyecto").value.trim(),unidad:g("v-unidad").value.trim(),asesor:g("v-asesor").value,opcionador:g("v-opc").value||null,autogenerada:g("v-ag").checked,top_realtor:g("v-top").checked,monto:num(g("v-monto").value),comision_pct:num(g("v-pct").value),comision_monto:num(g("v-cmonto").value),notas:g("v-notas").value.trim()});
   const total=()=>{const c=cur();return c.comision_monto!=null?c.comision_monto:(c.monto||0)*(c.comision_pct||0)/100};
   function drawDisp(){
     const tot=total();g("v-ctotal").value=fmt(tot)+(cur().comision_monto!=null?" (monto fijo)":"");
@@ -681,7 +684,8 @@ function openVenta(v){
   }
   g("disp-add").onclick=()=>{DISP.push({id:uid(),nombre:"",rol:"",pct:0,monto:null});drawDisp()};
   g("disp-reset").onclick=()=>{DISP=null;drawDisp()};
-  ["v-un","v-prop","v-asesor","v-opc","v-ag","v-tipo"].forEach(id=>g(id).onchange=()=>{g("v-prop-box").style.visibility=g("v-un").value==="Corretaje"?"":"hidden";const cr=g("v-tipo").value==="Crédito hipotecario";g("lbl-monto").textContent=cr?"Monto del crédito (referencia)":"Monto de la operación";g("v-pct").disabled=cr;g("v-cmonto").placeholder=cr?"$ comisión que paga el banco":"$ (opcional)";if(isNew||confirm("¿Recalcular la dispersión con las reglas para estos datos?")){DISP=null}drawDisp()});
+  if(isNew)g("v-fecha").onchange=()=>{g("v-top").checked=topDe(g("v-fecha").value).includes(g("v-asesor").value);DISP=null;drawDisp()};
+  ["v-un","v-prop","v-asesor","v-opc","v-ag","v-top","v-tipo"].forEach(id=>g(id).onchange=()=>{if(isNew&&id==="v-asesor")g("v-top").checked=topDe(g("v-fecha").value).includes(g("v-asesor").value);g("v-prop-box").style.visibility=g("v-un").value==="Corretaje"?"":"hidden";const cr=g("v-tipo").value==="Crédito hipotecario";g("lbl-monto").textContent=cr?"Monto del crédito (referencia)":"Monto de la operación";g("v-pct").disabled=cr;g("v-cmonto").placeholder=cr?"$ comisión que paga el banco":"$ (opcional)";if(isNew||confirm("¿Recalcular la dispersión con las reglas para estos datos?")){DISP=null}drawDisp()});
   ["v-monto","v-pct","v-cmonto"].forEach(id=>g(id).onchange=()=>{if(id==="v-monto"||id==="v-cmonto"){const x=num(g(id).value);g(id).value=x==null?"":fmt(x)}drawDisp()});
   drawDisp();
   if(!isNew){
