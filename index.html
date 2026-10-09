@@ -29,6 +29,16 @@ body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--bg);co
 .brand h1{font-family:Lora,Georgia,serif;font-weight:500;font-size:28px;color:var(--green);line-height:1.15}
 .brand .sub{color:var(--muted);font-size:13px}
 .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-2);font-weight:600}
+.topr{display:none;align-items:center;gap:16px;background:linear-gradient(120deg,#173F35 0%,#1F5446 55%,#2A6655 100%);border:1px solid #B8956A;border-radius:14px;padding:16px 20px;margin-bottom:18px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.topr.on{display:flex}
+.topr::before{content:"★";position:absolute;right:-6px;top:-22px;font-size:110px;color:rgba(184,149,106,.14);line-height:1}
+.topr .star{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#B8956A,#E3C68E);display:flex;align-items:center;justify-content:center;color:#173F35;font-size:24px;flex:none;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.topr .t{min-width:0;position:relative}
+.topr .eyebrow{color:#E3C68E;margin-bottom:2px}
+.topr .names{font-family:Lora,Georgia,serif;font-size:22px;color:#fff;line-height:1.2}
+.topr .names span+span::before{content:"  ·  ";color:#B8956A}
+.topr .s{font-size:12px;color:#D9C9A8;margin-top:3px}
+@media (max-width:560px){.topr .names{font-size:19px}}
 .tools{display:grid;grid-template-columns:1fr;gap:8px}
 a.tool{display:grid;grid-template-columns:42px 1fr auto;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 16px;text-decoration:none;color:var(--text);transition:border-color .15s,box-shadow .15s,transform .15s}
 a.tool:hover{border-color:var(--gold);box-shadow:var(--shadow);transform:translateY(-2px)}
@@ -60,6 +70,8 @@ a.tool:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
     </div>
     <span class="eyebrow">Asesores</span>
   </div>
+
+  <div class="topr" id="topr"><div class="star">★</div><div class="t"><div class="eyebrow" id="topr-q">TOP Realtor</div><div class="names" id="topr-n"></div><div class="s">Reconocimiento trimestral a los mejores resultados del equipo.</div></div></div>
 
   <div class="tools">
     <a class="tool" href="leads/asesores.html">
@@ -106,5 +118,21 @@ a.tool:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 </div>
 
 <div class="foot">TRUST realtor · uso interno</div>
+<script>
+(async()=>{
+  try{
+    const U="https://xshhjvdmkuqesdlvczbb.supabase.co",K="sb_publishable_5erZfpELyuncW1nrReTaZw_BQj0bc-P";
+    const r=await fetch(U+"/rest/v1/ventas_reglas?id=eq.1&select=reglas",{headers:{apikey:K,Authorization:"Bearer "+K}});
+    const rows=await r.json();const t=(rows&&rows[0]&&rows[0].reglas&&rows[0].reglas.top)||{};
+    const d=new Date(),cur=d.getFullYear()+"-Q"+(Math.floor(d.getMonth()/3)+1);
+    const keys=Object.keys(t).filter(k=>k<=cur&&Array.isArray(t[k])&&t[k].length).sort();const k=keys[keys.length-1];
+    if(!k)return;
+    const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+    document.getElementById("topr-q").textContent="TOP Realtor · "+k.slice(5)+" "+k.slice(0,4);
+    document.getElementById("topr-n").innerHTML=t[k].map(n=>`<span>${esc(n)}</span>`).join("");
+    document.getElementById("topr").classList.add("on");
+  }catch(e){}
+})();
+</script>
 </body>
 </html>
