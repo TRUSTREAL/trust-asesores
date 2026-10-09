@@ -330,13 +330,13 @@ function renderEmpresa(){
     <div class="legend"><span><i></i>Ingresos ${Y}</span><span><i class="p"></i>Objetivo</span><span style="margin-left:auto">Ingresos ${Y}: <b>${fmtK(byM.reduce((a,b)=>a+b,0))}</b> de <b>${fmtK(byMprev.reduce((a,b)=>a+b,0))}</b></span></div></div>
   <div class="grid4">
     <div class="card"><h3>Por unidad de negocio</h3><div class="bars">${bars(byUN,ingreso)}</div></div>
-    <div class="card"><h3>Por proyecto</h3><div class="bars">${bars(byProy,ingreso)}</div></div>
+    <div class="card"><h3>Por proyecto</h3><div class="bars">${bars(byProy,ingreso,0,10)}</div></div>
     <div class="card"><h3>Por asesor</h3><div class="bars">${bars(byAse,ingreso,1)}</div></div>
     <div class="card"><h3>Por tipo de inmueble</h3><div class="bars">${barsN(byInm,vP.length)}</div><p class="hint" style="margin:8px 0 0">% de las operaciones del periodo.</p></div>
   </div>`;
 }
 function barsN(obj,total){const e=Object.entries(obj).sort((a,b)=>b[1]-a[1]);if(!e.length)return `<p class="hint">Sin datos en el periodo.</p>`;const max=e[0][1]||1;return e.map(([k,v])=>`<div class="bar"><span>${esc(k)}</span><div class="trk"><div class="fil" style="width:${v/max*100}%"></div></div><span class="val">${pct(v,total)} <small style="color:var(--muted);font-weight:400">${v}</small></span></div>`).join("")}
-function bars(obj,total,g){const e=Object.entries(obj).sort((a,b)=>b[1]-a[1]);if(!e.length)return `<p class="hint">Sin datos en el periodo.</p>`;const max=e[0][1]||1;return e.map(([k,v])=>`<div class="bar"><span>${esc(k)}</span><div class="trk"><div class="fil ${g?"g":""}" style="width:${v/max*100}%"></div></div><span class="val">${fmt(v)} <small style="color:var(--muted);font-weight:400">${pct(v,total)}</small></span></div>`).join("")}
+function bars(obj,total,g,top){let e=Object.entries(obj).sort((a,b)=>b[1]-a[1]);if(!e.length)return `<p class="hint">Sin datos en el periodo.</p>`;const extra=top&&e.length>top?e.length-top:0;if(extra)e=e.slice(0,top);const max=e[0][1]||1;return (extra?`<p class="hint" style="margin:0 0 6px">Top ${top} de ${e.length+extra}</p>`:"")+e.map(([k,v])=>`<div class="bar"><span>${esc(k)}</span><div class="trk"><div class="fil ${g?"g":""}" style="width:${v/max*100}%"></div></div><span class="val">${fmt(v)} <small style="color:var(--muted);font-weight:400">${pct(v,total)}</small></span></div>`).join("")}
 
 /* ---------- asesores ---------- */
 function renderAsesores(){
