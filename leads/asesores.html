@@ -374,6 +374,9 @@ th.sortable{cursor:pointer;user-select:none;white-space:nowrap}th.sortable:hover
   .topbar{padding:0 16px}.wrap{padding:16px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.topb{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#B8956A,#E3C68E);color:#173F35;border-radius:999px;padding:2px 10px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;vertical-align:middle;box-shadow:0 1px 2px rgba(23,63,53,.15)}
+.chip.top,button.top{border-color:#B8956A!important;box-shadow:0 0 0 2px rgba(184,149,106,.25)}
+.chip.top::after,button.top::after{content:" ★";color:#B8956A}
 /* modo asesor */
 #reg,#tab,#base,#proy{display:none!important}
 .pickcard{max-width:640px;margin:32px auto}
@@ -1637,10 +1640,19 @@ let LOCK_ASE=null;
 del=()=>{}; reasignar=()=>{}; remove=async()=>{ throw new Error("No permitido"); };   // el asesor sí puede registrar y editar; no borrar ni reasignar
 asesorSel=l=> esc(l.asesor);
 const _openAse=openAse;
-openAse=function(){ if(!LOCK_ASE) return; _openAse(LOCK_ASE,"ase"); };
+openAse=function(){ if(!LOCK_ASE) return; _openAse(LOCK_ASE,"ase"); paintTop(); };
 const _go=go;
 go=function(v){ if(!LOCK_ASE){ v="pick"; } else if(v!=="ase"){ v="ase"; } _go(v); document.getElementById("pick").classList.toggle("on", v==="pick"); document.getElementById("tabSwitch").style.display= LOCK_ASE? "" : "none"; };
+
+/* ===== TOP Realtor (reconocimiento trimestral) ===== */
+const TOP_Q=(()=>{const d=new Date();return d.getFullYear()+"-Q"+(Math.floor(d.getMonth()/3)+1)})();
+let TOP={key:"",names:[]};
+const topTxt=k=>k?`${k.slice(5)} ${k.slice(0,4)}`:"";
+async function loadTop(){ if(!sb)return; try{ const r=await sb.from("ventas_reglas").select("reglas").eq("id",1).maybeSingle(); const t=(r.data&&r.data.reglas&&r.data.reglas.top)||{}; const keys=Object.keys(t).filter(k=>k<=TOP_Q&&Array.isArray(t[k])&&t[k].length).sort(); const k=keys[keys.length-1]; TOP=k?{key:k,names:t[k]}:{key:"",names:[]}; }catch(e){} }
+const isTop=n=>TOP.names.includes(n);
+const topBadge=n=>isTop(n)?` <span class="topb" title="TOP Realtor · ${topTxt(TOP.key)}">★ TOP Realtor</span>`:"";
 function entrar(name){ LOCK_ASE=name; openAse(); }
+function paintTop(){ document.querySelectorAll("#pickChips .chip").forEach(b=>b.classList.toggle("top",isTop(b.dataset.a))); const h=document.getElementById("aseName"); if(h&&LOCK_ASE) h.innerHTML=esc(LOCK_ASE)+topBadge(LOCK_ASE); }
 function salir(){ LOCK_ASE=null; try{ localStorage.removeItem(ASE_KEY); }catch(e){} document.getElementById("ase").classList.remove("on"); go("pick"); window.scrollTo(0,0); }
 document.getElementById("pickChips").innerHTML = ASESORES.filter(a=>a!=="Otro").map(a=>`<button type="button" class="chip" onclick="entrar(this.dataset.a)" data-a="${esc(a)}">${esc(a)}</button>`).join("");
 const _load=load;
@@ -1651,7 +1663,7 @@ document.getElementById("canalMktSel").innerHTML += MARKETPLACES.map(m=>`<option
 document.getElementById("tCanalF").innerHTML += CANALES.map(a=>`<option>${esc(a)}</option>`).join("");
 document.getElementById("aseSel").innerHTML += ASESORES.filter(a=>a!=="Otro").map(a=>`<option>${a}</option>`).join("");
 document.getElementById("fecha").value=todayISO();
-initStore(); load();
+initStore(); load(); loadTop().then(paintTop);
 </script>
 </body>
 </html>
