@@ -92,6 +92,9 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--green);color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:99}
 .toast.show{opacity:1;transform:translateX(-50%)}.toast.err{background:var(--bad)}
 @media (max-width:760px){.tiles{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.pick .grid{grid-template-columns:1fr 1fr}}
+.topb{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#B8956A,#E3C68E);color:#173F35;border-radius:999px;padding:2px 10px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;vertical-align:middle;box-shadow:0 1px 2px rgba(23,63,53,.15)}
+.chip.top,button.top{border-color:#B8956A!important;box-shadow:0 0 0 2px rgba(184,149,106,.25)}
+.chip.top::after,button.top::after{content:" ★";color:#B8956A}
 </style>
 </head>
 <body>
@@ -116,6 +119,14 @@ const $=s=>document.querySelector(s);
 $("#logo-img").src="data:image/png;base64,"+LOGO_B64;
 let tt; function toast(m,err){const t=$("#toast");t.textContent=m;t.classList.toggle("err",!!err);t.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("show"),err?3600:2200);}
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ===== TOP Realtor (reconocimiento trimestral) ===== */
+const TOP_Q=(()=>{const d=new Date();return d.getFullYear()+"-Q"+(Math.floor(d.getMonth()/3)+1)})();
+let TOP={key:"",names:[]};
+const topTxt=k=>k?`${k.slice(5)} ${k.slice(0,4)}`:"";
+async function loadTop(){ if(!sb)return; try{ const r=await sb.from("ventas_reglas").select("reglas").eq("id",1).maybeSingle(); const t=(r.data&&r.data.reglas&&r.data.reglas.top)||{}; const keys=Object.keys(t).filter(k=>k<=TOP_Q&&Array.isArray(t[k])&&t[k].length).sort(); const k=keys[keys.length-1]; TOP=k?{key:k,names:t[k]}:{key:"",names:[]}; }catch(e){} }
+const isTop=n=>TOP.names.includes(n);
+const topBadge=n=>isTop(n)?` <span class="topb" title="TOP Realtor · ${topTxt(TOP.key)}">★ TOP Realtor</span>`:"";
 const KEY="trust_asesor_oo";
 let ASESOR=localStorage.getItem(KEY)||"", OO=[];
 function lunes(d){const x=new Date(d);x.setHours(0,0,0,0);const w=(x.getDay()+6)%7;x.setDate(x.getDate()-w);return new Date(x.getTime()-x.getTimezoneOffset()*60000).toISOString().slice(0,10)}
@@ -132,8 +143,8 @@ async function load(){
 }
 function render(){
   const m=$("#main");
-  if(!ASESOR){$("#acts").hidden=true;m.innerHTML=`<div class="pick card"><h2>¿Quién eres?</h2><p>Elige tu nombre para ver tu misión, compromisos y solicitudes.</p><div class="grid">${ASESORES.map(n=>`<button data-ase="${esc(n)}">${esc(n)}</button>`).join("")}</div></div>`;return}
-  $("#acts").hidden=false;$("#sub").textContent=ASESOR+" · mi misión y lo que acordamos en el one-on-one, semana por semana";
+  if(!ASESOR){$("#acts").hidden=true;m.innerHTML=`<div class="pick card"><h2>¿Quién eres?</h2><p>Elige tu nombre para ver tu misión, compromisos y solicitudes.</p><div class="grid">${ASESORES.map(n=>`<button class="${isTop(n)?"top":""}" data-ase="${esc(n)}">${esc(n)}</button>`).join("")}</div></div>`;return}
+  $("#acts").hidden=false;$("#sub").innerHTML=esc(ASESOR)+topBadge(ASESOR)+" · mi misión y lo que acordamos en el one-on-one, semana por semana";
   const sem=lunes(new Date());const cur=OO.find(o=>o.semana===sem);const past=OO.filter(o=>o.semana!==sem);
   const allC=items(cur?.compromisos),doneC=allC.filter(isDone).length,allS=items(cur?.solicitudes),doneS=allS.filter(isDone).length;
   const pendHist=past.reduce((a,o)=>a+items(o.compromisos).filter(x=>!isDone(x)).length,0);
@@ -180,7 +191,7 @@ function openEdit(sem){
   const close=()=>$("#drawer-root").innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
   $("#d-save").onclick=async()=>{const row={asesor:ASESOR,semana:sem,mision:$("#oo-mis").value.trim()||null,compromisos:$("#oo-comp").value.trim(),solicitudes:$("#oo-sol").value.trim(),updated_at:new Date().toISOString()};if(cur.id&&cur.mision!==row.mision)row.mision_ok=false;const r=await sb.from("one_on_one").upsert(row,{onConflict:"asesor,semana"});if(r.error){toast("No se guardó: "+r.error.message,true);return}close();toast("Guardado");load()};
 }
-render();load();
+loadTop().then(render);render();load();
 </script>
 </body>
 </html>
