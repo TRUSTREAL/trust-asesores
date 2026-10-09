@@ -96,13 +96,13 @@ const fecha=d=>d?(()=>{const [y,m,dd]=String(d).slice(0,10).split("-");return `$
 const dias=d=>d?Math.max(0,Math.round((Date.now()-new Date(d+"T12:00:00"))/86400000)):null;
 const pct=(n,d)=>d?Math.round(n/d*100)+"%":"—";
 const KEY="trust_asesor_com";
-let ASESOR=localStorage.getItem(KEY)||"", VENTAS=[], COBROS=[], PAGOS=[], anio=new Date().getFullYear(), est="";
+let ASESOR=localStorage.getItem(KEY)||"", VENTAS=[], COBROS=[], PAGOS=[], INGRESOS={}, anio=new Date().getFullYear(), est="";
 
 async function load(){
   if(!sb||!ASESOR)return;
-  const [v,c,p]=await Promise.all([sb.from("ventas").select("*").order("fecha",{ascending:false}),sb.from("ventas_cobros").select("*"),sb.from("ventas_pagos").select("*").eq("beneficiario",ASESOR)]);
+  const [v,c,p,r]=await Promise.all([sb.from("ventas").select("*").order("fecha",{ascending:false}),sb.from("ventas_cobros").select("*"),sb.from("ventas_pagos").select("*").eq("beneficiario",ASESOR),sb.from("ventas_reglas").select("reglas").eq("id",1).maybeSingle()]);
   if(v.error){toast("Error: "+v.error.message,true);return}
-  VENTAS=(v.data||[]).filter(x=>(x.dispersion||[]).some(p=>p.nombre===ASESOR));COBROS=c.data||[];PAGOS=p.data||[];render();
+  VENTAS=(v.data||[]).filter(x=>(x.dispersion||[]).some(p=>p.nombre===ASESOR));COBROS=c.data||[];PAGOS=p.data||[];INGRESOS=(r.data&&r.data.reglas&&r.data.reglas.ingresos)||{};render();
 }
 const comTotal=v=>v.comision_monto!=null?+v.comision_monto:(+v.monto||0)*(+v.comision_pct||0)/100;
 const cobradoDe=id=>COBROS.filter(c=>c.venta_id===id).reduce((a,c)=>a+(+c.monto||0),0);
@@ -116,6 +116,18 @@ function lineas(){
   return out;
 }
 const EST={pendiente:"Pendiente",parcial:"Pago parcial",pagada:"Pagada"};
+const MESES_L=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+// Meses que cuentan para el promedio en un año: desde la fecha de ingreso (o la primera venta) hasta el mes en curso (o diciembre si el año ya terminó)
+function mesesBase(y){
+  const hoy=new Date(),cy=hoy.getFullYear(),cm=hoy.getMonth()+1;
+  if(y>cy)return {n:0};
+  let ini=INGRESOS[ASESOR]||"";
+  if(!ini){const fs=VENTAS.map(v=>String(v.fecha).slice(0,7)).sort();ini=fs[0]||""}
+  let start=1,desde="";
+  if(ini){const [iy,im]=ini.split("-").map(Number);if(iy>y)return {n:0};if(iy===y){start=im;desde=`${MESES_L[im-1]} ${y}`}}
+  const end=y===cy?cm:12;
+  return {n:Math.max(0,end-start+1),desde,parcial:y===cy};
+}
 function render(){
   const m=$("#main");
   if(!ASESOR){$("#acts").hidden=true;m.innerHTML=`<div class="pick card"><h2>¿Quién eres?</h2><p>Elige tu nombre para ver tus comisiones.</p><div class="grid">${ASESORES.map(n=>`<button data-ase="${esc(n)}">${esc(n)}</button>`).join("")}</div></div>`;return}
@@ -127,13 +139,14 @@ function render(){
   <div class="filters"><select id="f-anio">${years.map(y=>`<option ${y===anio?"selected":""}>${y}</option>`).join("")}</select>
     <select id="f-est"><option value="">Todas</option>${Object.entries(EST).map(([k,v])=>`<option value="${k}" ${est===k?"selected":""}>${v}</option>`).join("")}</select>
     <span class="hint" style="margin-left:auto">${rows.length} operaci${rows.length===1?"ón":"ones"}</span></div>
-  <div class="tiles" style="grid-template-columns:repeat(3,1fr)">
+  <div class="tiles">
     <div class="tile dark"><span class="l">Generado ${anio}</span><span class="v">${fmt(gen)}</span><span class="s">${rowsY.length} operaciones</span></div>
+    ${(()=>{const mb=mesesBase(anio);const prom=mb.n?gen/mb.n:0;return `<div class="tile dark" style="background:var(--gold-2,#9C7A4E)"><span class="l">Promedio mensual</span><span class="v">${mb.n?fmt(prom):"—"}</span><span class="s">${mb.n?`sobre ${mb.n} mes${mb.n===1?"":"es"}${mb.desde?` · desde ${mb.desde}`:""}${mb.parcial?" · incluye el mes en curso":""}`:"sin meses que contar"}</span></div>`})()}
     <div class="tile ok"><span class="l">Pagado</span><span class="v">${fmt(pag)}</span><span class="s">${pct(pag,gen)} de lo generado</span></div>
     <div class="tile warn"><span class="l">Pendiente</span><span class="v">${fmt(gen-pag)}</span><span class="s">por pagarte</span></div>
   </div>
-  <div class="twrap"><table><thead><tr><th>Cierre</th><th class="num">Días</th><th>Cliente</th><th>Proyecto</th><th>Rol</th><th class="num">Mi comisión</th><th class="num">Pagado</th><th class="num">Pendiente</th><th>Estatus</th></tr></thead>
-  <tbody>${rows.map(x=>`<tr><td class="dim">${fecha(x.v.fecha)}</td><td class="num"><span class="dd">${dias(x.v.fecha)}</span></td><td><b>${esc(x.v.cliente)}</b>${x.v.tipo==="Crédito hipotecario"?' <span class="st" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(x.v.proyecto||"")}${x.v.unidad?` <span class="dim">· ${esc(x.v.unidad)}</span>`:""}</td><td class="dim">${esc(x.rol)}</td><td class="num com">${fmt(x.mia)}</td><td class="num ${x.pag?"money":""}" style="${x.pag?"color:var(--ok)":""}">${fmt(x.pag)}</td><td class="num">${fmt(Math.max(0,x.mia-x.pag))}</td><td><span class="st ${x.e}">${EST[x.e]}</span></td></tr>`).join("")}</tbody></table>
+  <div class="twrap"><table><thead><tr><th>Mes</th><th class="num">Días</th><th>Cliente</th><th>Proyecto</th><th>Rol</th><th class="num">Mi comisión</th><th class="num">Pagado</th><th class="num">Pendiente</th><th>Estatus</th></tr></thead>
+  <tbody>${rows.map(x=>`<tr><td class="dim">${(()=>{const [y,m]=String(x.v.fecha).slice(0,7).split("-");return MESES_L[+m-1].replace(/^./,c=>c.toUpperCase())+" "+y})()}</td><td class="num"><span class="dd">${dias(x.v.fecha)}</span></td><td><b>${esc(x.v.cliente)}</b>${x.v.tipo==="Crédito hipotecario"?' <span class="st" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(x.v.proyecto||"")}${x.v.unidad?` <span class="dim">· ${esc(x.v.unidad)}</span>`:""}</td><td class="dim">${esc(x.rol)}</td><td class="num com">${fmt(x.mia)}</td><td class="num ${x.pag?"money":""}" style="${x.pag?"color:var(--ok)":""}">${fmt(x.pag)}</td><td class="num">${fmt(Math.max(0,x.mia-x.pag))}</td><td><span class="st ${x.e}">${EST[x.e]}</span></td></tr>`).join("")}</tbody></table>
   ${rows.length?"":`<div class="empty">Sin comisiones registradas en ${anio}${est?" con ese estatus":""}.</div>`}</div>
   <p class="hint" style="margin-top:12px">Las comisiones se pagan conforme el cliente liquida la operación. Si ves un dato que no cuadra, coméntalo en tu one-on-one.</p>`;
   $("#f-anio").onchange=e=>{anio=+e.target.value;render()};$("#f-est").onchange=e=>{est=e.target.value;render()};
