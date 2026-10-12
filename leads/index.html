@@ -1342,7 +1342,7 @@ function renderBase(){
   const page=rows.slice(basePage*PER, basePage*PER+PER);
   const fl=(l,k,lab,cls)=>`<button class="flag ${l[k]?"on":""} ${cls||""}" onclick="toggleFlag(${JSON.stringify(l.id)},'${k}')">${lab}</button>`;
   box.innerHTML=`<table><tr><th><button class="lnk" style="font-size:11px;color:var(--trust-gray)" onclick="baseAsc=!baseAsc;renderBase()">Fecha ${baseAsc?"↑":"↓"}</button></th><th>Días</th><th>Nombre</th><th>Teléfono</th><th>Canal</th><th>Proyecto</th><th>Asesor</th><th>Estatus</th><th></th></tr>`+
-    page.map(l=>`<tr><td class="m">${fmt(l.fecha)}/${l.fecha.slice(2,4)}</td><td>${diasDe(l)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span>${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}${lastNota(l)}</td><td class="m" style="white-space:nowrap">${esc(l.telefono||"—")}${waIcon(l)}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td>${asesorSel(l)}</td><td><div class="flags">${fl(l,"nc","NC","n")}${fl(l,"seguimiento","Seg.","s")}${fl(l,"cita","Cita","c")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"futuro","Fut.","f")}${fl(l,"perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div></td><td style="white-space:nowrap"><button class="x" title="Editar" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="x" title="Borrar este lead" onclick="del(${JSON.stringify(l.id)})">×</button></td></tr>`).join("")+`</table>`+
+    page.map(l=>`<tr><td class="m">${fmt(l.fecha)}/${l.fecha.slice(2,4)}</td><td>${diasDe(l)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span>${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}${lastNota(l)}</td><td class="m" style="white-space:nowrap">${esc(l.telefono||"—")}${waIcon(l)}</td><td>${esc(canalTxt(l))}</td><td>${proyectoSel(l)}</td><td>${asesorSel(l)}</td><td><div class="flags">${fl(l,"nc","NC","n")}${fl(l,"seguimiento","Seg.","s")}${fl(l,"cita","Cita","c")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"futuro","Fut.","f")}${fl(l,"perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div></td><td style="white-space:nowrap"><button class="x" title="Editar" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="x" title="Borrar este lead" onclick="del(${JSON.stringify(l.id)})">×</button></td></tr>`).join("")+`</table>`+
     (pages>1?`<div class="pager"><span>${basePage*PER+1}–${Math.min(rows.length,(basePage+1)*PER)} de ${rows.length}</span><div><button ${basePage===0?"disabled":""} onclick="basePage--;renderBase()">Anteriores</button><button ${basePage>=pages-1?"disabled":""} onclick="basePage++;renderBase()">Siguientes</button></div></div>`:"");
 }
 function exportBase(){
@@ -1439,6 +1439,16 @@ function asesorSel(l){
   const ases=ASESORES.filter(a=>a!=="Otro").concat([...new Set(leads.map(x=>x.asesor))].filter(x=>!ASESORES.includes(x)).sort());
   if(!ases.includes(l.asesor)) ases.push(l.asesor);
   return `<select class="mini cur" onchange="reasignar(${JSON.stringify(l.id)},this.value,this)">${ases.map(a=>`<option ${a===l.asesor?"selected":""}>${esc(a)}</option>`).join("")}</select>`;
+}
+function proyectoSel(l){
+  const ps=PROYECTOS.concat([...new Set(leads.map(x=>x.proyecto).filter(Boolean))].filter(x=>!PROYECTOS.includes(x)).sort());
+  if(l.proyecto&&!ps.includes(l.proyecto)) ps.push(l.proyecto);
+  return `<select class="mini cur" title="Cambiar de proyecto" onchange="cambiarProy(${JSON.stringify(l.id)},this.value,this)">${ps.map(p=>`<option ${p===l.proyecto?"selected":""}>${esc(p)}</option>`).join("")}</select>`;
+}
+async function cambiarProy(id, proyecto, el){
+  const l=leads.find(x=>x.id===id); if(!l || proyecto===l.proyecto) return;
+  if(!await ask(`¿Cambiar el lead de ${l.nombre} de ${l.proyecto||"sin proyecto"} a ${proyecto}?`, "Cambiar")){ if(el) el.value=l.proyecto; return; }
+  try{ await patch(id,{proyecto}); render(); toast(`Lead movido a ${proyecto}`); }catch(e){ toast("No se guardó: "+e.message, true); }
 }
 function reasignSel(l){
   const ases=ASESORES.filter(a=>a!=="Otro").concat([...new Set(leads.map(x=>x.asesor))].filter(x=>!ASESORES.includes(x)).sort()).filter(a=>a!==l.asesor);
