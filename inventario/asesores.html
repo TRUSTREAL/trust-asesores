@@ -403,15 +403,15 @@ const cotUrl=(p,u)=>{const o={proyecto:p.nombre,giro:p.giro,tipo:/preventa/i.tes
 const nivKey=v=>{const t=String(v??"").trim().toUpperCase();if(t==="PB"||t==="S"||t==="SÓTANO"||t==="SOTANO")return -1;if(t.startsWith("PH"))return 999;const n=parseFloat(t);return isNaN(n)?500:n};
 const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36);
 const isRenta=p=>/renta/i.test(p.giro||"");
-function filtActive(){return !!(filt.estatus||filt.torre||filt.tipo||filt.vista||filt.q)}
+function filtActive(){return !!(filt.estatus||filt.nivel||filt.vista||filt.recamaras||filt.q)}
 function visibleRows(p){
-  let rows=p.units.filter(u=>(!VENTAS||u.estatus==="Disponible")&&(!filt.estatus||u.estatus===filt.estatus)&&(!filt.torre||u.torre===filt.torre)&&(!filt.tipo||u.tipo===filt.tipo)&&(!filt.vista||u.vista===filt.vista)
+  let rows=p.units.filter(u=>(!VENTAS||u.estatus==="Disponible")&&(!filt.estatus||u.estatus===filt.estatus)&&(!filt.nivel||String(u.nivel??"")===filt.nivel)&&(!filt.vista||u.vista===filt.vista)&&(!filt.recamaras||String(u.recamaras??"")===filt.recamaras)
     &&(!filt.q||[u.tipo,u.torre,u.nivel,u.vista,u.parking,u.clave].join(" ").toLowerCase().includes(filt.q.toLowerCase())));
   if(sort.k){const k=sort.k,d=sort.dir==="asc"?1:-1;rows=[...rows].sort((a,b)=>{const pm=u=>u.m2tot?u.precio/u.m2tot:0;const x=k==="nivel"?nivKey(a[k]):k==="pm2"?pm(a):a[k]??"",y=k==="nivel"?nivKey(b[k]):k==="pm2"?pm(b):b[k]??"";return (typeof x==="number"&&typeof y==="number"?x-y:String(x).localeCompare(String(y),"es",{numeric:true}))*d})}
   return rows;
 }
 function counts(p){const c={Disponible:0,Apartado:0,Vendido:0,Bloqueado:0,Aportante:0,dispVal:0};p.units.forEach(u=>{c[u.estatus]=(c[u.estatus]||0)+1;if(u.estatus==="Disponible")c.dispVal+=u.precio||0});return c}
-let filt={q:"",estatus:"",torre:"",tipo:"",vista:""};
+let filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};
 let VENTAS=READONLY&&(()=>{try{return localStorage.getItem("inv_ventas")==="1"}catch(e){return false}})();
 let vista="precios"; // precios | politica | docs | ventas (solo admin)
 let vsort={k:"fecha_cierre",dir:"desc"};
@@ -462,8 +462,8 @@ function renderMain(){
       <i style="width:${c.Bloqueado/n*100}%;background:var(--st-bloq)"></i>
       <i style="width:${c.Aportante/n*100}%;background:var(--st-apor)"></i>
       <i style="width:${c.Disponible/n*100}%;background:var(--st-disp)"></i></div>`:""}`;
-  const opts=k=>[...new Set(p.units.map(u=>u[k]).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),"es",{numeric:true}));
-  const sel=(id,k,lbl)=>`<select id="${id}" data-k="${k}"><option value="">${lbl}</option>${opts(k).map(v=>`<option ${filt[k]===v?"selected":""}>${esc(v)}</option>`).join("")}</select>`;
+  const opts=k=>[...new Set(p.units.map(u=>u[k]).filter(v=>v!=null&&v!=="").map(String))].sort((a,b)=>k==="nivel"?nivKey(a)-nivKey(b)||a.localeCompare(b,"es",{numeric:true}):a.localeCompare(b,"es",{numeric:true}));
+  const sel=(id,k,lbl)=>`<select id="${id}" data-k="${k}"><option value="">${lbl}</option>${opts(k).map(v=>`<option value="${esc(v)}" ${filt[k]===v?"selected":""}>${esc(v)}</option>`).join("")}</select>`;
   const rows=visibleRows(p);
   const hasDesc=p.units.some(u=>u.m2desc>0);
   const th=(k,l,num)=>`<th data-k="${k}" ${sort.k===k?`data-dir="${sort.dir}"`:""} class="${num?"num":""}">${l}</th>`;
@@ -471,7 +471,7 @@ function renderMain(){
     <div class="filters">
       <input id="f-q" placeholder="Buscar…" value="${esc(filt.q)}">
       ${VENTAS?"":`<select id="f-estatus" data-k="estatus"><option value="">Estatus</option>${STATUSES.map(s=>`<option ${filt.estatus===s?"selected":""}>${s}</option>`).join("")}</select>`}
-      ${sel("f-torre","torre","Torre")}${sel("f-tipo","tipo","ID")}${sel("f-vista","vista","Vista")}
+      ${sel("f-vista","vista","Vista")}${sel("f-nivel","nivel","Nivel")}${sel("f-recamaras","recamaras","Recámaras")}
       <span class="count">${VENTAS?rows.length+" unidad"+(rows.length===1?"":"es"):rows.length+" de "+n}</span>
     </div>
     <div class="twrap"><table>
@@ -554,10 +554,10 @@ function openCierre(u){
 document.addEventListener("click",e=>{
   const t=e.target.closest("button");
   if(!t)return;
-  if(t.dataset.cat){S.cat=t.dataset.cat;filt={q:"",estatus:"",torre:"",tipo:"",vista:""};save();render();return}
+  if(t.dataset.cat){S.cat=t.dataset.cat;filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};save();render();return}
   if(t.id==="btn-ventas"){VENTAS=!VENTAS;try{localStorage.setItem("inv_ventas",VENTAS?"1":"0")}catch(e){}filt.estatus="";renderMain();return}
   if(t.id==="pbtn"){const pk=$("#picker");const open=pk.toggleAttribute("open");t.setAttribute("aria-expanded",open);if(open)($("#picker .pitem[aria-current='true']")||$("#picker .pitem"))?.focus();return}
-  if(t.classList.contains("pitem")){S.sel=t.dataset.id;vista="precios";delete docs[t.dataset.id];filt={q:"",estatus:"",torre:"",tipo:"",vista:""};sort={k:null,dir:"asc"};save();render();return}
+  if(t.classList.contains("pitem")){S.sel=t.dataset.id;vista="precios";delete docs[t.dataset.id];filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};sort={k:null,dir:"asc"};save();render();return}
   if(t.dataset.vista){vista=t.dataset.vista;renderMain();return}
   if(t.classList.contains("del-doc")){e.preventDefault();deleteDoc(S.sel,t.dataset.name);return}
   if(t.id==="btn-pdf")return listaPDF(S.projects.find(p=>p.id===S.sel));
@@ -598,7 +598,7 @@ function listaPDF(p){
   const filtered=filtActive();
   const rows=sort.k?visibleRows(p):[...visibleRows(p)].sort(defSort);   // exactamente lo que se ve en la tabla
   const mixed=rows.some(u=>u.estatus!=="Disponible");
-  const filtTxt=filtered?[filt.estatus,filt.torre?"Torre "+filt.torre:"",filt.tipo?"ID "+filt.tipo:"",filt.vista?"Vista "+filt.vista:"",filt.q?`"${filt.q}"`:""].filter(Boolean).join(" · "):"";
+  const filtTxt=filtered?[filt.estatus,filt.vista?"Vista "+filt.vista:"",filt.nivel?"Nivel "+filt.nivel:"",filt.recamaras?filt.recamaras+" rec.":"",filt.q?`"${filt.q}"`:""].filter(Boolean).join(" · "):"";
   const hasTorre=rows.some(u=>u.torre), hasVista=rows.some(u=>u.vista), hasTerr=rows.some(u=>u.m2terr>0), hasDescP=rows.some(u=>u.m2desc>0), hasPark=rows.some(u=>u.parking!=null), hasRec=rows.some(u=>u.recamaras!=null), hasBan=rows.some(u=>u.banos!=null);
   const hoy=new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"});
   const n2=v=>v==null||v===""?"—":(+v).toFixed(2);
@@ -874,6 +874,7 @@ loadAll().then(()=>{restoreUI();render();});
 if(sb){ setInterval(()=>{ if(!$("#drawer-root").innerHTML) loadAll().then(render); },60000);
   document.addEventListener("visibilitychange",()=>{ if(!document.hidden&&!$("#drawer-root").innerHTML) loadAll().then(render); }); }
 </script>
+
 
 
 </body>
