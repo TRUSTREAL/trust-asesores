@@ -281,6 +281,7 @@ select.st{padding-right:10px}
 <script>
 const READONLY=true; // asesores.html: true (solo consulta)
 const STATUSES=["Disponible","Apartado","Vendido","Bloqueado","Aportante"];
+const stLabel=(st,renta)=>st==="Vendido"&&renta?"Rentado":st; // en proyectos de renta (Neza, Epicentria…) "Vendido" se muestra como "Rentado"
 const KEY="inventario-trust-v1";
 
 // ---------- seed ----------
@@ -470,14 +471,14 @@ function renderMain(){
   const table=n?`
     <div class="filters">
       <input id="f-q" placeholder="Buscar…" value="${esc(filt.q)}">
-      ${VENTAS?"":`<select id="f-estatus" data-k="estatus"><option value="">Estatus</option>${STATUSES.map(s=>`<option ${filt.estatus===s?"selected":""}>${s}</option>`).join("")}</select>`}
+      ${VENTAS?"":`<select id="f-estatus" data-k="estatus"><option value="">Estatus</option>${STATUSES.map(s=>`<option value="${s}" ${filt.estatus===s?"selected":""}>${stLabel(s,renta)}</option>`).join("")}</select>`}
       ${sel("f-vista","vista","Vista")}${sel("f-nivel","nivel","Nivel")}${sel("f-recamaras","recamaras","Recámaras")}
       <span class="count">${VENTAS?rows.length+" unidad"+(rows.length===1?"":"es"):rows.length+" de "+n}</span>
     </div>
     <div class="twrap"><table>
       <thead><tr>${VENTAS?"":th("estatus","Estatus")}${th("tipo","ID")}${th("torre","Torre")}${th("nivel","Nivel",1)}${th("vista","Vista")}${th("recamaras","Rec.",1)}${th("banos","Baños",1)}${th("m2int","m² int.",1)}${th("m2terr","m² terr.",1)}${hasDesc?th("m2desc","m² s/techar",1):""}${th("m2tot","m² total",1)}${th("parking","Cajones",1)}${th("precio",renta?"Renta mensual":"Precio",1)}${th("pm2",renta?"Renta / m²":"Precio / m²",1)}${renta?"":`<th class="num eng">Enganche mín. ${eng}%</th>`}<th></th></tr></thead>
       <tbody>${rows.map(u=>`<tr data-id="${u.id}">
-        ${VENTAS?"":`<td>${READONLY?`<span class="st ${u.estatus}">${u.estatus}</span>`:`<select class="st ${u.estatus}" data-id="${u.id}" aria-label="Estatus">${STATUSES.map(s=>`<option ${u.estatus===s?"selected":""}>${s}</option>`).join("")}</select>`}</td>`}
+        ${VENTAS?"":`<td>${READONLY?`<span class="st ${u.estatus}">${stLabel(u.estatus,renta)}</span>`:`<select class="st ${u.estatus}" data-id="${u.id}" aria-label="Estatus">${STATUSES.map(s=>`<option value="${s}" ${u.estatus===s?"selected":""}>${stLabel(s,renta)}</option>`).join("")}</select>`}</td>`}
         <td class="type">${esc(u.tipo)}</td><td>${esc(u.torre)}</td><td class="num">${esc(u.nivel??"")}</td><td>${esc(u.vista)}</td><td class="num dim">${esc(u.recamaras??"")}</td><td class="num dim">${u.banos??""}</td>
         <td class="num dim">${u.m2int?.toFixed(2)??""}</td><td class="num dim">${u.m2terr?u.m2terr.toFixed(2):"–"}</td>${hasDesc?`<td class="num dim">${u.m2desc?(+u.m2desc).toFixed(2):"–"}</td>`:""}<td class="num tot">${u.m2tot?.toFixed(2)??""}</td>
         <td class="num">${u.parking??""}</td>${sold(u)?`<td class="num sold">${renta?"Rentado":"Vendido"}</td><td class="num dim">–</td>${renta?"":`<td class="num eng">–</td>`}`:`<td class="num price">${fmt(u.precio)}</td><td class="num dim">${u.m2tot?fmt(u.precio/u.m2tot):"–"}</td>${renta?"":`<td class="num eng">${fmt(u.precio*eng/100)}</td>`}`}
@@ -604,7 +605,7 @@ function listaPDF(p){
   const n2=v=>v==null||v===""?"—":(+v).toFixed(2);
   const money=v=>"$ "+Math.round(v).toLocaleString("es-MX");
   const th=[mixed?["Estatus"]:null,["ID"],hasTorre?["Torre"]:null,["Nivel","num"],hasVista?["Vista"]:null,hasRec?["Rec.","num"]:null,hasBan?["Baños","num"]:null,["m² int.","num"],hasTerr?["m² terraza","num"]:null,hasDescP?["m² s/techar","num"]:null,["m² total","num"],hasPark?["Cajones","num"]:null,[renta?"Renta mensual":"Precio","num strong"],[renta?"Renta / m²":"Precio / m²","num"],!renta?[`Enganche mín. ${eng}%`,"num eng"]:null].filter(Boolean);
-  const tr=rows.map(u=>[mixed?[esc(u.estatus),"stc "+u.estatus]:null,[esc(u.tipo),"tipo"],hasTorre?[esc(u.torre)]:null,[esc(u.nivel??""),"num"],hasVista?[esc(u.vista)]:null,hasRec?[esc(u.recamaras??""),"num"]:null,hasBan?[u.banos??"","num"]:null,[n2(u.m2int),"num dim"],hasTerr?[u.m2terr?n2(u.m2terr):"–","num dim"]:null,hasDescP?[u.m2desc?n2(u.m2desc):"–","num dim"]:null,[n2(u.m2tot),"num tot"],hasPark?[u.parking??"","num"]:null,...(sold(u)?[[renta?"Rentado":"Vendido","num dim"],["–","num dim"],!renta?["–","num eng"]:null]:[[money(u.precio),"num strong"],[u.m2tot?money(u.precio/u.m2tot):"–","num dim"],!renta?[money(u.precio*eng/100),"num eng"]:null])].filter(Boolean));
+  const tr=rows.map(u=>[mixed?[esc(stLabel(u.estatus,renta)),"stc "+u.estatus]:null,[esc(u.tipo),"tipo"],hasTorre?[esc(u.torre)]:null,[esc(u.nivel??""),"num"],hasVista?[esc(u.vista)]:null,hasRec?[esc(u.recamaras??""),"num"]:null,hasBan?[u.banos??"","num"]:null,[n2(u.m2int),"num dim"],hasTerr?[u.m2terr?n2(u.m2terr):"–","num dim"]:null,hasDescP?[u.m2desc?n2(u.m2desc):"–","num dim"]:null,[n2(u.m2tot),"num tot"],hasPark?[u.parking??"","num"]:null,...(sold(u)?[[renta?"Rentado":"Vendido","num dim"],["–","num dim"],!renta?["–","num eng"]:null]:[[money(u.precio),"num strong"],[u.m2tot?money(u.precio/u.m2tot):"–","num dim"],!renta?[money(u.precio*eng/100),"num eng"]:null])].filter(Boolean));
   const nota=renta?"":"Aparta tu unidad con $5,000 reembolsables.";
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Lista de precios · ${esc(p.nombre)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
@@ -832,7 +833,7 @@ function drawer(title,body,onSave,onDelete){
   const first=$("#d-form input,#d-form select");first&&first.focus();
 }
 const fld=(name,label,val="",attrs="",full=false)=>`<div class="f ${full?"full":""}"><label for="fx-${name}">${label}</label><input id="fx-${name}" name="${name}" value="${esc(val)}" ${attrs}></div>`;
-const fsel=(name,label,val,opts,full=false)=>`<div class="f ${full?"full":""}"><label for="fx-${name}">${label}</label><select id="fx-${name}" name="${name}">${opts.map(o=>`<option ${o===val?"selected":""}>${o}</option>`).join("")}</select></div>`;
+const fsel=(name,label,val,opts,full=false)=>`<div class="f ${full?"full":""}"><label for="fx-${name}">${label}</label><select id="fx-${name}" name="${name}">${opts.map(o=>{const [v,l]=Array.isArray(o)?o:[o,o];return `<option value="${v}" ${v===val?"selected":""}>${l}</option>`}).join("")}</select></div>`;
 
 function openProject(p){
   const giros=["Departamentos en preventa","Oficinas en renta","Oficinas en venta","Locales","Terrenos","Otro"];
@@ -851,7 +852,7 @@ function openProject(p){
 function openUnit(u){
   const p=S.projects.find(p=>p.id===S.sel), renta=isRenta(p);
   drawer(u?"Editar unidad":"Nueva unidad · "+p.nombre,
-    fsel("estatus","Estatus",u?.estatus||"Disponible",STATUSES)+
+    fsel("estatus","Estatus",u?.estatus||"Disponible",STATUSES.map(s=>[s,stLabel(s,renta)]))+
     fld("tipo","ID / prototipo",u?.tipo||"","required placeholder='101, C, PH1…'")+
     fld("torre","Torre / edificio",u?.torre||"")+
     fld("nivel","Nivel",u?.nivel??"","placeholder='PB, 1, 2… PH'")+
