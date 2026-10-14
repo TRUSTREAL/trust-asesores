@@ -884,13 +884,14 @@ tr.tot td{background:#173F35;color:#fff;font-weight:600;border-bottom:0}tr.tot t
 }
 
 /* ----- apartados ----- */
-let apView="vig";
+let apView="act"; // act = todos menos devueltos · dev = devueltos
 function renderApartados(){
   const el=$("#pane-apartados");
   const desc=(a,b)=>String(b.fecha).localeCompare(String(a.fecha));
   const vig=APARTADOS.filter(a=>(a.estatus||"vigente")==="vigente").sort(desc),sol=APARTADOS.filter(a=>a.estatus==="solicitado").sort(desc),aP=APARTADOS.filter(a=>inPeriodo(a.fecha)).sort(desc);
   const conv=aP.filter(a=>a.estatus==="venta"),caidos=aP.filter(a=>a.estatus==="devuelto"||a.estatus==="cancelado");
-  const rows=apView==="vig"?[...sol,...vig]:aP; // en Vigentes también se ven los que piden devolución, arriba
+  const act=APARTADOS.filter(a=>a.estatus!=="devuelto").sort((x,y)=>((y.estatus==="solicitado")-(x.estatus==="solicitado"))||desc(x,y)),dev=APARTADOS.filter(a=>a.estatus==="devuelto").sort(desc);
+  const rows=apView==="dev"?dev:act; // los que piden devolución van arriba
   const vmap={};VENTAS.forEach(v=>vmap[v.id]=v);
   el.innerHTML=`
   <div class="tiles">
@@ -900,11 +901,11 @@ function renderApartados(){
     <div class="tile"><span class="l">Devolución solicitada</span><span class="v" style="color:${sol.length?"var(--bad)":"var(--ok)"}">${sol.length}</span><span class="s">${sol.length?fmtK(sumM(sol))+" por regresar":"nadie ha pedido devolución"}</span></div>
     <div class="tile"><span class="l">Caídos</span><span class="v" style="color:${caidos.length?"var(--bad)":"var(--ok)"}">${caidos.length}</span><span class="s">devueltos o cancelados · ${periodoTxt()}</span></div>
   </div>
-  <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Apartados</h3><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="qseg" id="ap-seg"><button data-v="vig" class="${apView==="vig"?"on":""}">Vigentes · ${vig.length+sol.length}</button><button data-v="per" class="${apView==="per"?"on":""}">${periodoTxt()} · ${aP.length}</button></div><button class="btn sm primary" id="btn-ap">+ Apartado</button></div></div>
+  <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Apartados</h3><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="qseg" id="ap-seg"><button data-v="act" class="${apView==="act"?"on":""}">Activos · ${act.length}</button><button data-v="dev" class="${apView==="dev"?"on":""}">Devueltos · ${dev.length}</button></div><button class="btn sm primary" id="btn-ap">+ Apartado</button></div></div>
     <p class="hint" style="margin:6px 0 10px">Lo que el prospecto deja para apartar una unidad o propiedad. Cuando se firme, usa <b>→ Venta</b>: abre el registro de venta ya con sus datos y deja el apartado como convertido. <b>Solicitado</b> = el cliente pidió que le regresemos el apartado; cuando se le pague, pásalo a Devuelto. <b>Recibo</b> genera el PDF para mandarle al cliente.</p>
     ${TABLAS_OK.apartados?`<div class="twrap" style="border:0"><table><thead><tr><th>Fecha</th><th>Prospecto</th><th>Proyecto / propiedad</th><th>Asesor</th><th>Método de pago</th><th class="num">Monto</th><th>Estatus</th><th></th></tr></thead>
     <tbody>${rows.map(a=>{const e=a.estatus||"vigente";return `<tr class="${e==="vigente"||e==="solicitado"?"":"dimrow"}" style="${e==="solicitado"?"background:var(--bad-bg)":""}"><td class="dim">${fecha(a.fecha)}</td><td><b>${esc(a.prospecto)}</b>${a.notas?`<br><small class="dim">${esc(a.notas)}</small>`:""}</td><td>${esc(a.proyecto||"—")}${a.unidad?` <span class="dim">· ${esc(a.unidad)}</span>`:""}</td><td>${esc(a.asesor||"—")}</td><td class="dim">${esc(a.metodo||"—")}</td><td class="num money">${fmt(a.monto)}</td><td>${segG(a.id,Object.entries(AP_EST).map(([k,l])=>({k,l,cls:AP_CLS[k],t:AP_TIP[k]})),e)}${e==="solicitado"?`<br><small style="color:var(--bad);font-weight:600">Pidió devolución · ${fmt(a.monto)} por regresar</small>`:""}${e==="venta"&&a.venta_id&&vmap[a.venta_id]?`<br><small class="dim">venta de ${esc(vmap[a.venta_id].cliente)} · ${fechaM(vmap[a.venta_id].fecha)}</small>`:""}</td><td style="white-space:nowrap">${e==="vigente"?`<button class="btn sm primary ap-venta" data-id="${a.id}">→ Venta</button> `:""}<button class="btn sm ap-pdf" data-id="${a.id}" title="Recibo de apartado en PDF para el cliente">⤓ Recibo</button> <button class="ico edit-ap" data-id="${a.id}" title="Editar">✎</button></td></tr>`}).join("")}</tbody></table>
-    ${rows.length?"":`<div class="empty">${apView==="vig"?`<b>Sin apartados vigentes</b>Registra el siguiente con “+ Apartado”.`:`<b>Sin apartados</b>No hay apartados registrados en ${periodoTxt().toLowerCase()}.`}</div>`}</div>`:faltaTabla("apartados")}</div>`;
+    ${rows.length?"":`<div class="empty">${apView==="dev"?`<b>Sin devueltos</b>Ningún apartado se ha marcado como devuelto.`:`<b>Sin apartados activos</b>Registra el siguiente con “+ Apartado”.`}</div>`}</div>`:faltaTabla("apartados")}</div>`;
   el.querySelectorAll("#ap-seg button").forEach(b=>b.onclick=()=>{apView=b.dataset.v;renderApartados()});
   const nb=el.querySelector("#btn-ap");if(nb)nb.onclick=()=>openApartado(null);
   el.querySelectorAll(".edit-ap").forEach(b=>b.onclick=()=>openApartado(APARTADOS.find(a=>a.id===b.dataset.id)));
