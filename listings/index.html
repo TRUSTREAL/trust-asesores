@@ -275,10 +275,10 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
         <label class="dz" data-kind="cliente">⇪ Subir documentos del cliente<input type="file" multiple accept=".pdf,image/*"></label>
         <div class="doclist" id="docs-cliente"></div></div>
       <div class="sect"><h3>Fotos horizontales (5 a 20)</h3><p class="hint">Se enumeran en el orden en que las acomodes. Marca <b>Portada</b> e <b>Interior</b>: son las que usa la ficha.</p>
-        <label class="dz" data-kind="foto_h">⇪ Subir fotos horizontales<input type="file" multiple accept="image/*"></label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label class="dz" data-kind="foto_h" style="flex:1">⇪ Subir fotos horizontales<input type="file" multiple accept="image/*"></label><button type="button" class="btn dl-all" data-kind="foto_h" title="Descarga todas las fotos horizontales en un .zip">⤓ Descargar todas</button></div>
         <div class="photos" id="docs-foto_h"></div></div>
       <div class="sect"><h3>Fotos verticales para redes</h3>
-        <label class="dz" data-kind="foto_v">⇪ Subir fotos verticales<input type="file" multiple accept="image/*"></label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label class="dz" data-kind="foto_v" style="flex:1">⇪ Subir fotos verticales<input type="file" multiple accept="image/*"></label><button type="button" class="btn dl-all" data-kind="foto_v" title="Descarga todas las fotos verticales en un .zip">⤓ Descargar todas</button></div>
         <div class="photos" id="docs-foto_v"></div></div>
     </div>
 
@@ -523,7 +523,7 @@ function renderDocList(kind){
   const list=docsOf(cur.id,kind);
   if(kind==="foto_h"||kind==="foto_v"){
     el.innerHTML=list.map((d,i)=>`<div class="pho ${kind==="foto_v"?"v":""}" data-id="${d.id}"><img src="${pubUrl(d.path)}" loading="lazy"><span class="n">${i+1}</span>${d.etiqueta?`<span class="tag">${d.etiqueta}</span>`:""}
-      <div class="tools">${kind==="foto_h"?`<button data-act="portada" title="Marcar como portada">★</button><button data-act="interior" title="Marcar como interior">◧</button>`:""}<button data-act="up" title="Mover antes">‹</button><button data-act="down" title="Mover después">›</button><button data-act="del" title="Eliminar">×</button></div></div>`).join("")||`<div class="hint">Sin fotos todavía.</div>`;
+      <div class="tools"><button data-act="dl" title="Descargar esta foto">⤓</button>${kind==="foto_h"?`<button data-act="portada" title="Marcar como portada">★</button><button data-act="interior" title="Marcar como interior">◧</button>`:""}<button data-act="up" title="Mover antes">‹</button><button data-act="down" title="Mover después">›</button><button data-act="del" title="Eliminar">×</button></div></div>`).join("")||`<div class="hint">Sin fotos todavía.</div>`;
   } else {
     el.innerHTML=list.map(d=>`<div class="doc" data-id="${d.id}">📄 <a href="${pubUrl(d.path)}" target="_blank" rel="noopener">${esc(d.nombre)}</a><span class="hint">${fecha(d.created_at)}</span><button class="x" data-act="del" title="Eliminar">×</button></div>`).join("")||`<div class="hint">Nada subido todavía.</div>`;
   }
@@ -531,11 +531,32 @@ function renderDocList(kind){
 document.addEventListener("click",async e=>{
   const b=e.target.closest("[data-act]");if(!b||!b.closest(".pho,.doc"))return;
   const id=b.closest("[data-id]").dataset.id,act=b.dataset.act;const list=DOCS[cur.id]||[];const d=list.find(x=>x.id===id);if(!d)return;
+  if(act==="dl"){descargarFoto(d,list.filter(x=>x.tipo===d.tipo).indexOf(d)+1);return}
   if(act==="del"){if(!confirm("¿Eliminar este archivo?"))return;await sb.storage.from(BUCKET).remove([d.path]);await sb.from("listing_docs").delete().eq("id",id);DOCS[cur.id]=list.filter(x=>x.id!==id)}
   else if(act==="portada"||act==="interior"){const prev=list.filter(x=>x.tipo===d.tipo&&x.etiqueta===act);for(const p of prev){p.etiqueta=null;await sb.from("listing_docs").update({etiqueta:null}).eq("id",p.id)}d.etiqueta=act;await sb.from("listing_docs").update({etiqueta:act}).eq("id",id)}
   else if(act==="up"||act==="down"){const same=list.filter(x=>x.tipo===d.tipo).sort((a,b)=>a.orden-b.orden);const i=same.indexOf(d),j=act==="up"?i-1:i+1;if(j<0||j>=same.length)return;[same[i].orden,same[j].orden]=[same[j].orden,same[i].orden];await sb.from("listing_docs").update({orden:same[i].orden}).eq("id",same[i].id);await sb.from("listing_docs").update({orden:same[j].orden}).eq("id",same[j].id);DOCS[cur.id]=list.slice().sort((a,b)=>a.orden-b.orden)}
   renderDocs();renderProgress();renderActions();
 });
+
+/* ---------- descarga de fotos ---------- */
+const fotoNombre=(d,i)=>{const base=(cur.titulo||"TRUST").replace(/[^\wáéíóúñÁÉÍÓÚÑ]+/gi,"_").slice(0,40);const ext=(d.path.match(/\.([a-z0-9]{3,4})$/i)||[,"jpg"])[1].toLowerCase();return `${base}_${d.tipo==="foto_v"?"V":"H"}${String(i).padStart(2,"0")}${d.etiqueta?"_"+d.etiqueta:""}.${ext}`};
+async function blobDe(d){const r=await fetch(pubUrl(d.path));if(!r.ok)throw new Error("No se pudo leer la foto");return r.blob()}
+function bajar(blob,name){const u=URL.createObjectURL(blob);const a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
+async function descargarFoto(d,i){try{bajar(await blobDe(d),fotoNombre(d,i));toast("Descargando foto")}catch(e){window.open(pubUrl(d.path),"_blank")}}
+function cargarJSZip(){return window.JSZip?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
+async function descargarTodas(kind){
+  const list=docsOf(cur.id,kind);if(!list.length){toast("No hay fotos en esta sección",true);return}
+  const b=document.querySelector(`.dl-all[data-kind="${kind}"]`);if(b){b.disabled=true;b.textContent="Preparando…"}
+  try{
+    await cargarJSZip();const zip=new JSZip();let n=0;
+    for(const d of list){try{zip.file(fotoNombre(d,++n),await blobDe(d))}catch(e){}}
+    const blob=await zip.generateAsync({type:"blob"});
+    bajar(blob,`${(cur.titulo||"TRUST").replace(/[^\wáéíóúñÁÉÍÓÚÑ]+/gi,"_").slice(0,40)}_fotos_${kind==="foto_v"?"verticales":"horizontales"}.zip`);
+    toast(`${n} foto${n===1?"":"s"} en el .zip`);
+  }catch(e){toast("No se pudo armar el .zip; descarga una por una con ⤓",true)}
+  if(b){b.disabled=false;b.textContent="⤓ Descargar todas"}
+}
+document.addEventListener("click",e=>{const b=e.target.closest(".dl-all");if(b)descargarTodas(b.dataset.kind)});
 
 /* ---------- ficha ---------- */
 function latlng(url){
