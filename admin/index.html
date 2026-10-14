@@ -41,6 +41,7 @@ a.tool:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .tool h2{font-family:Lora,Georgia,serif;font-weight:500;font-size:21px;color:var(--green);margin-bottom:6px}
 .tool p{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:16px;flex:1}
 .tool .go{font-size:13px;font-weight:500;color:var(--green)}
+.tool{position:relative}.badge{position:absolute;top:14px;right:16px;min-width:26px;height:26px;padding:0 8px;border-radius:999px;background:#A8342A;color:#fff;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(168,52,42,.35)}.badge[hidden]{display:none}.tool .sub{display:block;font-size:12px;color:#A8342A;font-weight:600;margin-top:-4px;margin-bottom:8px}
 .tool .go::after{content:" →"}
 .soon{margin-top:32px;padding-top:20px;border-top:1px solid var(--line)}
 .soon h3{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px}
@@ -82,9 +83,11 @@ a.tool:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
       <p>Seguimiento lead por lead de los prospectos próximos al cierre: monto, comisión proyectada, apartado y estatus.</p>
       <span class="go">Entrar</span>
     </a>
-    <a class="tool" href="../listings/">
+    <a class="tool" href="../listings/" id="card-listings">
+      <span class="badge" id="b-list" hidden></span>
       <div class="ic"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></svg></div>
       <h2>Listings</h2>
+      <span class="sub" id="b-list-sub" hidden></span>
       <p>Tablero de alta de propiedades: por verificar, ficha por hacer, activos. Liga de Easy Broker y lona.</p>
       <span class="go">Entrar</span>
     </a>
@@ -97,5 +100,21 @@ a.tool:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   </div>
 
 <div class="foot">TRUST realtor · administración · uso interno</div>
+<script>
+// Aviso de listings pendientes (por verificar / ficha por hacer) y nuevos desde la última visita
+(async()=>{
+  const URL="https://xshhjvdmkuqesdlvczbb.supabase.co",KEY="sb_publishable_5erZfpELyuncW1nrReTaZw_BQj0bc-P";
+  const badge=document.getElementById("b-list"),sub=document.getElementById("b-list-sub"),card=document.getElementById("card-listings");
+  let seen="";try{seen=localStorage.getItem("adm_listings_seen")||""}catch(e){}
+  card.addEventListener("click",()=>{try{localStorage.setItem("adm_listings_seen",new Date().toISOString())}catch(e){}});
+  try{
+    const r=await fetch(URL+"/rest/v1/listings?select=estatus,created_at,easybroker_url",{headers:{apikey:KEY,Authorization:"Bearer "+KEY}});
+    const L=await r.json();if(!Array.isArray(L))return;
+    const ver=L.filter(l=>l.estatus==="verificacion").length,fic=L.filter(l=>l.estatus==="ficha").length,nuevos=seen?L.filter(l=>l.created_at>seen).length:0;
+    const pend=ver+fic;const parts=[];if(ver)parts.push(ver+" por verificar");if(fic)parts.push(fic+" ficha por hacer");if(nuevos)parts.push(nuevos+" nuevo"+(nuevos===1?"":"s")+" desde tu última visita");
+    if(pend||nuevos){badge.textContent=pend||nuevos;badge.hidden=false;badge.title=parts.join(" · ");sub.textContent=parts.join(" · ");sub.hidden=false}
+  }catch(e){}
+})();
+</script>
 </body>
 </html>
