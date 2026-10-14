@@ -204,7 +204,10 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 $("#logo-img").src="data:image/png;base64,"+LOGO_B64;
 let tt; function toast(m,err){const t=$("#toast");t.textContent=m;t.classList.toggle("err",!!err);t.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("show"),err?3600:2200);}
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const fmt=v=>v==null||v===""||isNaN(v)?"—":"$ "+Math.round(+v).toLocaleString("es-MX");
+const hasCents=v=>Math.round(Math.abs(+v)*100)%100!==0;
+const fmt=v=>v==null||v===""||isNaN(v)?"—":"$ "+(+v).toLocaleString("es-MX",{minimumFractionDigits:hasCents(v)?2:0,maximumFractionDigits:2});
+const fmtN=v=>v==null||v===""||isNaN(v)?"":(+v).toLocaleString("es-MX",{minimumFractionDigits:hasCents(v)?2:0,maximumFractionDigits:2}); // sin signo, para inputs
+const EPS=0.005; // tolerancia con centavos
 const fmtK=v=>Math.abs(v)>=1e6?"$ "+(v/1e6).toFixed(2).replace(/\.?0+$/,"")+" M":fmt(v);
 const num=s=>{const x=parseFloat(String(s??"").replace(/[^0-9.\-]/g,""));return isNaN(x)?null:x};
 const pct=(n,d)=>d?Math.round(n/d*100)+"%":"—";
@@ -231,7 +234,7 @@ async function loadAll(){
 }
 const comTotal=v=>v.comision_monto!=null?+v.comision_monto:(+v.monto||0)*(+v.comision_pct||0)/100;
 // Cobranza: estatus manual por venta (independiente del pago a asesores)
-const estatusDe=v=>{const cob=typeof cobradoDe==="function"?cobradoDe(v.id):0;if(cob>0)return cob+0.5>=comTotal(v)?"pagada":"parcial";return v.cobro_estatus||"pendiente"};
+const estatusDe=v=>{const cob=typeof cobradoDe==="function"?cobradoDe(v.id):0;if(cob>0)return cob+EPS>=comTotal(v)?"pagada":"parcial";return v.cobro_estatus||"pendiente"};
 const EST_LABEL={pendiente:"Pendiente",parcial:"Pago parcial",pagada:"Pagada"};
 // Pagos a beneficiarios por venta
 const pagadoDe=(n,vid)=>PAGOS.filter(p=>p.beneficiario===n&&p.venta_id===vid).reduce((a,p)=>a+(+p.monto||0),0);
@@ -495,7 +498,7 @@ function renderCobranza(){
   <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Cobranza · ${periodoTxt()}</h3><div class="qseg" id="cb-seg"><button data-v="pend" class="${cobView==="pend"?"on":""}">Pendientes · ${pend.length+parc.length}</button><button data-v="pag" class="${cobView==="pag"?"on":""}">Cobradas · ${pag.length}</button></div></div>
     <p class="hint" style="margin:6px 0 10px">Lo que el desarrollador / cliente nos ha pagado por cada venta. "Pago parcial" registra un cobro con monto (en Cobradas sirve para corregir una venta que en realidad fue parcial); "Pagada" liquida el resto. Independiente del pago a asesores.</p>
     <div class="twrap" style="border:0"><table><thead><tr><th>Mes</th><th>Cliente</th><th>Proyecto</th><th>Asesor</th><th class="num">Comisión</th><th class="num">Cobrado</th><th class="num">Pendiente</th><th>Estatus de cobro</th></tr></thead>
-    <tbody>${rows.map(v=>{const tot=comTotal(v),cob=cobradoFx(v),pd=Math.max(0,tot-cob),n=cobrosDe(v.id).length;return `<tr class="${estatusDe(v)==="pagada"?"dimrow":""}"><td class="dim">${fechaM(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${esCredito(v)?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(v.proyecto)}${v.unidad?` <span class="dim">· ${esc(v.unidad)}</span>`:""}</td><td>${esc(v.asesor)}</td><td class="num com">${fmt(tot)}</td><td class="num ${cob?"paid":""}">${fmt(cob)}${n?` <button class="ico cobs" data-id="${v.id}" title="Ver cobros">${n}</button>`:""}</td><td class="num money" style="color:${pd>0.5?"var(--bad)":"var(--ok)"}">${fmt(pd)}</td><td>${seg(v)}</td></tr>`}).join("")}</tbody></table>
+    <tbody>${rows.map(v=>{const tot=comTotal(v),cob=cobradoFx(v),pd=Math.max(0,tot-cob),n=cobrosDe(v.id).length;return `<tr class="${estatusDe(v)==="pagada"?"dimrow":""}"><td class="dim">${fechaM(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${esCredito(v)?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(v.proyecto)}${v.unidad?` <span class="dim">· ${esc(v.unidad)}</span>`:""}</td><td>${esc(v.asesor)}</td><td class="num com">${fmt(tot)}</td><td class="num ${cob?"paid":""}">${fmt(cob)}${n?` <button class="ico cobs" data-id="${v.id}" title="Ver cobros">${n}</button>`:""}</td><td class="num money" style="color:${pd>EPS?"var(--bad)":"var(--ok)"}">${fmt(pd)}</td><td>${seg(v)}</td></tr>`}).join("")}</tbody></table>
     ${rows.length?"":`<div class="empty">${cobView==="pag"?`<b>Sin cobradas</b>Todavía no hay ventas cobradas por completo en ${periodoTxt().toLowerCase()}.`:`<b>Todo cobrado</b>No hay ventas por cobrar en ${periodoTxt().toLowerCase()}.`}</div>`}</div></div>
   ${otrosHTML()}`;
   wireOtros(el);
@@ -510,7 +513,7 @@ function renderCobranza(){
         renderCobranza();}
       openCobro(v);return}
     if(estatusDe(v)===k)return;
-    if(k==="pagada"){const falta=comTotal(v)-cobradoDe(v.id);if(falta>0.5){const r=await sb.from("ventas_cobros").insert({venta_id:v.id,fecha:todayISO(),monto:falta,concepto:"Liquidación"}).select().single();if(r.error){toast("No se guardó: "+r.error.message,true);return}COBROS.push(r.data)}}
+    if(k==="pagada"){const falta=comTotal(v)-cobradoDe(v.id);if(falta>EPS){const r=await sb.from("ventas_cobros").insert({venta_id:v.id,fecha:todayISO(),monto:falta,concepto:"Liquidación"}).select().single();if(r.error){toast("No se guardó: "+r.error.message,true);return}COBROS.push(r.data)}}
     if(k==="pendiente"&&cobrosDe(v.id).length){if(!confirm("¿Regresar a pendiente? Se borran los cobros registrados de esta venta."))return;const r=await sb.from("ventas_cobros").delete().eq("venta_id",v.id);if(r.error){toast(r.error.message,true);return}COBROS=COBROS.filter(c=>c.venta_id!==v.id)}
     const r=await sb.from("ventas").update({cobro_estatus:k}).eq("id",id);if(r.error){toast("No se guardó: "+r.error.message,true);return}v.cobro_estatus=k;toast(k==="pagada"?"Marcada como cobrada":"Estatus actualizado");renderCobranza()});
 }
@@ -520,21 +523,21 @@ function openCobro(v){
   root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(480px,100%)">
     <header><h3>Cobro · ${esc(v.cliente)}</h3><button class="ico" id="d-close">✕</button></header>
     <div class="body">
-      <p style="margin:0 0 12px"><b>${esc(v.proyecto||"")}</b>${v.unidad?" · "+esc(v.unidad):""} · ${fechaM(v.fecha)}<br><span class="dim">Comisión ${fmt(tot)} · cobrado ${fmt(cob)} · <b style="color:${falta>0.5?"var(--bad)":"var(--ok)"}">pendiente ${fmt(falta)}</b></span></p>
+      <p style="margin:0 0 12px"><b>${esc(v.proyecto||"")}</b>${v.unidad?" · "+esc(v.unidad):""} · ${fechaM(v.fecha)}<br><span class="dim">Comisión ${fmt(tot)} · cobrado ${fmt(cob)} · <b style="color:${falta>EPS?"var(--bad)":"var(--ok)"}">pendiente ${fmt(falta)}</b></span></p>
       ${list.length?`<table class="disp" style="margin-bottom:12px"><thead><tr><th>Fecha</th><th>Concepto</th><th class="num">Monto</th><th></th></tr></thead><tbody>${list.map(c=>`<tr><td class="dim">${fecha(c.fecha)}</td><td>${esc(c.concepto||"")}</td><td class="num">${fmt(c.monto)}</td><td><button class="ico delcob" data-id="${c.id}" title="Eliminar cobro">×</button></td></tr>`).join("")}</tbody></table>`:""}
-      ${falta>0.5||true?`<div class="fg">
+      ${falta>EPS||true?`<div class="fg">
         <div class="f c6"><label>Fecha del cobro</label><input type="date" id="cb-fecha" value="${todayISO()}"></div>
-        <div class="f c6"><label>Monto cobrado</label><input id="cb-m" inputmode="numeric" value="${falta>0.5?Math.round(falta).toLocaleString("es-MX"):""}"></div>
+        <div class="f c6"><label>Monto cobrado</label><input id="cb-m" inputmode="decimal" value="${falta>EPS?fmtN(falta):""}"></div>
         <div class="f c12"><label>Concepto</label><input id="cb-nota" placeholder="Anticipo, firma, escritura…"></div>
       </div>
-      <p class="hint" style="margin-top:10px">${falta>0.5?"Si el monto es menor al pendiente queda como pago parcial; si lo cubre, la venta pasa a cobrada.":"Esta venta ya está cobrada por completo. Si fue parcial, borra el cobro que sobra con × y registra el monto real."}</p>`:""}</div>
+      <p class="hint" style="margin-top:10px">${falta>EPS?"Si el monto es menor al pendiente queda como pago parcial; si lo cubre, la venta pasa a cobrada.":"Esta venta ya está cobrada por completo. Si fue parcial, borra el cobro que sobra con × y registra el monto real."}</p>`:""}</div>
     <footer><span></span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cerrar</button><button class="btn primary" id="d-save">Registrar cobro</button></span></footer></div>`;
   const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
   root.querySelectorAll(".delcob").forEach(b=>b.onclick=async()=>{if(!confirm("¿Eliminar este cobro?"))return;const r=await sb.from("ventas_cobros").delete().eq("id",b.dataset.id);if(r.error){toast(r.error.message,true);return}COBROS=COBROS.filter(c=>c.id!==b.dataset.id);
-    const k=cobradoDe(v.id)<=0?"pendiente":cobradoDe(v.id)+0.5>=tot?"pagada":"parcial";await sb.from("ventas").update({cobro_estatus:k}).eq("id",v.id);v.cobro_estatus=k;openCobro(v);render()});
+    const k=cobradoDe(v.id)<=0?"pendiente":cobradoDe(v.id)+EPS>=tot?"pagada":"parcial";await sb.from("ventas").update({cobro_estatus:k}).eq("id",v.id);v.cobro_estatus=k;openCobro(v);render()});
   const sv=$("#d-save");if(sv)sv.onclick=async()=>{const m=num($("#cb-m").value);if(!m||m<=0){toast("Falta el monto",true);return}
     const r=await sb.from("ventas_cobros").insert({venta_id:v.id,fecha:$("#cb-fecha").value||todayISO(),monto:m,concepto:$("#cb-nota").value.trim()||null}).select().single();if(r.error){toast("No se guardó: "+r.error.message,true);return}
-    COBROS.push(r.data);const k=cobradoDe(v.id)+0.5>=tot?"pagada":"parcial";const r2=await sb.from("ventas").update({cobro_estatus:k}).eq("id",v.id);if(!r2.error)v.cobro_estatus=k;
+    COBROS.push(r.data);const k=cobradoDe(v.id)+EPS>=tot?"pagada":"parcial";const r2=await sb.from("ventas").update({cobro_estatus:k}).eq("id",v.id);if(!r2.error)v.cobro_estatus=k;
     close();toast(k==="pagada"?"Cobro registrado · venta cobrada":"Cobro parcial registrado");render()};
 }
 
@@ -543,7 +546,7 @@ let verPagadas=false;
 function lineasCom(){
   const out=[];
   VENTAS.forEach(v=>{const tot=comTotal(v);(v.dispersion||[]).forEach(p=>{if(!p.nombre||p.nombre===EX)return;const mia=partAmt(p,tot);if(!mia)return;const k=p.nombre+"|"+v.id;let L=out.find(x=>x.k===k);if(!L){L={k,n:p.nombre,v,roles:[],mia:0,pag:pagadoDe(p.nombre,v.id)};out.push(L)}L.roles.push(p.rol);L.mia+=mia})});
-  out.forEach(L=>{L.e=L.pag+0.5>=L.mia?"pagada":L.pag>0.5?"parcial":"pendiente"});
+  out.forEach(L=>{L.e=L.pag+EPS>=L.mia?"pagada":L.pag>EPS?"parcial":"pendiente"});
   return out;
 }
 function renderComisiones(){
@@ -566,8 +569,8 @@ function renderComisiones(){
   <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Comisiones por pagar</h3><label class="chk" style="padding:0"><input type="checkbox" id="cm-all" ${verPagadas?"checked":""} style="width:auto"> Ver pagadas del periodo</label></div>
     <p class="hint" style="margin:6px 0 10px">Una línea por persona y venta. La comisión nace al registrar la venta; aquí marcas cuándo se le pagó. No depende de la cobranza. Las partidas de <b>EX</b> (asesores que ya no están) no se listan: se consideran liquidadas.</p>
     <div class="twrap" style="border:0"><table><thead><tr><th>Beneficiario</th><th>Venta</th><th>Rol</th><th class="num">Comisión</th><th class="num">Pagado</th><th class="num">Pendiente</th><th>Estatus</th><th></th></tr></thead>
-    <tbody>${(()=>{const subt=(n,g)=>{const mia=g.reduce((a,L)=>a+L.mia,0),pag=g.reduce((a,L)=>a+L.pag,0),pend=mia-pag;return `<tr class="subt"><td class="lbl">Subtotal</td><td>${esc(n)} · ${g.length} partida${g.length===1?"":"s"}</td><td></td><td class="num com">${fmt(mia)}</td><td class="num paid">${fmt(pag)}</td><td class="num money" style="color:${pend>0.5?"var(--bad)":"var(--ok)"}">${fmt(pend)}</td><td></td><td></td></tr>`};
-      let html="",grp=[];rows.forEach((L,i)=>{const first=L.n!==lastN;if(first&&grp.length){html+=subt(lastN,grp);grp=[]}lastN=L.n;grp.push(L);const pend=L.mia-L.pag;html+=`<tr class="${L.e==="pagada"?"dimrow":""}"><td>${first?`<b>${esc(L.n)}</b>`:""}</td><td>${esc(L.v.cliente)}<br><small class="dim">${esc(L.v.proyecto||"")}${L.v.unidad?" · "+esc(L.v.unidad):""} · ${fechaM(L.v.fecha)}</small></td><td class="dim">${esc(L.roles.join(" + "))}</td><td class="num com">${fmt(L.mia)}</td><td class="num ${L.pag?"paid":""}">${fmt(L.pag)}</td><td class="num money" style="color:${pend>0.5?"var(--bad)":"var(--ok)"}">${fmt(pend)}</td><td><span class="st ${L.e}">${EST_LABEL[L.e]}</span></td><td style="white-space:nowrap">${pend>0.5?`<button class="btn sm primary pay" data-k="${esc(L.k)}">Pagar</button>`:""}</td></tr>`});
+    <tbody>${(()=>{const subt=(n,g)=>{const mia=g.reduce((a,L)=>a+L.mia,0),pag=g.reduce((a,L)=>a+L.pag,0),pend=mia-pag;return `<tr class="subt"><td class="lbl">Subtotal</td><td>${esc(n)} · ${g.length} partida${g.length===1?"":"s"}</td><td></td><td class="num com">${fmt(mia)}</td><td class="num paid">${fmt(pag)}</td><td class="num money" style="color:${pend>EPS?"var(--bad)":"var(--ok)"}">${fmt(pend)}</td><td></td><td></td></tr>`};
+      let html="",grp=[];rows.forEach((L,i)=>{const first=L.n!==lastN;if(first&&grp.length){html+=subt(lastN,grp);grp=[]}lastN=L.n;grp.push(L);const pend=L.mia-L.pag;html+=`<tr class="${L.e==="pagada"?"dimrow":""}"><td>${first?`<b>${esc(L.n)}</b>`:""}</td><td>${esc(L.v.cliente)}<br><small class="dim">${esc(L.v.proyecto||"")}${L.v.unidad?" · "+esc(L.v.unidad):""} · ${fechaM(L.v.fecha)}</small></td><td class="dim">${esc(L.roles.join(" + "))}</td><td class="num com">${fmt(L.mia)}</td><td class="num ${L.pag?"paid":""}">${fmt(L.pag)}</td><td class="num money" style="color:${pend>EPS?"var(--bad)":"var(--ok)"}">${fmt(pend)}</td><td><span class="st ${L.e}">${EST_LABEL[L.e]}</span></td><td style="white-space:nowrap">${pend>EPS?`<button class="btn sm primary pay" data-k="${esc(L.k)}">Pagar</button>`:""}</td></tr>`});
       if(grp.length)html+=subt(lastN,grp);
       if(rows.length){const mia=rows.reduce((a,L)=>a+L.mia,0),pag=rows.reduce((a,L)=>a+L.pag,0);html+=`<tr class="gtot"><td>Total</td><td>${[...new Set(rows.map(L=>L.n))].length} persona${[...new Set(rows.map(L=>L.n))].length===1?"":"s"} · ${rows.length} partidas</td><td></td><td class="num com">${fmt(mia)}</td><td class="num paid">${fmt(pag)}</td><td class="num money">${fmt(mia-pag)}</td><td></td><td></td></tr>`}
       return html})()}</tbody></table>
@@ -581,17 +584,17 @@ function renderComisiones(){
 function openPago(L){
   const pend=L.mia-L.pag;const root=$("#drawer-root");
   const tot=comTotal(L.v),cob=cobradoFx(L.v),frac=tot?Math.min(1,cob/tot):0;const prop=Math.max(0,Math.min(pend,L.mia*frac-L.pag));
-  const sug=cob>0&&prop>0.5?prop:pend;
+  const sug=cob>0&&prop>EPS?prop:pend;
   root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(480px,100%)">
     <header><h3>Pagar a ${esc(L.n)}</h3><button class="ico" id="d-close">✕</button></header>
     <div class="body">
       <p style="margin:0 0 12px"><b>${esc(L.v.cliente)}</b> · ${esc(L.v.proyecto||"")} · ${fechaM(L.v.fecha)}<br><span class="dim">${esc(L.roles.join(" + "))} · comisión ${fmt(L.mia)} · pagado ${fmt(L.pag)}</span></p>
       <div class="fg">
         <div class="f c6"><label>Fecha de pago</label><input type="date" id="pg-fecha" value="${todayISO()}"></div>
-        <div class="f c6"><label>Monto</label><input id="pg-m" inputmode="numeric" value="${Math.round(sug).toLocaleString("es-MX")}"></div>
+        <div class="f c6"><label>Monto</label><input id="pg-m" inputmode="decimal" value="${fmtN(sug)}"></div>
         <div class="f c12"><label>Nota</label><input id="pg-nota" placeholder="Transferencia, efectivo…"></div>
       </div>
-      <p class="hint" style="margin-top:10px">Pendiente de pagarle: <b>${fmt(pend)}</b>.${cob>0?` De esta venta hemos cobrado el ${Math.round(frac*100)}% (${fmt(cob)} de ${fmt(tot)}); la parte proporcional que le toca es <b>${fmt(prop)}</b>${prop>0.5?" (sugerido)":" (ya está cubierta)"}.`:" Aún no hemos cobrado nada de esta venta."} Si pagas menos del pendiente queda como pago parcial.</p></div>
+      <p class="hint" style="margin-top:10px">Pendiente de pagarle: <b>${fmt(pend)}</b>.${cob>0?` De esta venta hemos cobrado el ${Math.round(frac*100)}% (${fmt(cob)} de ${fmt(tot)}); la parte proporcional que le toca es <b>${fmt(prop)}</b>${prop>EPS?" (sugerido)":" (ya está cubierta)"}.`:" Aún no hemos cobrado nada de esta venta."} Si pagas menos del pendiente queda como pago parcial.</p></div>
     <footer><span></span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cancelar</button><button class="btn primary" id="d-save">Registrar pago</button></span></footer></div>`;
   const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
   $("#d-save").onclick=async()=>{const m=num($("#pg-m").value);if(!m||m<=0){toast("Falta el monto",true);return}
@@ -692,7 +695,7 @@ function openOtro(o){
       <div class="f c6"><label>Categoría</label><input id="o-cat" list="dl-ocat" value="${esc(o.categoria||"")}" placeholder="Marketing, Pauta digital…">${dlist("dl-ocat",OTROS_CAT)}</div>
       <div class="f c12"><label>Cliente / quién paga</label><input id="o-cliente" value="${esc(o.cliente||"")}" placeholder="Desarrollador, cliente, empresa…"></div>
       <div class="f c12"><label>Concepto</label><input id="o-conc" value="${esc(o.concepto||"")}" placeholder="Ej. Pauta digital Tanhia octubre, asesoría de valuación…"></div>
-      <div class="f c6"><label>Monto</label><input id="o-monto" inputmode="numeric" value="${o.monto!=null?fmt(o.monto):""}" placeholder="$ 0"></div>
+      <div class="f c6"><label>Monto</label><input id="o-monto" inputmode="decimal" value="${o.monto!=null?fmt(o.monto):""}" placeholder="$ 0"></div>
       <div class="f c6"><label class="chk" style="padding:0;margin-top:22px"><input type="checkbox" id="o-cob" ${o.cobrado?"checked":""} style="width:auto"> Ya se cobró</label></div>
       <div class="f c6" id="o-fc-box" style="${o.cobrado?"":"display:none"}"><label>Fecha de cobro</label><input type="date" id="o-fc" value="${esc(o.fecha_cobro||todayISO())}"></div>
       <div class="f c12"><label>Notas</label><textarea id="o-notas" rows="2">${esc(o.notas||"")}</textarea></div>
@@ -715,7 +718,7 @@ function openOtro(o){
 let gView="pend";
 const gPagosDe=id=>GPAGOS.filter(p=>p.gasto_id===id).sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));
 const gPagadoDe=g=>{const l=gPagosDe(g.id);return l.length?l.reduce((a,p)=>a+(+p.monto||0),0):(g.pagado?(+g.monto||0):0)};
-const gEst=g=>{const pag=gPagadoDe(g),m=+g.monto||0;return pag+0.5>=m&&m>0?"pagado":pag>0.5?"parcial":"pendiente"};
+const gEst=g=>{const pag=gPagadoDe(g),m=+g.monto||0;return pag+EPS>=m&&m>0?"pagado":pag>EPS?"parcial":"pendiente"};
 const G_LABEL={pendiente:"Por pagar",parcial:"Pago parcial",pagado:"Pagado"};
 const gFechaPago=g=>{const l=gPagosDe(g.id);return l.length?l[l.length-1].fecha:g.fecha_pago};
 async function gSync(g){ // mantiene pagado / fecha_pago alineados con los pagos registrados
@@ -747,7 +750,7 @@ function renderGastos(){
   <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Gastos de la empresa</h3><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="qseg" id="g-seg"><button data-v="pend" class="${gView==="pend"?"on":""}">Por pagar · ${pend.length}</button><button data-v="pag" class="${gView==="pag"?"on":""}">Pagados · ${pagP.length}</button></div><button class="btn sm" id="btn-gpdf" title="PDF con todos los gastos pendientes de pago">⤓ Pagos pendientes PDF</button><button class="btn sm primary" id="btn-gasto">+ Gasto</button></div></div>
     <p class="hint" style="margin:6px 0 10px">Gastos propios de la empresa (nómina, renta, pauta, software…), no comisiones a asesores. "Pago parcial" registra un abono con monto; "Pagado" liquida lo que falta con fecha de hoy. El número junto a lo pagado abre el detalle de pagos.</p>
     ${TABLAS_OK.gastos?`<div class="twrap" style="border:0"><table><thead><tr><th>Fecha</th><th>Vence</th><th>Concepto</th><th>Proveedor</th><th>Categoría</th><th class="num">Monto</th><th class="num">Pagado</th><th class="num">Pendiente</th><th>Estatus</th><th></th></tr></thead>
-    <tbody>${rows.map(g=>{const e=gEst(g),pag=gPagadoDe(g),pd=falta(g),n=gPagosDe(g.id).length,vencido=e!=="pagado"&&g.vence&&g.vence<hoy;return `<tr class="${e==="pagado"?"dimrow":""}"><td class="dim">${fecha(g.fecha)}</td><td style="color:${vencido?"var(--bad)":"inherit"};font-weight:${vencido?600:400}">${g.vence?fecha(g.vence):"—"}${vencido?" ⚠":""}</td><td><b>${esc(g.concepto)}</b>${g.notas?`<br><small class="dim">${esc(g.notas)}</small>`:""}</td><td>${esc(g.proveedor||"—")}</td><td class="dim">${esc(g.categoria||"—")}</td><td class="num money">${fmt(g.monto)}</td><td class="num ${pag?"paid":""}">${fmt(pag)}${n?` <button class="ico gpagos" data-id="${g.id}" title="Ver pagos">${n}</button>`:""}</td><td class="num money" style="color:${pd>0.5?"var(--bad)":"var(--ok)"}">${fmt(pd)}</td><td>${seg(g)}${e==="pagado"?`<br><small class="dim">pagado el ${fecha(gFechaPago(g))}${g.metodo?" · "+esc(g.metodo):""}</small>`:""}</td><td><button class="ico edit-gasto" data-id="${g.id}" title="Editar">✎</button></td></tr>`}).join("")}</tbody></table>
+    <tbody>${rows.map(g=>{const e=gEst(g),pag=gPagadoDe(g),pd=falta(g),n=gPagosDe(g.id).length,vencido=e!=="pagado"&&g.vence&&g.vence<hoy;return `<tr class="${e==="pagado"?"dimrow":""}"><td class="dim">${fecha(g.fecha)}</td><td style="color:${vencido?"var(--bad)":"inherit"};font-weight:${vencido?600:400}">${g.vence?fecha(g.vence):"—"}${vencido?" ⚠":""}</td><td><b>${esc(g.concepto)}</b>${g.notas?`<br><small class="dim">${esc(g.notas)}</small>`:""}</td><td>${esc(g.proveedor||"—")}</td><td class="dim">${esc(g.categoria||"—")}</td><td class="num money">${fmt(g.monto)}</td><td class="num ${pag?"paid":""}">${fmt(pag)}${n?` <button class="ico gpagos" data-id="${g.id}" title="Ver pagos">${n}</button>`:""}</td><td class="num money" style="color:${pd>EPS?"var(--bad)":"var(--ok)"}">${fmt(pd)}</td><td>${seg(g)}${e==="pagado"?`<br><small class="dim">pagado el ${fecha(gFechaPago(g))}${g.metodo?" · "+esc(g.metodo):""}</small>`:""}</td><td><button class="ico edit-gasto" data-id="${g.id}" title="Editar">✎</button></td></tr>`}).join("")}</tbody></table>
     ${rows.length?"":`<div class="empty">${gView==="pag"?`<b>Sin pagos</b>No hay gastos pagados en ${periodoTxt().toLowerCase()}.`:`<b>Nada por pagar</b>No hay gastos pendientes.`}</div>`}</div>`:faltaTabla("gastos")}</div>
   <div class="grid2" style="margin-top:14px"><div class="card"><h3>Por categoría · ${periodoTxt()}</h3><div class="bars">${bars(byCat,sumM(gP))}</div></div>
   <div class="card"><h3>Por mes · ${P.anio}</h3><div class="cols mo">${(()=>{const arr=Array.from({length:12},()=>0);GASTOS.filter(g=>+String(g.fecha).slice(0,4)===+P.anio).forEach(g=>arr[+String(g.fecha).slice(5,7)-1]+=+g.monto||0);const mx=Math.max(...arr,1);const fmtS=v=>v>=1e6?(v/1e6).toFixed(1).replace(/\.0$/,"")+" M":v>=1e3?Math.round(v/1e3)+" k":v?Math.round(v):"–";return arr.map((v,i)=>`<div class="c" title="${MESES_L[i]}: ${fmt(v)}"><small class="${v?"":"dim"}">${fmtS(v)}</small><div style="display:flex;width:100%;align-items:flex-end;height:90px;justify-content:center"><i style="height:${v/mx*100}%;background:var(--gold-2)"></i></div><b>${MESES[i]}</b></div>`).join("")})()}</div></div></div>`;
@@ -765,7 +768,7 @@ function renderGastos(){
         renderGastos()}
       openGastoPago(g);return}
     if(e===k)return;
-    if(k==="pagado"){const f=falta(g);if(f>0.5){const r=await sb.from("gastos_pagos").insert({gasto_id:g.id,fecha:todayISO(),monto:f,metodo:g.metodo||null,nota:"Liquidación"}).select().single();if(r.error){toast("No se guardó: "+r.error.message,true);return}GPAGOS.push(r.data)}}
+    if(k==="pagado"){const f=falta(g);if(f>EPS){const r=await sb.from("gastos_pagos").insert({gasto_id:g.id,fecha:todayISO(),monto:f,metodo:g.metodo||null,nota:"Liquidación"}).select().single();if(r.error){toast("No se guardó: "+r.error.message,true);return}GPAGOS.push(r.data)}}
     if(k==="pendiente"&&gPagosDe(g.id).length){if(!confirm("¿Regresar a por pagar? Se borran los pagos registrados de este gasto."))return;const r=await sb.from("gastos_pagos").delete().eq("gasto_id",g.id);if(r.error){toast(r.error.message,true);return}GPAGOS=GPAGOS.filter(p=>p.gasto_id!==g.id)}
     const upd={pagado:k==="pagado",fecha_pago:k==="pagado"?todayISO():null};const r=await sb.from("gastos").update(upd).eq("id",g.id);if(r.error){toast("No se guardó: "+r.error.message,true);return}Object.assign(g,upd);toast(k==="pagado"?"Marcado como pagado":"Regresado a por pagar");renderGastos()});
 }
@@ -774,15 +777,15 @@ function openGastoPago(g){
   root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(500px,100%)">
     <header><h3>Pagos · ${esc(g.concepto)}</h3><button class="ico" id="d-close">✕</button></header>
     <div class="body">
-      <p style="margin:0 0 12px"><b>${esc(g.proveedor||"")}</b>${g.proveedor?" · ":""}${esc(g.categoria||"")}${g.vence?" · vence "+fecha(g.vence):""}<br><span class="dim">Monto ${fmt(tot)} · pagado ${fmt(pag)} · <b style="color:${f>0.5?"var(--bad)":"var(--ok)"}">pendiente ${fmt(f)}</b></span></p>
+      <p style="margin:0 0 12px"><b>${esc(g.proveedor||"")}</b>${g.proveedor?" · ":""}${esc(g.categoria||"")}${g.vence?" · vence "+fecha(g.vence):""}<br><span class="dim">Monto ${fmt(tot)} · pagado ${fmt(pag)} · <b style="color:${f>EPS?"var(--bad)":"var(--ok)"}">pendiente ${fmt(f)}</b></span></p>
       ${list.length?`<table class="disp" style="margin-bottom:12px"><thead><tr><th>Fecha</th><th>Método</th><th>Nota</th><th class="num">Monto</th><th></th></tr></thead><tbody>${list.map(p=>`<tr><td class="dim">${fecha(p.fecha)}</td><td class="dim">${esc(p.metodo||"")}</td><td>${esc(p.nota||"")}</td><td class="num">${fmt(p.monto)}</td><td><button class="ico delgp" data-id="${p.id}" title="Eliminar pago">×</button></td></tr>`).join("")}</tbody></table>`:(g.pagado?`<p class="hint" style="margin:0 0 10px">Marcado como pagado el ${fecha(g.fecha_pago)} sin detalle de pagos.</p>`:"")}
       ${TABLAS_OK.gpagos?`<div class="fg">
         <div class="f c4"><label>Fecha del pago</label><input type="date" id="gp-fecha" value="${todayISO()}"></div>
-        <div class="f c4"><label>Monto pagado</label><input id="gp-m" inputmode="numeric" value="${f>0.5?Math.round(f).toLocaleString("es-MX"):""}"></div>
+        <div class="f c4"><label>Monto pagado</label><input id="gp-m" inputmode="decimal" value="${f>EPS?fmtN(f):""}"></div>
         <div class="f c4"><label>Método</label>${dsel("gp-met",METODOS,g.metodo||"Transferencia")}</div>
         <div class="f c12"><label>Nota</label><input id="gp-nota" placeholder="Anticipo, segunda parte, factura…"></div>
       </div>
-      <p class="hint" style="margin-top:10px">${f>0.5?"Si el monto es menor al pendiente queda como pago parcial; si lo cubre, el gasto pasa a pagado.":"Este gasto ya está pagado por completo. Si fue parcial, borra el pago que sobra con × y registra el monto real."}</p>`:faltaTabla("gastos_pagos").replace("ventas_v6.sql","ventas_v7.sql")}</div>
+      <p class="hint" style="margin-top:10px">${f>EPS?"Si el monto es menor al pendiente queda como pago parcial; si lo cubre, el gasto pasa a pagado.":"Este gasto ya está pagado por completo. Si fue parcial, borra el pago que sobra con × y registra el monto real."}</p>`:faltaTabla("gastos_pagos").replace("ventas_v6.sql","ventas_v7.sql")}</div>
     <footer><span></span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cerrar</button>${TABLAS_OK.gpagos?`<button class="btn primary" id="d-save">Registrar pago</button>`:""}</span></footer></div>`;
   const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
   root.querySelectorAll(".delgp").forEach(b=>b.onclick=async()=>{if(!confirm("¿Eliminar este pago?"))return;const r=await sb.from("gastos_pagos").delete().eq("id",b.dataset.id);if(r.error){toast(r.error.message,true);return}GPAGOS=GPAGOS.filter(p=>p.id!==b.dataset.id);await gSync(g);openGastoPago(g);render()});
@@ -802,7 +805,7 @@ function openGasto(g){
       <div class="f c4"><label>Categoría</label><input id="g-cat" list="dl-gcat" value="${esc(g.categoria||"")}" placeholder="Nómina, Renta…">${dlist("dl-gcat",GASTOS_CAT)}</div>
       <div class="f c12"><label>Concepto</label><input id="g-conc" value="${esc(g.concepto||"")}" placeholder="Ej. Renta oficina octubre, Meta Ads Tanhia, Canva…"></div>
       <div class="f c4"><label>Proveedor / a quién se paga</label><input id="g-prov" value="${esc(g.proveedor||"")}"></div>
-      <div class="f c4"><label>Monto</label><input id="g-monto" inputmode="numeric" value="${g.monto!=null?fmt(g.monto):""}" placeholder="$ 0"></div>
+      <div class="f c4"><label>Monto</label><input id="g-monto" inputmode="decimal" value="${g.monto!=null?fmt(g.monto):""}" placeholder="$ 0"></div>
       <div class="f c4"><label>Método</label>${dsel("g-met",METODOS,g.metodo||"Transferencia")}</div>
       ${conPagos?`<div class="f c12"><label>Pagos</label><p class="hint" style="margin:0">${fmt(gPagadoDe(g))} pagado de ${fmt(g.monto)} en ${gPagosDe(g.id).length} pago${gPagosDe(g.id).length===1?"":"s"}. Edítalos desde la lista (número junto a lo pagado) o con “Pago parcial”.</p></div>`:`
       <div class="f c6"><label class="chk" style="padding:0;margin-top:22px"><input type="checkbox" id="g-pag" ${g.pagado?"checked":""} style="width:auto"> Ya está pagado por completo</label></div>
@@ -923,7 +926,7 @@ function openApartado(a){
       <div class="f c6"><label>Proyecto / propiedad</label><input id="a-proy" list="dl-aproy" value="${esc(a.proyecto||"")}">${dlist("dl-aproy",PROYECTOS)}</div>
       <div class="f c6"><label>Unidad / ID</label><input id="a-uni" value="${esc(a.unidad||"")}" placeholder="Depto 402, Casa 12…"></div>
       <div class="f c4"><label>Método de pago</label>${dsel("a-met",METODOS,a.metodo||"Transferencia")}</div>
-      <div class="f c4"><label>Monto del apartado</label><input id="a-monto" inputmode="numeric" value="${a.monto!=null?fmt(a.monto):""}" placeholder="$ 0"></div>
+      <div class="f c4"><label>Monto del apartado</label><input id="a-monto" inputmode="decimal" value="${a.monto!=null?fmt(a.monto):""}" placeholder="$ 0"></div>
       <div class="f c4"><label>Asesor</label>${dsel("a-ase",ASESORES.filter(x=>x!==EX),a.asesor||"","Elegir…")}</div>
       ${isNew?"":`<div class="f c12"><label>Estatus</label>${dsel("a-est",Object.keys(AP_EST),a.estatus||"vigente")}</div>`}
       <div class="f c12"><label>Notas</label><textarea id="a-notas" rows="2">${esc(a.notas||"")}</textarea></div>
@@ -964,9 +967,9 @@ function openVenta(v,pre,onSaved){
         <div class="f c4"><label>Asesor vendedor <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted)">· EX = ya no está</span></label><select id="v-asesor">${opt(ASESORES,v.asesor,"Elegir…")}</select></div>
         <div class="f c4"><label>Opcionador</label><select id="v-opc">${opt(ASESORES,v.opcionador,"— Sin opcionador —")}</select></div>
         <div class="f c4"><label>Extras del vendedor</label><label class="chk" style="padding:0"><input type="checkbox" id="v-ag" ${v.autogenerada?"checked":""} style="width:auto"> Autogenerada (+${REGLAS.autogenerada}%)</label><label class="chk" style="padding:0"><input type="checkbox" id="v-top" ${v.top_realtor?"checked":""} style="width:auto"> TOP Realtor (+${topPct()}%)</label></div>
-        <div class="f c4"><label id="lbl-monto">Monto de la operación</label><input id="v-monto" inputmode="numeric" value="${v.monto!=null?fmt(v.monto):""}" placeholder="$ 0"></div>
+        <div class="f c4"><label id="lbl-monto">Monto de la operación</label><input id="v-monto" inputmode="decimal" value="${v.monto!=null?fmt(v.monto):""}" placeholder="$ 0"></div>
         <div class="f c4"><label>Comisión %</label><input id="v-pct" inputmode="decimal" value="${v.comision_pct??""}" placeholder="ej. 4"></div>
-        <div class="f c4"><label>o comisión en monto fijo</label><input id="v-cmonto" inputmode="numeric" value="${v.comision_monto!=null?fmt(v.comision_monto):""}" placeholder="$ (opcional)"></div>
+        <div class="f c4"><label>o comisión en monto fijo</label><input id="v-cmonto" inputmode="decimal" value="${v.comision_monto!=null?fmt(v.comision_monto):""}" placeholder="$ (opcional)"></div>
         <div class="f c12"><label>Comisión total</label><input class="ro" id="v-ctotal" disabled value=""></div>
         <div class="f c12"><label>Notas</label><textarea id="v-notas" rows="2">${esc(v.notas||"")}</textarea></div>
       </div>
@@ -986,10 +989,10 @@ function openVenta(v,pre,onSaved){
     const tot=total();g("v-ctotal").value=fmt(tot)+(cur().comision_monto!=null?" (monto fijo)":"");
     if(!DISP)DISP=dispDefault(cur());
     const tb=g("disp-body");
-    tb.innerHTML=DISP.map(p=>{const amt=partAmt(p,tot),pc=partPct(p,tot);return `<tr data-id="${p.id}"><td><input class="name" data-f="nombre" list="dl-ase" value="${esc(p.nombre)}"></td><td><input class="name" data-f="rol" value="${esc(p.rol)}"></td><td><input data-f="pct" value="${p.monto!=null&&p.monto!==""?pc.toFixed(2).replace(/\.?0+$/,""):(p.pct??"")}" ${p.monto!=null&&p.monto!==""?'style="color:var(--muted)"':""}></td><td><input data-f="monto" value="${amt?Math.round(amt).toLocaleString("es-MX"):""}" ${p.monto!=null&&p.monto!==""?'style="font-weight:600"':'style="color:var(--muted)"'}></td><td><button class="ico" data-del="${p.id}">×</button></td></tr>`}).join("")
+    tb.innerHTML=DISP.map(p=>{const amt=partAmt(p,tot),pc=partPct(p,tot);return `<tr data-id="${p.id}"><td><input class="name" data-f="nombre" list="dl-ase" value="${esc(p.nombre)}"></td><td><input class="name" data-f="rol" value="${esc(p.rol)}"></td><td><input data-f="pct" value="${p.monto!=null&&p.monto!==""?pc.toFixed(2).replace(/\.?0+$/,""):(p.pct??"")}" ${p.monto!=null&&p.monto!==""?'style="color:var(--muted)"':""}></td><td><input data-f="monto" value="${amt?fmtN(amt):""}" ${p.monto!=null&&p.monto!==""?'style="font-weight:600"':'style="color:var(--muted)"'}></td><td><button class="ico" data-del="${p.id}">×</button></td></tr>`}).join("")
       +`<tr class="trust"><td>TRUST</td><td class="tag">Queda en la empresa</td><td style="text-align:right">${tot?(100-DISP.reduce((a,p)=>a+partPct(p,tot),0)).toFixed(2).replace(/\.?0+$/,""):"—"}%</td><td style="text-align:right">${fmt(tot-DISP.reduce((a,p)=>a+partAmt(p,tot),0))}</td><td></td></tr>`;
     if(!$("#dl-ase")){const dl=document.createElement("datalist");dl.id="dl-ase";dl.innerHTML=ASESORES.concat(["Aly"]).map(a=>`<option value="${esc(a)}">`).join("");root.appendChild(dl)}
-    const over=DISP.reduce((a,p)=>a+partAmt(p,tot),0)>tot+0.5;g("disp-warn").textContent=over?"⚠ La dispersión supera la comisión total.":"";g("disp-warn").style.color=over?"var(--bad)":"";
+    const over=DISP.reduce((a,p)=>a+partAmt(p,tot),0)>tot+EPS;g("disp-warn").textContent=over?"⚠ La dispersión supera la comisión total.":"";g("disp-warn").style.color=over?"var(--bad)":"";
     tb.querySelectorAll("input").forEach(i=>i.onchange=()=>{const p=DISP.find(x=>x.id===i.closest("tr").dataset.id);const f=i.dataset.f;if(f==="pct"){p.pct=num(i.value)||0;p.monto=null}else if(f==="monto"){const m=num(i.value);p.monto=m==null?null:m;if(m==null)p.pct=p.pct||0}else p[f]=i.value.trim();drawDisp()});
     tb.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{DISP=DISP.filter(x=>x.id!==b.dataset.del);drawDisp()});
   }
