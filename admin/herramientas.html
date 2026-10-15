@@ -197,6 +197,7 @@ function render(){
 function openOferta(d){
   const isNew=!d;const x=d?{...dat(d)}:{fecha:todayISO(),lugar:"Guadalajara, Jal.",vigencia:5,con_deposito:true,garantia_forma:"Transferencia",asesor:ASESOR};
   if(!x.asesor)x.asesor=d?d.asesor:ASESOR;
+  if(!x.asesor_nombre)x.asesor_nombre=LS.get("trust_herr_nombre_"+(x.asesor||""))||x.asesor;
   const root=$("#drawer-root");
   const fld=(id,label,val,c,attrs,sub)=>`<div class="f ${c||"c6"}"><label>${label}</label><input id="o-${id}" value="${esc(val??"")}" ${attrs||""}>${sub?`<span class="sub" id="o-${id}-sub"></span>`:""}</div>`;
   root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog">
@@ -206,6 +207,7 @@ function openOferta(d){
         ${fld("oferente","Oferente (comprador, nombre completo)",x.oferente,"c8","placeholder='Nombre como aparece en su identificación'")}
         ${fld("fecha","Fecha de la oferta",x.fecha,"c4","type='date'")}
         ${ROLE==="admin"?`<div class="f c4"><label>Asesor (por conducto de)</label><select id="o-asesor">${ASESORES.map(a=>`<option ${a===x.asesor?"selected":""}>${esc(a)}</option>`).join("")}</select></div>`:`<input type="hidden" id="o-asesor" value="${esc(x.asesor)}">`}
+        ${fld("asesor_nombre","Tu nombre como aparecerá en el documento",x.asesor_nombre,"c8","placeholder='Ej. Ramsés Hernández López'")}
         ${fld("domicilio","Domicilio del inmueble",x.domicilio,"c12","placeholder='Calle, número, colonia, municipio'")}
       </div>
       <div class="sect"><h4>Términos de la oferta</h4><div class="fg">
@@ -236,9 +238,9 @@ function openOferta(d){
   g("con_deposito").onchange=()=>{$("#dep-box").style.display=g("con_deposito").checked?"":"none"};
   g("con_inmo").onchange=()=>{$("#inmo-box").style.display=g("con_inmo").checked?"":"none"};
   ["precio","anticipo","garantia"].forEach(id=>{const el=g(id);const upd=()=>{const v=num(el.value);const s=g(id+"-sub");if(s)s.textContent=v?pesosLetra(v):""};el.onchange=()=>{const v=num(el.value);el.value=v==null?"":fmt(v);upd()};upd()});
-  const leer=()=>({oferente:g("oferente").value.trim(),fecha:g("fecha").value||todayISO(),asesor:g("asesor").value,domicilio:g("domicilio").value.trim(),precio:num(g("precio").value),anticipo:num(g("anticipo").value),entrega:g("entrega").value.trim(),vigencia:Math.max(1,Math.round(num(g("vigencia").value)||5)),aclaraciones:g("aclaraciones").value.trim(),con_inmo:g("con_inmo").checked,inmo_nombre:g("con_inmo").checked?g("inmo_nombre").value.trim():"",inmo_contacto:g("con_inmo").checked?g("inmo_contacto").value.trim():"",con_deposito:g("con_deposito").checked,garantia:g("con_deposito").checked?num(g("garantia").value):null,garantia_forma:g("garantia_forma").value,recoger:g("recoger").value||null,recibi_de:g("recibi_de").value.trim(),lugar:g("lugar").value.trim()||"Guadalajara, Jal."});
+  const leer=()=>({oferente:g("oferente").value.trim(),fecha:g("fecha").value||todayISO(),asesor:g("asesor").value,asesor_nombre:g("asesor_nombre").value.trim()||g("asesor").value,domicilio:g("domicilio").value.trim(),precio:num(g("precio").value),anticipo:num(g("anticipo").value),entrega:g("entrega").value.trim(),vigencia:Math.max(1,Math.round(num(g("vigencia").value)||5)),aclaraciones:g("aclaraciones").value.trim(),con_inmo:g("con_inmo").checked,inmo_nombre:g("con_inmo").checked?g("inmo_nombre").value.trim():"",inmo_contacto:g("con_inmo").checked?g("inmo_contacto").value.trim():"",con_deposito:g("con_deposito").checked,garantia:g("con_deposito").checked?num(g("garantia").value):null,garantia_forma:g("garantia_forma").value,recoger:g("recoger").value||null,recibi_de:g("recibi_de").value.trim(),lugar:g("lugar").value.trim()||"Guadalajara, Jal."});
   const valida=x=>{if(!x.oferente){toast("Falta el nombre del oferente",true);return false}if(!x.domicilio){toast("Falta el domicilio del inmueble",true);return false}if(!x.precio){toast("Falta el precio ofertado",true);return false}if(x.con_deposito&&!x.garantia){toast("Falta el monto del depósito (o desmarca que hubo depósito)",true);return false}return true};
-  async function guardar(){const x=leer();if(!valida(x))return null;
+  async function guardar(){const x=leer();if(!valida(x))return null;LS.set("trust_herr_nombre_"+x.asesor,x.asesor_nombre);
     const row={tipo:"oferta_compra",asesor:x.asesor,titulo:x.oferente,datos:x,updated_at:new Date().toISOString()};
     const r=isNew?await sb.from("documentos").insert({...row,estatus:"borrador"}).select().single():await sb.from("documentos").update(row).eq("id",d.id).select().single();
     if(r.error){toast("No se guardó: "+r.error.message,true);return null}
@@ -269,7 +271,7 @@ body{margin:0;font-family:Poppins,"Segoe UI",sans-serif;color:#1E241F;background
 .folio{text-align:right;font-size:9px;color:#D9C9A8;line-height:1.6;letter-spacing:.04em}.folio b{display:block;font-family:Lora,serif;font-size:12px;color:#fff;letter-spacing:0;font-weight:500}
 h1{font-family:Lora,Georgia,serif;font-weight:500;font-size:42px;line-height:1.05;margin:8px 0 0;letter-spacing:-.01em}h1 em{font-style:italic;color:#B8956A}
 .body{padding:0 .65in .28in;flex:1;display:flex;flex-direction:column}
-.cards{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:8px;margin-top:-.42in}
+.cards{display:grid;grid-template-columns:1.15fr 1.7fr .95fr .95fr;gap:8px;margin-top:-.42in}
 .k{background:#fff;border:1px solid #E3DDD0;border-radius:12px;padding:11px 12px;box-shadow:0 8px 24px rgba(23,63,53,.10)}
 .k .l{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:#6F726B;font-weight:600;display:block;margin-bottom:2px}.k .v{font-family:Lora,serif;font-size:15px;color:#173F35;line-height:1.2}.k .v.big{font-size:20px;font-weight:500}.k .s{display:block;font-size:8.5px;color:#6F726B;margin-top:2px}
 .k.dark{background:#173F35;border-color:#173F35}.k.dark .l,.k.dark .s{color:#D9C9A8}.k.dark .v{color:#fff}
@@ -303,12 +305,12 @@ p{margin:0 0 5px}.dato{color:#173F35;font-weight:600;background:#FBF5E9;border-b
   <div class="body">
     <div class="cards">
       <div class="k dark"><span class="l">Precio ofertado</span><span class="v big">${fmt(x.precio)}</span><span class="s">${esc(pesosLetra(x.precio))}</span></div>
-      <div class="k"><span class="l">Inmueble</span><span class="v" style="font-size:12.5px">${esc(x.domicilio)}</span></div>
+      <div class="k"><span class="l">Inmueble</span><span class="v" style="font-size:11.5px">${esc(x.domicilio)}</span></div>
       <div class="k"><span class="l">Anticipo a la firma</span><span class="v">${x.anticipo?fmt(x.anticipo):"—"}</span><span class="s">resto a la escrituración</span></div>
       <div class="k"><span class="l">Vigencia</span><span class="v">${x.vigencia} día${+x.vigencia===1?"":"s"}</span><span class="s">${vence?"hasta el "+fechaL(vence):"naturales"}</span></div>
     </div>
     <div class="eyebrow">Declaración</div><h2>Oferente</h2>
-    <p>${b(x.oferente)}, por conducto de ${b(x.asesor)}, en representación de <b>“${EMPRESA}”</b> que ejerce como mediador en la operación, ofrezco celebrar con el legítimo propietario el contrato de <b>PROMESA DE COMPRA-VENTA</b> de acuerdo con lo siguiente:</p>
+    <p>${b(x.oferente)}, por conducto de ${b(x.asesor_nombre||x.asesor)}, en representación de <b>“${EMPRESA}”</b> que ejerce como mediador en la operación, ofrezco celebrar con el legítimo propietario el contrato de <b>PROMESA DE COMPRA-VENTA</b> de acuerdo con lo siguiente:</p>
     <ul class="cl">
       <li><i>a</i><span>Comprar el bien inmueble con domicilio en: ${b(x.domicilio)}.</span></li>
       <li><i>b</i><span>Manifiesto que conozco el inmueble y el estado en el que se encuentra.</span></li>
@@ -329,7 +331,7 @@ p{margin:0 0 5px}.dato{color:#173F35;font-weight:600;background:#FBF5E9;border-b
       </div>
     </div>`})()}
     <p style="margin-top:10px">${esc(x.lugar||"Guadalajara, Jal.")}, a ${fd} de ${MESES_L[fm-1]} del año ${fy}.</p>
-    <div class="firmas"><div><b>${esc(x.oferente)}</b>Oferente</div><div><b>${esc(x.asesor)} · TRUST</b>Mediador</div></div>
+    <div class="firmas"><div><b>${esc(x.oferente)}</b>Oferente</div><div><b>${esc(x.asesor_nombre||x.asesor)} · TRUST</b>Mediador</div></div>
     <div class="foot"><div>${esc(CONTACTO)}</div><img src="data:image/png;base64,${LOGO_B64}" alt="TRUST"></div>
   </div>
 </div>
