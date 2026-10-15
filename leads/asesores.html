@@ -1477,6 +1477,9 @@ function openLead(id){ const l=leads.find(x=>String(x.id)===String(id)); if(!l) 
 function closeLead(){ LEAD_OPEN=null; document.getElementById("modalL").classList.remove("on"); }
 function drawLead(){
   const l=leads.find(x=>x.id===LEAD_OPEN); const box=document.getElementById("modalLBox"); if(!l){ closeLead(); return; }
+  // Conserva el comentario que se está escribiendo si la tarjeta se vuelve a dibujar (refresco automático, cambio de estatus)
+  const prev=document.getElementById("nTxt"); const draft=prev?prev.value:""; const hadFocus=prev&&document.activeElement===prev; const selPos=hadFocus?prev.selectionStart:0;
+  setTimeout(()=>{ const ta=document.getElementById("nTxt"); if(ta&&draft){ ta.value=draft; if(hadFocus){ ta.focus(); ta.setSelectionRange(selPos,selPos); } } },0);
   const wa=waUrl(l);
   const fl=(k,lab,cls)=>`<button class="flag ${l[k]?"on":""} ${cls||""}" onclick="toggleFlag('${esc(l.id)}','${k}')">${lab}</button>`;
   const ns=notasDe(l.id);
@@ -1626,6 +1629,7 @@ document.addEventListener("keydown", e=>{
 let afterLoad=null;   // las variantes (Tanhia, asesores) pueden filtrar aquí
 async function refresh(){
   if(!sb || document.hidden || document.querySelector(".modal.on:not(#modalL)")) return;
+  const nt=document.getElementById("nTxt"); if(nt && nt.value.trim()) return; // no interrumpir un comentario a medio escribir
   const {data, error} = await sb.from("leads").select("*").order("fecha",{ascending:false}).order("created_at",{ascending:false});
   if(error) return;
   await loadNotas();
