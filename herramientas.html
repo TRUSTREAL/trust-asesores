@@ -139,7 +139,7 @@ const pesosLetra=v=>{if(v==null||isNaN(v))return "";const e=Math.floor(v),c=Math
 /* ---------- catálogo de herramientas ---------- */
 const TOOLS=[
   {k:"oferta_compra",n:"Oferta de compra",d:"Oferta formal al propietario con precio, anticipo, vigencia y depósito de seriedad.",ok:true,ic:'<path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/>'},
-  {k:"oferta_renta",n:"Oferta de renta",d:"Propuesta de arrendamiento: renta mensual, depósito, plazo y condiciones.",ok:false,ic:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>'},
+  {k:"oferta_renta",n:"Oferta de renta",d:"Oferta formal de arrendamiento: renta mensual, vigencia y depósito de seriedad.",ok:true,ic:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>'},
   {k:"aut_venta",n:"Autorización de venta",d:"Autorización del propietario para comercializar su inmueble en venta.",ok:false,ic:'<path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7z"/><path d="M9 12l2 2 4-4"/>'},
   {k:"aut_renta",n:"Autorización de renta",d:"Autorización del propietario para comercializar su inmueble en renta.",ok:false,ic:'<path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7z"/><path d="M8 12h8"/>'},
   {k:"carta_comision",n:"Carta de comisión",d:"Acuerdo de comisión compartida con otra inmobiliaria.",ok:false,ic:'<path d="M3 6h18v12H3z"/><path d="M3 7l9 6 9-6"/>'},
@@ -172,7 +172,7 @@ function render(){
   m.innerHTML=`
   <div class="tools">${TOOLS.map(t=>`<button class="tool ${t.ok?"":"soon"}" data-tool="${t.k}" ${t.ok?"":"disabled"}>${cnt(t.k)?`<span class="cnt">${cnt(t.k)}</span>`:""}<div class="ic"><svg viewBox="0 0 24 24">${t.ic}</svg></div><h2>${t.n}</h2><p>${t.d}</p><span class="go">${t.ok?(ROLE==="admin"?"Ver documentos":"Crear"):"Próximamente"}</span></button>`).join("")}</div>
   <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">${ROLE==="admin"?"Documentos del equipo":"Mis documentos"}</h3>${ROLE==="admin"?"":`<button class="btn primary" id="btn-new">+ Oferta de compra</button>`}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">${ROLE==="admin"?"Documentos del equipo":"Mis documentos"}</h3>${ROLE==="admin"?"":`<span style="display:flex;gap:8px"><button class="btn primary" id="btn-new">+ Oferta de compra</button><button class="btn primary" id="btn-new-r">+ Oferta de renta</button></span>`}</div>
     <div class="filters">
       <input id="f-q" placeholder="Buscar cliente o inmueble…" value="${esc(filt.q)}">
       <select id="f-tipo"><option value="">Tipo: todos</option>${TOOLS.map(t=>`<option value="${t.k}" ${filt.tipo===t.k?"selected":""}>${t.n}</option>`).join("")}</select>
@@ -184,8 +184,8 @@ function render(){
     <tbody>${rows.map(d=>{const x=dat(d),v=venceDe(d),venc=v&&v<todayISO()&&(d.estatus==="enviada"||d.estatus==="borrador");return `<tr><td class="dim">${fechaC(x.fecha||d.created_at)}</td><td><b>${esc(TOOL(d.tipo).n)}</b></td><td>${esc(d.titulo||"—")}</td><td class="dim" style="max-width:260px;overflow:hidden;text-overflow:ellipsis" title="${esc(x.domicilio||"")}">${esc(x.domicilio||"—")}</td>${ROLE==="admin"?`<td>${esc(d.asesor)}</td>`:""}<td class="num money">${fmt(montoDe(d))}</td><td class="dim" style="color:${venc?"var(--bad)":"inherit"}">${v?fechaC(v)+(venc?" ⚠":""):"—"}</td><td><select class="st ${d.estatus}" data-est="${d.id}">${Object.entries(EST).map(([k,l])=>`<option value="${k}" ${d.estatus===k?"selected":""}>${l}</option>`).join("")}</select></td><td style="white-space:nowrap"><button class="btn sm pdf" data-id="${d.id}">⤓ PDF</button> <button class="ico edit" data-id="${d.id}" title="Editar">✎</button></td></tr>`}).join("")}</tbody></table>
     ${rows.length?"":`<div class="empty"><b>Sin documentos</b>${ROLE==="admin"?"Los asesores aún no generan documentos.":"Crea tu primera oferta de compra con el botón de arriba."}</div>`}</div>`:`<div class="empty"><b>Falta activar el módulo</b>Corre <code>documentos.sql</code> en Supabase → SQL Editor y recarga la página.</div>`}
   </div>`;
-  m.querySelectorAll("[data-tool]").forEach(b=>b.onclick=()=>{if(ROLE==="admin"){filt.tipo=b.dataset.tool;render()}else if(b.dataset.tool==="oferta_compra")openOferta(null)});
-  const nb=$("#btn-new");if(nb)nb.onclick=()=>openOferta(null);
+  m.querySelectorAll("[data-tool]").forEach(b=>b.onclick=()=>{if(ROLE==="admin"){filt.tipo=b.dataset.tool;render()}else if(b.dataset.tool==="oferta_compra"||b.dataset.tool==="oferta_renta")openOferta(null,b.dataset.tool)});
+  const nb=$("#btn-new");if(nb)nb.onclick=()=>openOferta(null,"oferta_compra");const nr=$("#btn-new-r");if(nr)nr.onclick=()=>openOferta(null,"oferta_renta");
   $("#f-q").oninput=e=>{filt.q=e.target.value;render();const i=$("#f-q");i.focus();i.setSelectionRange(i.value.length,i.value.length)};
   ["tipo","est","ase"].forEach(k=>{const el=$("#f-"+k);if(el)el.onchange=e=>{filt[k]=e.target.value;render()}});
   m.querySelectorAll(".edit").forEach(b=>b.onclick=()=>openOferta(DOCS.find(d=>d.id===b.dataset.id)));
@@ -194,26 +194,26 @@ function render(){
 }
 
 /* ---------- oferta de compra · formulario ---------- */
-function openOferta(d){
-  const isNew=!d;const x=d?{...dat(d)}:{fecha:todayISO(),lugar:"Guadalajara, Jal.",vigencia:5,con_deposito:true,garantia_forma:"Transferencia",asesor:ASESOR};
+function openOferta(d,tipo){
+  const isNew=!d;const T=d?d.tipo:(tipo||"oferta_compra"),R=T==="oferta_renta";const x=d?{...dat(d)}:{fecha:todayISO(),lugar:"Guadalajara, Jal.",vigencia:5,con_deposito:true,garantia_forma:"Transferencia",asesor:ASESOR};
   if(!x.asesor)x.asesor=d?d.asesor:ASESOR;
   if(!x.asesor_nombre)x.asesor_nombre=LS.get("trust_herr_nombre_"+(x.asesor||""))||x.asesor;
   const root=$("#drawer-root");
   const fld=(id,label,val,c,attrs,sub)=>`<div class="f ${c||"c6"}"><label>${label}</label><input id="o-${id}" value="${esc(val??"")}" ${attrs||""}>${sub?`<span class="sub" id="o-${id}-sub"></span>`:""}</div>`;
   root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog">
-    <header><h3>${isNew?"Nueva oferta de compra":"Oferta de compra · "+esc(d.titulo||"")}</h3><button class="ico" id="d-close">✕</button></header>
+    <header><h3>${isNew?(R?"Nueva oferta de renta":"Nueva oferta de compra"):TOOL(T).n+" · "+esc(d.titulo||"")}</h3><button class="ico" id="d-close">✕</button></header>
     <div class="body">
       <div class="fg">
-        ${fld("oferente","Oferente (comprador, nombre completo)",x.oferente,"c8","placeholder='Nombre como aparece en su identificación'")}
+        ${fld("oferente",R?"Oferente (arrendatario, nombre completo)":"Oferente (comprador, nombre completo)",x.oferente,"c8","placeholder='Nombre como aparece en su identificación'")}
         ${fld("fecha","Fecha de la oferta",x.fecha,"c4","type='date'")}
         ${ROLE==="admin"?`<div class="f c4"><label>Asesor (por conducto de)</label><select id="o-asesor">${ASESORES.map(a=>`<option ${a===x.asesor?"selected":""}>${esc(a)}</option>`).join("")}</select></div>`:`<input type="hidden" id="o-asesor" value="${esc(x.asesor)}">`}
         ${fld("asesor_nombre","Tu nombre como aparecerá en el documento",x.asesor_nombre,"c8","placeholder='Ej. Ramsés Hernández López'")}
         ${fld("domicilio","Domicilio del inmueble",x.domicilio,"c12","placeholder='Calle, número, colonia, municipio'")}
       </div>
       <div class="sect"><h4>Términos de la oferta</h4><div class="fg">
-        ${fld("precio","Precio ofertado",x.precio!=null?fmt(x.precio):"","c6","inputmode='decimal' placeholder='$'",true)}
-        ${fld("anticipo","Anticipo a la firma de la promesa",x.anticipo!=null?fmt(x.anticipo):"","c6","inputmode='decimal' placeholder='$ · el resto a la escrituración'",true)}
-        ${fld("entrega","Fecha de entrega de posesión",x.entrega,"c6","placeholder='Ej. a la firma de escritura / 30 de noviembre de 2026'")}
+        ${fld("precio",R?"Renta mensual ofrecida":"Precio ofertado",x.precio!=null?fmt(x.precio):"","c6","inputmode='decimal' placeholder='$'",true)}
+        ${R?"":fld("anticipo","Anticipo a la firma de la promesa",x.anticipo!=null?fmt(x.anticipo):"","c6","inputmode='decimal' placeholder='$ · el resto a la escrituración'",true)}
+        ${fld("entrega","Fecha de entrega de posesión",x.entrega,"c6",R?"placeholder='Ej. 1 de noviembre de 2026'":"placeholder='Ej. a la firma de escritura / 30 de noviembre de 2026'")}
         ${fld("vigencia","Vigencia de la oferta (días naturales)",x.vigencia,"c6","inputmode='numeric'")}
         <div class="f c12"><label>Aclaraciones</label><textarea id="o-aclaraciones" rows="2" placeholder="Condiciones especiales, muebles incluidos, crédito, etc.">${esc(x.aclaraciones||"")}</textarea></div>
       </div></div>
@@ -237,11 +237,11 @@ function openOferta(d){
   const g=i=>$("#o-"+i);const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
   g("con_deposito").onchange=()=>{$("#dep-box").style.display=g("con_deposito").checked?"":"none"};
   g("con_inmo").onchange=()=>{$("#inmo-box").style.display=g("con_inmo").checked?"":"none"};
-  ["precio","anticipo","garantia"].forEach(id=>{const el=g(id);const upd=()=>{const v=num(el.value);const s=g(id+"-sub");if(s)s.textContent=v?pesosLetra(v):""};el.onchange=()=>{const v=num(el.value);el.value=v==null?"":fmt(v);upd()};upd()});
-  const leer=()=>({oferente:g("oferente").value.trim(),fecha:g("fecha").value||todayISO(),asesor:g("asesor").value,asesor_nombre:g("asesor_nombre").value.trim()||g("asesor").value,domicilio:g("domicilio").value.trim(),precio:num(g("precio").value),anticipo:num(g("anticipo").value),entrega:g("entrega").value.trim(),vigencia:Math.max(1,Math.round(num(g("vigencia").value)||5)),aclaraciones:g("aclaraciones").value.trim(),con_inmo:g("con_inmo").checked,inmo_nombre:g("con_inmo").checked?g("inmo_nombre").value.trim():"",inmo_contacto:g("con_inmo").checked?g("inmo_contacto").value.trim():"",con_deposito:g("con_deposito").checked,garantia:g("con_deposito").checked?num(g("garantia").value):null,garantia_forma:g("garantia_forma").value,recoger:g("recoger").value||null,recibi_de:g("recibi_de").value.trim(),lugar:g("lugar").value.trim()||"Guadalajara, Jal."});
-  const valida=x=>{if(!x.oferente){toast("Falta el nombre del oferente",true);return false}if(!x.domicilio){toast("Falta el domicilio del inmueble",true);return false}if(!x.precio){toast("Falta el precio ofertado",true);return false}if(x.con_deposito&&!x.garantia){toast("Falta el monto del depósito (o desmarca que hubo depósito)",true);return false}return true};
+  ["precio","anticipo","garantia"].forEach(id=>{const el=g(id);if(!el)return;const upd=()=>{const v=num(el.value);const s=g(id+"-sub");if(s)s.textContent=v?pesosLetra(v):""};el.onchange=()=>{const v=num(el.value);el.value=v==null?"":fmt(v);upd()};upd()});
+  const leer=()=>({oferente:g("oferente").value.trim(),fecha:g("fecha").value||todayISO(),asesor:g("asesor").value,asesor_nombre:g("asesor_nombre").value.trim()||g("asesor").value,domicilio:g("domicilio").value.trim(),precio:num(g("precio").value),anticipo:g("anticipo")?num(g("anticipo").value):null,entrega:g("entrega").value.trim(),vigencia:Math.max(1,Math.round(num(g("vigencia").value)||5)),aclaraciones:g("aclaraciones").value.trim(),con_inmo:g("con_inmo").checked,inmo_nombre:g("con_inmo").checked?g("inmo_nombre").value.trim():"",inmo_contacto:g("con_inmo").checked?g("inmo_contacto").value.trim():"",con_deposito:g("con_deposito").checked,garantia:g("con_deposito").checked?num(g("garantia").value):null,garantia_forma:g("garantia_forma").value,recoger:g("recoger").value||null,recibi_de:g("recibi_de").value.trim(),lugar:g("lugar").value.trim()||"Guadalajara, Jal."});
+  const valida=x=>{if(!x.oferente){toast("Falta el nombre del oferente",true);return false}if(!x.domicilio){toast("Falta el domicilio del inmueble",true);return false}if(!x.precio){toast(R?"Falta la renta mensual":"Falta el precio ofertado",true);return false}if(x.con_deposito&&!x.garantia){toast("Falta el monto del depósito (o desmarca que hubo depósito)",true);return false}return true};
   async function guardar(){const x=leer();if(!valida(x))return null;LS.set("trust_herr_nombre_"+x.asesor,x.asesor_nombre);
-    const row={tipo:"oferta_compra",asesor:x.asesor,titulo:x.oferente,datos:x,updated_at:new Date().toISOString()};
+    const row={tipo:T,asesor:x.asesor,titulo:x.oferente,datos:x,updated_at:new Date().toISOString()};
     const r=isNew?await sb.from("documentos").insert({...row,estatus:"borrador"}).select().single():await sb.from("documentos").update(row).eq("id",d.id).select().single();
     if(r.error){toast("No se guardó: "+r.error.message,true);return null}
     if(isNew)DOCS.unshift(r.data);else DOCS[DOCS.findIndex(y=>y.id===d.id)]=r.data;return r.data}
@@ -254,12 +254,12 @@ function openOferta(d){
 
 /* ---------- oferta de compra · PDF ---------- */
 function ofertaPDF(d){
-  const x=dat(d);const folio="OC-"+String(x.fecha||"").replace(/-/g,"").slice(2)+"-"+String(d.id||"").replace(/-/g,"").slice(-4).toUpperCase();
+  const x=dat(d);const R=d.tipo==="oferta_renta";const folio=(R?"OR-":"OC-")+String(x.fecha||"").replace(/-/g,"").slice(2)+"-"+String(d.id||"").replace(/-/g,"").slice(-4).toUpperCase();
   const vence=x.fecha&&x.vigencia?sumar(x.fecha,+x.vigencia):null;
   const [fy,fm,fd]=String(x.fecha||todayISO()).slice(0,10).split("-").map(Number);
   const recibi=x.recibi_de||x.oferente;
   const b=v=>`<b class="dato">${esc(v||"______________________")}</b>`;
-  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Oferta de compra · ${esc(x.oferente)}</title>
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>${R?"Oferta de renta":"Oferta de compra"} · ${esc(x.oferente)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 @page{size:letter;margin:0}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -299,24 +299,24 @@ p{margin:0 0 5px}.dato{color:#173F35;font-weight:600;background:#FBF5E9;border-b
 </style></head><body><div class="page">
   <div class="hero">
     <div class="top"><img class="logo" src="data:image/png;base64,${LOGO_B64}" alt="TRUST realtor"><div class="folio">Folio<b>${folio}</b>${esc(x.lugar||"Guadalajara, Jal.")} · ${fechaL(x.fecha)}</div></div>
-    <div class="tag">Promesa de compraventa</div>
-    <h1>Oferta <em>de compra</em></h1>
+    <div class="tag">${R?"Arrendamiento":"Promesa de compraventa"}</div>
+    <h1>Oferta <em>${R?"de renta":"de compra"}</em></h1>
   </div>
   <div class="body">
     <div class="cards">
-      <div class="k dark"><span class="l">Precio ofertado</span><span class="v big">${fmt(x.precio)}</span><span class="s">${esc(pesosLetra(x.precio))}</span></div>
+      <div class="k dark"><span class="l">${R?"Renta mensual":"Precio ofertado"}</span><span class="v big">${fmt(x.precio)}</span><span class="s">${esc(pesosLetra(x.precio))}</span></div>
       <div class="k"><span class="l">Inmueble</span><span class="v" style="font-size:11.5px">${esc(x.domicilio)}</span></div>
-      <div class="k"><span class="l">Anticipo a la firma</span><span class="v">${x.anticipo?fmt(x.anticipo):"—"}</span><span class="s">resto a la escrituración</span></div>
+      ${R?`<div class="k"><span class="l">Entrega de posesión</span><span class="v" style="font-size:12.5px">${esc(x.entrega||"—")}</span></div>`:`<div class="k"><span class="l">Anticipo a la firma</span><span class="v">${x.anticipo?fmt(x.anticipo):"—"}</span><span class="s">resto a la escrituración</span></div>`}
       <div class="k"><span class="l">Vigencia</span><span class="v">${x.vigencia} día${+x.vigencia===1?"":"s"}</span><span class="s">${vence?"hasta el "+fechaL(vence):"naturales"}</span></div>
     </div>
     <div class="eyebrow">Declaración</div><h2>Oferente</h2>
-    <p>${b(x.oferente)}, por conducto de ${b(x.asesor_nombre||x.asesor)}, en representación de <b>“${EMPRESA}”</b> que ejerce como mediador en la operación, ofrezco celebrar con el legítimo propietario el contrato de <b>PROMESA DE COMPRA-VENTA</b> de acuerdo con lo siguiente:</p>
+    <p>${b(x.oferente)}, por conducto de ${b(x.asesor_nombre||x.asesor)}, en representación de <b>“${EMPRESA}”</b> que ejerce como mediador en la operación, ofrezco celebrar con el legítimo propietario el contrato de <b>${R?"ARRENDAMIENTO":"PROMESA DE COMPRA-VENTA"}</b> de acuerdo con lo siguiente:</p>
     <ul class="cl">
-      <li><i>a</i><span>Comprar el bien inmueble con domicilio en: ${b(x.domicilio)}.</span></li>
+      <li><i>a</i><span>${R?"Rentar":"Comprar"} el bien inmueble con domicilio en: ${b(x.domicilio)}.</span></li>
       <li><i>b</i><span>Manifiesto que conozco el inmueble y el estado en el que se encuentra.</span></li>
-      <li><i>c</i><span>Ofrezco a su legítimo propietario comprar en la cantidad de: ${b(fmt(x.precio))} (${esc(pesosLetra(x.precio))}).</span></li>
-      <li><i>d</i><span>En el momento de la firma del contrato de promesa de compraventa la cantidad de: ${b(x.anticipo?fmt(x.anticipo):"")} ${x.anticipo?`(${esc(pesosLetra(x.anticipo))})`:""} y el resto a la fecha de escrituración.</span></li>
-      <li><i>e</i><span>Fecha de entrega de posesión: ${b(x.entrega)}.</span></li>
+      <li><i>c</i><span>${R?"Ofrezco a su legítimo propietario una renta mensual de":"Ofrezco a su legítimo propietario comprar en la cantidad de"}: ${b(fmt(x.precio))} (${esc(pesosLetra(x.precio))}).</span></li>
+      ${R?"":`<li><i>d</i><span>En el momento de la firma del contrato de promesa de compraventa la cantidad de: ${b(x.anticipo?fmt(x.anticipo):"")} ${x.anticipo?`(${esc(pesosLetra(x.anticipo))})`:""} y el resto a la fecha de escrituración.</span></li>`}
+      <li><i>${R?"d":"e"}</i><span>Fecha de entrega de posesión: ${b(x.entrega)}.</span></li>
     </ul>
     ${x.con_inmo&&(x.inmo_nombre||x.inmo_contacto)?`<div class="note" style="border-left-color:#173F35;background:#F1F5F3"><span class="nl" style="color:#173F35">Operación compartida con inmobiliaria</span><b>${esc(x.inmo_nombre||"")}</b>${x.inmo_contacto?` · ${esc(x.inmo_contacto)}`:""}</div>`:""}
     ${x.aclaraciones?`<div class="note"><span class="nl">Aclaraciones</span>${esc(x.aclaraciones)}</div>`:""}
@@ -326,8 +326,8 @@ p{margin:0 0 5px}.dato{color:#173F35;font-weight:600;background:#FBF5E9;border-b
       <div class="bb">
         <p>Como garantía de la seriedad de mi oferta, entrego ${tr?"mediante <b>transferencia bancaria</b>":"en <b>efectivo</b>"} la cantidad de ${b(x.garantia?fmt(x.garantia):"")}${x.garantia?` (${esc(pesosLetra(x.garantia))})`:""} a favor de “${EMPRESA}”${tr?":":"."}</p>
         ${tr?`<div class="bank"><div style="font-size:9.5px;color:#4F534E">Cuenta de la empresa mediadora.</div><div class="r"><b>PROMOTORA DE INMUEBLES TRUST SA DE CV</b>Banco ${BANCO.banco} · CLABE ${BANCO.clabe}<br>Cuenta ${BANCO.cuenta}</div></div>`:""}
-        <p class="legal">En caso de que mi oferta <b>SEA ACEPTADA</b> por el propietario, esta cantidad me deberá ser devuelta en el momento de la firma del contrato correspondiente, sin que cause interés o rédito alguno. En el supuesto que mi oferta <b>NO SEA ACEPTADA</b> por el propietario, deberé recogerla en su totalidad sin que cause interés o rédito alguno a partir del día ${b(x.recoger?fechaL(x.recoger):"")} en las oficinas de “${EMPRESA}”, quedando automáticamente liberados de cualquier tipo de responsabilidad, tanto el propietario como el oferente${tr?"; al tratarse de transferencia, la devolución será en un periodo no mayor a 10 días hábiles":""}.</p>
-        <div class="recibo"><p><b>Recibo de depósito.</b> En mi carácter de mediador de la operación de compraventa del inmueble antes mencionado, recibí de ${b(recibi)} la cantidad antes mencionada ${tr?"vía transferencia":"en efectivo"}.</p></div>
+        <p class="legal">En caso de que mi oferta <b>SEA ACEPTADA</b> por el propietario, esta cantidad me deberá ser devuelta en el momento de la firma del contrato correspondiente, sin que cause interés o rédito alguno. En el supuesto que mi oferta <b>NO SEA ACEPTADA</b> por el propietario, deberé recogerla en su totalidad sin que cause interés o rédito alguno a partir del día ${b(x.recoger?fechaL(x.recoger):"")} en las oficinas de “${EMPRESA}”, quedando automáticamente liberados de cualquier tipo de responsabilidad, tanto el propietario como el oferente${tr?"; al tratarse de transferencia, la devolución será en un periodo no mayor a 10 días hábiles":""}.${R?" Manifiesto igualmente mi conformidad para que, en caso de incumplimiento de mi parte a los términos de esta oferta, la cantidad que hoy entrego me sea penalizada en su totalidad por concepto de indemnización.":""}</p>
+        <div class="recibo"><p><b>Recibo de depósito.</b> En mi carácter de mediador de la operación de ${R?"renta":"compraventa"} del inmueble antes mencionado, recibí de ${b(recibi)} la cantidad antes mencionada ${tr?"vía transferencia":"en efectivo"}.</p></div>
       </div>
     </div>`})()}
     <p style="margin-top:10px">${esc(x.lugar||"Guadalajara, Jal.")}, a ${fd} de ${MESES_L[fm-1]} del año ${fy}.</p>
