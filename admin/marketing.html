@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FAF8F2">
+<title>Marketing | TRUST · Admin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap">
+<style>
+:root{
+  --green:#173F35; --green-2:#1F5446; --gold:#B8956A; --gold-2:#9C7A4E;
+  --bg:#FAF8F2; --surface:#FFFFFF; --surface-2:#EFEAE0; --line:#D9D2C3; --line-2:#BFB5A0;
+  --text:#1E241F; --muted:#585C57; --faint:#8A8D88;
+  --ok:#2E7D5B; --ok-bg:#E1F1E8; --warn:#B27A0F; --warn-bg:#FBF0D6; --bad:#A8342A; --bad-bg:#F8E1DE; --info:#2F5597; --info-bg:#E7ECF6;
+  --shadow:0 1px 2px rgba(23,63,53,.06),0 8px 24px rgba(23,63,53,.06);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Poppins,"Segoe UI",system-ui,sans-serif;font-size:14px;line-height:1.45}
+.wrap{max-width:1240px;margin:0 auto;padding:20px 16px 60px}
+h1,h2,h3{font-family:Lora,Georgia,serif;font-weight:500;margin:0}
+button,select,input,textarea{font:inherit;color:inherit}button{cursor:pointer}
+.home-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 14px;background:var(--surface)}
+.home-link:hover{color:var(--green);border-color:var(--green)}
+header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.brand .logo{height:30px;display:block;margin-bottom:12px}.brand h1{font-size:30px;line-height:1.1}.brand p{margin:4px 0 0;color:var(--muted)}
+.topright{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.btn{border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:9px 16px;font-weight:500;font-size:13px;color:var(--text);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{border-color:var(--green);color:var(--green)}
+.btn.primary{background:var(--green);border-color:var(--green);color:#fff}.btn.primary:hover{background:var(--green-2);color:#fff}
+.btn.danger{border-color:var(--bad);color:var(--bad)}.btn.sm{padding:5px 11px;font-size:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px 20px;box-shadow:var(--shadow)}
+.card h3{font-size:17px;margin-bottom:12px}
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.filters select,.filters input{border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:8px 14px;font-size:13px}
+.qseg{display:inline-flex;border:1px solid var(--line-2);border-radius:999px;overflow:hidden;background:var(--surface)}.qseg button{border:0;background:transparent;padding:8px 14px;font:inherit;font-size:13px;cursor:pointer;color:var(--muted)}.qseg button+button{border-left:1px solid var(--line-2)}.qseg button.on{background:var(--green);color:#fff}
+.hint{font-size:12px;color:var(--muted)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.tile{background:var(--surface);border:1px solid var(--line-2);border-radius:14px;padding:12px 14px}
+.tile .l{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.tile .v{display:block;font-family:Lora,serif;font-size:26px;color:var(--green);line-height:1.15}
+.tile .s{font-size:12px;color:var(--muted)}
+.tile.dark{background:var(--green);border-color:var(--green)}.tile.dark .l,.tile.dark .s{color:#D9C9A8}.tile.dark .v{color:#fff}
+.tile.gold .v{color:var(--gold-2)}.tile.bad .v{color:var(--bad)}.tile.ok .v{color:var(--ok)}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:14px}.grid3 .card{min-width:0}
+.twrap{overflow:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{background:#EFEAE0;color:#4F534E;text-align:left;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}tbody tr:nth-child(even) td{background:#FBFAF6}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}td.dim{color:var(--muted)}td.money{font-weight:600}
+tbody tr.subt td{background:var(--surface-2);font-weight:600;border-bottom:2px solid var(--line-2)}
+.segc{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden}
+.segc button{border:0;background:var(--bg);padding:5px 10px;font:inherit;font-size:12px;cursor:pointer;color:var(--muted)}.segc button+button{border-left:1px solid var(--line-2)}
+.segc button.on.bad{background:#FBEDEA;color:var(--bad)}.segc button.on.ok{background:#E6F2EC;color:var(--ok)}
+.st{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.st.na{background:var(--surface-2);color:var(--muted)}.st.dev{background:var(--info-bg);color:var(--info)}
+.ico{border:0;background:transparent;color:var(--faint);font-size:15px;padding:2px 6px;border-radius:6px}.ico:hover{color:var(--green);background:var(--surface-2)}
+.empty{color:var(--muted);padding:26px;text-align:center;border:1px dashed var(--line-2);border-radius:14px}.empty b{display:block;color:var(--text);margin-bottom:4px}
+.bars .bar{display:grid;grid-template-columns:minmax(90px,1fr) minmax(60px,1.4fr) auto;gap:10px;align-items:center;padding:5px 0;font-size:13px}
+.bars .bar>span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bars i{display:block;height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden}.bars i b{display:block;height:100%;background:var(--green);border-radius:4px}
+.bars .n{text-align:right;font-weight:600;white-space:nowrap;font-size:12.5px}.bars .n small{color:var(--muted);font-weight:400}
+.cols{display:flex;align-items:flex-end;gap:4px;height:150px;padding-top:10px}
+.cols .c{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;min-width:0}
+.cols .c i{display:block;width:100%;max-width:40px;background:var(--green);border-radius:5px 5px 0 0;min-height:2px}.cols .c i.r{background:var(--gold)}
+.cols .c small{font-size:11px;font-weight:700;white-space:nowrap}.cols .c small.dim{color:var(--faint);font-weight:400}.cols .c b{font-size:11px;color:var(--muted);font-weight:600}
+.scrim{position:fixed;inset:0;background:rgba(23,63,53,.35);z-index:20}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(640px,100%);background:var(--surface);z-index:21;box-shadow:var(--shadow);display:flex;flex-direction:column}
+.drawer header{display:flex;justify-content:space-between;align-items:center;padding:16px 22px;border-bottom:1px solid var(--line)}.drawer header h3{font-size:19px}
+.drawer .body{padding:18px 22px;overflow:auto;flex:1}
+.drawer footer{padding:12px 22px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.fg{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;align-content:start}
+.f{display:flex;flex-direction:column;gap:4px}.f label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.f input,.f select,.f textarea{border:1px solid var(--line-2);border-radius:10px;padding:9px 11px;background:var(--bg)}
+.c12{grid-column:span 12}.c8{grid-column:span 8}.c6{grid-column:span 6}.c4{grid-column:span 4}.c3{grid-column:span 3}
+.sect{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}.sect h4{margin:0 0 10px;font-family:Lora,serif;font-weight:500;font-size:15px;color:var(--green)}
+.chk{display:flex;align-items:center;gap:8px;font-size:13px}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--green);color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:99}
+.toast.show{opacity:1;transform:translateX(-50%)}.toast.err{background:var(--bad)}
+@media (max-width:860px){.grid3{grid-template-columns:1fr}.c8,.c6,.c4,.c3{grid-column:span 12}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><img class="logo" id="logo-img" alt="TRUST realtor"><h1>Marketing</h1><p>Inversión en marketing digital por proyecto y reembolsos de desarrolladores</p></div>
+    <div class="topright"><a class="home-link" href="./">← Inicio</a><button class="btn" id="btn-reglas">Reglas por proyecto</button><button class="btn primary" id="btn-new">+ Inversión</button></div>
+  </header>
+  <div class="filters" id="period-bar">
+    <select id="p-anio"></select>
+    <select id="p-mes"><option value="">Todo el año</option></select>
+    <select id="f-proy"><option value="">Proyecto: todos</option></select>
+    <select id="f-plat"><option value="">Plataforma: todas</option></select>
+    <select id="f-reem"><option value="">Reembolso: todos</option><option value="pend">Pendientes de reembolso</option><option value="ok">Reembolsados</option><option value="na">Sin reembolso</option></select>
+    <span class="hint" id="period-txt" style="margin-left:auto"></span>
+  </div>
+  <div id="main"></div>
+</div>
+<div id="drawer-root"></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const SUPABASE_URL="https://xshhjvdmkuqesdlvczbb.supabase.co";
+const SUPABASE_KEY="sb_publishable_5erZfpELyuncW1nrReTaZw_BQj0bc-P";
+const LOGO_B64="__LOGO__";
+const PROYECTOS=["Tanhia","Balcana","Luciana Colomos","Luciana Providencia","Lázaro","Epicentria","Neza","ILARA","TRUST","Corretaje","Otro"];
+const PLATAFORMAS=["Meta Ads","Google Ads","TikTok Ads","Inmuebles24","Lamudi","Easy Broker","Influencers","Diseño / producción","Otro"];
+// Reglas por default: quién paga y si TRUST exige reembolso al desarrollador
+const REGLAS_DEF={"Balcana":{reembolsable:true,desarrollador:"Tazakan"},"Luciana Colomos":{reembolsable:true,desarrollador:"Valari"},"Luciana Providencia":{reembolsable:true,desarrollador:""},"Epicentria":{reembolsable:true,desarrollador:"Epicentria"},"TRUST":{reembolsable:false,desarrollador:""},"ILARA":{reembolsable:false,desarrollador:"INDEA"},"Tanhia":{reembolsable:false,desarrollador:"Celsius"},"Lázaro":{reembolsable:false,desarrollador:""},"Neza":{reembolsable:false,desarrollador:""},"Corretaje":{reembolsable:false,desarrollador:""},"Otro":{reembolsable:false,desarrollador:""}};
+let sb=null; try{ sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); }catch(e){}
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+$("#logo-img").src="data:image/png;base64,"+LOGO_B64;
+let tt; function toast(m,err){const t=$("#toast");t.textContent=m;t.classList.toggle("err",!!err);t.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("show"),err?3600:2200);}
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const num=s=>{const x=parseFloat(String(s??"").replace(/[^0-9.\-]/g,""));return isNaN(x)?null:x};
+const hasCents=v=>Math.round(Math.abs(+v)*100)%100!==0;
+const fmt=v=>v==null||v===""||isNaN(v)?"—":"$ "+(+v).toLocaleString("es-MX",{minimumFractionDigits:hasCents(v)?2:0,maximumFractionDigits:2});
+const fmtK=v=>Math.abs(v)>=1e6?"$ "+(v/1e6).toFixed(2).replace(/\.?0+$/,"")+" M":fmt(v);
+const cpl=(m,l)=>l>0?"$ "+Math.round(m/l).toLocaleString("es-MX"):"—";
+const L=l=>l.reduce((a,x)=>a+(+x.leads||0),0);
+const pct=(n,d)=>d?Math.round(n/d*100)+"%":"—";
+const todayISO=()=>{const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)};
+const MESES=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"],MESES_L=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const fechaM=d=>d?(()=>{const [y,m]=String(d).slice(0,7).split("-");return `${MESES_L[+m-1]} ${y}`})():"—";
+const fecha=d=>d?(()=>{const [y,m,dd]=String(d).slice(0,10).split("-");return `${+dd} ${MESES[+m-1]} ${y.slice(2)}`})():"—";
+
+let INV=[], REGLAS={...REGLAS_DEF}, TABLA_OK=true;
+let P={anio:new Date().getFullYear(),mes:""}, filt={proy:"",plat:"",reem:""};
+async function loadAll(){
+  if(!sb){toast("Sin conexión a Supabase",true);return}
+  const [i,r]=await Promise.all([sb.from("marketing_inversion").select("*").order("mes",{ascending:false}),sb.from("ventas_reglas").select("reglas").eq("id",1).maybeSingle()]);
+  if(i.error){TABLA_OK=false}else{TABLA_OK=true;INV=i.data||[]}
+  if(r.data&&r.data.reglas&&r.data.reglas.marketing)REGLAS={...REGLAS_DEF,...r.data.reglas.marketing};
+  REGLAS_ALL=(r.data&&r.data.reglas)||{};
+  render();
+}
+let REGLAS_ALL={};
+const inPeriodo=d=>{if(!d)return false;const [y,m]=String(d).slice(0,7).split("-");return +y===+P.anio&&(!P.mes||+m===+P.mes)};
+const periodoTxt=()=>P.mes?`${MESES_L[+P.mes-1]} ${P.anio}`:`Año ${P.anio}`;
+const reemEstado=x=>x.pagado_por!=="TRUST"?"dev":x.reembolsable?(x.reembolsado?"ok":"pend"):"na";
+const REEM_TXT={dev:"Lo pagó el desarrollador",na:"Sin reembolso",pend:"Pendiente de reembolso",ok:"Reembolsado"};
+
+function renderPeriodBar(){
+  const years=[...new Set(INV.map(x=>+String(x.mes).slice(0,4)).concat([new Date().getFullYear()]))].sort((a,b)=>b-a);
+  $("#p-anio").innerHTML=years.map(y=>`<option ${y===+P.anio?"selected":""}>${y}</option>`).join("");
+  const ms=$("#p-mes");if(ms.options.length===1)MESES_L.forEach((m,i)=>{const o=document.createElement("option");o.value=i+1;o.textContent=m;ms.appendChild(o)});ms.value=P.mes;
+  const proys=[...new Set(PROYECTOS.concat(INV.map(x=>x.proyecto).filter(Boolean)))];
+  $("#f-proy").innerHTML=`<option value="">Proyecto: todos</option>`+proys.map(p=>`<option ${filt.proy===p?"selected":""}>${esc(p)}</option>`).join("");
+  const plats=[...new Set(PLATAFORMAS.concat(INV.map(x=>x.plataforma).filter(Boolean)))];
+  $("#f-plat").innerHTML=`<option value="">Plataforma: todas</option>`+plats.map(p=>`<option ${filt.plat===p?"selected":""}>${esc(p)}</option>`).join("");
+  $("#f-reem").value=filt.reem;$("#period-txt").textContent=periodoTxt();
+}
+$("#p-anio").onchange=e=>{P.anio=+e.target.value;render()};$("#p-mes").onchange=e=>{P.mes=e.target.value;render()};
+["proy","plat","reem"].forEach(k=>$("#f-"+k).onchange=e=>{filt[k]=e.target.value;render()});
+
+function render(){
+  renderPeriodBar();const el=$("#main");
+  const yr=INV.filter(x=>inPeriodo(x.mes));
+  const rows=yr.filter(x=>(!filt.proy||x.proyecto===filt.proy)&&(!filt.plat||x.plataforma===filt.plat)&&(!filt.reem||reemEstado(x)===filt.reem)).sort((a,b)=>String(b.mes).localeCompare(String(a.mes))||String(a.proyecto).localeCompare(String(b.proyecto)));
+  const S=l=>l.reduce((a,x)=>a+(+x.monto||0),0);
+  const total=S(yr),trust=S(yr.filter(x=>x.pagado_por==="TRUST")),dev=S(yr.filter(x=>x.pagado_por!=="TRUST"));
+  const reemb=yr.filter(x=>reemEstado(x)==="pend"||reemEstado(x)==="ok"),pendL=INV.filter(x=>reemEstado(x)==="pend"),okL=yr.filter(x=>reemEstado(x)==="ok");
+  const neto=trust-S(reemb); // lo que de verdad absorbe TRUST
+  const byP={},byPl={},byM=Array.from({length:12},()=>({t:0,r:0}));
+  yr.forEach(x=>{const m=+x.monto||0;byP[x.proyecto]=(byP[x.proyecto]||0)+m;byPl[x.plataforma]=(byPl[x.plataforma]||0)+m;const i=+String(x.mes).slice(5,7)-1;byM[i].t+=m;if(reemEstado(x)!=="na"&&reemEstado(x)!=="dev")byM[i].r+=m});
+  const bars=(obj,tot)=>{const e=Object.entries(obj).sort((a,b)=>b[1]-a[1]);if(!e.length)return `<p class="hint">Sin datos en el periodo.</p>`;const mx=e[0][1]||1;return e.map(([k,v])=>`<div class="bar"><span>${esc(k)}</span><i><b style="width:${v/mx*100}%"></b></i><span class="n">${fmt(v)} <small>${pct(v,tot)}</small></span></div>`).join("")};
+  const pendPorDev={};pendL.forEach(x=>{const k=x.proyecto;pendPorDev[k]=(pendPorDev[k]||0)+(+x.monto||0)});
+  const seg=x=>{const e=reemEstado(x);if(e==="dev")return `<span class="st dev">Desarrollador</span>`;if(e==="na")return `<span class="st na">Sin reembolso</span>`;return `<div class="segc" data-id="${x.id}"><button class="bad ${e==="pend"?"on":""}" data-k="pend" title="Todavía no me lo reembolsan">Pendiente</button><button class="ok ${e==="ok"?"on":""}" data-k="ok" title="Marcar como reembolsado hoy">Reembolsado</button></div>${e==="ok"&&x.fecha_reembolso?`<br><small class="dim">el ${fecha(x.fecha_reembolso)}</small>`:""}`};
+  el.innerHTML=`
+  <div class="tiles">
+    <div class="tile dark"><span class="l">Inversión total</span><span class="v">${fmtK(total)}</span><span class="s">${yr.length} registro${yr.length===1?"":"s"} · ${periodoTxt()}</span></div>
+    <div class="tile"><span class="l">Pagado por TRUST</span><span class="v">${fmtK(trust)}</span><span class="s">${dev?"+ "+fmtK(dev)+" pagado por desarrolladores":"todo salió de TRUST"}</span></div>
+    <div class="tile gold"><span class="l">Costo neto TRUST</span><span class="v">${fmtK(neto)}</span><span class="s">pagado por TRUST menos lo reembolsable</span></div>
+    <div class="tile bad"><span class="l">Por reembolsarme</span><span class="v">${fmtK(S(pendL))}</span><span class="s">${pendL.length} registro${pendL.length===1?"":"s"} · cualquier fecha</span></div>
+    <div class="tile ok"><span class="l">Reembolsado</span><span class="v">${fmtK(S(okL))}</span><span class="s">${periodoTxt()}</span></div>
+    <div class="tile"><span class="l">Leads recibidos</span><span class="v">${L(yr).toLocaleString("es-MX")}</span><span class="s">${periodoTxt()}</span></div>
+    <div class="tile gold"><span class="l">Costo por lead</span><span class="v">${cpl(S(yr.filter(x=>+x.leads>0)),L(yr))}</span><span class="s">${L(yr)?"inversión con leads ÷ leads":"captura leads en cada registro"}</span></div>
+  </div>
+  ${pendL.length?`<div class="card" style="margin-bottom:14px;border-color:var(--bad)"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0;color:var(--bad)">Pendiente de cobrar a desarrolladores</h3><span class="hint">Genera el estado de cuenta y mándaselo al desarrollador.</span></div>
+    <div class="bars" style="margin-top:8px">${Object.entries(pendPorDev).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="bar"><span><b>${esc(k)}</b> <small class="hint">${esc((REGLAS[k]||{}).desarrollador||"")}</small></span><i><b style="width:${v/Math.max(...Object.values(pendPorDev))*100}%;background:var(--bad)"></b></i><span class="n">${fmt(v)} <button class="btn sm edo" data-p="${esc(k)}" style="margin-left:8px">⤓ Estado de cuenta</button></span></div>`).join("")}</div></div>`:""}
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">Inversiones · ${periodoTxt()}</h3><span class="hint">${rows.length} de ${yr.length}</span></div>
+    ${TABLA_OK?`<div class="twrap"><table><thead><tr><th>Mes</th><th>Proyecto</th><th>Plataforma</th><th>Campaña</th><th class="num">Monto</th><th>Pagó</th><th>Reembolso</th><th class="num">Leads</th><th class="num">CPL</th><th></th></tr></thead>
+    <tbody>${rows.map(x=>`<tr><td class="dim">${fechaM(x.mes)}</td><td><b>${esc(x.proyecto)}</b></td><td>${esc(x.plataforma||"—")}</td><td class="dim">${esc(x.campana||"")}${x.notas?`<br><small>${esc(x.notas)}</small>`:""}</td><td class="num money">${fmt(x.monto)}</td><td>${x.pagado_por==="TRUST"?"TRUST":esc(x.pagado_por||"Desarrollador")}</td><td>${seg(x)}</td><td class="num">${x.leads??"—"}</td><td class="num dim">${cpl(+x.monto||0,+x.leads||0)}</td><td><button class="ico edit" data-id="${x.id}" title="Editar">✎</button></td></tr>`).join("")}
+    ${rows.length?`<tr class="subt"><td colspan="4">Total</td><td class="num">${fmt(S(rows))}</td><td colspan="2"></td><td class="num">${L(rows).toLocaleString("es-MX")}</td><td class="num">${cpl(S(rows.filter(x=>+x.leads>0)),L(rows))}</td><td></td></tr>`:""}</tbody></table>
+    ${rows.length?"":`<div class="empty"><b>Sin inversiones</b>Registra la primera con “+ Inversión”.</div>`}</div>`:`<div class="empty"><b>Falta activar el módulo</b>Corre <code>marketing.sql</code> en Supabase → SQL Editor y recarga.</div>`}
+  </div>
+  ${(()=>{const pp={};yr.forEach(x=>{const k=x.proyecto;pp[k]=pp[k]||{m:0,l:0,ml:0};pp[k].m+=+x.monto||0;pp[k].l+=+x.leads||0;if(+x.leads>0)pp[k].ml+=+x.monto||0});
+    const E=Object.entries(pp).sort((a,b)=>b[1].m-a[1].m);if(!E.length)return "";
+    const mm=Array.from({length:12},()=>({m:0,l:0,ml:0}));yr.forEach(x=>{const i=+String(x.mes).slice(5,7)-1;mm[i].m+=+x.monto||0;mm[i].l+=+x.leads||0;if(+x.leads>0)mm[i].ml+=+x.monto||0});
+    const row=(k,v)=>`<tr><td><b>${esc(k)}</b></td><td class="num money">${fmt(v.m)}</td><td class="num">${v.l?v.l.toLocaleString("es-MX"):"—"}</td><td class="num"><b>${cpl(v.ml,v.l)}</b></td></tr>`;
+    return `<div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">Leads y costo por lead · ${periodoTxt()}</h3><span class="hint">CPL = inversión de los registros con leads ÷ leads recibidos</span></div>
+    <div class="grid3" style="margin-top:0;grid-template-columns:repeat(2,minmax(0,1fr))"><div class="twrap"><table><thead><tr><th>Proyecto</th><th class="num">Inversión</th><th class="num">Leads</th><th class="num">CPL</th></tr></thead><tbody>${E.map(([k,v])=>row(k,v)).join("")}<tr class="subt"><td>Total</td><td class="num">${fmt(S(yr))}</td><td class="num">${L(yr).toLocaleString("es-MX")}</td><td class="num">${cpl(S(yr.filter(x=>+x.leads>0)),L(yr))}</td></tr></tbody></table></div>
+    ${P.mes?"":`<div class="twrap"><table><thead><tr><th>Mes ${P.anio}</th><th class="num">Inversión</th><th class="num">Leads</th><th class="num">CPL</th></tr></thead><tbody>${mm.map((v,i)=>v.m||v.l?row(MESES_L[i],v):"").join("")}</tbody></table></div>`}</div></div>`})()}
+  <div class="grid3">
+    <div class="card"><h3>Por proyecto</h3><div class="bars">${bars(byP,total)}</div></div>
+    <div class="card"><h3>Por plataforma</h3><div class="bars">${bars(byPl,total)}</div></div>
+    <div class="card"><h3>Por mes · ${P.anio}</h3><div class="cols">${(()=>{const mx=Math.max(...byM.map(m=>m.t),1);return byM.map((m,i)=>`<div class="c" title="${MESES_L[i]}: ${fmt(m.t)} · reembolsable ${fmt(m.r)}"><small class="${m.t?"":"dim"}">${m.t?(m.t>=1e3?Math.round(m.t/1e3)+" k":Math.round(m.t)):"–"}</small><div style="display:flex;gap:2px;width:100%;align-items:flex-end;height:100px;justify-content:center"><i style="height:${m.t/mx*100}%"></i><i class="r" style="height:${m.r/mx*100}%"></i></div><b>${MESES[i]}</b></div>`).join("")})()}</div><p class="hint" style="margin:8px 0 0">Verde: inversión total · Dorado: parte reembolsable por el desarrollador.</p></div>
+  </div>`;
+  el.querySelectorAll(".edit").forEach(b=>b.onclick=()=>openInv(INV.find(x=>x.id===b.dataset.id)));
+  el.querySelectorAll(".edo").forEach(b=>b.onclick=()=>estadoCuentaPDF(b.dataset.p));
+  el.querySelectorAll(".segc button").forEach(b=>b.onclick=async()=>{const x=INV.find(y=>y.id===b.closest(".segc").dataset.id);const k=b.dataset.k;if(reemEstado(x)===k)return;
+    const upd=k==="ok"?{reembolsado:true,fecha_reembolso:todayISO()}:{reembolsado:false,fecha_reembolso:null};const r=await sb.from("marketing_inversion").update(upd).eq("id",x.id);if(r.error){toast("No se guardó: "+r.error.message,true);return}Object.assign(x,upd);toast(k==="ok"?"Marcado como reembolsado":"Regresado a pendiente");render()});
+}
+
+/* ---------- alta / edición ---------- */
+function openInv(x){
+  const isNew=!x;x=x?{...x}:{mes:todayISO().slice(0,7)+"-01",proyecto:"",plataforma:"Meta Ads",campana:"",monto:null,pagado_por:"TRUST",reembolsable:false,reembolsado:false,fecha_reembolso:null,leads:null,notas:""};
+  const root=$("#drawer-root");
+  const opt=(list,cur,blank)=>(blank?`<option value="">${blank}</option>`:"")+list.map(v=>`<option ${v===cur?"selected":""}>${esc(v)}</option>`).join("");
+  root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog">
+    <header><h3>${isNew?"Registrar inversión":"Inversión · "+esc(x.proyecto)}</h3><button class="ico" id="d-close">✕</button></header>
+    <div class="body"><div class="fg">
+      <div class="f c4"><label>Mes</label><input type="month" id="i-mes" value="${String(x.mes||"").slice(0,7)}"></div>
+      <div class="f c4"><label>Proyecto</label><select id="i-proy">${opt([...new Set(PROYECTOS.concat(INV.map(v=>v.proyecto).filter(Boolean)))],x.proyecto,"Elegir…")}</select></div>
+      <div class="f c4"><label>Plataforma</label><input id="i-plat" list="dl-plat" value="${esc(x.plataforma||"")}"><datalist id="dl-plat">${PLATAFORMAS.map(p=>`<option value="${esc(p)}">`).join("")}</datalist></div>
+      <div class="f c8"><label>Campaña / concepto</label><input id="i-camp" value="${esc(x.campana||"")}" placeholder="Ej. Tanhia · leads octubre, Balcana · remate"></div>
+      <div class="f c4"><label>Monto invertido</label><input id="i-monto" inputmode="decimal" value="${x.monto!=null?fmt(x.monto):""}" placeholder="$ 0"></div>
+      <div class="f c4"><label>Leads recibidos</label><input id="i-leads" inputmode="numeric" value="${x.leads??""}" placeholder="0"></div>
+      <div class="f c8"><label>Notas</label><input id="i-notas" value="${esc(x.notas||"")}"></div>
+    </div>
+    <div class="sect"><h4>¿Quién lo paga?</h4><div class="fg">
+      <div class="f c6"><label>Pagado por</label><select id="i-pago"><option value="TRUST" ${x.pagado_por==="TRUST"?"selected":""}>TRUST (yo lo pagué)</option><option value="Desarrollador" ${x.pagado_por!=="TRUST"?"selected":""}>El desarrollador directamente</option></select></div>
+      <div class="f c6" id="box-reem"><label>Reembolso del desarrollador</label><label class="chk" style="padding:9px 0"><input type="checkbox" id="i-reem" ${x.reembolsable?"checked":""}> TRUST exige reembolso de este gasto</label><span class="hint" id="i-regla"></span></div>
+      <div class="f c6" id="box-reemok" style="${x.reembolsable&&x.pagado_por==="TRUST"?"":"display:none"}"><label class="chk" style="padding:9px 0"><input type="checkbox" id="i-reemok" ${x.reembolsado?"checked":""}> Ya me lo reembolsaron</label></div>
+      <div class="f c6" id="box-freem" style="${x.reembolsado?"":"display:none"}"><label>Fecha del reembolso</label><input type="date" id="i-freem" value="${esc(x.fecha_reembolso||todayISO())}"></div>
+    </div></div></div>
+    <footer><span>${isNew?"":`<button class="btn danger" id="d-del">Eliminar</button>`}</span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cancelar</button><button class="btn primary" id="d-save">${isNew?"Registrar":"Guardar"}</button></span></footer></div>`;
+  const g=i=>$("#i-"+i);const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
+  g("monto").onchange=()=>{const v=num(g("monto").value);g("monto").value=v==null?"":fmt(v)};
+  const vis=()=>{const t=g("pago").value==="TRUST";$("#box-reem").style.display=t?"":"none";$("#box-reemok").style.display=t&&g("reem").checked?"":"none";$("#box-freem").style.display=t&&g("reem").checked&&g("reemok").checked?"":"none"};
+  g("pago").onchange=vis;g("reem").onchange=vis;g("reemok").onchange=vis;
+  g("proy").onchange=()=>{const R=REGLAS[g("proy").value];if(R&&isNew){g("reem").checked=!!R.reembolsable;g("regla").textContent=R.reembolsable?`Regla: ${g("proy").value} se le cobra a ${R.desarrollador||"el desarrollador"}.`:`Regla: ${g("proy").value} lo absorbe TRUST.`}else g("regla").textContent="";vis()};
+  if(x.proyecto){const R=REGLAS[x.proyecto];if(R)g("regla").textContent=R.reembolsable?`Regla: se le cobra a ${R.desarrollador||"el desarrollador"}.`:"Regla: lo absorbe TRUST."}vis();
+  const leer=()=>{const t=g("pago").value==="TRUST";const re=t&&g("reem").checked;const ok=re&&g("reemok").checked;return {mes:(g("mes").value||todayISO().slice(0,7))+"-01",proyecto:g("proy").value,plataforma:g("plat").value.trim()||null,campana:g("camp").value.trim()||null,monto:num(g("monto").value),leads:num(g("leads").value),notas:g("notas").value.trim()||null,pagado_por:g("pago").value,reembolsable:re,reembolsado:ok,fecha_reembolso:ok?(g("freem").value||todayISO()):null}};
+  $("#d-save").onclick=async()=>{const row=leer();if(!row.proyecto){toast("Falta el proyecto",true);return}if(!row.monto){toast("Falta el monto",true);return}
+    const r=isNew?await sb.from("marketing_inversion").insert(row).select().single():await sb.from("marketing_inversion").update(row).eq("id",x.id).select().single();
+    if(r.error){toast("No se guardó: "+r.error.message,true);return}
+    if(isNew)INV.unshift(r.data);else INV[INV.findIndex(y=>y.id===x.id)]=r.data;close();render();toast(isNew?"Inversión registrada":"Guardado")};
+  if(!isNew)$("#d-del").onclick=async()=>{if(!confirm("¿Eliminar esta inversión?"))return;const r=await sb.from("marketing_inversion").delete().eq("id",x.id);if(r.error){toast(r.error.message,true);return}INV=INV.filter(y=>y.id!==x.id);close();render();toast("Eliminada")};
+}
+
+/* ---------- reglas por proyecto ---------- */
+$("#btn-reglas").onclick=()=>{
+  const root=$("#drawer-root");const proys=[...new Set(PROYECTOS.concat(Object.keys(REGLAS)))];
+  root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(560px,100%)">
+    <header><h3>Reglas por proyecto</h3><button class="ico" id="d-close">✕</button></header>
+    <div class="body"><p class="hint" style="margin:0 0 12px">Quién absorbe la pauta de cada proyecto. Al registrar una inversión se precarga esta regla; la puedes cambiar en cada registro.</p>
+      <table><thead><tr><th>Proyecto</th><th>Desarrollador</th><th>¿TRUST exige reembolso?</th></tr></thead><tbody>${proys.map(p=>{const R=REGLAS[p]||{};return `<tr data-p="${esc(p)}"><td><b>${esc(p)}</b></td><td><input class="dev" value="${esc(R.desarrollador||"")}" style="border:1px solid var(--line-2);border-radius:8px;padding:5px 8px;width:140px"></td><td><label class="chk"><input type="checkbox" class="re" ${R.reembolsable?"checked":""}> Sí, me lo reembolsan</label></td></tr>`}).join("")}</tbody></table></div>
+    <footer><span></span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cancelar</button><button class="btn primary" id="d-save">Guardar reglas</button></span></footer></div>`;
+  const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
+  $("#d-save").onclick=async()=>{const R={};root.querySelectorAll("tr[data-p]").forEach(tr=>R[tr.dataset.p]={desarrollador:tr.querySelector(".dev").value.trim(),reembolsable:tr.querySelector(".re").checked});
+    const reglas={...REGLAS_ALL,marketing:R};const r=await sb.from("ventas_reglas").upsert({id:1,reglas,updated_at:new Date().toISOString()});if(r.error){toast("No se guardó: "+r.error.message,true);return}REGLAS={...REGLAS_DEF,...R};REGLAS_ALL=reglas;close();toast("Reglas guardadas")};
+};
+
+/* ---------- estado de cuenta de reembolso (PDF) ---------- */
+function estadoCuentaPDF(proy){
+  const R=REGLAS[proy]||{};const rows=INV.filter(x=>x.proyecto===proy&&(reemEstado(x)==="pend"||reemEstado(x)==="ok")).sort((a,b)=>String(a.mes).localeCompare(String(b.mes)));
+  const pend=rows.filter(x=>reemEstado(x)==="pend"),ok=rows.filter(x=>reemEstado(x)==="ok");const S=l=>l.reduce((a,x)=>a+(+x.monto||0),0);
+  const hoy=new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"});
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Estado de cuenta · Marketing ${esc(proy)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>@page{size:letter;margin:.5in .55in}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{margin:0;font-family:Poppins,sans-serif;color:#1E241F;background:#FAF8F2;font-size:10px}.page{width:8.5in;min-height:11in;margin:0 auto;padding:.45in .55in .4in;background:#FAF8F2}
+.top{display:flex;justify-content:space-between;align-items:flex-start}.logo{width:110px}.right{text-align:right;font-size:10.5px;color:#6F726B;line-height:1.5}.right b{display:block;font-family:Lora,serif;font-size:13px;color:#173F35;font-weight:500}
+.title{margin:14px 0 2px;font-family:Lora,serif;font-size:28px;font-weight:500;color:#173F35}.title em{font-style:italic;color:#B8956A}.sub{font-size:11px;color:#6F726B;margin-bottom:14px}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}.k{background:#fff;border:1px solid #E3DDD0;border-radius:8px;padding:8px 10px}.k .l{font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:#6F726B;font-weight:600;display:block}.k .v{font-family:Lora,serif;font-size:18px}.k.dark{background:#173F35;border-color:#173F35;color:#fff}.k.dark .l{color:#D9C9A8}.k.bad .v{color:#A8342A}.k.ok .v{color:#2E7D5B}
+table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #E3DDD0;border-radius:8px;overflow:hidden}th{background:#EFEAE0;color:#4F534E;text-align:left;font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;padding:7px 8px}td{padding:6px 8px;border-bottom:1px solid #EEE9DE;font-size:9.5px}td.n,th.n{text-align:right;white-space:nowrap}tr.tot td{background:#173F35;color:#fff;font-weight:600}.tag{display:inline-block;padding:1px 6px;border-radius:999px;font-size:7.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}.tag.p{background:#F8E1DE;color:#A8342A}.tag.o{background:#E1F1E8;color:#2E7D5B}
+.bank{margin-top:14px;background:#fff;border:1px solid #E3DDD0;border-radius:8px;padding:10px 12px;font-size:9.5px}.bank b{font-family:Lora,serif;font-size:11px;color:#173F35;font-weight:500;display:block}
+.foot{margin-top:18px;display:flex;justify-content:space-between;align-items:flex-end;font-size:9px;color:#6F726B}.foot img{width:64px}</style></head><body><div class="page">
+<div class="top"><img class="logo" src="data:image/png;base64,${LOGO_B64}"><div class="right">Proyecto<b>${esc(proy)}${R.desarrollador?" · "+esc(R.desarrollador):""}</b>Corte al<b>${hoy}</b></div></div>
+<div class="title">Estado de cuenta · <em>marketing</em></div>
+<div class="sub">Inversión en pauta y marketing digital pagada por ${esc("Promotora de Inmuebles TRUST, S.A. de C.V.")} por cuenta del desarrollador, sujeta a reembolso.</div>
+<div class="kpis"><div class="k dark"><span class="l">Total invertido (reembolsable)</span><span class="v">${fmt(S(rows))}</span></div><div class="k bad"><span class="l">Pendiente de reembolso</span><span class="v">${fmt(S(pend))}</span></div><div class="k ok"><span class="l">Ya reembolsado</span><span class="v">${fmt(S(ok))}</span></div></div>
+<table><thead><tr><th>Mes</th><th>Plataforma</th><th>Campaña / concepto</th><th>Estatus</th><th class="n">Monto</th></tr></thead><tbody>
+${rows.map(x=>`<tr><td>${fechaM(x.mes)}</td><td>${esc(x.plataforma||"")}</td><td>${esc(x.campana||"")}${x.notas?`<br><small style="color:#6F726B">${esc(x.notas)}</small>`:""}</td><td>${reemEstado(x)==="ok"?`<span class="tag o">Reembolsado${x.fecha_reembolso?" · "+fecha(x.fecha_reembolso):""}</span>`:`<span class="tag p">Pendiente</span>`}</td><td class="n">${fmt(x.monto)}</td></tr>`).join("")}
+<tr class="tot"><td colspan="4">Pendiente de reembolso a TRUST</td><td class="n">${fmt(S(pend))}</td></tr></tbody></table>
+<div class="bank"><b>Datos para el reembolso</b>PROMOTORA DE INMUEBLES TRUST SA DE CV · Banco BBVA · CLABE 0123 2000 1217 080823 · Cuenta 012 170 8082</div>
+<div class="foot"><div><b style="color:#173F35;letter-spacing:.14em;text-transform:uppercase">Confidencial</b> · hola@trustreal.mx · 33 3376 5616 · trustreal.mx</div><img src="data:image/png;base64,${LOGO_B64}"></div>
+</div><script>window.addEventListener("load",()=>setTimeout(()=>window.print(),600));<\/script></body></html>`;
+  const w=window.open("","_blank");if(!w){toast("Permite las ventanas emergentes para generar el PDF",true);return}w.document.open();w.document.write(html);w.document.close();
+}
+$("#btn-new").onclick=()=>openInv(null);
+loadAll();
+</script>
+</body>
+</html>
