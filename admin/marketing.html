@@ -85,7 +85,7 @@ tbody tr.subt td{background:var(--surface-2);font-weight:600;border-bottom:2px s
 <div class="wrap">
   <header class="top">
     <div class="brand"><img class="logo" id="logo-img" alt="TRUST realtor"><h1>Marketing</h1><p>Inversión en marketing digital por proyecto y reembolsos de desarrolladores</p></div>
-    <div class="topright"><a class="home-link" href="./">← Inicio</a><button class="btn" id="btn-reglas">Reglas por proyecto</button><button class="btn primary" id="btn-new">+ Inversión</button></div>
+    <div class="topright"><a class="home-link" href="./">← Inicio</a><button class="btn" id="btn-hist">Históricos anuales</button><button class="btn" id="btn-reglas">Reglas por proyecto</button><button class="btn primary" id="btn-new">+ Inversión</button></div>
   </header>
   <div class="filters" id="period-bar">
     <select id="p-anio"></select>
@@ -133,10 +133,13 @@ async function loadAll(){
   const [i,r]=await Promise.all([sb.from("marketing_inversion").select("*").order("mes",{ascending:false}),sb.from("ventas_reglas").select("reglas").eq("id",1).maybeSingle()]);
   if(i.error){TABLA_OK=false}else{TABLA_OK=true;INV=i.data||[]}
   if(r.data&&r.data.reglas&&r.data.reglas.marketing)REGLAS={...REGLAS_DEF,...r.data.reglas.marketing};
-  REGLAS_ALL=(r.data&&r.data.reglas)||{};
+  REGLAS_ALL=(r.data&&r.data.reglas)||{};HIST=REGLAS_ALL.marketing_hist||{};
   render();
 }
-let REGLAS_ALL={};
+let REGLAS_ALL={}, HIST={};
+const HIST_YEARS=["2023","2024","2025"];
+const anual=(proy,y)=>{const yy=String(y);const real=INV.filter(x=>String(x.mes).slice(0,4)===yy&&(!proy||x.proyecto===proy)).reduce((a,x)=>a+(+x.monto||0),0);if(real)return real;if(proy)return +((HIST[proy]||{})[yy])||0;return Object.values(HIST).reduce((a,h)=>a+(+h[yy]||0),0)};
+const anios=()=>[...new Set(HIST_YEARS.concat(INV.map(x=>String(x.mes).slice(0,4))).concat([String(new Date().getFullYear())]))].sort();
 const inPeriodo=d=>{if(!d)return false;const [y,m]=String(d).slice(0,7).split("-");return +y===+P.anio&&(!P.mes||+m===+P.mes)};
 const periodoTxt=()=>P.mes?`${MESES_L[+P.mes-1]} ${P.anio}`:`Año ${P.anio}`;
 const reemEstado=x=>x.pagado_por!=="TRUST"?"dev":x.reembolsable?(x.reembolsado?"ok":"pend"):"na";
@@ -194,6 +197,13 @@ function render(){
     return `<div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">Leads y costo por lead · ${periodoTxt()}</h3><span class="hint">CPL = inversión de los registros con leads ÷ leads recibidos</span></div>
     <div class="grid3" style="margin-top:0;grid-template-columns:repeat(2,minmax(0,1fr))"><div class="twrap"><table><thead><tr><th>Proyecto</th><th class="num">Inversión</th><th class="num">Leads</th><th class="num">CPL</th></tr></thead><tbody>${E.map(([k,v])=>row(k,v)).join("")}<tr class="subt"><td>Total</td><td class="num">${fmt(S(yr))}</td><td class="num">${L(yr).toLocaleString("es-MX")}</td><td class="num">${cpl(S(yr.filter(x=>+x.leads>0)),L(yr))}</td></tr></tbody></table></div>
     ${P.mes?"":`<div class="twrap"><table><thead><tr><th>Mes ${P.anio}</th><th class="num">Inversión</th><th class="num">Leads</th><th class="num">CPL</th></tr></thead><tbody>${mm.map((v,i)=>v.m||v.l?row(MESES_L[i],v):"").join("")}</tbody></table></div>`}</div></div>`})()}
+  ${(()=>{const ys=anios();const pr=filt.proy||"";const tot=ys.map(y=>anual(pr,y));if(!tot.some(v=>v))return `<div class="card" style="margin-top:14px"><h3>Comparativo anual</h3><p class="hint">Captura los totales de 2023, 2024 y 2025 en “Históricos anuales” para comparar contra ${new Date().getFullYear()}.</p></div>`;
+    const mx=Math.max(...tot,1);const cur=String(new Date().getFullYear());
+    const proys=[...new Set(Object.keys(HIST).concat(INV.map(x=>x.proyecto)))].filter(p=>!pr||p===pr).filter(p=>ys.some(y=>anual(p,y))).sort((a,b)=>anual(b,cur)-anual(a,cur)||anual(b,ys[ys.length-2])-anual(a,ys[ys.length-2]));
+    const varTxt=(a,b)=>a?`<small class="${b>=a?"":"dim"}" style="color:${b>=a?"var(--ok)":"var(--bad)"}">${b>=a?"▲":"▼"} ${Math.abs(Math.round((b-a)/a*100))}%</small>`:"";
+    return `<div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px"><h3 style="margin:0">Comparativo anual${pr?" · "+esc(pr):""}</h3><span class="hint">${cur}: suma de lo registrado este año · años anteriores: totales capturados en “Históricos anuales”</span></div>
+    <div class="grid3" style="margin-top:0;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr)"><div><div class="cols" style="height:190px">${ys.map((y,i)=>`<div class="c" title="${y}: ${fmt(tot[i])}"><small class="${tot[i]?"":"dim"}">${tot[i]?fmtK(tot[i]):"–"}</small><i style="height:${tot[i]/mx*120}px;max-width:64px;${y===cur?"":"background:#2F5F52;opacity:.85"}"></i><b>${y}</b>${i&&tot[i-1]&&tot[i]?varTxt(tot[i-1],tot[i]):"<small>&nbsp;</small>"}</div>`).join("")}</div></div>
+    <div class="twrap"><table><thead><tr><th>Proyecto</th>${ys.map(y=>`<th class="num">${y}</th>`).join("")}</tr></thead><tbody>${proys.map(p=>`<tr><td><b>${esc(p)}</b></td>${ys.map(y=>`<td class="num ${anual(p,y)?"":"dim"}">${anual(p,y)?fmt(anual(p,y)):"—"}</td>`).join("")}</tr>`).join("")}<tr class="subt"><td>Total</td>${tot.map(v=>`<td class="num">${fmt(v)}</td>`).join("")}</tr></tbody></table></div></div></div>`})()}
   <div class="grid3">
     <div class="card"><h3>Por proyecto</h3><div class="bars">${bars(byP,total)}</div></div>
     <div class="card"><h3>Por plataforma</h3><div class="bars">${bars(byPl,total)}</div></div>
@@ -242,6 +252,19 @@ function openInv(x){
   if(!isNew)$("#d-del").onclick=async()=>{if(!confirm("¿Eliminar esta inversión?"))return;const r=await sb.from("marketing_inversion").delete().eq("id",x.id);if(r.error){toast(r.error.message,true);return}INV=INV.filter(y=>y.id!==x.id);close();render();toast("Eliminada")};
 }
 
+/* ---------- históricos anuales ---------- */
+$("#btn-hist").onclick=()=>{
+  const root=$("#drawer-root");const proys=[...new Set(PROYECTOS.concat(Object.keys(HIST)).concat(INV.map(x=>x.proyecto).filter(Boolean)))];
+  root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(620px,100%)">
+    <header><h3>Históricos anuales</h3><button class="ico" id="d-close">✕</button></header>
+    <div class="body"><p class="hint" style="margin:0 0 12px">Total invertido en marketing por proyecto en cada año anterior. Sirve para el comparativo anual de la pantalla principal y del estado de cuenta del desarrollador. ${new Date().getFullYear()} se calcula solo con los registros mensuales.</p>
+      <table><thead><tr><th>Proyecto</th>${HIST_YEARS.map(y=>`<th class="num">${y}</th>`).join("")}</tr></thead><tbody>${proys.map(p=>{const H=HIST[p]||{};return `<tr data-p="${esc(p)}"><td><b>${esc(p)}</b></td>${HIST_YEARS.map(y=>`<td class="num"><input class="h" data-y="${y}" inputmode="decimal" value="${H[y]?fmt(H[y]):""}" placeholder="$ 0" style="border:1px solid var(--line-2);border-radius:8px;padding:5px 8px;width:110px;text-align:right"></td>`).join("")}</tr>`}).join("")}</tbody></table></div>
+    <footer><span></span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cancelar</button><button class="btn primary" id="d-save">Guardar históricos</button></span></footer></div>`;
+  const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
+  $("#d-save").onclick=async()=>{const H={};root.querySelectorAll("tr[data-p]").forEach(tr=>{const o={};tr.querySelectorAll("input.h").forEach(i=>{const v=num(i.value);if(v)o[i.dataset.y]=v});if(Object.keys(o).length)H[tr.dataset.p]=o});
+    const reglas={...REGLAS_ALL,marketing_hist:H};const r=await sb.from("ventas_reglas").upsert({id:1,reglas,updated_at:new Date().toISOString()});if(r.error){toast("No se guardó: "+r.error.message,true);return}HIST=H;REGLAS_ALL=reglas;close();toast("Históricos guardados");render()};
+};
+
 /* ---------- reglas por proyecto ---------- */
 $("#btn-reglas").onclick=()=>{
   const root=$("#drawer-root");const proys=[...new Set(PROYECTOS.concat(Object.keys(REGLAS)))];
@@ -269,6 +292,7 @@ body{margin:0;font-family:Poppins,sans-serif;color:#1E241F;background:#FAF8F2;fo
 .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}.k{background:#fff;border:1px solid #E3DDD0;border-radius:8px;padding:8px 10px}.k .l{font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:#6F726B;font-weight:600;display:block}.k .v{font-family:Lora,serif;font-size:18px}.k.dark{background:#173F35;border-color:#173F35;color:#fff}.k.dark .l{color:#D9C9A8}.k.bad .v{color:#A8342A}.k.ok .v{color:#2E7D5B}
 table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #E3DDD0;border-radius:8px;overflow:hidden}th{background:#EFEAE0;color:#4F534E;text-align:left;font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;padding:7px 8px}td{padding:6px 8px;border-bottom:1px solid #EEE9DE;font-size:9.5px}td.n,th.n{text-align:right;white-space:nowrap}tr.tot td{background:#173F35;color:#fff;font-weight:600}.tag{display:inline-block;padding:1px 6px;border-radius:999px;font-size:7.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}.tag.p{background:#F8E1DE;color:#A8342A}.tag.o{background:#E1F1E8;color:#2E7D5B}
 .bank{margin-top:14px;background:#fff;border:1px solid #E3DDD0;border-radius:8px;padding:10px 12px;font-size:9.5px}.bank b{font-family:Lora,serif;font-size:11px;color:#173F35;font-weight:500;display:block}
+.cmp{margin-top:14px;background:#fff;border:1px solid #E3DDD0;border-radius:8px;padding:10px 12px}.cmp>b{font-family:Lora,serif;font-size:11px;color:#173F35;font-weight:500;display:block;margin-bottom:6px}.cmp .bars{display:flex;gap:14px;align-items:flex-end;height:100px;padding:0 6px}.cmp .bc{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px}.cmp .bc i{display:block;width:100%;max-width:70px;background:#173F35;border-radius:4px 4px 0 0}.cmp .bv{font-size:9px;font-weight:600}.cmp .by{font-size:9px;color:#6F726B}.cmp small{display:block;margin-top:6px;font-size:8.5px;color:#6F726B}
 .foot{margin-top:18px;display:flex;justify-content:space-between;align-items:flex-end;font-size:9px;color:#6F726B}.foot img{width:64px}</style></head><body><div class="page">
 <div class="top"><img class="logo" src="data:image/png;base64,${LOGO_B64}"><div class="right">Proyecto<b>${esc(proy)}${R.desarrollador?" · "+esc(R.desarrollador):""}</b>Corte al<b>${hoy}</b></div></div>
 <div class="title">Estado de cuenta · <em>marketing</em></div>
@@ -277,6 +301,7 @@ table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #E3DD
 <table><thead><tr><th>Mes</th><th>Plataforma</th><th>Campaña / concepto</th><th>Estatus</th><th class="n">Monto</th></tr></thead><tbody>
 ${rows.map(x=>`<tr><td>${fechaM(x.mes)}</td><td>${esc(x.plataforma||"")}</td><td>${esc(x.campana||"")}${x.notas?`<br><small style="color:#6F726B">${esc(x.notas)}</small>`:""}</td><td>${reemEstado(x)==="ok"?`<span class="tag o">Reembolsado${x.fecha_reembolso?" · "+fecha(x.fecha_reembolso):""}</span>`:`<span class="tag p">Pendiente</span>`}</td><td class="n">${fmt(x.monto)}</td></tr>`).join("")}
 <tr class="tot"><td colspan="4">Pendiente de reembolso a TRUST</td><td class="n">${fmt(S(pend))}</td></tr></tbody></table>
+${(()=>{const ys=anios();const v=ys.map(y=>anual(proy,y));if(!v.some(x=>x))return "";const mx=Math.max(...v,1);return `<div class="cmp"><b>Inversión anual en marketing · ${esc(proy)}</b><div class="bars">${ys.map((y,i)=>`<div class="bc"><span class="bv">${v[i]?fmt(v[i]):"—"}</span><i style="height:${Math.max(v[i]/mx*70,2)}px;${i===ys.length-1?"":"background:#2F5F52"}"></i><span class="by">${y}</span></div>`).join("")}</div><small>Años anteriores: totales anuales del proyecto. ${ys[ys.length-1]}: acumulado de lo registrado al corte (incluye pauta no reembolsable).</small></div>`})()}
 <div class="bank"><b>Datos para el reembolso</b>PROMOTORA DE INMUEBLES TRUST SA DE CV · Banco BBVA · CLABE 0123 2000 1217 080823 · Cuenta 012 170 8082</div>
 <div class="foot"><div><b style="color:#173F35;letter-spacing:.14em;text-transform:uppercase">Confidencial</b> · hola@trustreal.mx · 33 3376 5616 · trustreal.mx</div><img src="data:image/png;base64,${LOGO_B64}"></div>
 </div><script>window.addEventListener("load",()=>setTimeout(()=>window.print(),600));<\/script></body></html>`;
