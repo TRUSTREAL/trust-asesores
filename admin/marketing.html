@@ -285,8 +285,8 @@ function estadoCuentaPDF(proy){
   const hoy=new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"});
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Estado de cuenta · Marketing ${esc(proy)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
-<style>@page{size:letter;margin:.5in .55in}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-body{margin:0;font-family:Poppins,sans-serif;color:#1E241F;background:#FAF8F2;font-size:10px}.page{width:8.5in;min-height:11in;margin:0 auto;padding:.45in .55in .4in;background:#FAF8F2}
+<style>@page{size:letter;margin:0}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}html{background:#FAF8F2}
+body{margin:0;font-family:Poppins,sans-serif;color:#1E241F;background:#FAF8F2;font-size:10px}.page{width:8.5in;min-height:11in;margin:0 auto;padding:.5in .6in .45in;background:#FAF8F2}@media print{.page{min-height:auto;height:11in;overflow:hidden}}
 .top{display:flex;justify-content:space-between;align-items:flex-start}.logo{width:110px}.right{text-align:right;font-size:10.5px;color:#6F726B;line-height:1.5}.right b{display:block;font-family:Lora,serif;font-size:13px;color:#173F35;font-weight:500}
 .title{margin:14px 0 2px;font-family:Lora,serif;font-size:28px;font-weight:500;color:#173F35}.title em{font-style:italic;color:#B8956A}.sub{font-size:11px;color:#6F726B;margin-bottom:14px}
 .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}.k{background:#fff;border:1px solid #E3DDD0;border-radius:8px;padding:8px 10px}.k .l{font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:#6F726B;font-weight:600;display:block}.k .v{font-family:Lora,serif;font-size:18px}.k.dark{background:#173F35;border-color:#173F35;color:#fff}.k.dark .l{color:#D9C9A8}.k.bad .v{color:#A8342A}.k.ok .v{color:#2E7D5B}
