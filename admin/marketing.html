@@ -147,7 +147,7 @@ const periodoTxt=()=>P.mes?`${MESES_L[+P.mes-1]} ${P.anio}`:`Año ${P.anio}`;
 const esReemb=x=>x.pagado_por==="TRUST"&&!!x.reembolsable;
 const EPS=0.005;
 const reemEstado=x=>x.pagado_por!=="TRUST"?"dev":x.reembolsable?"re":"na";
-const cuenta=p=>{const cargos=INV.filter(x=>esReemb(x)&&x.proyecto===p&&!x.reembolsado).reduce((a,x)=>a+(+x.monto||0),0);const abonos=PAGOS.filter(g=>g.proyecto===p).reduce((a,g)=>a+(+g.monto||0),0);return {cargos,abonos,saldo:cargos-abonos}};
+const cuenta=p=>{const cargos=INV.filter(x=>esReemb(x)&&x.proyecto===p).reduce((a,x)=>a+(+x.monto||0),0);const abonos=PAGOS.filter(g=>g.proyecto===p).reduce((a,g)=>a+(+g.monto||0),0);return {cargos,abonos,saldo:cargos-abonos}};
 
 
 function renderPeriodBar(){
@@ -174,12 +174,12 @@ function render(){
   const proysCta=[...new Set(INV.filter(esReemb).map(x=>x.proyecto))].filter(p=>!filt.proy||p===filt.proy);
   const ctas=proysCta.map(p=>({p,...cuenta(p)}));const porCobrar=ctas.reduce((a,c)=>a+Math.max(c.saldo,0),0);
   const pagosYr=PAGOS.filter(g=>inPeriodo(g.fecha)&&byProy(g)),pagosRows=pagosYr.slice().sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
-  const reembYr=pagosYr.reduce((a,g)=>a+(+g.monto||0),0)+S(yr.filter(x=>esReemb(x)&&x.reembolsado));
+  const reembYr=pagosYr.reduce((a,g)=>a+(+g.monto||0),0);
   const neto=trust-S(reemb); // lo que de verdad absorbe TRUST
   const byP={},byPl={},byM=Array.from({length:12},()=>({t:0,r:0}));
   yr.forEach(x=>{const m=+x.monto||0;byP[x.proyecto]=(byP[x.proyecto]||0)+m;byPl[x.plataforma]=(byPl[x.plataforma]||0)+m;const i=+String(x.mes).slice(5,7)-1;byM[i].t+=m;if(reemEstado(x)!=="na"&&reemEstado(x)!=="dev")byM[i].r+=m});
   const bars=(obj,tot)=>{const e=Object.entries(obj).sort((a,b)=>b[1]-a[1]);if(!e.length)return `<p class="hint">Sin datos en el periodo.</p>`;const mx=e[0][1]||1;return e.map(([k,v])=>`<div class="bar"><span>${esc(k)}</span><i><b style="width:${v/mx*100}%"></b></i><span class="n">${fmt(v)} <small>${pct(v,tot)}</small></span></div>`).join("")};
-  const seg=x=>{const e=reemEstado(x);if(e==="dev")return `<span class="st dev">Desarrollador</span>`;if(e==="na")return `<span class="st na">Sin reembolso</span>`;return `<span class="st re">Reembolsable</span>${x.reembolsado?`<br><small class="dim">reembolsado${x.fecha_reembolso?" el "+fecha(x.fecha_reembolso):""}</small>`:""}`};
+  const seg=x=>{const e=reemEstado(x);if(e==="dev")return `<span class="st dev">Desarrollador</span>`;if(e==="na")return `<span class="st na">Sin reembolso</span>`;return `<span class="st re">Reembolsable</span>`};
   el.innerHTML=`
   <div class="tiles">
     <div class="tile dark"><span class="l">Inversión total</span><span class="v">${fmtK(total)}</span><span class="s">${yr.length} registro${yr.length===1?"":"s"} · ${periodoTxt()}${filt.proy?" · "+esc(filt.proy):""}</span></div>
@@ -251,7 +251,7 @@ function openInv(x){
     <div class="sect"><h4>¿Quién lo paga?</h4><div class="fg">
       <div class="f c6"><label>Pagado por</label><select id="i-pago"><option value="TRUST" ${x.pagado_por==="TRUST"?"selected":""}>TRUST (yo lo pagué)</option><option value="Desarrollador" ${x.pagado_por!=="TRUST"?"selected":""}>El desarrollador directamente</option></select></div>
       <div class="f c6" id="box-reem"><label>Reembolso del desarrollador</label><label class="chk" style="padding:9px 0"><input type="checkbox" id="i-reem" ${x.reembolsable?"checked":""}> TRUST exige reembolso de este gasto</label><span class="hint" id="i-regla"></span></div>
-      <div class="f c6" id="box-reemok" style="${x.reembolsable&&x.pagado_por==="TRUST"?"":"display:none"}"><label>Reembolso</label><span class="hint" style="display:block;padding:9px 0">${x.reembolsado?"Marcado como reembolsado (registro anterior)":"Se cobra registrando pagos en “Pagos recibidos”."}</span></div>
+      <div class="f c6" id="box-reemok" style="${x.reembolsable&&x.pagado_por==="TRUST"?"":"display:none"}"><label>Reembolso</label><span class="hint" style="display:block;padding:9px 0">Se cobra registrando pagos en “Pagos recibidos”.</span></div>
 
     </div></div></div>
     <footer><span>${isNew?"":`<button class="btn danger" id="d-del">Eliminar</button>`}</span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cancelar</button><button class="btn primary" id="d-save">${isNew?"Registrar":"Guardar"}</button></span></footer></div>`;
@@ -261,7 +261,7 @@ function openInv(x){
   g("pago").onchange=vis;g("reem").onchange=vis;
   g("proy").onchange=()=>{const R=REGLAS[g("proy").value];if(R&&isNew){g("reem").checked=!!R.reembolsable;g("regla").textContent=R.reembolsable?`Regla: ${g("proy").value} se le cobra a ${R.desarrollador||"el desarrollador"}.`:`Regla: ${g("proy").value} lo absorbe TRUST.`}else g("regla").textContent="";vis()};
   if(x.proyecto){const R=REGLAS[x.proyecto];if(R)g("regla").textContent=R.reembolsable?`Regla: se le cobra a ${R.desarrollador||"el desarrollador"}.`:"Regla: lo absorbe TRUST."}vis();
-  const leer=()=>{const t=g("pago").value==="TRUST";const re=t&&g("reem").checked;const ok=re&&!!x.reembolsado;return {mes:(g("mes").value||todayISO().slice(0,7))+"-01",proyecto:g("proy").value,plataforma:g("plat").value.trim()||null,campana:g("camp").value.trim()||null,monto:num(g("monto").value),leads:num(g("leads").value),notas:g("notas").value.trim()||null,pagado_por:g("pago").value,reembolsable:re,reembolsado:ok,fecha_reembolso:ok?(x.fecha_reembolso||todayISO()):null}};
+  const leer=()=>{const t=g("pago").value==="TRUST";const re=t&&g("reem").checked;const ok=false;return {mes:(g("mes").value||todayISO().slice(0,7))+"-01",proyecto:g("proy").value,plataforma:g("plat").value.trim()||null,campana:g("camp").value.trim()||null,monto:num(g("monto").value),leads:num(g("leads").value),notas:g("notas").value.trim()||null,pagado_por:g("pago").value,reembolsable:re,reembolsado:ok,fecha_reembolso:null}};
   $("#d-save").onclick=async()=>{const row=leer();if(!row.proyecto){toast("Falta el proyecto",true);return}if(!row.monto){toast("Falta el monto",true);return}
     const r=isNew?await sb.from("marketing_inversion").insert(row).select().single():await sb.from("marketing_inversion").update(row).eq("id",x.id).select().single();
     if(r.error){toast("No se guardó: "+r.error.message,true);return}
@@ -326,7 +326,7 @@ $("#btn-reglas").onclick=()=>{
 function estadoCuentaPDF(proy){
   const R=REGLAS[proy]||{};const rows=INV.filter(x=>x.proyecto===proy&&esReemb(x)).sort((a,b)=>String(a.mes).localeCompare(String(b.mes)));
   const S=l=>l.reduce((a,x)=>a+(+x.monto||0),0);const c=cuenta(proy);const pagos=PAGOS.filter(g=>g.proyecto===proy).sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));
-  const legacy=S(rows.filter(x=>x.reembolsado));const totalReemb=S(rows),pagado=c.abonos+legacy,saldo=Math.max(c.saldo,0);
+  const totalReemb=S(rows),pagado=c.abonos,saldo=Math.max(c.saldo,0);
   const hoy=new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"});
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Estado de cuenta · Marketing ${esc(proy)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
