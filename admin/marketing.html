@@ -160,11 +160,12 @@ $("#p-anio").onchange=e=>{P.anio=+e.target.value;render()};$("#p-mes").onchange=
 
 function render(){
   renderPeriodBar();const el=$("#main");
-  const yr=INV.filter(x=>inPeriodo(x.mes));
-  const rows=yr.filter(x=>(!filt.proy||x.proyecto===filt.proy)&&(!filt.plat||x.plataforma===filt.plat)&&(!filt.reem||reemEstado(x)===filt.reem)).sort((a,b)=>String(b.mes).localeCompare(String(a.mes))||String(a.proyecto).localeCompare(String(b.proyecto)));
+  const byProy=x=>!filt.proy||x.proyecto===filt.proy;
+  const yr=INV.filter(x=>inPeriodo(x.mes)&&byProy(x));
+  const rows=yr.filter(x=>(!filt.plat||x.plataforma===filt.plat)&&(!filt.reem||reemEstado(x)===filt.reem)).sort((a,b)=>String(b.mes).localeCompare(String(a.mes))||String(a.proyecto).localeCompare(String(b.proyecto)));
   const S=l=>l.reduce((a,x)=>a+(+x.monto||0),0);
   const total=S(yr),trust=S(yr.filter(x=>x.pagado_por==="TRUST")),dev=S(yr.filter(x=>x.pagado_por!=="TRUST"));
-  const reemb=yr.filter(x=>reemEstado(x)==="pend"||reemEstado(x)==="ok"),pendL=INV.filter(x=>reemEstado(x)==="pend"),okL=yr.filter(x=>reemEstado(x)==="ok");
+  const reemb=yr.filter(x=>reemEstado(x)==="pend"||reemEstado(x)==="ok"),pendL=INV.filter(x=>reemEstado(x)==="pend"&&byProy(x)),okL=yr.filter(x=>reemEstado(x)==="ok");
   const neto=trust-S(reemb); // lo que de verdad absorbe TRUST
   const byP={},byPl={},byM=Array.from({length:12},()=>({t:0,r:0}));
   yr.forEach(x=>{const m=+x.monto||0;byP[x.proyecto]=(byP[x.proyecto]||0)+m;byPl[x.plataforma]=(byPl[x.plataforma]||0)+m;const i=+String(x.mes).slice(5,7)-1;byM[i].t+=m;if(reemEstado(x)!=="na"&&reemEstado(x)!=="dev")byM[i].r+=m});
@@ -173,7 +174,7 @@ function render(){
   const seg=x=>{const e=reemEstado(x);if(e==="dev")return `<span class="st dev">Desarrollador</span>`;if(e==="na")return `<span class="st na">Sin reembolso</span>`;return `<div class="segc" data-id="${x.id}"><button class="bad ${e==="pend"?"on":""}" data-k="pend" title="Todavía no me lo reembolsan">Pendiente</button><button class="ok ${e==="ok"?"on":""}" data-k="ok" title="Marcar como reembolsado hoy">Reembolsado</button></div>${e==="ok"&&x.fecha_reembolso?`<br><small class="dim">el ${fecha(x.fecha_reembolso)}</small>`:""}`};
   el.innerHTML=`
   <div class="tiles">
-    <div class="tile dark"><span class="l">Inversión total</span><span class="v">${fmtK(total)}</span><span class="s">${yr.length} registro${yr.length===1?"":"s"} · ${periodoTxt()}</span></div>
+    <div class="tile dark"><span class="l">Inversión total</span><span class="v">${fmtK(total)}</span><span class="s">${yr.length} registro${yr.length===1?"":"s"} · ${periodoTxt()}${filt.proy?" · "+esc(filt.proy):""}</span></div>
     <div class="tile"><span class="l">Pagado por TRUST</span><span class="v">${fmtK(trust)}</span><span class="s">${dev?"+ "+fmtK(dev)+" pagado por desarrolladores":"todo salió de TRUST"}</span></div>
     <div class="tile gold"><span class="l">Costo neto TRUST</span><span class="v">${fmtK(neto)}</span><span class="s">pagado por TRUST menos lo reembolsable</span></div>
     <div class="tile bad"><span class="l">Por reembolsarme</span><span class="v">${fmtK(S(pendL))}</span><span class="s">${pendL.length} registro${pendL.length===1?"":"s"} · cualquier fecha</span></div>
@@ -184,7 +185,7 @@ function render(){
   ${pendL.length?`<div class="card" style="margin-bottom:14px;border-color:var(--bad)"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0;color:var(--bad)">Pendiente de cobrar a desarrolladores</h3><span class="hint">Genera el estado de cuenta y mándaselo al desarrollador.</span></div>
     <div class="bars" style="margin-top:8px">${Object.entries(pendPorDev).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="bar"><span><b>${esc(k)}</b> <small class="hint">${esc((REGLAS[k]||{}).desarrollador||"")}</small></span><i><b style="width:${v/Math.max(...Object.values(pendPorDev))*100}%;background:var(--bad)"></b></i><span class="n">${fmt(v)} <button class="btn sm edo" data-p="${esc(k)}" style="margin-left:8px">⤓ Estado de cuenta</button></span></div>`).join("")}</div></div>`:""}
   <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">Inversiones · ${periodoTxt()}</h3><span class="hint">${rows.length} de ${yr.length}</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">Inversiones · ${periodoTxt()}${filt.proy?" · "+esc(filt.proy):""}</h3><span class="hint">${rows.length} de ${yr.length}</span></div>
     ${TABLA_OK?`<div class="twrap"><table><thead><tr><th>Mes</th><th>Proyecto</th><th>Plataforma</th><th>Campaña</th><th class="num">Monto</th><th>Pagó</th><th>Reembolso</th><th class="num">Leads</th><th class="num">CPL</th><th></th></tr></thead>
     <tbody>${rows.map(x=>`<tr><td class="dim">${fechaM(x.mes)}</td><td><b>${esc(x.proyecto)}</b></td><td>${esc(x.plataforma||"—")}</td><td class="dim">${esc(x.campana||"")}${x.notas?`<br><small>${esc(x.notas)}</small>`:""}</td><td class="num money">${fmt(x.monto)}</td><td>${x.pagado_por==="TRUST"?"TRUST":esc(x.pagado_por||"Desarrollador")}</td><td>${seg(x)}</td><td class="num">${x.leads??"—"}</td><td class="num dim">${cpl(+x.monto||0,+x.leads||0)}</td><td><button class="ico edit" data-id="${x.id}" title="Editar">✎</button></td></tr>`).join("")}
     ${rows.length?`<tr class="subt"><td colspan="4">Total</td><td class="num">${fmt(S(rows))}</td><td colspan="2"></td><td class="num">${L(rows).toLocaleString("es-MX")}</td><td class="num">${cpl(S(rows.filter(x=>+x.leads>0)),L(rows))}</td><td></td></tr>`:""}</tbody></table>
@@ -194,7 +195,7 @@ function render(){
     const E=Object.entries(pp).sort((a,b)=>b[1].m-a[1].m);if(!E.length)return "";
     const mm=Array.from({length:12},()=>({m:0,l:0,ml:0}));yr.forEach(x=>{const i=+String(x.mes).slice(5,7)-1;mm[i].m+=+x.monto||0;mm[i].l+=+x.leads||0;if(+x.leads>0)mm[i].ml+=+x.monto||0});
     const row=(k,v)=>`<tr><td><b>${esc(k)}</b></td><td class="num money">${fmt(v.m)}</td><td class="num">${v.l?v.l.toLocaleString("es-MX"):"—"}</td><td class="num"><b>${cpl(v.ml,v.l)}</b></td></tr>`;
-    return `<div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">Leads y costo por lead · ${periodoTxt()}</h3><span class="hint">CPL = inversión de los registros con leads ÷ leads recibidos</span></div>
+    return `<div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">Leads y costo por lead · ${periodoTxt()}${filt.proy?" · "+esc(filt.proy):""}</h3><span class="hint">CPL = inversión de los registros con leads ÷ leads recibidos</span></div>
     <div class="grid3" style="margin-top:0;grid-template-columns:repeat(2,minmax(0,1fr))"><div class="twrap"><table><thead><tr><th>Proyecto</th><th class="num">Inversión</th><th class="num">Leads</th><th class="num">CPL</th></tr></thead><tbody>${E.map(([k,v])=>row(k,v)).join("")}<tr class="subt"><td>Total</td><td class="num">${fmt(S(yr))}</td><td class="num">${L(yr).toLocaleString("es-MX")}</td><td class="num">${cpl(S(yr.filter(x=>+x.leads>0)),L(yr))}</td></tr></tbody></table></div>
     ${P.mes?"":`<div class="twrap"><table><thead><tr><th>Mes ${P.anio}</th><th class="num">Inversión</th><th class="num">Leads</th><th class="num">CPL</th></tr></thead><tbody>${mm.map((v,i)=>v.m||v.l?row(MESES_L[i],v):"").join("")}</tbody></table></div>`}</div></div>`})()}
   ${(()=>{const ys=anios();const pr=filt.proy||"";const tot=ys.map(y=>anual(pr,y));if(!tot.some(v=>v))return `<div class="card" style="margin-top:14px"><h3>Comparativo anual</h3><p class="hint">Captura los totales de 2023, 2024 y 2025 en “Históricos anuales” para comparar contra ${new Date().getFullYear()}.</p></div>`;
