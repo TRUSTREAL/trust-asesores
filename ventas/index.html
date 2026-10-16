@@ -853,9 +853,9 @@ function reporteGastosPDF(){
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Pagos pendientes · ${fechaTxt}</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-@page{size:letter;margin:.5in .55in}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+@page{size:letter;margin:0}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}html{background:#FAF8F2}
 body{margin:0;font-family:Poppins,"Segoe UI",sans-serif;color:#1E241F;background:#FAF8F2;font-size:10px}
-.page{width:8.5in;min-height:11in;margin:0 auto;padding:.45in .55in .4in;background:#FAF8F2}
+.page{width:8.5in;min-height:11in;margin:0 auto;padding:.5in .6in .45in;background:#FAF8F2}@media print{.page{min-height:auto;height:11in;overflow:hidden}}
 .top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}.logo{width:110px}
 .right{text-align:right;font-size:10.5px;color:#6F726B;line-height:1.5}.right b{display:block;font-family:Lora,serif;font-size:13px;color:#173F35;font-weight:500}
 .title{margin:14px 0 2px;font-family:Lora,Georgia,serif;font-size:28px;line-height:1.1;font-weight:500;color:#173F35}.title em{font-style:italic;color:#B8956A}
