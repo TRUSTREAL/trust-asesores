@@ -54,7 +54,7 @@ tbody tr.subt td{background:var(--surface-2);font-weight:600;border-bottom:2px s
 .segc button{border:0;background:var(--bg);padding:5px 10px;font:inherit;font-size:12px;cursor:pointer;color:var(--muted)}.segc button+button{border-left:1px solid var(--line-2)}
 .segc button.on.bad{background:#FBEDEA;color:var(--bad)}.segc button.on.ok{background:#E6F2EC;color:var(--ok)}
 .st{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
-.st.na{background:var(--surface-2);color:var(--muted)}.st.dev{background:var(--info-bg);color:var(--info)}
+.st.na{background:var(--surface-2);color:var(--muted)}.st.dev{background:var(--info-bg);color:var(--info)}.st.re{background:#F6EEDC;color:var(--gold-2)}
 .ico{border:0;background:transparent;color:var(--faint);font-size:15px;padding:2px 6px;border-radius:6px}.ico:hover{color:var(--green);background:var(--surface-2)}
 .empty{color:var(--muted);padding:26px;text-align:center;border:1px dashed var(--line-2);border-radius:14px}.empty b{display:block;color:var(--text);margin-bottom:4px}
 .bars .bar{display:grid;grid-template-columns:minmax(90px,1fr) minmax(60px,1.4fr) auto;gap:10px;align-items:center;padding:5px 0;font-size:13px}
@@ -85,14 +85,14 @@ tbody tr.subt td{background:var(--surface-2);font-weight:600;border-bottom:2px s
 <div class="wrap">
   <header class="top">
     <div class="brand"><img class="logo" id="logo-img" alt="TRUST realtor"><h1>Marketing</h1><p>Inversión en marketing digital por proyecto y reembolsos de desarrolladores</p></div>
-    <div class="topright"><a class="home-link" href="./">← Inicio</a><button class="btn" id="btn-hist">Históricos anuales</button><button class="btn" id="btn-reglas">Reglas por proyecto</button><button class="btn primary" id="btn-new">+ Inversión</button></div>
+    <div class="topright"><a class="home-link" href="./">← Inicio</a><button class="btn" id="btn-hist">Históricos anuales</button><button class="btn" id="btn-reglas">Reglas por proyecto</button><button class="btn" id="btn-pago">+ Pago recibido</button><button class="btn primary" id="btn-new">+ Inversión</button></div>
   </header>
   <div class="filters" id="period-bar">
     <select id="p-anio"></select>
     <select id="p-mes"><option value="">Todo el año</option></select>
     <select id="f-proy"><option value="">Proyecto: todos</option></select>
     <select id="f-plat"><option value="">Plataforma: todas</option></select>
-    <select id="f-reem"><option value="">Reembolso: todos</option><option value="pend">Pendientes de reembolso</option><option value="ok">Reembolsados</option><option value="na">Sin reembolso</option></select>
+    <select id="f-reem"><option value="">Reembolso: todos</option><option value="re">Reembolsables</option><option value="na">Sin reembolso</option><option value="dev">Pagó el desarrollador</option></select>
     <span class="hint" id="period-txt" style="margin-left:auto"></span>
   </div>
   <div id="main"></div>
@@ -126,12 +126,14 @@ const MESES=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","
 const fechaM=d=>d?(()=>{const [y,m]=String(d).slice(0,7).split("-");return `${MESES_L[+m-1]} ${y}`})():"—";
 const fecha=d=>d?(()=>{const [y,m,dd]=String(d).slice(0,10).split("-");return `${+dd} ${MESES[+m-1]} ${y.slice(2)}`})():"—";
 
-let INV=[], REGLAS={...REGLAS_DEF}, TABLA_OK=true;
+let INV=[], PAGOS=[], PAGOS_OK=true, REGLAS={...REGLAS_DEF}, TABLA_OK=true;
+const FORMAS=["Transferencia","Efectivo","Cheque","Compensación con comisiones","Otro"];
 let P={anio:new Date().getFullYear(),mes:""}, filt={proy:"",plat:"",reem:""};
 async function loadAll(){
   if(!sb){toast("Sin conexión a Supabase",true);return}
-  const [i,r]=await Promise.all([sb.from("marketing_inversion").select("*").order("mes",{ascending:false}),sb.from("ventas_reglas").select("reglas").eq("id",1).maybeSingle()]);
+  const [i,r,pg]=await Promise.all([sb.from("marketing_inversion").select("*").order("mes",{ascending:false}),sb.from("ventas_reglas").select("reglas").eq("id",1).maybeSingle(),sb.from("marketing_pagos").select("*").order("fecha",{ascending:false})]);
   if(i.error){TABLA_OK=false}else{TABLA_OK=true;INV=i.data||[]}
+  if(pg.error){PAGOS_OK=false;PAGOS=[]}else{PAGOS_OK=true;PAGOS=pg.data||[]}
   if(r.data&&r.data.reglas&&r.data.reglas.marketing)REGLAS={...REGLAS_DEF,...r.data.reglas.marketing};
   REGLAS_ALL=(r.data&&r.data.reglas)||{};HIST=REGLAS_ALL.marketing_hist||{};
   render();
@@ -142,8 +144,11 @@ const anual=(proy,y)=>{const yy=String(y);const real=INV.filter(x=>String(x.mes)
 const anios=()=>[...new Set(HIST_YEARS.concat(INV.map(x=>String(x.mes).slice(0,4))).concat([String(new Date().getFullYear())]))].sort();
 const inPeriodo=d=>{if(!d)return false;const [y,m]=String(d).slice(0,7).split("-");return +y===+P.anio&&(!P.mes||+m===+P.mes)};
 const periodoTxt=()=>P.mes?`${MESES_L[+P.mes-1]} ${P.anio}`:`Año ${P.anio}`;
-const reemEstado=x=>x.pagado_por!=="TRUST"?"dev":x.reembolsable?(x.reembolsado?"ok":"pend"):"na";
-const REEM_TXT={dev:"Lo pagó el desarrollador",na:"Sin reembolso",pend:"Pendiente de reembolso",ok:"Reembolsado"};
+const esReemb=x=>x.pagado_por==="TRUST"&&!!x.reembolsable;
+const EPS=0.005;
+const reemEstado=x=>x.pagado_por!=="TRUST"?"dev":x.reembolsable?"re":"na";
+const cuenta=p=>{const cargos=INV.filter(x=>esReemb(x)&&x.proyecto===p&&!x.reembolsado).reduce((a,x)=>a+(+x.monto||0),0);const abonos=PAGOS.filter(g=>g.proyecto===p).reduce((a,g)=>a+(+g.monto||0),0);return {cargos,abonos,saldo:cargos-abonos}};
+
 
 function renderPeriodBar(){
   const years=[...new Set(INV.map(x=>+String(x.mes).slice(0,4)).concat([new Date().getFullYear()]))].sort((a,b)=>b-a);
@@ -165,31 +170,41 @@ function render(){
   const rows=yr.filter(x=>(!filt.plat||x.plataforma===filt.plat)&&(!filt.reem||reemEstado(x)===filt.reem)).sort((a,b)=>String(b.mes).localeCompare(String(a.mes))||String(a.proyecto).localeCompare(String(b.proyecto)));
   const S=l=>l.reduce((a,x)=>a+(+x.monto||0),0);
   const total=S(yr),trust=S(yr.filter(x=>x.pagado_por==="TRUST")),dev=S(yr.filter(x=>x.pagado_por!=="TRUST"));
-  const reemb=yr.filter(x=>reemEstado(x)==="pend"||reemEstado(x)==="ok"),pendL=INV.filter(x=>reemEstado(x)==="pend"&&byProy(x)),okL=yr.filter(x=>reemEstado(x)==="ok");
+  const reemb=yr.filter(esReemb);
+  const proysCta=[...new Set(INV.filter(esReemb).map(x=>x.proyecto))].filter(p=>!filt.proy||p===filt.proy);
+  const ctas=proysCta.map(p=>({p,...cuenta(p)}));const porCobrar=ctas.reduce((a,c)=>a+Math.max(c.saldo,0),0);
+  const pagosYr=PAGOS.filter(g=>inPeriodo(g.fecha)&&byProy(g)),pagosRows=pagosYr.slice().sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
+  const reembYr=pagosYr.reduce((a,g)=>a+(+g.monto||0),0)+S(yr.filter(x=>esReemb(x)&&x.reembolsado));
   const neto=trust-S(reemb); // lo que de verdad absorbe TRUST
   const byP={},byPl={},byM=Array.from({length:12},()=>({t:0,r:0}));
   yr.forEach(x=>{const m=+x.monto||0;byP[x.proyecto]=(byP[x.proyecto]||0)+m;byPl[x.plataforma]=(byPl[x.plataforma]||0)+m;const i=+String(x.mes).slice(5,7)-1;byM[i].t+=m;if(reemEstado(x)!=="na"&&reemEstado(x)!=="dev")byM[i].r+=m});
   const bars=(obj,tot)=>{const e=Object.entries(obj).sort((a,b)=>b[1]-a[1]);if(!e.length)return `<p class="hint">Sin datos en el periodo.</p>`;const mx=e[0][1]||1;return e.map(([k,v])=>`<div class="bar"><span>${esc(k)}</span><i><b style="width:${v/mx*100}%"></b></i><span class="n">${fmt(v)} <small>${pct(v,tot)}</small></span></div>`).join("")};
-  const pendPorDev={};pendL.forEach(x=>{const k=x.proyecto;pendPorDev[k]=(pendPorDev[k]||0)+(+x.monto||0)});
-  const seg=x=>{const e=reemEstado(x);if(e==="dev")return `<span class="st dev">Desarrollador</span>`;if(e==="na")return `<span class="st na">Sin reembolso</span>`;return `<div class="segc" data-id="${x.id}"><button class="bad ${e==="pend"?"on":""}" data-k="pend" title="Todavía no me lo reembolsan">Pendiente</button><button class="ok ${e==="ok"?"on":""}" data-k="ok" title="Marcar como reembolsado hoy">Reembolsado</button></div>${e==="ok"&&x.fecha_reembolso?`<br><small class="dim">el ${fecha(x.fecha_reembolso)}</small>`:""}`};
+  const seg=x=>{const e=reemEstado(x);if(e==="dev")return `<span class="st dev">Desarrollador</span>`;if(e==="na")return `<span class="st na">Sin reembolso</span>`;return `<span class="st re">Reembolsable</span>${x.reembolsado?`<br><small class="dim">reembolsado${x.fecha_reembolso?" el "+fecha(x.fecha_reembolso):""}</small>`:""}`};
   el.innerHTML=`
   <div class="tiles">
     <div class="tile dark"><span class="l">Inversión total</span><span class="v">${fmtK(total)}</span><span class="s">${yr.length} registro${yr.length===1?"":"s"} · ${periodoTxt()}${filt.proy?" · "+esc(filt.proy):""}</span></div>
     <div class="tile"><span class="l">Pagado por TRUST</span><span class="v">${fmtK(trust)}</span><span class="s">${dev?"+ "+fmtK(dev)+" pagado por desarrolladores":"todo salió de TRUST"}</span></div>
     <div class="tile gold"><span class="l">Costo neto TRUST</span><span class="v">${fmtK(neto)}</span><span class="s">pagado por TRUST menos lo reembolsable</span></div>
-    <div class="tile bad"><span class="l">Por reembolsarme</span><span class="v">${fmtK(S(pendL))}</span><span class="s">${pendL.length} registro${pendL.length===1?"":"s"} · cualquier fecha</span></div>
-    <div class="tile ok"><span class="l">Reembolsado</span><span class="v">${fmtK(S(okL))}</span><span class="s">${periodoTxt()}</span></div>
+    <div class="tile bad"><span class="l">Por reembolsarme</span><span class="v">${fmtK(porCobrar)}</span><span class="s">saldo de ${ctas.filter(c=>c.saldo>EPS).length} proyecto${ctas.filter(c=>c.saldo>EPS).length===1?"":"s"} · cualquier fecha</span></div>
+    <div class="tile ok"><span class="l">Reembolsado</span><span class="v">${fmtK(reembYr)}</span><span class="s">${pagosYr.length} pago${pagosYr.length===1?"":"s"} recibido${pagosYr.length===1?"":"s"} · ${periodoTxt()}</span></div>
     <div class="tile"><span class="l">Leads recibidos</span><span class="v">${L(yr).toLocaleString("es-MX")}</span><span class="s">${periodoTxt()}</span></div>
     <div class="tile gold"><span class="l">Costo por lead</span><span class="v">${cpl(S(yr.filter(x=>+x.leads>0)),L(yr))}</span><span class="s">${L(yr)?"inversión con leads ÷ leads":"captura leads en cada registro"}</span></div>
   </div>
-  ${pendL.length?`<div class="card" style="margin-bottom:14px;border-color:var(--bad)"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0;color:var(--bad)">Pendiente de cobrar a desarrolladores</h3><span class="hint">Genera el estado de cuenta y mándaselo al desarrollador.</span></div>
-    <div class="bars" style="margin-top:8px">${Object.entries(pendPorDev).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="bar"><span><b>${esc(k)}</b> <small class="hint">${esc((REGLAS[k]||{}).desarrollador||"")}</small></span><i><b style="width:${v/Math.max(...Object.values(pendPorDev))*100}%;background:var(--bad)"></b></i><span class="n">${fmt(v)} <button class="btn sm edo" data-p="${esc(k)}" style="margin-left:8px">⤓ Estado de cuenta</button></span></div>`).join("")}</div></div>`:""}
+  ${(()=>{const L2=ctas.filter(c=>c.saldo>EPS).sort((a,b)=>b.saldo-a.saldo);if(!L2.length)return "";const mx=Math.max(...L2.map(c=>c.saldo));
+    return `<div class="card" style="margin-bottom:14px;border-color:var(--bad)"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0;color:var(--bad)">Pendiente de cobrar a desarrolladores</h3><span class="hint">Reembolsable acumulado − pagos recibidos. Registra cada pago cuando te lo depositen.</span></div>
+    <div class="bars" style="margin-top:8px">${L2.map(c=>`<div class="bar"><span><b>${esc(c.p)}</b> <small class="hint">${esc((REGLAS[c.p]||{}).desarrollador||"")}</small><br><small class="dim">${fmt(c.cargos)} reembolsable · ${fmt(c.abonos)} pagado</small></span><i><b style="width:${c.saldo/mx*100}%;background:var(--bad)"></b></i><span class="n">${fmt(c.saldo)} <button class="btn sm pago-p" data-p="${esc(c.p)}" style="margin-left:8px">+ Pago</button> <button class="btn sm edo" data-p="${esc(c.p)}">⤓ Estado de cuenta</button></span></div>`).join("")}</div></div>`})()}
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">Inversiones · ${periodoTxt()}${filt.proy?" · "+esc(filt.proy):""}</h3><span class="hint">${rows.length} de ${yr.length}</span></div>
     ${TABLA_OK?`<div class="twrap"><table><thead><tr><th>Mes</th><th>Proyecto</th><th>Plataforma</th><th>Campaña</th><th class="num">Monto</th><th>Pagó</th><th>Reembolso</th><th class="num">Leads</th><th class="num">CPL</th><th></th></tr></thead>
     <tbody>${rows.map(x=>`<tr><td class="dim">${fechaM(x.mes)}</td><td><b>${esc(x.proyecto)}</b></td><td>${esc(x.plataforma||"—")}</td><td class="dim">${esc(x.campana||"")}${x.notas?`<br><small>${esc(x.notas)}</small>`:""}</td><td class="num money">${fmt(x.monto)}</td><td>${x.pagado_por==="TRUST"?"TRUST":esc(x.pagado_por||"Desarrollador")}</td><td>${seg(x)}</td><td class="num">${x.leads??"—"}</td><td class="num dim">${cpl(+x.monto||0,+x.leads||0)}</td><td><button class="ico edit" data-id="${x.id}" title="Editar">✎</button></td></tr>`).join("")}
     ${rows.length?`<tr class="subt"><td colspan="4">Total</td><td class="num">${fmt(S(rows))}</td><td colspan="2"></td><td class="num">${L(rows).toLocaleString("es-MX")}</td><td class="num">${cpl(S(rows.filter(x=>+x.leads>0)),L(rows))}</td><td></td></tr>`:""}</tbody></table>
     ${rows.length?"":`<div class="empty"><b>Sin inversiones</b>Registra la primera con “+ Inversión”.</div>`}</div>`:`<div class="empty"><b>Falta activar el módulo</b>Corre <code>marketing.sql</code> en Supabase → SQL Editor y recarga.</div>`}
+  </div>
+  <div class="card" style="margin-top:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">Pagos recibidos · ${periodoTxt()}${filt.proy?" · "+esc(filt.proy):""}</h3><span style="display:flex;gap:8px;align-items:center"><span class="hint">${pagosRows.length} pago${pagosRows.length===1?"":"s"}</span><button class="btn sm" id="btn-pago2">+ Pago recibido</button></span></div>
+    ${PAGOS_OK?(pagosRows.length?`<div class="twrap"><table><thead><tr><th>Fecha</th><th>Proyecto</th><th>Forma de pago</th><th>Referencia / notas</th><th class="num">Monto</th><th></th></tr></thead>
+    <tbody>${pagosRows.map(g=>`<tr><td class="dim">${fecha(g.fecha)}</td><td><b>${esc(g.proyecto)}</b> <small class="hint">${esc((REGLAS[g.proyecto]||{}).desarrollador||"")}</small></td><td>${esc(g.forma_pago||"—")}</td><td class="dim">${esc(g.referencia||"")}${g.notas?`<br><small>${esc(g.notas)}</small>`:""}</td><td class="num money">${fmt(g.monto)}</td><td><button class="ico edit-pago" data-id="${g.id}" title="Editar">✎</button></td></tr>`).join("")}
+    <tr class="subt"><td colspan="4">Total recibido</td><td class="num">${fmt(pagosRows.reduce((a,g)=>a+(+g.monto||0),0))}</td><td></td></tr></tbody></table></div>`:`<div class="empty"><b>Sin pagos en el periodo</b>Cuando el desarrollador te reembolse (uno o varios meses juntos), regístralo con “+ Pago recibido”.</div>`):`<div class="empty"><b>Falta activar los pagos</b>Corre <code>marketing_pagos.sql</code> en Supabase → SQL Editor y recarga.</div>`}
   </div>
   ${(()=>{const pp={};yr.forEach(x=>{const k=x.proyecto;pp[k]=pp[k]||{m:0,l:0,ml:0};pp[k].m+=+x.monto||0;pp[k].l+=+x.leads||0;if(+x.leads>0)pp[k].ml+=+x.monto||0});
     const E=Object.entries(pp).sort((a,b)=>b[1].m-a[1].m);if(!E.length)return "";
@@ -212,8 +227,9 @@ function render(){
   </div>`;
   el.querySelectorAll(".edit").forEach(b=>b.onclick=()=>openInv(INV.find(x=>x.id===b.dataset.id)));
   el.querySelectorAll(".edo").forEach(b=>b.onclick=()=>estadoCuentaPDF(b.dataset.p));
-  el.querySelectorAll(".segc button").forEach(b=>b.onclick=async()=>{const x=INV.find(y=>y.id===b.closest(".segc").dataset.id);const k=b.dataset.k;if(reemEstado(x)===k)return;
-    const upd=k==="ok"?{reembolsado:true,fecha_reembolso:todayISO()}:{reembolsado:false,fecha_reembolso:null};const r=await sb.from("marketing_inversion").update(upd).eq("id",x.id);if(r.error){toast("No se guardó: "+r.error.message,true);return}Object.assign(x,upd);toast(k==="ok"?"Marcado como reembolsado":"Regresado a pendiente");render()});
+  el.querySelectorAll(".pago-p").forEach(b=>b.onclick=()=>openPago(null,{proyecto:b.dataset.p,monto:Math.max(cuenta(b.dataset.p).saldo,0)}));
+  el.querySelectorAll(".edit-pago").forEach(b=>b.onclick=()=>openPago(PAGOS.find(g=>g.id===b.dataset.id)));
+  const bp=$("#btn-pago2");if(bp)bp.onclick=()=>openPago(null,{proyecto:filt.proy||""});
 }
 
 /* ---------- alta / edición ---------- */
@@ -235,23 +251,50 @@ function openInv(x){
     <div class="sect"><h4>¿Quién lo paga?</h4><div class="fg">
       <div class="f c6"><label>Pagado por</label><select id="i-pago"><option value="TRUST" ${x.pagado_por==="TRUST"?"selected":""}>TRUST (yo lo pagué)</option><option value="Desarrollador" ${x.pagado_por!=="TRUST"?"selected":""}>El desarrollador directamente</option></select></div>
       <div class="f c6" id="box-reem"><label>Reembolso del desarrollador</label><label class="chk" style="padding:9px 0"><input type="checkbox" id="i-reem" ${x.reembolsable?"checked":""}> TRUST exige reembolso de este gasto</label><span class="hint" id="i-regla"></span></div>
-      <div class="f c6" id="box-reemok" style="${x.reembolsable&&x.pagado_por==="TRUST"?"":"display:none"}"><label class="chk" style="padding:9px 0"><input type="checkbox" id="i-reemok" ${x.reembolsado?"checked":""}> Ya me lo reembolsaron</label></div>
-      <div class="f c6" id="box-freem" style="${x.reembolsado?"":"display:none"}"><label>Fecha del reembolso</label><input type="date" id="i-freem" value="${esc(x.fecha_reembolso||todayISO())}"></div>
+      <div class="f c6" id="box-reemok" style="${x.reembolsable&&x.pagado_por==="TRUST"?"":"display:none"}"><label>Reembolso</label><span class="hint" style="display:block;padding:9px 0">${x.reembolsado?"Marcado como reembolsado (registro anterior)":"Se cobra registrando pagos en “Pagos recibidos”."}</span></div>
+
     </div></div></div>
     <footer><span>${isNew?"":`<button class="btn danger" id="d-del">Eliminar</button>`}</span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cancelar</button><button class="btn primary" id="d-save">${isNew?"Registrar":"Guardar"}</button></span></footer></div>`;
   const g=i=>$("#i-"+i);const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
   g("monto").onchange=()=>{const v=num(g("monto").value);g("monto").value=v==null?"":fmt(v)};
-  const vis=()=>{const t=g("pago").value==="TRUST";$("#box-reem").style.display=t?"":"none";$("#box-reemok").style.display=t&&g("reem").checked?"":"none";$("#box-freem").style.display=t&&g("reem").checked&&g("reemok").checked?"":"none"};
-  g("pago").onchange=vis;g("reem").onchange=vis;g("reemok").onchange=vis;
+  const vis=()=>{const t=g("pago").value==="TRUST";$("#box-reem").style.display=t?"":"none";$("#box-reemok").style.display=t&&g("reem").checked?"":"none"};
+  g("pago").onchange=vis;g("reem").onchange=vis;
   g("proy").onchange=()=>{const R=REGLAS[g("proy").value];if(R&&isNew){g("reem").checked=!!R.reembolsable;g("regla").textContent=R.reembolsable?`Regla: ${g("proy").value} se le cobra a ${R.desarrollador||"el desarrollador"}.`:`Regla: ${g("proy").value} lo absorbe TRUST.`}else g("regla").textContent="";vis()};
   if(x.proyecto){const R=REGLAS[x.proyecto];if(R)g("regla").textContent=R.reembolsable?`Regla: se le cobra a ${R.desarrollador||"el desarrollador"}.`:"Regla: lo absorbe TRUST."}vis();
-  const leer=()=>{const t=g("pago").value==="TRUST";const re=t&&g("reem").checked;const ok=re&&g("reemok").checked;return {mes:(g("mes").value||todayISO().slice(0,7))+"-01",proyecto:g("proy").value,plataforma:g("plat").value.trim()||null,campana:g("camp").value.trim()||null,monto:num(g("monto").value),leads:num(g("leads").value),notas:g("notas").value.trim()||null,pagado_por:g("pago").value,reembolsable:re,reembolsado:ok,fecha_reembolso:ok?(g("freem").value||todayISO()):null}};
+  const leer=()=>{const t=g("pago").value==="TRUST";const re=t&&g("reem").checked;const ok=re&&!!x.reembolsado;return {mes:(g("mes").value||todayISO().slice(0,7))+"-01",proyecto:g("proy").value,plataforma:g("plat").value.trim()||null,campana:g("camp").value.trim()||null,monto:num(g("monto").value),leads:num(g("leads").value),notas:g("notas").value.trim()||null,pagado_por:g("pago").value,reembolsable:re,reembolsado:ok,fecha_reembolso:ok?(x.fecha_reembolso||todayISO()):null}};
   $("#d-save").onclick=async()=>{const row=leer();if(!row.proyecto){toast("Falta el proyecto",true);return}if(!row.monto){toast("Falta el monto",true);return}
     const r=isNew?await sb.from("marketing_inversion").insert(row).select().single():await sb.from("marketing_inversion").update(row).eq("id",x.id).select().single();
     if(r.error){toast("No se guardó: "+r.error.message,true);return}
     if(isNew)INV.unshift(r.data);else INV[INV.findIndex(y=>y.id===x.id)]=r.data;close();render();toast(isNew?"Inversión registrada":"Guardado")};
   if(!isNew)$("#d-del").onclick=async()=>{if(!confirm("¿Eliminar esta inversión?"))return;const r=await sb.from("marketing_inversion").delete().eq("id",x.id);if(r.error){toast(r.error.message,true);return}INV=INV.filter(y=>y.id!==x.id);close();render();toast("Eliminada")};
 }
+
+/* ---------- pagos recibidos ---------- */
+function openPago(g,pre){
+  const isNew=!g;g=g?{...g}:{fecha:todayISO(),proyecto:"",monto:null,forma_pago:"Transferencia",referencia:"",notas:"",...(pre||{})};
+  const root=$("#drawer-root");const proys=[...new Set(PROYECTOS.concat(INV.map(v=>v.proyecto).filter(Boolean)))];
+  const opt=(list,cur,blank)=>(blank?`<option value="">${blank}</option>`:"")+list.map(v=>`<option ${v===cur?"selected":""}>${esc(v)}</option>`).join("");
+  const info=p=>{if(!p)return "";const c=cuenta(p);return `Reembolsable acumulado ${fmt(c.cargos)} · pagado ${fmt(c.abonos)} · <b>saldo ${fmt(Math.max(c.saldo,0))}</b>`};
+  root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(520px,100%)">
+    <header><h3>${isNew?"Registrar pago recibido":"Pago · "+esc(g.proyecto)}</h3><button class="ico" id="d-close">✕</button></header>
+    <div class="body"><div class="fg">
+      <div class="f c6"><label>Proyecto</label><select id="g-proy">${opt(proys,g.proyecto,"Elegir…")}</select><span class="hint" id="g-info">${info(g.proyecto)}</span></div>
+      <div class="f c6"><label>Fecha de pago</label><input type="date" id="g-fecha" value="${String(g.fecha||"").slice(0,10)}"></div>
+      <div class="f c6"><label>Monto recibido</label><input id="g-monto" inputmode="decimal" value="${g.monto!=null?fmt(g.monto):""}" placeholder="$ 0"></div>
+      <div class="f c6"><label>Forma de pago</label><select id="g-forma">${opt(FORMAS,g.forma_pago||"Transferencia")}</select></div>
+      <div class="f c12"><label>Referencia</label><input id="g-ref" value="${esc(g.referencia||"")}" placeholder="Ej. folio de transferencia, factura, meses que cubre"></div>
+      <div class="f c12"><label>Notas</label><input id="g-notas" value="${esc(g.notas||"")}"></div>
+    </div><p class="hint" style="margin:10px 0 0">Se maneja por acumulado: reembolsable del proyecto menos pagos recibidos. Un pago puede cubrir uno o varios meses.</p></div>
+    <footer><span>${isNew?"":`<button class="btn danger" id="d-del">Eliminar</button>`}</span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cancelar</button><button class="btn primary" id="d-save">Guardar pago</button></span></footer></div>`;
+  const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
+  $("#g-proy").onchange=e=>{$("#g-info").innerHTML=info(e.target.value)};
+  $("#d-save").onclick=async()=>{const row={proyecto:$("#g-proy").value,fecha:$("#g-fecha").value||todayISO(),monto:num($("#g-monto").value),forma_pago:$("#g-forma").value,referencia:$("#g-ref").value.trim()||null,notas:$("#g-notas").value.trim()||null};
+    if(!row.proyecto){toast("Elige el proyecto",true);return}if(!(row.monto>0)){toast("Captura el monto recibido",true);return}
+    const r=isNew?await sb.from("marketing_pagos").insert(row).select().single():await sb.from("marketing_pagos").update(row).eq("id",g.id).select().single();
+    if(r.error){toast("No se guardó: "+r.error.message,true);return}if(isNew)PAGOS.unshift(r.data);else Object.assign(PAGOS.find(x=>x.id===g.id),r.data);close();toast("Pago registrado");render()};
+  if(!isNew)$("#d-del").onclick=async()=>{if(!confirm("¿Eliminar este pago?"))return;const r=await sb.from("marketing_pagos").delete().eq("id",g.id);if(r.error){toast("No se eliminó: "+r.error.message,true);return}PAGOS=PAGOS.filter(x=>x.id!==g.id);close();toast("Pago eliminado");render()};
+}
+$("#btn-pago").onclick=()=>openPago(null,{proyecto:filt.proy||""});
 
 /* ---------- históricos anuales ---------- */
 $("#btn-hist").onclick=()=>{
@@ -281,8 +324,9 @@ $("#btn-reglas").onclick=()=>{
 
 /* ---------- estado de cuenta de reembolso (PDF) ---------- */
 function estadoCuentaPDF(proy){
-  const R=REGLAS[proy]||{};const rows=INV.filter(x=>x.proyecto===proy&&(reemEstado(x)==="pend"||reemEstado(x)==="ok")).sort((a,b)=>String(a.mes).localeCompare(String(b.mes)));
-  const pend=rows.filter(x=>reemEstado(x)==="pend"),ok=rows.filter(x=>reemEstado(x)==="ok");const S=l=>l.reduce((a,x)=>a+(+x.monto||0),0);
+  const R=REGLAS[proy]||{};const rows=INV.filter(x=>x.proyecto===proy&&esReemb(x)).sort((a,b)=>String(a.mes).localeCompare(String(b.mes)));
+  const S=l=>l.reduce((a,x)=>a+(+x.monto||0),0);const c=cuenta(proy);const pagos=PAGOS.filter(g=>g.proyecto===proy).sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));
+  const legacy=S(rows.filter(x=>x.reembolsado));const totalReemb=S(rows),pagado=c.abonos+legacy,saldo=Math.max(c.saldo,0);
   const hoy=new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"});
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Estado de cuenta · Marketing ${esc(proy)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
@@ -298,10 +342,13 @@ table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #E3DD
 <div class="top"><img class="logo" src="data:image/png;base64,${LOGO_B64}"><div class="right">Proyecto<b>${esc(proy)}${R.desarrollador?" · "+esc(R.desarrollador):""}</b>Corte al<b>${hoy}</b></div></div>
 <div class="title">Estado de cuenta · <em>marketing</em></div>
 <div class="sub">Inversión en pauta y marketing digital pagada por ${esc("Promotora de Inmuebles TRUST, S.A. de C.V.")} por cuenta del desarrollador, sujeta a reembolso.</div>
-<div class="kpis"><div class="k dark"><span class="l">Total invertido (reembolsable)</span><span class="v">${fmt(S(rows))}</span></div><div class="k bad"><span class="l">Pendiente de reembolso</span><span class="v">${fmt(S(pend))}</span></div><div class="k ok"><span class="l">Ya reembolsado</span><span class="v">${fmt(S(ok))}</span></div></div>
-<table><thead><tr><th>Mes</th><th>Plataforma</th><th>Campaña / concepto</th><th>Estatus</th><th class="n">Monto</th></tr></thead><tbody>
-${rows.map(x=>`<tr><td>${fechaM(x.mes)}</td><td>${esc(x.plataforma||"")}</td><td>${esc(x.campana||"")}${x.notas?`<br><small style="color:#6F726B">${esc(x.notas)}</small>`:""}</td><td>${reemEstado(x)==="ok"?`<span class="tag o">Reembolsado${x.fecha_reembolso?" · "+fecha(x.fecha_reembolso):""}</span>`:`<span class="tag p">Pendiente</span>`}</td><td class="n">${fmt(x.monto)}</td></tr>`).join("")}
-<tr class="tot"><td colspan="4">Pendiente de reembolso a TRUST</td><td class="n">${fmt(S(pend))}</td></tr></tbody></table>
+<div class="kpis"><div class="k dark"><span class="l">Total invertido (reembolsable)</span><span class="v">${fmt(totalReemb)}</span></div><div class="k ok"><span class="l">Pagos recibidos</span><span class="v">${fmt(pagado)}</span></div><div class="k bad"><span class="l">Saldo pendiente</span><span class="v">${fmt(saldo)}</span></div></div>
+<table><thead><tr><th>Mes</th><th>Plataforma</th><th>Campaña / concepto</th><th class="n">Monto</th></tr></thead><tbody>
+${rows.map(x=>`<tr><td>${fechaM(x.mes)}</td><td>${esc(x.plataforma||"")}</td><td>${esc(x.campana||"")}${x.notas?`<br><small style="color:#6F726B">${esc(x.notas)}</small>`:""}</td><td class="n">${fmt(x.monto)}</td></tr>`).join("")}
+<tr class="tot"><td colspan="3">Total reembolsable</td><td class="n">${fmt(totalReemb)}</td></tr></tbody></table>
+${pagos.length?`<table style="margin-top:10px"><thead><tr><th>Fecha de pago</th><th>Forma de pago</th><th>Referencia</th><th class="n">Monto recibido</th></tr></thead><tbody>
+${pagos.map(g=>`<tr><td>${fecha(g.fecha)}</td><td>${esc(g.forma_pago||"")}</td><td>${esc(g.referencia||"")}${g.notas?` <small style="color:#6F726B">· ${esc(g.notas)}</small>`:""}</td><td class="n">${fmt(g.monto)}</td></tr>`).join("")}
+<tr class="tot"><td colspan="3">Saldo pendiente de reembolso a TRUST</td><td class="n">${fmt(saldo)}</td></tr></tbody></table>`:`<table style="margin-top:10px"><tbody><tr class="tot"><td colspan="3">Saldo pendiente de reembolso a TRUST</td><td class="n" style="text-align:right">${fmt(saldo)}</td></tr></tbody></table>`}
 ${(()=>{const ys=anios();const v=ys.map(y=>anual(proy,y));if(!v.some(x=>x))return "";const mx=Math.max(...v,1);return `<div class="cmp"><b>Inversión anual en marketing · ${esc(proy)}</b><div class="bars">${ys.map((y,i)=>`<div class="bc"><span class="bv">${v[i]?fmt(v[i]):"—"}</span><i style="height:${Math.max(v[i]/mx*70,2)}px;${i===ys.length-1?"":"background:#2F5F52"}"></i><span class="by">${y}</span></div>`).join("")}</div><small>Años anteriores: totales anuales del proyecto. ${ys[ys.length-1]}: acumulado de lo registrado al corte (incluye pauta no reembolsable).</small></div>`})()}
 <div class="bank"><b>Datos para el reembolso</b>PROMOTORA DE INMUEBLES TRUST SA DE CV · Banco BBVA · CLABE 0123 2000 1217 080823 · Cuenta 012 170 8082</div>
 <div class="foot"><div><b style="color:#173F35;letter-spacing:.14em;text-transform:uppercase">Confidencial</b> · hola@trustreal.mx · 33 3376 5616 · trustreal.mx</div><img src="data:image/png;base64,${LOGO_B64}"></div>
