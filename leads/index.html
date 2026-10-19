@@ -226,6 +226,7 @@ td.m{color:var(--trust-gray)}
 .lnm{cursor:pointer;text-decoration:underline dotted transparent;transition:.15s}.lnm:hover{text-decoration-color:var(--trust-green);color:var(--trust-green)}
 .lastn{font-size:11.5px;color:var(--trust-gray);margin-top:2px;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lastn b{font-weight:600;color:var(--trust-gray)}
+.lastn.hotn{white-space:normal;max-width:420px;line-height:1.35;font-style:normal;font-weight:400}
 .kan .kc .lastn{max-width:none;margin-top:3px;font-style:italic;display:block}
 #modalL .modalbox{max-width:640px;padding:0;overflow:hidden;display:flex;flex-direction:column;max-height:calc(100vh - 40px)}
 .lc-h{padding:20px 24px 14px;border-bottom:1px solid #EFEEEA;display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
@@ -1170,7 +1171,7 @@ function listaSimple(rows){
 function listaMontos(rows, editable){
   const tm=rows.reduce((a,l)=>a+(Number(l.monto)||0),0), te=rows.reduce((a,l)=>a+(Number(l.enganche)||0),0);
   return `<table><tr><th>Fecha</th><th>Nombre</th><th>Teléfono</th><th>Canal</th><th>Asesor</th><th style="text-align:right">Monto venta</th><th style="text-align:right">Enganche</th>${editable?"<th></th>":""}</tr>`+
-    rows.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span>${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}</td><td class="m" style="white-space:nowrap">${esc(l.telefono||"—")}${waIcon(l)}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.asesor)}</td><td style="text-align:right;font-variant-numeric:tabular-nums">${money(l.monto)}</td><td style="text-align:right;font-variant-numeric:tabular-nums">${money(l.enganche)}</td>${editable?`<td><button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button></td>`:""}</tr>`).join("")+
+    rows.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span>${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${lastNota(l).replace('class="lastn"','class="lastn hotn"')}</td><td class="m" style="white-space:nowrap">${esc(l.telefono||"—")}${waIcon(l)}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.asesor)}</td><td style="text-align:right;font-variant-numeric:tabular-nums">${money(l.monto)}</td><td style="text-align:right;font-variant-numeric:tabular-nums">${money(l.enganche)}</td>${editable?`<td><button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button></td>`:""}</tr>`).join("")+
     `<tr><td colspan="5" style="font-weight:700;color:var(--trust-green)">Proyectado</td><td style="text-align:right;font-weight:700;color:var(--trust-green);font-variant-numeric:tabular-nums">${money(tm)}</td><td style="text-align:right;font-weight:700;color:var(--trust-green);font-variant-numeric:tabular-nums">${money(te)}</td>${editable?"<td></td>":""}</tr></table>`;
 }
 
