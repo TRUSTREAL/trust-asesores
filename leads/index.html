@@ -816,8 +816,11 @@ async function toggleFlag(id, k, force){
   if(force && l[k] && estatusDe(l)===k) return;   // ya está ahí
   if(!l[k] || force) f[k]=true;                       // clic en el activo lo quita; clic en otro lo sustituye
   const CIERRES=["hot","apartado","venta","perdido","futuro"];  // pasos posteriores a la cita: conviven con "cita"
+  const EMBUDO=["cita","hot","apartado","venta"];                 // conviven entre sí: un lead puede ser Cita + Hot + Apartado
   if(f[k] && CIERRES.includes(k) && l.cita) f.cita=true;          // la cita se conserva al cerrar
   if(k==="cita") CIERRES.forEach(e=>{ if(l[e]) f[e]=true; });      // marcar/quitar cita no toca el cierre
+  if(EMBUDO.includes(k)) EMBUDO.forEach(e=>{ if(e!==k && l[e]) f[e]=true; }); // marcar/quitar un paso del embudo no toca los demás
+  if(f[k] && (k==="perdido"||k==="futuro")) EMBUDO.forEach(e=>{ if(e!=="cita") f[e]=false; }); // perdido/futuro cierran el embudo (solo queda la cita)
   if(k==="apartado" && f.apartado){ const r=await askMontos(l); if(!r) return; Object.assign(f, r); }
   if(k==="perdido" && f.perdido){ const r=await askRazon(l); if(r===null) return; f.razon_perdido=r; }
   if(l.perdido && !f.perdido) f.razon_perdido=null;
