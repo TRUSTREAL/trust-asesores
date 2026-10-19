@@ -1170,7 +1170,7 @@ function convAse(rows){
 
 const pPage={cita:0,hot:0,ap:0};
 function paged(key, rows, renderFn, emptyMsg){
-  const PER=5, pages=Math.max(1,Math.ceil(rows.length/PER));
+  const PER=key==="hot"?1e9:5, pages=Math.max(1,Math.ceil(rows.length/PER));
   if(pPage[key]>=pages) pPage[key]=pages-1; if(pPage[key]<0) pPage[key]=0;
   if(!rows.length) return `<p class="empty">${emptyMsg}</p>`;
   const page=rows.slice(pPage[key]*PER, pPage[key]*PER+PER);
