@@ -268,7 +268,8 @@ function fillForm(){
 
 /* ---------- modelo ----------
  Supuestos: el valor de mercado al comprar es el precio de lista; el descuento es ganancia inmediata.
- La plusvalía por preventa se acumula linealmente hasta la entrega. La plusvalía de la zona capitaliza cada año sobre el valor.
+ La plusvalía por preventa se acumula linealmente hasta la entrega. La plusvalía de la zona capitaliza cada año sobre el valor
+ a partir de la entrega (el "% al terminarse" ya es precio de mercado de la unidad terminada; no se suman durante la obra).
  Pagos: enganche hoy, mensualidades durante la obra y el saldo a la escritura, de contado o financiado (opcionalmente con una
  aportación en efectivo al escriturar). En corretaje: contado, o enganche + crédito desde el día uno.
  La renta neta empieza al entregarse (preventa) o a los "inicio" meses (corretaje) y sube cada año; con crédito, la renta paga
@@ -299,7 +300,7 @@ function modelo(){
     let pago=0,im=0;if(cred&&m>ent&&B>1e-6){im=B*i;let pr=Math.min(Math.max(P-im,0),B);pago=im+pr;B-=pr}
     const f=rm-pago;rentas+=rm;interes+=im;if(f>=0)inn+=f;else{out+=-f;aport+=-f}
     capital+=out;flujo+=inn;Object.keys(fv).forEach(k=>fv[k]=fv[k]*Math.pow(1+alts[k],1/12)+out);
-    const pp=lista*pre*(ent?Math.min(m/ent,1):1),base=lista+pp,valor=base*Math.pow(1+zona,m/12),pz=valor-base;
+    const pp=lista*pre*(ent?Math.min(m/ent,1):1),base=lista+pp,valor=base*Math.pow(1+zona,Math.max(0,m-ent)/12),pz=valor-base; // la zona corre a partir de la entrega
     const gan=dsc+pp+pz+rentas-interes;
     cf.push(inn-out);
     M.push({m,valor,desc:dsc,pre:pp,zona:pz,renta:rentas,interes,capital,pagado,deuda:B,flujo,aport,gan,patrimonio:capital+gan,cetes:fv.cetes,debito:fv.debito,coche:fv.coche});
@@ -317,7 +318,7 @@ const nombre=()=>S.cliente?S.cliente.trim().split(" ")[0]:"";
 const lista_y=a=>a.length<2?a.join(""):a.slice(0,-1).join(", ")+" y "+a[a.length-1];
 const GEN=[{k:"desc",n:"Descuento",c:"var(--c-desc)",d:"Compras por debajo del precio de lista: ganas desde el día uno."},
   {k:"pre",n:"Plusvalía por preventa",c:"var(--c-pre)",d:"Tu propiedad sube de valor conforme se construye y se entrega."},
-  {k:"zona",n:"Plusvalía de la zona",c:"var(--c-zona)",d:"La zona se revaloriza año con año y tu propiedad con ella."},
+  {k:"zona",n:"Plusvalía de la zona",c:"var(--c-zona)",d:"Ya entregada, la zona se revaloriza año con año y tu propiedad con ella."},
   {k:"renta",n:"Arrendamiento",c:"var(--c-renta)",d:"Rentas que cobras mientras tu propiedad sigue subiendo de valor."}];
 function pagosDe(R,H){ // de qué se compone lo que pone de su bolsa hasta el horizonte
   const p=[];if(R.E>0)p.push(`${fmt(R.E)} de enganche`);if(R.O>0)p.push(`${fmt(R.O)} durante la obra`);
@@ -357,7 +358,7 @@ function heroHTML(R,H,forPdf){
 }
 function flipHTML(R){
   const F=R.flip;if(!F)return "";
-  return `<div class="flip"><div class="h">Si vendieras al entregarse <small>mes ${F.ent} · con ${S.pre}% de plusvalía de preventa${R.dsc?`, ${pct(R.descPct,0)} de descuento`:""} y ${S.zona}% anual de zona · antes de comisiones e impuestos</small></div>
+  return `<div class="flip"><div class="h">Si vendieras al entregarse <small>mes ${F.ent} · con ${S.pre}% de plusvalía de preventa${R.dsc?` y ${pct(R.descPct,0)} de descuento`:""} · antes de comisiones e impuestos</small></div>
     <div><span>Pones de tu bolsa</span><b>${fmtK(F.dinero)}</b></div><div><span>Ganas</span><b>${fmtK(F.gan)}</b></div><div><span>Sobre tu dinero</span><b>${pct(F.roi,0)}</b>${F.tir!=null?`<small style="display:block;font-size:11px;color:var(--muted)">≈ ${pct(F.tir,0)} anual</small>`:""}</div></div>`;
 }
 function gensHTML(R,H){
@@ -476,7 +477,7 @@ table{font-size:9.5px}th{font-size:8.5px;padding:6px 8px}td{padding:4px 8px}.cmp
   <section class="card"><h3>Supuestos del escenario</h3><div class="sup"><table><tbody>
     <tr><td>Precio de lista</td><td class="n">${fmt(R.lista)}${S.m2?` · ${fmt(R.lista/S.m2)} / m²`:""}</td><td>Descuento</td><td class="n">${R.dsc?`${fmt(R.dsc)} (${pct(R.descPct,1)})`:"sin descuento"} → compra en ${fmt(R.compra)}</td></tr>
     <tr><td>Esquema de pago</td><td class="n" colspan="3">${pagoTxt}</td></tr>
-    <tr>${R.PRE?`<td>Plusvalía por preventa</td><td class="n">${S.pre}% al terminarse · entrega en ${S.entrega} meses</td>`:`<td></td><td></td>`}<td>Plusvalía de la zona</td><td class="n">${S.zona}% anual</td></tr>
+    <tr>${R.PRE?`<td>Plusvalía por preventa</td><td class="n">${S.pre}% al terminarse · entrega en ${S.entrega} meses</td>`:`<td></td><td></td>`}<td>Plusvalía de la zona</td><td class="n">${S.zona}% anual${R.PRE?" a partir de la entrega":""}</td></tr>
     ${R.bruta?`<tr><td>Renta ${S.renta_modo==="corta"?"corta estancia":"tradicional"}</td><td class="n">${S.renta_modo==="corta"?`${fmt(S.noche)} / noche · ${S.ocup}% ocupación → `:""}${fmt(R.bruta)} / mes bruta · ${S.gastos}% gastos → ${fmt(R.neta)} neta · +${S.incr}% anual</td><td>Empieza a rentar</td><td class="n">${R.PRE?"al entregarse":"mes "+S.inicio} · cap rate ${pct(R.cap)}</td></tr>`:""}
     <tr><td>Comparativos</td><td class="n">débito ${S.debito}% · CETES ${S.cetes}% · coche −${S.coche}% anual</td><td>Horizonte presentado</td><td class="n">${S.horizonte} años</td></tr>
   </tbody></table></div>
