@@ -142,6 +142,7 @@ const TOOLS=[
   {k:"oferta_renta",n:"Oferta de renta",d:"Oferta formal de arrendamiento: renta mensual, vigencia y depósito de seriedad.",ok:true,ic:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>'},
   {k:"aut_venta",n:"Autorización de venta",d:"Autorización abierta o carta convenio en exclusiva para comercializar el inmueble en venta.",ok:true,ic:'<path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7z"/><path d="M9 12l2 2 4-4"/>'},
   {k:"rentabilidad",n:"Cotizador de rentabilidad",d:"Escenarios a 3, 5 y 10 años: descuento, plusvalía por preventa, plusvalía de la zona y rentas. Para presentar y entregar en PDF.",ok:true,href:"rentabilidad.html",ic:'<path d="M3 20h18"/><path d="M5 16l4-5 3 3 5-7"/><path d="M14 7h3v3"/>'},
+  {k:"politicas",n:"Políticas",d:"Políticas oficiales de TRUST: comisiones por supuesto, bono de autogeneración y TOP Realtor.",ok:true,href:"politicas.html",nodoc:true,ic:'<path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7z"/><path d="M9 11h6M9 14h4"/>'},
   {k:"aut_renta",n:"Autorización de renta",d:"Autorización del propietario para comercializar su inmueble en renta.",ok:false,ic:'<path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7z"/><path d="M8 12h8"/>'},
   {k:"carta_comision",n:"Carta de comisión",d:"Acuerdo de comisión compartida con otra inmobiliaria.",ok:false,ic:'<path d="M3 6h18v12H3z"/><path d="M3 7l9 6 9-6"/>'},
   {k:"opinion_valor",n:"Opinión de valor",d:"Estimación de valor del inmueble con comparables para el propietario.",ok:false,ic:'<path d="M3 20h18"/><path d="M6 16l4-5 3 3 5-7"/>'}
@@ -176,7 +177,7 @@ function render(){
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">${ROLE==="admin"?"Documentos del equipo":"Mis documentos"}</h3>${ROLE==="admin"?"":`<span style="display:flex;gap:8px"><button class="btn primary" id="btn-new">+ Oferta de compra</button><button class="btn primary" id="btn-new-r">+ Oferta de renta</button><button class="btn primary" id="btn-new-av">+ Autorización de venta</button></span>`}</div>
     <div class="filters">
       <input id="f-q" placeholder="Buscar cliente o inmueble…" value="${esc(filt.q)}">
-      <select id="f-tipo"><option value="">Tipo: todos</option>${TOOLS.map(t=>`<option value="${t.k}" ${filt.tipo===t.k?"selected":""}>${t.n}</option>`).join("")}</select>
+      <select id="f-tipo"><option value="">Tipo: todos</option>${TOOLS.filter(t=>!t.nodoc).map(t=>`<option value="${t.k}" ${filt.tipo===t.k?"selected":""}>${t.n}</option>`).join("")}</select>
       <select id="f-est"><option value="">Estatus: todos</option>${Object.entries(EST).map(([k,v])=>`<option value="${k}" ${filt.est===k?"selected":""}>${v}</option>`).join("")}</select>
       ${ROLE==="admin"?`<select id="f-ase"><option value="">Asesor: todos</option>${ASESORES.map(a=>`<option ${filt.ase===a?"selected":""}>${esc(a)}</option>`).join("")}</select>`:""}
       <span class="hint" style="margin-left:auto">${rows.length} de ${DOCS.length}</span>
