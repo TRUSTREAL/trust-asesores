@@ -455,6 +455,7 @@ function pdf(){
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=Poppins:wght@400;500;600&display=swap">
 <style>${css}
 @page{size:letter;margin:0}html{background:#FAF8F2}body{background:#FAF8F2;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+*{box-shadow:none!important;text-shadow:none!important;filter:none!important}.hero::after{display:none!important}.hero{background:#1A4A3D!important}.flip{background:#F6EEDC!important}.pin{transform-origin:top left}
 .page{width:8.5in;min-height:11in;padding:.5in .55in .45in;margin:0 auto;position:relative;page-break-after:always}.page:last-child{page-break-after:auto}
 @media print{.page{height:11in;overflow:hidden}}
 .ptop{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}.ptop img{width:105px}.ptop .r{text-align:right;font-size:10px;color:#6F726B;line-height:1.5}.ptop .r b{display:block;font-family:Lora,serif;font-size:13px;color:#173F35;font-weight:500}
@@ -480,7 +481,7 @@ table{font-size:9.5px}th{font-size:8.5px;padding:6px 8px}td{padding:4px 8px}.cmp
     <tr><td>Comparativos</td><td class="n">débito ${S.debito}% · CETES ${S.cetes}% · coche −${S.coche}% anual</td><td>Horizonte presentado</td><td class="n">${S.horizonte} años</td></tr>
   </tbody></table></div>
   <p class="note">Proyección ilustrativa elaborada con los supuestos anteriores; los rendimientos reales pueden variar y no constituyen garantía. No incluye gastos de escrituración, impuestos, mantenimiento extraordinario${R.cred&&R.L>0?", seguros ni comisiones del crédito":" ni costos de financiamiento"}. Elaborado por ${esc(asesorActual()||"TRUST realtor")} · Promotora de Inmuebles TRUST, S.A. de C.V.</p></section></div></div>${pfoot}</div>
-<script>function fit(){document.querySelectorAll(".page").forEach(p=>{const pin=p.querySelector(".pin");pin.style.zoom="";const lim=p.clientWidth*11/8.5-96-62;const h=pin.getBoundingClientRect().height;if(h>lim)pin.style.zoom=(lim/h).toFixed(3)})}let printed=false;const go=()=>{if(printed)return;printed=true;fit();window.print()};fit();document.addEventListener("DOMContentLoaded",fit);window.addEventListener("load",()=>{fit();setTimeout(go,600)});setTimeout(go,4000);<\/script></body></html>`;
+<script>function fit(){document.querySelectorAll(".page").forEach(p=>{const pin=p.querySelector(".pin");pin.style.transform="";pin.style.width="";const lim=p.clientWidth*11/8.5-96-62;const h=pin.getBoundingClientRect().height;if(h>lim){const s=(lim/h).toFixed(3);pin.style.transform="scale("+s+")";pin.style.width=(100/s).toFixed(2)+"%"}})}let printed=false;const go=()=>{if(printed)return;printed=true;fit();window.print()};fit();document.addEventListener("DOMContentLoaded",fit);window.addEventListener("load",()=>{fit();setTimeout(go,600)});setTimeout(go,4000);<\/script></body></html>`;
   const w=window.open("","_blank");if(!w){toast("Permite las ventanas emergentes para generar el PDF",true);return}w.document.open();w.document.write(html);w.document.close();
 }
 
