@@ -77,11 +77,11 @@ select.st{cursor:pointer;appearance:none;-webkit-appearance:none;padding-right:1
 .f input,.f select,.f textarea{border:1px solid var(--line-2);border-radius:10px;padding:9px 11px;background:var(--bg)}
 .f textarea{resize:vertical}
 .f .sub{font-size:11px;color:var(--gold-2);min-height:14px}
-.c12{grid-column:span 12}.c8{grid-column:span 8}.c6{grid-column:span 6}.c4{grid-column:span 4}.c3{grid-column:span 3}
+.c12{grid-column:span 12}.c9{grid-column:span 9}.c8{grid-column:span 8}.c6{grid-column:span 6}.c4{grid-column:span 4}.c3{grid-column:span 3}
 .sect{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}.sect h4{margin:0 0 10px;font-family:Lora,serif;font-weight:500;font-size:15px;color:var(--green)}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--green);color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:99}
 .toast.show{opacity:1;transform:translateX(-50%)}.toast.err{background:var(--bad)}
-@media (max-width:760px){.c8,.c6,.c4,.c3{grid-column:span 12}.pick .grid{grid-template-columns:1fr}}
+@media (max-width:760px){.c9,.c8,.c6,.c4,.c3{grid-column:span 12}.pick .grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -140,7 +140,8 @@ const pesosLetra=v=>{if(v==null||isNaN(v))return "";const e=Math.floor(v),c=Math
 const TOOLS=[
   {k:"oferta_compra",n:"Oferta de compra",d:"Oferta formal al propietario con precio, anticipo, vigencia y depósito de seriedad.",ok:true,ic:'<path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/>'},
   {k:"oferta_renta",n:"Oferta de renta",d:"Oferta formal de arrendamiento: renta mensual, vigencia y depósito de seriedad.",ok:true,ic:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>'},
-  {k:"aut_venta",n:"Autorización de venta",d:"Autorización del propietario para comercializar su inmueble en venta.",ok:false,ic:'<path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7z"/><path d="M9 12l2 2 4-4"/>'},
+  {k:"aut_venta",n:"Autorización de venta",d:"Autorización abierta o carta convenio en exclusiva para comercializar el inmueble en venta.",ok:true,ic:'<path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7z"/><path d="M9 12l2 2 4-4"/>'},
+  {k:"rentabilidad",n:"Cotizador de rentabilidad",d:"Escenarios a 3, 5 y 10 años: descuento, plusvalía por preventa, plusvalía de la zona y rentas. Para presentar y entregar en PDF.",ok:true,href:"rentabilidad.html",ic:'<path d="M3 20h18"/><path d="M5 16l4-5 3 3 5-7"/><path d="M14 7h3v3"/>'},
   {k:"aut_renta",n:"Autorización de renta",d:"Autorización del propietario para comercializar su inmueble en renta.",ok:false,ic:'<path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7z"/><path d="M8 12h8"/>'},
   {k:"carta_comision",n:"Carta de comisión",d:"Acuerdo de comisión compartida con otra inmobiliaria.",ok:false,ic:'<path d="M3 6h18v12H3z"/><path d="M3 7l9 6 9-6"/>'},
   {k:"opinion_valor",n:"Opinión de valor",d:"Estimación de valor del inmueble con comparables para el propietario.",ok:false,ic:'<path d="M3 20h18"/><path d="M6 16l4-5 3 3 5-7"/>'}
@@ -160,7 +161,7 @@ async function load(){
 }
 const dat=d=>d.datos||{};
 const montoDe=d=>{const x=dat(d);return x.precio??x.renta??null};
-const venceDe=d=>{const x=dat(d);return x.fecha&&x.vigencia?sumar(x.fecha,+x.vigencia):null};
+const venceDe=d=>{const x=dat(d);if(d.tipo==="aut_venta")return x.modalidad==="exclusiva"&&x.fecha&&x.plazo?sumar(x.fecha,+x.plazo):null;return x.fecha&&x.vigencia?sumar(x.fecha,+x.vigencia):null};
 
 /* ---------- render ---------- */
 function render(){
@@ -172,7 +173,7 @@ function render(){
   m.innerHTML=`
   <div class="tools">${TOOLS.map(t=>`<button class="tool ${t.ok?"":"soon"}" data-tool="${t.k}" ${t.ok?"":"disabled"}>${cnt(t.k)?`<span class="cnt">${cnt(t.k)}</span>`:""}<div class="ic"><svg viewBox="0 0 24 24">${t.ic}</svg></div><h2>${t.n}</h2><p>${t.d}</p><span class="go">${t.ok?(ROLE==="admin"?"Ver documentos":"Crear"):"Próximamente"}</span></button>`).join("")}</div>
   <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">${ROLE==="admin"?"Documentos del equipo":"Mis documentos"}</h3>${ROLE==="admin"?"":`<span style="display:flex;gap:8px"><button class="btn primary" id="btn-new">+ Oferta de compra</button><button class="btn primary" id="btn-new-r">+ Oferta de renta</button></span>`}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">${ROLE==="admin"?"Documentos del equipo":"Mis documentos"}</h3>${ROLE==="admin"?"":`<span style="display:flex;gap:8px"><button class="btn primary" id="btn-new">+ Oferta de compra</button><button class="btn primary" id="btn-new-r">+ Oferta de renta</button><button class="btn primary" id="btn-new-av">+ Autorización de venta</button></span>`}</div>
     <div class="filters">
       <input id="f-q" placeholder="Buscar cliente o inmueble…" value="${esc(filt.q)}">
       <select id="f-tipo"><option value="">Tipo: todos</option>${TOOLS.map(t=>`<option value="${t.k}" ${filt.tipo===t.k?"selected":""}>${t.n}</option>`).join("")}</select>
@@ -184,12 +185,14 @@ function render(){
     <tbody>${rows.map(d=>{const x=dat(d),v=venceDe(d),venc=v&&v<todayISO()&&(d.estatus==="enviada"||d.estatus==="borrador");return `<tr><td class="dim">${fechaC(x.fecha||d.created_at)}</td><td><b>${esc(TOOL(d.tipo).n)}</b></td><td>${esc(d.titulo||"—")}</td><td class="dim" style="max-width:260px;overflow:hidden;text-overflow:ellipsis" title="${esc(x.domicilio||"")}">${esc(x.domicilio||"—")}</td>${ROLE==="admin"?`<td>${esc(d.asesor)}</td>`:""}<td class="num money">${fmt(montoDe(d))}</td><td class="dim" style="color:${venc?"var(--bad)":"inherit"}">${v?fechaC(v)+(venc?" ⚠":""):"—"}</td><td><select class="st ${d.estatus}" data-est="${d.id}">${Object.entries(EST).map(([k,l])=>`<option value="${k}" ${d.estatus===k?"selected":""}>${l}</option>`).join("")}</select></td><td style="white-space:nowrap"><button class="btn sm pdf" data-id="${d.id}">⤓ PDF</button> <button class="ico edit" data-id="${d.id}" title="Editar">✎</button></td></tr>`}).join("")}</tbody></table>
     ${rows.length?"":`<div class="empty"><b>Sin documentos</b>${ROLE==="admin"?"Los asesores aún no generan documentos.":"Crea tu primera oferta de compra con el botón de arriba."}</div>`}</div>`:`<div class="empty"><b>Falta activar el módulo</b>Corre <code>documentos.sql</code> en Supabase → SQL Editor y recarga la página.</div>`}
   </div>`;
-  m.querySelectorAll("[data-tool]").forEach(b=>b.onclick=()=>{if(ROLE==="admin"){filt.tipo=b.dataset.tool;render()}else if(b.dataset.tool==="oferta_compra"||b.dataset.tool==="oferta_renta")openOferta(null,b.dataset.tool)});
+  m.querySelectorAll("[data-tool]").forEach(b=>b.onclick=()=>{const T0=TOOL(b.dataset.tool);if(T0.href){location.href=T0.href;return}if(ROLE==="admin"){filt.tipo=b.dataset.tool;render()}else if(b.dataset.tool==="oferta_compra"||b.dataset.tool==="oferta_renta")openOferta(null,b.dataset.tool);else if(b.dataset.tool==="aut_venta")openAutorizacion(null)});
+  const na=$("#btn-new-av");if(na)na.onclick=()=>openAutorizacion(null);
   const nb=$("#btn-new");if(nb)nb.onclick=()=>openOferta(null,"oferta_compra");const nr=$("#btn-new-r");if(nr)nr.onclick=()=>openOferta(null,"oferta_renta");
   $("#f-q").oninput=e=>{filt.q=e.target.value;render();const i=$("#f-q");i.focus();i.setSelectionRange(i.value.length,i.value.length)};
   ["tipo","est","ase"].forEach(k=>{const el=$("#f-"+k);if(el)el.onchange=e=>{filt[k]=e.target.value;render()}});
-  m.querySelectorAll(".edit").forEach(b=>b.onclick=()=>openOferta(DOCS.find(d=>d.id===b.dataset.id)));
-  m.querySelectorAll(".pdf").forEach(b=>b.onclick=()=>ofertaPDF(DOCS.find(d=>d.id===b.dataset.id)));
+  const abrir=d=>d.tipo==="rentabilidad"?(location.href="rentabilidad.html?doc="+d.id):d.tipo==="aut_venta"?openAutorizacion(d):openOferta(d);const pdfDe=d=>d.tipo==="rentabilidad"?(location.href="rentabilidad.html?doc="+d.id+"&pdf=1"):d.tipo==="aut_venta"?autorizacionPDF(d):ofertaPDF(d);
+  m.querySelectorAll(".edit").forEach(b=>b.onclick=()=>abrir(DOCS.find(d=>d.id===b.dataset.id)));
+  m.querySelectorAll(".pdf").forEach(b=>b.onclick=()=>pdfDe(DOCS.find(d=>d.id===b.dataset.id)));
   m.querySelectorAll("select[data-est]").forEach(s=>s.onchange=async()=>{const d=DOCS.find(x=>x.id===s.dataset.est);const r=await sb.from("documentos").update({estatus:s.value,updated_at:new Date().toISOString()}).eq("id",d.id);if(r.error){toast("No se guardó: "+r.error.message,true);return}d.estatus=s.value;s.className="st "+s.value;toast("Estatus: "+EST[s.value])});
 }
 
@@ -336,6 +339,177 @@ p{margin:0 0 5px}.dato{color:#173F35;font-weight:600;background:#FBF5E9;border-b
   </div>
 </div>
 <script>window.addEventListener("load",()=>{const p=document.querySelector(".page");const H=p.clientHeight;const fit=()=>{p.style.zoom="";p.style.height="auto";const h=p.scrollHeight;if(h>H+1){p.style.zoom=(H/h*0.995).toFixed(3)}else p.style.height=""};fit();setTimeout(()=>{fit();window.print()},700)});<\/script>
+</body></html>`;
+  const w=window.open("","_blank");if(!w){toast("Permite las ventanas emergentes para generar el PDF",true);return}
+  w.document.open();w.document.write(html);w.document.close();
+}
+
+
+/* ---------- autorización de venta · formulario ---------- */
+function openAutorizacion(d){
+  const isNew=!d;const x=d?{...dat(d)}:{modalidad:"autorizacion",fecha:todayISO(),lugar:"Guadalajara, Jalisco",comision:5,plazo:90,condiciones:"Pago de contado o crédito bancario",asesor:ASESOR};
+  if(!x.asesor)x.asesor=d?d.asesor:ASESOR;if(!x.asesor_nombre)x.asesor_nombre=LS.get("trust_herr_nombre_"+(x.asesor||""))||x.asesor;
+  const root=$("#drawer-root");
+  const fld=(id,label,val,c,attrs,sub)=>`<div class="f ${c||"c6"}"><label>${label}</label><input id="a-${id}" value="${esc(val??"")}" ${attrs||""}>${sub?`<span class="sub" id="a-${id}-sub"></span>`:""}</div>`;
+  root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog">
+    <header><h3>${isNew?"Nueva autorización de venta":"Autorización de venta · "+esc(d.titulo||"")}</h3><button class="ico" id="d-close">✕</button></header>
+    <div class="body">
+      <div class="fg">
+        <div class="f c6"><label>Modalidad</label><select id="a-modalidad"><option value="autorizacion" ${x.modalidad!=="exclusiva"?"selected":""}>Autorización de venta (abierta)</option><option value="exclusiva" ${x.modalidad==="exclusiva"?"selected":""}>Exclusiva · carta convenio</option></select></div>
+        ${fld("fecha","Fecha",x.fecha,"c3","type='date'")}
+        ${fld("lugar","Lugar",x.lugar,"c3")}
+        ${ROLE==="admin"?`<div class="f c4"><label>Asesor</label><select id="a-asesor">${ASESORES.map(a=>`<option ${a===x.asesor?"selected":""}>${esc(a)}</option>`).join("")}</select></div>`:`<input type="hidden" id="a-asesor" value="${esc(x.asesor)}">`}
+        ${fld("asesor_nombre","Tu nombre como aparecerá en el documento (opcionador)",x.asesor_nombre,"c8")}
+        <div class="f c4" id="a-gerente-box" style="${x.modalidad==="exclusiva"?"":"display:none"}"><label>Nombre del gerente (firma)</label><input id="a-gerente" value="${esc(x.gerente||"")}" placeholder="Quien firma por TRUST"></div>
+      </div>
+      <div class="sect"><h4>Inmueble</h4><div class="fg">
+        ${fld("domicilio","Domicilio del inmueble",x.domicilio,"c12","placeholder='Calle, número, colonia, municipio'")}
+        ${fld("m2terr","Superficie de terreno (m²)",x.m2terr,"c3","inputmode='decimal'")}
+        ${fld("m2cons","Superficie de construcción (m²)",x.m2cons,"c3","inputmode='decimal'")}
+        ${fld("precio","Precio de venta autorizado",x.precio!=null?fmt(x.precio):"","c6","inputmode='decimal' placeholder='$'",true)}
+        ${fld("comision","Comisión de venta (%)",x.comision,"c3","inputmode='decimal'",true)}
+        <div id="a-exc" class="f c9" style="${x.modalidad==="exclusiva"?"":"display:none"}"><div class="fg">
+          ${fld("plazo","Plazo de la exclusiva (días)",x.plazo,"c4","inputmode='numeric'",true)}
+          ${fld("condiciones","Condiciones de compra",x.condiciones,"c8")}
+        </div></div>
+      </div></div>
+      <div class="sect"><h4>Propietario (sección Acepto)</h4><div class="fg">
+        ${fld("prop_nombre","Nombre del propietario",x.prop_nombre,"c8")}
+        ${fld("prop_civil","Estado civil",x.prop_civil,"c4")}
+        ${fld("prop_ocup","Ocupación",x.prop_ocup,"c4")}
+        ${fld("prop_tel","Teléfono",x.prop_tel,"c4")}
+        ${fld("prop_correo","Correo electrónico",x.prop_correo,"c4")}
+        ${fld("prop_dir","Dirección del propietario",x.prop_dir,"c8")}
+        ${fld("conyuge","Nombre del cónyuge (si aplica)",x.conyuge,"c4")}
+      </div></div>
+    </div>
+    <footer><span>${isNew?"":`<button class="btn danger" id="d-del">Eliminar</button>`}</span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cancelar</button>${isNew?"":`<button class="btn" id="d-pdf">⤓ PDF</button>`}<button class="btn primary" id="d-save">${isNew?"Guardar autorización":"Guardar"}</button></span></footer></div>`;
+  const g=i=>$("#a-"+i);const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
+  const exc=()=>{const e=g("modalidad").value==="exclusiva";$("#a-exc").style.display=e?"":"none";$("#a-gerente-box").style.display=e?"":"none"};g("modalidad").onchange=exc;
+  const pr=g("precio");const updP=()=>{const v=num(pr.value);g("precio-sub").textContent=v?pesosLetra(v):""};pr.onchange=()=>{const v=num(pr.value);pr.value=v==null?"":fmt(v);updP()};updP();
+  const co=g("comision");const updC=()=>{const v=num(co.value);g("comision-sub").textContent=v?pctLetra(v):""};co.onchange=updC;updC();
+  const pl=g("plazo");const updL=()=>{const n=Math.round(num(pl.value)||0);const f=g("fecha").value;g("plazo-sub").textContent=n&&f?`del ${fechaL(f)} al ${fechaL(sumar(f,n))}`:""};pl.onchange=updL;g("fecha").onchange=updL;updL();
+  const leer=()=>({modalidad:g("modalidad").value,fecha:g("fecha").value||todayISO(),lugar:g("lugar").value.trim()||"Guadalajara, Jalisco",asesor:g("asesor").value,asesor_nombre:g("asesor_nombre").value.trim()||g("asesor").value,gerente:g("gerente").value.trim(),domicilio:g("domicilio").value.trim(),m2terr:num(g("m2terr").value),m2cons:num(g("m2cons").value),precio:num(g("precio").value),comision:num(g("comision").value),plazo:Math.round(num(g("plazo").value)||0),condiciones:g("condiciones").value.trim(),prop_nombre:g("prop_nombre").value.trim(),prop_civil:g("prop_civil").value.trim(),prop_ocup:g("prop_ocup").value.trim(),prop_tel:g("prop_tel").value.trim(),prop_correo:g("prop_correo").value.trim(),prop_dir:g("prop_dir").value.trim(),conyuge:g("conyuge").value.trim()});
+  const valida=x=>{if(!x.domicilio){toast("Falta el domicilio del inmueble",true);return false}if(!x.precio){toast("Falta el precio de venta",true);return false}if(!x.comision){toast("Falta el % de comisión",true);return false}if(x.modalidad==="exclusiva"&&!x.plazo){toast("Falta el plazo de la exclusiva",true);return false}if(!x.prop_nombre){toast("Falta el nombre del propietario",true);return false}return true};
+  async function guardar(){const x=leer();if(!valida(x))return null;LS.set("trust_herr_nombre_"+x.asesor,x.asesor_nombre);
+    const row={tipo:"aut_venta",asesor:x.asesor,titulo:x.prop_nombre,datos:x,updated_at:new Date().toISOString()};
+    const r=isNew?await sb.from("documentos").insert({...row,estatus:"borrador"}).select().single():await sb.from("documentos").update(row).eq("id",d.id).select().single();
+    if(r.error){toast("No se guardó: "+r.error.message,true);return null}
+    if(isNew)DOCS.unshift(r.data);else DOCS[DOCS.findIndex(y=>y.id===d.id)]=r.data;return r.data}
+  $("#d-save").onclick=async()=>{const saved=await guardar();if(!saved)return;close();render();toast(isNew?"Autorización guardada. Ya puedes generar el PDF.":"Guardado");if(isNew)autorizacionPDF(saved)};
+  if(!isNew){$("#d-pdf").onclick=async()=>{const saved=await guardar();if(saved)autorizacionPDF(saved)};
+    $("#d-del").onclick=async()=>{if(!confirm("¿Eliminar esta autorización? No se puede recuperar."))return;const r=await sb.from("documentos").delete().eq("id",d.id);if(r.error){toast(r.error.message,true);return}DOCS=DOCS.filter(y=>y.id!==d.id);close();render();toast("Eliminada")}}
+}
+const pctLetra=v=>{if(v==null||isNaN(v))return "";const [e,dec]=String(+v).split(".");let L=enLetras(+e);if(dec)L+=" punto "+dec.split("").map(d=>enLetras(+d)).join(" ");return L+" por ciento"};
+const n2=v=>v==null||v===""||isNaN(v)||+v===0?"____":(+v).toLocaleString("es-MX",{maximumFractionDigits:2});
+
+/* ---------- autorización de venta · PDF (2 páginas) ---------- */
+function autorizacionPDF(d){
+  const x=dat(d);const E=x.modalidad==="exclusiva";const folio=(E?"EV-":"AV-")+String(x.fecha||"").replace(/-/g,"").slice(2)+"-"+String(d.id||"").replace(/-/g,"").slice(-4).toUpperCase();
+  const [fy,fm,fd]=String(x.fecha||todayISO()).slice(0,10).split("-").map(Number);const fin=E&&x.plazo?sumar(x.fecha,+x.plazo):null;
+  const b=v=>`<b class="dato">${esc(v||"______________________")}</b>`;
+  const titulo=E?"Carta convenio <em>en exclusiva</em>":"Autorización <em>de venta</em>";
+  const foot=`<div class="foot"><div>${esc(CONTACTO)}</div><img src="data:image/png;base64,${LOGO_B64}" alt="TRUST"></div>`;
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>${E?"Carta convenio en exclusiva":"Autorización de venta"} · ${esc(x.prop_nombre)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+@page{size:letter;margin:0}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{margin:0;font-family:Poppins,"Segoe UI",sans-serif;color:#1E241F;background:#fff;font-size:10px;line-height:1.5}
+.page{width:8.5in;height:11in;overflow:hidden;margin:0 auto;display:flex;flex-direction:column;background:#fff;page-break-after:always}
+.page:last-child{page-break-after:auto}
+.hero{background:linear-gradient(135deg,#173F35 0%,#1F5446 100%);color:#fff;padding:.36in .65in .56in;border-bottom:6px solid #B8956A}
+.hero.mini{padding:.3in .65in .3in;border-bottom-width:4px}
+.top{display:flex;justify-content:space-between;align-items:flex-start}.logo{width:118px;filter:brightness(0) invert(1)}
+.folio{text-align:right;font-size:9px;color:#D9C9A8;line-height:1.6;letter-spacing:.04em}.folio b{display:block;font-family:Lora,serif;font-size:12px;color:#fff;letter-spacing:0;font-weight:500}
+.tag{display:inline-block;margin-top:.26in;font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:#B8956A;font-weight:600;border:1px solid rgba(184,149,106,.6);border-radius:999px;padding:3px 10px}
+h1{font-family:Lora,Georgia,serif;font-weight:500;font-size:38px;line-height:1.05;margin:8px 0 0;letter-spacing:-.01em}h1 em{font-style:italic;color:#B8956A}
+.hero.mini h1{font-size:20px;margin:0}
+.body{padding:0 .65in .28in;flex:1;display:flex;flex-direction:column}.body.p2{padding-top:.3in}
+.cards{display:grid;grid-template-columns:1.15fr 1.7fr .95fr .95fr;gap:8px;margin-top:-.42in}
+.k{background:#fff;border:1px solid #E3DDD0;border-radius:12px;padding:11px 12px;box-shadow:0 8px 24px rgba(23,63,53,.10)}
+.k .l{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:#6F726B;font-weight:600;display:block;margin-bottom:2px}.k .v{font-family:Lora,serif;font-size:15px;color:#173F35;line-height:1.2}.k .v.big{font-size:20px;font-weight:500}.k .s{display:block;font-size:8.5px;color:#6F726B;margin-top:2px}
+.k.dark{background:#173F35;border-color:#173F35}.k.dark .l,.k.dark .s{color:#D9C9A8}.k.dark .v{color:#fff}
+.eyebrow{font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:#B8956A;font-weight:600;margin:14px 0 0}
+h2{font-family:Lora,serif;font-weight:500;font-size:14px;color:#173F35;margin:1px 0 6px}
+p{margin:0 0 6px}.dato{color:#173F35;font-weight:600;background:#FBF5E9;border-bottom:1.5px solid #B8956A;padding:0 4px;border-radius:3px 3px 0 0}
+.cl{list-style:none;margin:6px 0 0;padding:0}.cl li{display:grid;grid-template-columns:18px 1fr;gap:8px;align-items:start;margin:0 0 4px}
+.cl li i{display:inline-flex;width:18px;height:18px;border-radius:50%;background:#173F35;color:#B8956A;font-style:normal;font-weight:600;font-size:9px;align-items:center;justify-content:center;margin-top:1px}
+.note{margin-top:8px;border-left:4px solid #B8956A;background:#FBF5E9;border-radius:0 10px 10px 0;padding:8px 12px}
+.note .nl{font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:#9C7A4E;font-weight:600;display:block;margin-bottom:1px}
+.legal{font-size:9.2px;color:#4F534E;line-height:1.5}
+.box{margin-top:12px;border:1.5px solid #173F35;border-radius:14px;overflow:hidden}
+.box .bh{background:#173F35;color:#fff;padding:8px 14px;display:flex;justify-content:space-between;align-items:center}
+.box .bh b{font-family:Lora,serif;font-weight:500;font-size:13px}.box .bh span{font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:#B8956A;font-weight:600}
+.box .bb{padding:10px 14px}
+.dl{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;margin-top:4px}.dl div{border-bottom:1px solid #E3DDD0;padding:4px 0;font-size:10px}.dl div span{display:block;font-size:7.5px;letter-spacing:.14em;text-transform:uppercase;color:#6F726B;font-weight:600}.dl div.w{grid-column:1/-1}
+.firmas{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+.firmas div{background:#FAF8F2;border:1px solid #E3DDD0;border-radius:12px;padding:34px 14px 9px;text-align:center;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:#6F726B;position:relative}
+.firmas div:before{content:"";position:absolute;left:14px;right:14px;top:30px;border-top:1px solid #BFB5A0}
+.firmas div b{display:block;font-family:Lora,serif;font-size:11.5px;letter-spacing:0;text-transform:none;color:#173F35;font-weight:500;margin-top:4px}
+.foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;font-size:8.3px;color:#6F726B;border-top:1px solid #E3DDD0;padding-top:8px}.foot img{width:60px}
+@media print{.page{margin:0}}
+</style></head><body>
+<div class="page">
+  <div class="hero">
+    <div class="top"><img class="logo" src="data:image/png;base64,${LOGO_B64}" alt="TRUST realtor"><div class="folio">Folio<b>${folio}</b>${esc(x.lugar||"Guadalajara, Jalisco")} · ${fechaL(x.fecha)}</div></div>
+    <div class="tag">${E?"Venta de propiedad en exclusiva":"Comercialización en venta"}</div>
+    <h1>${titulo}</h1>
+  </div>
+  <div class="body">
+    <div class="cards">
+      <div class="k dark"><span class="l">Precio de venta</span><span class="v big">${fmt(x.precio)}</span><span class="s">${esc(pesosLetra(x.precio))}</span></div>
+      <div class="k"><span class="l">Inmueble</span><span class="v" style="font-size:11.5px">${esc(x.domicilio)}</span><span class="s">${x.m2terr?n2(x.m2terr)+" m² terreno":""}${x.m2terr&&x.m2cons?" · ":""}${x.m2cons?n2(x.m2cons)+" m² construcción":""}</span></div>
+      <div class="k"><span class="l">Comisión</span><span class="v">${n2(x.comision)}%</span><span class="s">sobre el valor de cierre</span></div>
+      ${E?`<div class="k"><span class="l">Plazo</span><span class="v">${x.plazo} días</span><span class="s">${fin?"hasta el "+fechaL(fin):""}</span></div>`:`<div class="k"><span class="l">Modalidad</span><span class="v" style="font-size:13px">Autorización abierta</span><span class="s">sin exclusividad</span></div>`}
+    </div>
+    <div class="eyebrow">Declaración</div><h2>${E?"Contratación en exclusiva":"Autorización"}</h2>
+    ${E?`<p>Por este conducto acepto en contratar a la empresa <b>“${EMPRESA}”</b>, por el periodo de ${b(x.plazo+" días")}, plazo comprendido del ${b(fechaL(x.fecha))} concluyendo precisamente el ${b(fin?fechaL(fin):"")}, para la comercialización y <b>VENTA</b> del inmueble ubicado en: ${b(x.domicilio)}; dicho inmueble cuenta con una superficie aproximada de ${b(n2(x.m2terr)+" m²")} de terreno y ${b(n2(x.m2cons)+" m²")} de construcción.</p>
+    <p>Por lo anterior, otorgo a la empresa referida el derecho de comercializar en venta el inmueble anteriormente descrito por la cantidad de ${b(fmt(x.precio))} (${esc(pesosLetra(x.precio))}) y ofrecer a compradores calificados bajo las siguientes condiciones: ${b(x.condiciones||"Pago de contado o crédito bancario")}.</p>`
+    :`<p>Por este conducto, el aquí suscrito autorizo para vender el inmueble ubicado en: ${b(x.domicilio)}, a la empresa <b>“${EMPRESA}”</b>. Dicho inmueble cuenta con una superficie aproximada de ${b(n2(x.m2terr)+" m²")} de terreno y ${b(n2(x.m2cons)+" m²")} de construcción.</p>
+    <p>Por lo anterior, otorgo a la empresa referida el derecho de comercializar en venta el inmueble anteriormente descrito por la cantidad de ${b(fmt(x.precio))} (${esc(pesosLetra(x.precio))}).</p>
+    <p>Así mismo reconozco el carácter de intermediario de la empresa referida, ya que su intervención con tal carácter la excluye de la responsabilidad del estado jurídico y/o físico del inmueble de mi propiedad.</p>`}
+    <div class="box">
+      <div class="bh"><b>Comisión de venta</b><span>${n2(x.comision)}% · ${esc(pctLetra(x.comision))}</span></div>
+      <div class="bb"><p>Por la prestación del servicio por parte de “${EMPRESA}”, cubriré a dicha empresa por concepto de comisión de venta el ${b(n2(x.comision)+"%")} (${esc(pctLetra(x.comision))}) sobre el valor en que se ${E?"comercialice la propiedad":"cierre la operación"}; cantidad que será cubierta de la siguiente forma:</p>
+      <ul class="cl"><li><i>1</i><span>Pagaré el primer 50% de la comisión a la firma del contrato de promesa de compraventa, y el restante 50% de la comisión a la firma de la escritura pública respectiva.</span></li></ul>
+      <p class="legal" style="margin-top:6px">Por otro lado, acuerdo que, en caso de atraso en el pago oportuno de cualquier cantidad aquí contemplada, se devengará un interés moratorio a razón del 3.5% mensual sobre saldos insolutos a partir del primer día de mora. Así mismo, señalo que en el caso en que no se haya establecido día alguno para el cumplimiento de alguna obligación, ésta se hará dentro de los siguientes 5 cinco días a partir de cuando sean exigibles.</p></div>
+    </div>
+    ${E?`<div class="eyebrow">Servicios</div><h2>Lo que incluye el servicio de TRUST</h2>
+    <ul class="cl">
+      <li><i>a</i><span>Analizar el inmueble a fin de emitir una Opinión de Valor adecuada para su venta.</span></li>
+      <li><i>b</i><span>Crear la publicidad en los medios informativos tales como: revistas de bienes raíces, rótulos, promoción con más de 85 inmobiliarias, 13 páginas web con difusión nacional y un reporte mensual.</span></li>
+      <li><i>c</i><span>Mostrar la propiedad, habiendo reconocido nombre y teléfono de los posibles compradores.</span></li>
+      <li><i>d</i><span>Dar orientación en relación con el manejo de la operación e integración de toda la documentación.</span></li>
+      <li><i>e</i><span>Atención de asesores de tiempo completo contratados por “${EMPRESA}”, quienes proporcionarán a los posibles compradores la información necesaria.</span></li>
+      <li><i>f</i><span>Orientación a los posibles compradores para obtener crédito(s) que necesiten.</span></li>
+    </ul>`:""}
+    ${foot}
+  </div>
+</div>
+<div class="page">
+  <div class="hero mini"><div class="top"><img class="logo" src="data:image/png;base64,${LOGO_B64}" alt="TRUST realtor"><div class="folio">Folio<b>${folio}</b>Página 2 de 2</div></div><h1 style="margin-top:10px">${titulo}</h1></div>
+  <div class="body p2">
+    ${E?`<p class="legal">El presente convenio será automáticamente renovado por las partes por plazos consecutivos de 30 días cada uno, hasta que el propietario del inmueble indique a la agencia la cancelación, mediante un correo simple dirigido a <b>bb@trustreal.mx</b> cinco días antes de terminar el plazo.</p>
+    <p class="legal">En caso de que la propiedad sea vendida, por acuerdo ajeno a “${EMPRESA}”, por conducto de cualquier inmobiliaria profesional dentro del término establecido en el presente contrato, el propietario del inmueble se compromete a cubrir a “${EMPRESA}” el total de 2% (dos por ciento) sobre el valor total de la operación por concepto de comisión y gastos de publicidad, quedando la empresa liberada de continuar ofreciéndome sus servicios.</p>`:""}
+    <p class="legal">Declaro bajo protesta que soy el propietario del inmueble o que puedo enajenar legalmente la propiedad de este, sujeto a restricciones, servidumbres y derechos de vía que consten actualmente. Por tal motivo presento a la agencia “${EMPRESA}” toda la documentación adecuada de dicho inmueble. Si la documentación no está completa a la firma del presente, estoy enterado que presentaré todos los documentos necesarios dentro de 8 días a partir de la firma de este convenio.</p>
+    <p class="legal">En caso de que se presente cualquier controversia entre las partes derivada de la interpretación o cumplimiento del presente instrumento, las mismas se sujetan expresamente a partir de este momento a la jurisdicción y competencia de las leyes y tribunales aplicables en la ciudad de Guadalajara, Jalisco, renunciando desde este momento a cualquier otro fuero que en razón de su domicilio presente o futuro les pudiera corresponder.</p>
+    <div class="box"><div class="bh"><b>Acepto</b><span>Datos del propietario</span></div><div class="bb">
+      <div class="dl">
+        <div class="w"><span>Nombre del propietario</span>${esc(x.prop_nombre||"")}</div>
+        ${E?"":`<div><span>Estado civil</span>${esc(x.prop_civil||"")}&nbsp;</div><div><span>Ocupación</span>${esc(x.prop_ocup||"")}&nbsp;</div>`}
+        <div class="w"><span>Dirección</span>${esc(x.prop_dir||"")}&nbsp;</div>
+        <div><span>Teléfono</span>${esc(x.prop_tel||"")}&nbsp;</div><div><span>Correo electrónico</span>${esc(x.prop_correo||"")}&nbsp;</div>
+        ${E?"":`<div class="w"><span>Nombre del cónyuge</span>${esc(x.conyuge||"")}&nbsp;</div>`}
+      </div>
+      <div class="firmas"><div><b>${esc(x.prop_nombre||"")}</b>Firma del propietario</div><div><b>${esc(x.conyuge||"")}&nbsp;</b>Firma del cónyuge</div></div>
+    </div></div>
+    <div class="eyebrow">En representación de “${EMPRESA}”</div>
+    <div class="firmas" style="margin-top:6px"><div><b>${esc(x.asesor_nombre||x.asesor)}</b>${E?"Nombre y firma del opcionador":"Nombre y firma"}</div>${E?`<div><b>${esc(x.gerente||"")}&nbsp;</b>Nombre y firma de gerente</div>`:""}</div>
+    <p style="margin-top:12px">${esc(x.lugar||"Guadalajara, Jalisco")}, a ${fd} del mes de ${MESES_L[fm-1]} de ${fy}.</p>
+    ${foot}
+  </div>
+</div>
+<script>window.addEventListener("load",()=>{document.querySelectorAll(".page").forEach(p=>{const H=p.clientHeight;p.style.height="auto";const h=p.scrollHeight;if(h>H+1)p.style.zoom=(H/h*0.995).toFixed(3);else p.style.height=""});setTimeout(()=>window.print(),700)});<\/script>
 </body></html>`;
   const w=window.open("","_blank");if(!w){toast("Permite las ventanas emergentes para generar el PDF",true);return}
   w.document.open();w.document.write(html);w.document.close();
