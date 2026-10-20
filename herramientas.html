@@ -144,7 +144,7 @@ const TOOLS=[
   {k:"rentabilidad",n:"Cotizador de rentabilidad",d:"Escenarios a 3, 5 y 10 años: descuento, plusvalía por preventa, plusvalía de la zona y rentas. Para presentar y entregar en PDF.",ok:true,href:"rentabilidad.html",ic:'<path d="M3 20h18"/><path d="M5 16l4-5 3 3 5-7"/><path d="M14 7h3v3"/>'},
   {k:"politicas",n:"Políticas",d:"Políticas oficiales de TRUST: comisiones por supuesto, bono de autogeneración y TOP Realtor.",ok:true,href:"politicas.html",nodoc:true,ic:'<path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7z"/><path d="M9 11h6M9 14h4"/>'},
   {k:"aut_renta",n:"Autorización de renta",d:"Autorización del propietario para comercializar su inmueble en renta.",ok:false,ic:'<path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7z"/><path d="M8 12h8"/>'},
-  {k:"carta_comision",n:"Carta de comisión",d:"Acuerdo de comisión compartida con otra inmobiliaria.",ok:false,ic:'<path d="M3 6h18v12H3z"/><path d="M3 7l9 6 9-6"/>'},
+  {k:"carta_comision",n:"Carta de comisión",d:"Blinda la comisión de TRUST cuando traemos al comprador: con otra inmobiliaria o con el propietario.",ok:true,ic:'<path d="M3 6h18v12H3z"/><path d="M3 7l9 6 9-6"/>'},
   {k:"opinion_valor",n:"Opinión de valor",d:"Estimación de valor del inmueble con comparables para el propietario.",ok:false,ic:'<path d="M3 20h18"/><path d="M6 16l4-5 3 3 5-7"/>'}
 ];
 const TOOL=k=>TOOLS.find(t=>t.k===k)||{n:k};
@@ -174,7 +174,7 @@ function render(){
   m.innerHTML=`
   <div class="tools">${TOOLS.map(t=>`<button class="tool ${t.ok?"":"soon"}" data-tool="${t.k}" ${t.ok?"":"disabled"}>${cnt(t.k)?`<span class="cnt">${cnt(t.k)}</span>`:""}<div class="ic"><svg viewBox="0 0 24 24">${t.ic}</svg></div><h2>${t.n}</h2><p>${t.d}</p><span class="go">${t.ok?(ROLE==="admin"?"Ver documentos":"Crear"):"Próximamente"}</span></button>`).join("")}</div>
   <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">${ROLE==="admin"?"Documentos del equipo":"Mis documentos"}</h3>${ROLE==="admin"?"":`<span style="display:flex;gap:8px"><button class="btn primary" id="btn-new">+ Oferta de compra</button><button class="btn primary" id="btn-new-r">+ Oferta de renta</button><button class="btn primary" id="btn-new-av">+ Autorización de venta</button></span>`}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">${ROLE==="admin"?"Documentos del equipo":"Mis documentos"}</h3>${ROLE==="admin"?"":`<span style="display:flex;gap:8px"><button class="btn primary" id="btn-new">+ Oferta de compra</button><button class="btn primary" id="btn-new-r">+ Oferta de renta</button><button class="btn primary" id="btn-new-av">+ Autorización de venta</button><button class="btn primary" id="btn-new-cc">+ Carta de comisión</button></span>`}</div>
     <div class="filters">
       <input id="f-q" placeholder="Buscar cliente o inmueble…" value="${esc(filt.q)}">
       <select id="f-tipo"><option value="">Tipo: todos</option>${TOOLS.filter(t=>!t.nodoc).map(t=>`<option value="${t.k}" ${filt.tipo===t.k?"selected":""}>${t.n}</option>`).join("")}</select>
@@ -186,12 +186,12 @@ function render(){
     <tbody>${rows.map(d=>{const x=dat(d),v=venceDe(d),venc=v&&v<todayISO()&&(d.estatus==="enviada"||d.estatus==="borrador");return `<tr><td class="dim">${fechaC(x.fecha||d.created_at)}</td><td><b>${esc(TOOL(d.tipo).n)}</b></td><td>${esc(d.titulo||"—")}</td><td class="dim" style="max-width:260px;overflow:hidden;text-overflow:ellipsis" title="${esc(x.domicilio||"")}">${esc(x.domicilio||"—")}</td>${ROLE==="admin"?`<td>${esc(d.asesor)}</td>`:""}<td class="num money">${fmt(montoDe(d))}</td><td class="dim" style="color:${venc?"var(--bad)":"inherit"}">${v?fechaC(v)+(venc?" ⚠":""):"—"}</td><td><select class="st ${d.estatus}" data-est="${d.id}">${Object.entries(EST).map(([k,l])=>`<option value="${k}" ${d.estatus===k?"selected":""}>${l}</option>`).join("")}</select></td><td style="white-space:nowrap"><button class="btn sm pdf" data-id="${d.id}">⤓ PDF</button> <button class="ico edit" data-id="${d.id}" title="Editar">✎</button></td></tr>`}).join("")}</tbody></table>
     ${rows.length?"":`<div class="empty"><b>Sin documentos</b>${ROLE==="admin"?"Los asesores aún no generan documentos.":"Crea tu primera oferta de compra con el botón de arriba."}</div>`}</div>`:`<div class="empty"><b>Falta activar el módulo</b>Corre <code>documentos.sql</code> en Supabase → SQL Editor y recarga la página.</div>`}
   </div>`;
-  m.querySelectorAll("[data-tool]").forEach(b=>b.onclick=()=>{const T0=TOOL(b.dataset.tool);if(T0.href){location.href=T0.href;return}if(ROLE==="admin"){filt.tipo=b.dataset.tool;render()}else if(b.dataset.tool==="oferta_compra"||b.dataset.tool==="oferta_renta")openOferta(null,b.dataset.tool);else if(b.dataset.tool==="aut_venta")openAutorizacion(null)});
-  const na=$("#btn-new-av");if(na)na.onclick=()=>openAutorizacion(null);
+  m.querySelectorAll("[data-tool]").forEach(b=>b.onclick=()=>{const T0=TOOL(b.dataset.tool);if(T0.href){location.href=T0.href;return}if(ROLE==="admin"){filt.tipo=b.dataset.tool;render()}else if(b.dataset.tool==="oferta_compra"||b.dataset.tool==="oferta_renta")openOferta(null,b.dataset.tool);else if(b.dataset.tool==="aut_venta")openAutorizacion(null);else if(b.dataset.tool==="carta_comision")openCarta(null)});
+  const na=$("#btn-new-av");if(na)na.onclick=()=>openAutorizacion(null);const ncc=$("#btn-new-cc");if(ncc)ncc.onclick=()=>openCarta(null);
   const nb=$("#btn-new");if(nb)nb.onclick=()=>openOferta(null,"oferta_compra");const nr=$("#btn-new-r");if(nr)nr.onclick=()=>openOferta(null,"oferta_renta");
   $("#f-q").oninput=e=>{filt.q=e.target.value;render();const i=$("#f-q");i.focus();i.setSelectionRange(i.value.length,i.value.length)};
   ["tipo","est","ase"].forEach(k=>{const el=$("#f-"+k);if(el)el.onchange=e=>{filt[k]=e.target.value;render()}});
-  const abrir=d=>d.tipo==="rentabilidad"?(location.href="rentabilidad.html?doc="+d.id):d.tipo==="aut_venta"?openAutorizacion(d):openOferta(d);const pdfDe=d=>d.tipo==="rentabilidad"?(location.href="rentabilidad.html?doc="+d.id+"&pdf=1"):d.tipo==="aut_venta"?autorizacionPDF(d):ofertaPDF(d);
+  const abrir=d=>d.tipo==="rentabilidad"?(location.href="rentabilidad.html?doc="+d.id):d.tipo==="aut_venta"?openAutorizacion(d):d.tipo==="carta_comision"?openCarta(d):openOferta(d);const pdfDe=d=>d.tipo==="rentabilidad"?(location.href="rentabilidad.html?doc="+d.id+"&pdf=1"):d.tipo==="aut_venta"?autorizacionPDF(d):d.tipo==="carta_comision"?cartaPDF(d):ofertaPDF(d);
   m.querySelectorAll(".edit").forEach(b=>b.onclick=()=>abrir(DOCS.find(d=>d.id===b.dataset.id)));
   m.querySelectorAll(".pdf").forEach(b=>b.onclick=()=>pdfDe(DOCS.find(d=>d.id===b.dataset.id)));
   m.querySelectorAll("select[data-est]").forEach(s=>s.onchange=async()=>{const d=DOCS.find(x=>x.id===s.dataset.est);const r=await sb.from("documentos").update({estatus:s.value,updated_at:new Date().toISOString()}).eq("id",d.id);if(r.error){toast("No se guardó: "+r.error.message,true);return}d.estatus=s.value;s.className="st "+s.value;toast("Estatus: "+EST[s.value])});
@@ -511,6 +511,167 @@ p{margin:0 0 6px}.dato{color:#173F35;font-weight:600;background:#FBF5E9;border-b
   </div>
 </div>
 <script>window.addEventListener("load",()=>{document.querySelectorAll(".page").forEach(p=>{const H=p.clientHeight;p.style.height="auto";const h=p.scrollHeight;if(h>H+1)p.style.zoom=(H/h*0.995).toFixed(3);else p.style.height=""});setTimeout(()=>window.print(),700)});<\/script>
+</body></html>`;
+  const w=window.open("","_blank");if(!w){toast("Permite las ventanas emergentes para generar el PDF",true);return}
+  w.document.open();w.document.write(html);w.document.close();
+}
+
+/* ---------- carta de comisión · formulario ---------- */
+const PAGO_OPC={promesa:"50% a la firma del contrato de promesa o compraventa y 50% a la firma de la escritura pública",escritura:"100% a la firma de la escritura pública",cobro:"Al momento en que la inmobiliaria reciba el pago de su comisión, y a más tardar a la firma de la escritura pública"};
+function openCarta(d){
+  const isNew=!d;const x=d?{...dat(d)}:{modalidad:"inmobiliaria",fecha:todayISO(),lugar:"Guadalajara, Jalisco",base:"pct",comision:2.5,pago:"promesa",vigencia:180,iva:true,asesor:ASESOR};
+  if(!x.asesor)x.asesor=d?d.asesor:ASESOR;if(!x.asesor_nombre)x.asesor_nombre=LS.get("trust_herr_nombre_"+(x.asesor||""))||x.asesor;
+  const root=$("#drawer-root");
+  const fld=(id,label,val,c,attrs,sub)=>`<div class="f ${c||"c6"}"><label>${label}</label><input id="a-${id}" value="${esc(val??"")}" ${attrs||""}>${sub?`<span class="sub" id="a-${id}-sub"></span>`:""}</div>`;
+  const I=x.modalidad!=="propietario";
+  root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog">
+    <header><h3>${isNew?"Nueva carta de comisión":"Carta de comisión · "+esc(d.titulo||"")}</h3><button class="ico" id="d-close">✕</button></header>
+    <div class="body">
+      <div class="fg">
+        <div class="f c6"><label>¿Quién nos paga la comisión?</label><select id="a-modalidad"><option value="inmobiliaria" ${I?"selected":""}>Otra inmobiliaria (listing de ellos, comprador nuestro)</option><option value="propietario" ${!I?"selected":""}>Propietario (corretaje sin exclusiva)</option></select></div>
+        ${fld("fecha","Fecha",x.fecha,"c3","type='date'")}
+        ${fld("lugar","Lugar",x.lugar,"c3")}
+        ${ROLE==="admin"?`<div class="f c4"><label>Asesor</label><select id="a-asesor">${ASESORES.map(a=>`<option ${a===x.asesor?"selected":""}>${esc(a)}</option>`).join("")}</select></div>`:`<input type="hidden" id="a-asesor" value="${esc(x.asesor)}">`}
+        ${fld("asesor_nombre","Tu nombre como aparecerá en el documento",x.asesor_nombre,"c8")}
+      </div>
+      <div class="sect"><h4 id="a-cp-title">${I?"Inmobiliaria que paga":"Propietario que paga"}</h4><div class="fg">
+        ${fld("cp_nombre",I?"Nombre de la inmobiliaria":"Nombre del propietario",x.cp_nombre,"c8")}
+        <div class="f c4" id="a-rep-box" style="${I?"":"display:none"}"><label>Representante / asesor que firma</label><input id="a-cp_rep" value="${esc(x.cp_rep||"")}"></div>
+        ${fld("cp_tel","Teléfono",x.cp_tel,"c4")}
+        ${fld("cp_correo","Correo electrónico",x.cp_correo,"c4")}
+        ${fld("cp_dir","Dirección",x.cp_dir,"c4")}
+      </div></div>
+      <div class="sect"><h4>Operación</h4><div class="fg">
+        ${fld("domicilio","Domicilio del inmueble",x.domicilio,"c12","placeholder='Calle, número, colonia, municipio'")}
+        ${fld("precio","Precio de venta (lista u oferta)",x.precio!=null?fmt(x.precio):"","c6","inputmode='decimal' placeholder='$'",true)}
+        ${fld("comprador","Nombre del comprador (cliente de TRUST)",x.comprador,"c6")}
+      </div></div>
+      <div class="sect"><h4>Comisión para TRUST</h4><div class="fg">
+        <div class="f c4"><label>Cómo se calcula</label><select id="a-base"><option value="pct" ${x.base!=="fijo"?"selected":""}>% sobre el precio de cierre</option><option value="fijo" ${x.base==="fijo"?"selected":""}>Monto fijo</option></select></div>
+        <div class="f c4" id="a-pct-box" style="${x.base==="fijo"?"display:none":""}"><label>Comisión (%)</label><input id="a-comision" value="${esc(x.comision??"")}" inputmode="decimal"><span class="sub" id="a-comision-sub"></span></div>
+        <div class="f c4" id="a-fijo-box" style="${x.base==="fijo"?"":"display:none"}"><label>Monto fijo</label><input id="a-monto" value="${x.monto!=null?fmt(x.monto):""}" inputmode="decimal" placeholder="$"><span class="sub" id="a-monto-sub"></span></div>
+        <div class="f c4"><label>IVA</label><select id="a-iva"><option value="1" ${x.iva!==false?"selected":""}>Más IVA</option><option value="0" ${x.iva===false?"selected":""}>IVA incluido</option></select></div>
+        <div class="f c8"><label>Forma de pago</label><select id="a-pago">${Object.entries(PAGO_OPC).map(([k,v])=>`<option value="${k}" ${x.pago===k?"selected":""}>${v}</option>`).join("")}</select></div>
+        ${fld("vigencia","Vigencia (días)",x.vigencia,"c4","inputmode='numeric'",true)}
+        <div class="f c12"><label>Notas (opcional, aparecen en la carta)</label><input id="a-notas" value="${esc(x.notas||"")}" placeholder="Condiciones particulares de esta operación"></div>
+      </div></div>
+    </div>
+    <footer><span>${isNew?"":`<button class="btn danger" id="d-del">Eliminar</button>`}</span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cancelar</button>${isNew?"":`<button class="btn" id="d-pdf">⤓ PDF</button>`}<button class="btn primary" id="d-save">${isNew?"Guardar carta":"Guardar"}</button></span></footer></div>`;
+  const g=i=>$("#a-"+i);const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
+  g("modalidad").onchange=()=>{const I2=g("modalidad").value!=="propietario";$("#a-rep-box").style.display=I2?"":"none";$("#a-cp-title").textContent=I2?"Inmobiliaria que paga":"Propietario que paga";g("cp_nombre").previousElementSibling.textContent=I2?"Nombre de la inmobiliaria":"Nombre del propietario"};
+  g("base").onchange=()=>{const f=g("base").value==="fijo";$("#a-pct-box").style.display=f?"none":"";$("#a-fijo-box").style.display=f?"":"none"};
+  const pr=g("precio");const updP=()=>{const v=num(pr.value);g("precio-sub").textContent=v?pesosLetra(v):""};pr.onchange=()=>{const v=num(pr.value);pr.value=v==null?"":fmt(v);updP()};updP();
+  const co=g("comision");const updC=()=>{const v=num(co.value);g("comision-sub").textContent=v?pctLetra(v):""};co.onchange=updC;updC();
+  const mo=g("monto");const updM=()=>{const v=num(mo.value);g("monto-sub").textContent=v?pesosLetra(v):""};mo.onchange=()=>{const v=num(mo.value);mo.value=v==null?"":fmt(v);updM()};updM();
+  const vi=g("vigencia");const updV=()=>{const n=Math.round(num(vi.value)||0);const f=g("fecha").value;g("vigencia-sub").textContent=n&&f?`hasta el ${fechaL(sumar(f,n))}`:""};vi.onchange=updV;g("fecha").onchange=updV;updV();
+  const leer=()=>({modalidad:g("modalidad").value,fecha:g("fecha").value||todayISO(),lugar:g("lugar").value.trim()||"Guadalajara, Jalisco",asesor:g("asesor").value,asesor_nombre:g("asesor_nombre").value.trim()||g("asesor").value,
+    cp_nombre:g("cp_nombre").value.trim(),cp_rep:g("cp_rep").value.trim(),cp_tel:g("cp_tel").value.trim(),cp_correo:g("cp_correo").value.trim(),cp_dir:g("cp_dir").value.trim(),
+    domicilio:g("domicilio").value.trim(),precio:num(g("precio").value),comprador:g("comprador").value.trim(),
+    base:g("base").value,comision:num(g("comision").value),monto:num(g("monto").value),iva:g("iva").value==="1",pago:g("pago").value,vigencia:Math.round(num(g("vigencia").value)||0),notas:g("notas").value.trim()});
+  const valida=x=>{if(!x.cp_nombre){toast(x.modalidad==="propietario"?"Falta el nombre del propietario":"Falta el nombre de la inmobiliaria",true);return false}if(!x.domicilio){toast("Falta el domicilio del inmueble",true);return false}if(!x.comprador){toast("Falta el nombre del comprador",true);return false}if(x.base==="fijo"?!x.monto:!x.comision){toast("Falta la comisión",true);return false}if(!x.vigencia){toast("Falta la vigencia",true);return false}return true};
+  async function guardar(){const x=leer();if(!valida(x))return null;LS.set("trust_herr_nombre_"+x.asesor,x.asesor_nombre);
+    const row={tipo:"carta_comision",asesor:x.asesor,titulo:x.cp_nombre,datos:x,updated_at:new Date().toISOString()};
+    const r=isNew?await sb.from("documentos").insert({...row,estatus:"borrador"}).select().single():await sb.from("documentos").update(row).eq("id",d.id).select().single();
+    if(r.error){toast("No se guardó: "+r.error.message,true);return null}
+    if(isNew)DOCS.unshift(r.data);else DOCS[DOCS.findIndex(y=>y.id===d.id)]=r.data;return r.data}
+  $("#d-save").onclick=async()=>{const saved=await guardar();if(!saved)return;close();render();toast(isNew?"Carta guardada. Ya puedes generar el PDF.":"Guardado");if(isNew)cartaPDF(saved)};
+  if(!isNew){$("#d-pdf").onclick=async()=>{const saved=await guardar();if(saved)cartaPDF(saved)};
+    $("#d-del").onclick=async()=>{if(!confirm("¿Eliminar esta carta? No se puede recuperar."))return;const r=await sb.from("documentos").delete().eq("id",d.id);if(r.error){toast(r.error.message,true);return}DOCS=DOCS.filter(y=>y.id!==d.id);close();render();toast("Eliminada")}}
+}
+
+/* ---------- carta de comisión · PDF (1 página) ---------- */
+function cartaPDF(d){
+  const x=dat(d);const I=x.modalidad!=="propietario";const folio="CC-"+String(x.fecha||"").replace(/-/g,"").slice(2)+"-"+String(d.id||"").replace(/-/g,"").slice(-4).toUpperCase();
+  const [fy,fm,fd]=String(x.fecha||todayISO()).slice(0,10).split("-").map(Number);const fin=x.fecha&&x.vigencia?sumar(x.fecha,+x.vigencia):null;
+  const b=v=>`<b class="dato">${esc(v||"______________________")}</b>`;
+  const fijo=x.base==="fijo";const comTxt=fijo?`${fmt(x.monto)} (${pesosLetra(x.monto)})`:`${n2(x.comision)}% (${pctLetra(x.comision)}) sobre el precio final de cierre de la operación`;
+  const ivaTxt=x.iva===false?"IVA incluido":"más el Impuesto al Valor Agregado (IVA) correspondiente";
+  const QUIEN=I?`<b>“${esc(x.cp_nombre)}”</b>${x.cp_rep?", representada en este acto por "+b(x.cp_rep)+",":","}`:`${b(x.cp_nombre)}, en mi carácter de propietario del inmueble,`;
+  const PAGADOR=I?"la Inmobiliaria":"el Propietario";
+  const foot=`<div class="foot"><div>${esc(CONTACTO)}</div><img src="data:image/png;base64,${LOGO_B64}" alt="TRUST"></div>`;
+  const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Carta de comisión · ${esc(x.cp_nombre)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+@page{size:letter;margin:0}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{margin:0;font-family:Poppins,"Segoe UI",sans-serif;color:#1E241F;background:#fff;font-size:9.6px;line-height:1.5}
+.page{width:8.5in;height:11in;overflow:hidden;margin:0 auto;display:flex;flex-direction:column;background:#fff}
+.hero{background:linear-gradient(135deg,#173F35 0%,#1F5446 100%);color:#fff;padding:.34in .65in .54in;border-bottom:6px solid #B8956A}
+.top{display:flex;justify-content:space-between;align-items:flex-start}.logo{width:118px;filter:brightness(0) invert(1)}
+.folio{text-align:right;font-size:9px;color:#D9C9A8;line-height:1.6;letter-spacing:.04em}.folio b{display:block;font-family:Lora,serif;font-size:12px;color:#fff;letter-spacing:0;font-weight:500}
+.tag{display:inline-block;margin-top:.22in;font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:#B8956A;font-weight:600;border:1px solid rgba(184,149,106,.6);border-radius:999px;padding:3px 10px}
+h1{font-family:Lora,Georgia,serif;font-weight:500;font-size:36px;line-height:1.05;margin:8px 0 0;letter-spacing:-.01em}h1 em{font-style:italic;color:#B8956A}
+.body{padding:0 .65in .26in;flex:1;display:flex;flex-direction:column}
+.cards{display:grid;grid-template-columns:1.1fr 1.6fr 1fr 1fr;gap:8px;margin-top:-.4in}
+.k{background:#fff;border:1px solid #E3DDD0;border-radius:12px;padding:10px 12px;box-shadow:0 8px 24px rgba(23,63,53,.10)}
+.k .l{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:#6F726B;font-weight:600;display:block;margin-bottom:2px}.k .v{font-family:Lora,serif;font-size:15px;color:#173F35;line-height:1.2}.k .v.big{font-size:19px;font-weight:500}.k .s{display:block;font-size:8.3px;color:#6F726B;margin-top:2px}
+.k.dark{background:#173F35;border-color:#173F35}.k.dark .l,.k.dark .s{color:#D9C9A8}.k.dark .v{color:#fff}
+.eyebrow{font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:#B8956A;font-weight:600;margin:12px 0 0}
+h2{font-family:Lora,serif;font-weight:500;font-size:14px;color:#173F35;margin:1px 0 5px}
+p{margin:0 0 5px}.dato{color:#173F35;font-weight:600;background:#FBF5E9;border-bottom:1.5px solid #B8956A;padding:0 4px;border-radius:3px 3px 0 0}
+.cl{list-style:none;margin:4px 0 0;padding:0}.cl li{display:grid;grid-template-columns:18px 1fr;gap:8px;align-items:start;margin:0 0 4px}
+.cl li i{display:inline-flex;width:18px;height:18px;border-radius:50%;background:#173F35;color:#B8956A;font-style:normal;font-weight:600;font-size:9px;align-items:center;justify-content:center;margin-top:1px}
+.cl li b.t{color:#173F35;font-weight:600}
+.note{margin-top:6px;border-left:4px solid #B8956A;background:#FBF5E9;border-radius:0 10px 10px 0;padding:7px 12px}
+.note .nl{font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:#9C7A4E;font-weight:600;display:block;margin-bottom:1px}
+.legal{font-size:8.8px;color:#4F534E;line-height:1.45}
+.box{margin-top:10px;border:1.5px solid #173F35;border-radius:14px;overflow:hidden}
+.box .bh{background:#173F35;color:#fff;padding:7px 14px;display:flex;justify-content:space-between;align-items:center}
+.box .bh b{font-family:Lora,serif;font-weight:500;font-size:13px}.box .bh span{font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:#B8956A;font-weight:600}
+.box .bb{padding:8px 14px 10px}
+.dl{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px 16px;margin-top:2px}.dl div{border-bottom:1px solid #E3DDD0;padding:3px 0;font-size:9.6px}.dl div span{display:block;font-size:7.5px;letter-spacing:.14em;text-transform:uppercase;color:#6F726B;font-weight:600}.dl div.w{grid-column:1/-1}
+.firmas{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+.firmas div{background:#FAF8F2;border:1px solid #E3DDD0;border-radius:12px;padding:32px 14px 8px;text-align:center;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:#6F726B;position:relative}
+.firmas div:before{content:"";position:absolute;left:14px;right:14px;top:28px;border-top:1px solid #BFB5A0}
+.firmas div b{display:block;font-family:Lora,serif;font-size:11.5px;letter-spacing:0;text-transform:none;color:#173F35;font-weight:500;margin-top:4px}
+.firmas div small{display:block;font-size:8px;letter-spacing:0;text-transform:none;color:#6F726B;margin-top:1px}
+.foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;font-size:8.3px;color:#6F726B;border-top:1px solid #E3DDD0;padding-top:8px}.foot img{width:60px}
+@media print{.page{margin:0}}
+</style></head><body>
+<div class="page">
+  <div class="hero">
+    <div class="top"><img class="logo" src="data:image/png;base64,${LOGO_B64}" alt="TRUST realtor"><div class="folio">Folio<b>${folio}</b>${esc(x.lugar||"Guadalajara, Jalisco")} · ${fechaL(x.fecha)}</div></div>
+    <div class="tag">${I?"Acuerdo de comisión compartida":"Acuerdo de comisión de venta"}</div>
+    <h1>Carta <em>de comisión</em></h1>
+  </div>
+  <div class="body">
+    <div class="cards">
+      <div class="k dark"><span class="l">Comisión para TRUST</span><span class="v big">${fijo?fmt(x.monto):n2(x.comision)+"%"}</span><span class="s">${fijo?"monto fijo":"sobre el precio de cierre"} · ${x.iva===false?"IVA incluido":"más IVA"}</span></div>
+      <div class="k"><span class="l">Inmueble</span><span class="v" style="font-size:11.5px">${esc(x.domicilio)}</span><span class="s">Precio de referencia: ${fmt(x.precio)}</span></div>
+      <div class="k"><span class="l">Comprador registrado</span><span class="v" style="font-size:12px">${esc(x.comprador)}</span><span class="s">cliente de TRUST</span></div>
+      <div class="k"><span class="l">Vigencia</span><span class="v">${x.vigencia} días</span><span class="s">${fin?"hasta el "+fechaL(fin):""}</span></div>
+    </div>
+    <div class="eyebrow">Reconocimiento</div><h2>${I?"Cliente presentado por TRUST":"Comprador presentado por TRUST"}</h2>
+    <p>Por medio de la presente, ${QUIEN} reconozco que el prospecto comprador ${b(x.comprador)} fue presentado y es atendido por <b>“${EMPRESA}”</b> (en adelante <b>TRUST</b>) para la compra del inmueble ubicado en ${b(x.domicilio)}, con un precio de referencia de ${b(fmt(x.precio))} (${esc(pesosLetra(x.precio))}).</p>
+    <p>En consecuencia, reconozco a TRUST como la parte que generó al comprador en esta operación, y acepto las siguientes condiciones:</p>
+    <div class="box">
+      <div class="bh"><b>Comisión de TRUST</b><span>${fijo?esc(pesosLetra(x.monto)):n2(x.comision)+"% · "+esc(pctLetra(x.comision))}</span></div>
+      <div class="bb">
+      <ul class="cl">
+        <li><i>1</i><span><b class="t">Comisión.</b> Si la compraventa del inmueble se concreta con el comprador registrado, ${PAGADOR} pagará a TRUST por concepto de comisión ${b(comTxt)}, ${ivaTxt}.</span></li>
+        <li><i>2</i><span><b class="t">Forma de pago.</b> ${esc(PAGO_OPC[x.pago]||PAGO_OPC.promesa)}.</span></li>
+        <li><i>3</i><span><b class="t">Alcance del comprador.</b> Se entiende como comprador registrado a la persona señalada, así como a su cónyuge, familiares directos, socios o cualquier persona física o moral que ésta represente o a través de la cual adquiera el inmueble.</span></li>
+        <li><i>4</i><span><b class="t">Vigencia.</b> El presente acuerdo tiene una vigencia de ${b(x.vigencia+" días")} a partir de su fecha. La comisión será exigible aunque la operación se concrete después de la vigencia, siempre que se cierre con el comprador registrado dentro de los 12 meses siguientes a su término.</span></li>
+        <li><i>5</i><span><b class="t">Trato directo.</b> ${PAGADOR} se obliga a no negociar ni cerrar la operación directamente con el comprador registrado sin la intervención de TRUST, y a canalizar a través de TRUST toda comunicación relacionada con esta operación.</span></li>
+        ${I?`<li><i>6</i><span><b class="t">Listing.</b> La Inmobiliaria declara contar con la autorización del propietario para comercializar el inmueble y es la responsable de la información y documentación del mismo.</span></li>`:`<li><i>6</i><span><b class="t">Propiedad.</b> Declaro bajo protesta de decir verdad que soy el propietario del inmueble o que estoy facultado para venderlo, y reconozco el carácter de intermediario de TRUST, lo que lo excluye de responsabilidad sobre el estado jurídico y físico del inmueble.</span></li>`}
+      </ul>
+      ${x.notas?`<div class="note"><span class="nl">Condiciones particulares</span>${esc(x.notas)}</div>`:""}
+      <p class="legal" style="margin-top:6px">En caso de atraso en el pago de cualquier cantidad aquí contemplada se devengará un interés moratorio del 3.5% mensual sobre saldos insolutos a partir del primer día de mora. Para la interpretación y cumplimiento de la presente, las partes se someten a la jurisdicción de los tribunales de Guadalajara, Jalisco, renunciando a cualquier otro fuero que pudiera corresponderles.</p>
+      </div>
+    </div>
+    <div class="box" style="margin-top:8px"><div class="bh"><b>Acepto</b><span>${I?"Datos de la inmobiliaria":"Datos del propietario"}</span></div><div class="bb">
+      <div class="dl">
+        <div class="${I?"":"w"}"><span>${I?"Inmobiliaria":"Nombre del propietario"}</span>${esc(x.cp_nombre||"")}&nbsp;</div>
+        ${I?`<div><span>Representante</span>${esc(x.cp_rep||"")}&nbsp;</div>`:""}
+        <div><span>Teléfono</span>${esc(x.cp_tel||"")}&nbsp;</div><div><span>Correo electrónico</span>${esc(x.cp_correo||"")}&nbsp;</div>
+        <div class="${I?"":""}"><span>Dirección</span>${esc(x.cp_dir||"")}&nbsp;</div>
+      </div>
+      <div class="firmas"><div><b>${esc(I?(x.cp_rep||x.cp_nombre):x.cp_nombre)}</b>${I?"Por la inmobiliaria":"Firma del propietario"}${I?`<small>${esc(x.cp_nombre)}</small>`:""}</div><div><b>${esc(x.asesor_nombre||x.asesor)}</b>Por TRUST<small>${EMPRESA}</small></div></div>
+    </div></div>
+    <p style="margin-top:8px">${esc(x.lugar||"Guadalajara, Jalisco")}, a ${fd} del mes de ${MESES_L[fm-1]} de ${fy}.</p>
+    ${foot}
+  </div>
+</div>
+<script>window.addEventListener("load",()=>{const p=document.querySelector(".page");const H=p.clientHeight;p.style.height="auto";const h=p.scrollHeight;if(h>H+1)p.style.zoom=(H/h*0.995).toFixed(3);else p.style.height="";setTimeout(()=>window.print(),700)});<\/script>
 </body></html>`;
   const w=window.open("","_blank");if(!w){toast("Permite las ventanas emergentes para generar el PDF",true);return}
   w.document.open();w.document.write(html);w.document.close();
