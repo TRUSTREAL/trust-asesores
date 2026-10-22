@@ -196,6 +196,7 @@ th.hl,td.hl{background:#F6EEDC}
       <div class="sec">
         <div class="t">Comparativo con otras opciones</div>
         <div class="fg">
+          <div class="f w"><label>Si no haces nada · inflación anual</label><div class="range"><input type="range" id="i-infl" min="2" max="12" step="0.5" value="4.5"><output id="o-infl">4.5%</output></div><span class="sub">Lo que tu dinero deja de comprar cada año si lo dejas quieto. Es la línea roja de la gráfica.</span></div>
           <div class="f w"><label>Banco · cuenta de débito / ahorro</label><div class="range"><input type="range" id="i-debito" min="0" max="10" step="0.5" value="2"><output id="o-debito">2%</output></div></div>
           <div class="f w"><label>CETES / inversión</label><div class="range"><input type="range" id="i-cetes" min="0" max="15" step="0.5" value="8"><output id="o-cetes">8%</output></div></div>
           <div class="f w"><label>Un coche · pierde valor cada año</label><div class="range"><input type="range" id="i-coche" min="0" max="40" step="1" value="15"><output id="o-coche">15%</output></div></div>
@@ -229,8 +230,8 @@ const pct=(v,d=1)=>((+v||0)*100).toFixed(d).replace(/\.0+$/,"")+"%";
 const todayISO=()=>{const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)};
 
 /* ---------- estado ---------- */
-const S={tipo:"preventa",cliente:"",unidad:"",lista:null,m2:null,desc_modo:"pct",desc:0,desc_m:null,pago_modo:"pct",eng:20,eng_m:null,obra:10,obra_m:null,saldo:"contado",escr:0,escr_m:null,tasa:11.5,plazo:20,escrit:4,pre:20,entrega:18,meses:18,meses_auto:true,reventa:6,zona:7,renta_modo:"trad",renta:null,noche:null,ocup:60,gastos:10,incr:5,inicio:1,debito:2,cetes:8,coche:15,horizonte:5};
-const BIND=[["cliente","i-cliente","s"],["unidad","i-unidad","s"],["lista","i-lista","m"],["m2","i-m2","n"],["desc","i-desc","r"],["desc_m","i-desc-m","m"],["eng","i-eng","r"],["eng_m","i-eng-m","m"],["obra","i-obra","r"],["obra_m","i-obra-m","m"],["escr","i-escr","r"],["escr_m","i-escr-m","m"],["tasa","i-tasa","r"],["escrit","i-escrit","r"],["plazo","i-plazo","n"],["pre","i-pre","r"],["entrega","i-entrega","r"],["meses","i-meses","r"],["reventa","i-reventa","r"],["zona","i-zona","r"],["renta","i-renta","m"],["noche","i-noche","m"],["ocup","i-ocup","r"],["gastos","i-gastos","r"],["incr","i-incr","r"],["inicio","i-inicio","r"],["debito","i-debito","r"],["cetes","i-cetes","r"],["coche","i-coche","r"]];
+const S={tipo:"preventa",cliente:"",unidad:"",lista:null,m2:null,desc_modo:"pct",desc:0,desc_m:null,pago_modo:"pct",eng:20,eng_m:null,obra:10,obra_m:null,saldo:"contado",escr:0,escr_m:null,tasa:11.5,plazo:20,escrit:4,pre:20,entrega:18,meses:18,meses_auto:true,reventa:6,zona:7,renta_modo:"trad",renta:null,noche:null,ocup:60,gastos:10,incr:5,inicio:1,debito:2,cetes:8,coche:15,infl:4.5,horizonte:5};
+const BIND=[["cliente","i-cliente","s"],["unidad","i-unidad","s"],["lista","i-lista","m"],["m2","i-m2","n"],["desc","i-desc","r"],["desc_m","i-desc-m","m"],["eng","i-eng","r"],["eng_m","i-eng-m","m"],["obra","i-obra","r"],["obra_m","i-obra-m","m"],["escr","i-escr","r"],["escr_m","i-escr-m","m"],["tasa","i-tasa","r"],["escrit","i-escrit","r"],["plazo","i-plazo","n"],["pre","i-pre","r"],["entrega","i-entrega","r"],["meses","i-meses","r"],["reventa","i-reventa","r"],["zona","i-zona","r"],["renta","i-renta","m"],["noche","i-noche","m"],["ocup","i-ocup","r"],["gastos","i-gastos","r"],["incr","i-incr","r"],["inicio","i-inicio","r"],["debito","i-debito","r"],["cetes","i-cetes","r"],["coche","i-coche","r"],["infl","i-infl","r"]];
 function wire(){
   BIND.forEach(([k,id,t])=>{const el=document.getElementById(id);if(!el)return;
     el.oninput=()=>{S[k]=t==="s"?el.value:(t==="m"||t==="n")?num(el.value):+el.value;if(k==="eng"&&S.eng+S.obra>100){S.obra=100-S.eng;$("#i-obra").value=S.obra}if(k==="obra"&&S.eng+S.obra>100){S.obra=100-S.eng;el.value=S.obra}if(k==="meses")S.meses_auto=false;if(k==="entrega"&&S.meses_auto){S.meses=Math.max(1,S.entrega);$("#i-meses").value=S.meses}if(t==="r")outs();render()};
@@ -244,7 +245,7 @@ function wire(){
   $("#btn-pdf").onclick=pdf;$("#btn-save").onclick=guardar;$("#btn-esc").onclick=openEscenarios;
 }
 function outs(){
-  $("#o-desc").textContent=S.desc+"%";$("#o-eng").textContent=S.eng+"%";$("#o-obra").textContent=S.obra+"%";$("#o-escr").textContent=S.escr+"%";$("#o-tasa").textContent=S.tasa+"%";$("#o-escrit").textContent=S.escrit+"%";$("#o-pre").textContent=S.pre+"%";$("#o-entrega").textContent=S.entrega+" m";$("#o-meses").textContent=S.meses+" m";$("#o-reventa").textContent=S.reventa+" m";$("#o-zona").textContent=S.zona+"%";$("#o-ocup").textContent=S.ocup+"%";$("#o-gastos").textContent=S.gastos+"%";$("#o-incr").textContent=S.incr+"%";$("#o-inicio").textContent=S.inicio+" m";$("#o-debito").textContent=S.debito+"%";$("#o-cetes").textContent=S.cetes+"%";$("#o-coche").textContent="−"+S.coche+"%";
+  $("#o-desc").textContent=S.desc+"%";$("#o-eng").textContent=S.eng+"%";$("#o-obra").textContent=S.obra+"%";$("#o-escr").textContent=S.escr+"%";$("#o-tasa").textContent=S.tasa+"%";$("#o-escrit").textContent=S.escrit+"%";$("#o-pre").textContent=S.pre+"%";$("#o-entrega").textContent=S.entrega+" m";$("#o-meses").textContent=S.meses+" m";$("#o-reventa").textContent=S.reventa+" m";$("#o-zona").textContent=S.zona+"%";$("#o-ocup").textContent=S.ocup+"%";$("#o-gastos").textContent=S.gastos+"%";$("#o-incr").textContent=S.incr+"%";$("#o-inicio").textContent=S.inicio+" m";$("#o-debito").textContent=S.debito+"%";$("#o-cetes").textContent=S.cetes+"%";$("#o-coche").textContent="−"+S.coche+"%";$("#o-infl").textContent=S.infl+"%";
 }
 function syncUI(){
   const PRE=S.tipo==="preventa",cred=S.saldo==="credito",dm=S.desc_modo==="monto",pm=S.pago_modo==="monto";
@@ -295,7 +296,7 @@ function modelo(){
   const bruta=S.renta_modo==="trad"?(+S.renta||0):S.renta_modo==="corta"?(+S.noche||0)*30.4*(S.ocup/100):0;
   const neta=bruta*(1-S.gastos/100),ini=PRE?ent:S.inicio,inc=S.incr/100;
   const i=S.tasa/100/12,n=(+S.plazo||20)*12,P=L>0?(i>0?L*i/(1-Math.pow(1+i,-n)):L/n):0;
-  const alts={cetes:S.cetes/100,debito:S.debito/100,coche:-S.coche/100};const fv={cetes:0,debito:0,coche:0};
+  const alts={cetes:S.cetes/100,debito:S.debito/100,coche:-S.coche/100,nada:1/(1+S.infl/100)-1};const fv={cetes:0,debito:0,coche:0,nada:0};   // nada = el mismo dinero guardado, medido en pesos de hoy (lo deflacta la inflación)
   const M=[],cf=[];let rentas=0,interes=0,capital=0,flujo=0,aport=0,B=L,pagado=0;
   for(let m=0;m<=120;m++){
     let out=0,inn=0;
@@ -311,7 +312,7 @@ function modelo(){
     const pp=lista*pre*(ent?Math.min(m/ent,1):1),base=lista+pp,valor=base*Math.pow(1+zona,Math.max(0,m-ent)/12),pz=valor-base; // la zona corre a partir de la entrega
     const gan=dsc+pp+pz+rentas-interes-(m>=ent?G:0);
     cf.push(inn-out);
-    M.push({m,valor,desc:dsc,pre:pp,zona:pz,renta:rentas,interes,escrit:m>=ent?G:0,capital,pagado,deuda:B,flujo,aport,gan,patrimonio:capital+gan,cetes:fv.cetes,debito:fv.debito,coche:fv.coche});
+    M.push({m,valor,desc:dsc,pre:pp,zona:pz,renta:rentas,interes,escrit:m>=ent?G:0,capital,pagado,deuda:B,flujo,aport,gan,patrimonio:capital+gan,cetes:fv.cetes,debito:fv.debito,coche:fv.coche,nada:fv.nada});
   }
   const at=y=>{const k=Math.min(120,y*12),r=M[k];const unpaid=(PRE?O*Math.max(0,1-k/mp):0)+(k<ent?escrCash+L:0);   // mensualidades que faltan + lo que aún debe si no ha escriturado
     const fl=cf.slice(0,k+1);fl[k]+=r.valor-(k<ent?0:r.deuda)-unpaid;const tir=irr(fl);
@@ -387,13 +388,13 @@ function gensHTML(R,H){
   return `<div class="gens" style="--n:${gens.length+(cost?1:0)+(costG?1:0)}">${h}</div>`;
 }
 function legendHTML(R){
-  return `<div class="legend"><span><i style="background:var(--c-base)"></i>Dinero de tu bolsa</span>${R.dsc?`<span><i style="background:var(--c-desc)"></i>Descuento</span>`:""}${R.PRE&&S.pre?`<span><i style="background:var(--c-pre)"></i>Incremento de precios</span>`:""}<span><i style="background:var(--c-zona)"></i>Plusvalía zona</span>${R.neta>0?`<span><i style="background:var(--c-renta)"></i>${R.cred&&R.L>0?"Rentas netas de intereses":"Rentas acumuladas"}</span>`:""}<span><i class="ln" style="border-top:2px dashed #A8342A"></i>Mismo dinero en CETES ${S.cetes}%</span><span><i class="ln" style="border-top:2px dotted var(--car)"></i>Mismo dinero en un coche</span></div>`;
+  return `<div class="legend"><span><i style="background:var(--c-base)"></i>Dinero de tu bolsa</span>${R.dsc?`<span><i style="background:var(--c-desc)"></i>Descuento</span>`:""}${R.PRE&&S.pre?`<span><i style="background:var(--c-pre)"></i>Incremento de precios</span>`:""}<span><i style="background:var(--c-zona)"></i>Plusvalía zona</span>${R.neta>0?`<span><i style="background:var(--c-renta)"></i>${R.cred&&R.L>0?"Rentas netas de intereses":"Rentas acumuladas"}</span>`:""}<span><i class="ln" style="border-top:3px solid #A8342A"></i>Tu mismo dinero si no haces nada (inflación ${S.infl}%)</span><span><i style="background:rgba(168,52,42,.28)"></i>Lo que te come la inflación</span></div>`;
 }
 function altHTML(R,H){
-  const rows=[["Tu propiedad"+(R.cred&&R.L>0?" (menos deuda)":"")+(R.neta>0?" + rentas":""),H.patrimonio,"var(--green)"],[`En CETES al ${S.cetes}%`,H.cetes,"var(--bad)"],[`En el banco (débito) al ${S.debito}%`,H.debito,"var(--bank)"],[`En un coche que pierde ${S.coche}% al año`,H.coche,"var(--car)"]];
+  const rows=[["Tu propiedad"+(R.cred&&R.L>0?" (menos deuda)":"")+(R.neta>0?" + rentas":""),H.patrimonio,"var(--green)"],[`Si no haces nada · lo que compra con ${S.infl}% de inflación`,H.nada,"var(--bad)"],[`En CETES al ${S.cetes}%`,H.cetes,"var(--muted)"],[`En el banco (débito) al ${S.debito}%`,H.debito,"var(--bank)"],[`En un coche que pierde ${S.coche}% al año`,H.coche,"var(--car)"]];
   const mx=Math.max(...rows.map(r=>r[1]),1);
   return `<div class="alt">${rows.map(([l,v,c])=>`<div class="row"><span>${l}</span><b style="color:${c}">${fmtK(v)}</b></div><div class="brw"><i style="width:${Math.max(1.5,v/mx*100)}%;background:${c}"></i></div>`).join("")}
-    <p class="hint" style="margin:2px 0 0">${H.patrimonio>H.cetes?`Tu propiedad te deja <b>${fmt(H.patrimonio-H.cetes)}</b> más que CETES y <b>${fmt(H.patrimonio-H.debito)}</b> más que el banco${R.neta>0?", y además te queda un activo que sigue generando renta":""}. En un coche te quedarían ${fmt(H.coche)} de lo que pusiste: <b>pierdes ${fmt(H.capital-H.coche)}</b>.`:`Con estos supuestos CETES rinde más que la propiedad; ajusta descuento, plusvalía o renta para ver dónde se cruza. En un coche perderías ${fmt(H.capital-H.coche)}.`}</p>
+    <p class="hint" style="margin:2px 0 0">Si no haces nada, en ${H.anios} años tu dinero compra lo que hoy compran ${fmt(H.nada)}: <b>la inflación se come ${fmt(H.capital-H.nada)}</b>. Tu propiedad te deja <b>${fmt(H.patrimonio-H.nada)}</b> más que dejarlo quieto${H.patrimonio>H.cetes?`, ${fmt(H.patrimonio-H.cetes)} más que CETES y ${fmt(H.patrimonio-H.debito)} más que el banco`:`; con estos supuestos CETES rinde más que la propiedad, ajusta descuento, plusvalía o renta para ver dónde se cruza`}${R.neta>0?", y además te queda un activo que sigue generando renta":""}. En un coche te quedarían ${fmt(H.coche)}: pierdes ${fmt(H.capital-H.coche)}.</p>
   </div>`;
 }
 function render(){
@@ -452,7 +453,7 @@ function tabla(R){
 }
 function chart(R){
   const W=860,Hh=320,L=70,Rr=16,T=16,B=34;const w=W-L-Rr,h=Hh-T-B;
-  const M=R.M;const maxY=Math.max(...M.map(r=>Math.max(r.patrimonio,r.cetes)))*1.05||1;
+  const M=R.M;const maxY=Math.max(...M.map(r=>r.patrimonio))*1.05||1;
   const x=m=>L+m/120*w,y=v=>T+h-Math.max(0,v)/maxY*h;
   const layers=[["base",r=>r.capital,"var(--c-base)"],["desc",r=>r.desc,"var(--c-desc)"],["pre",r=>r.pre,"var(--c-pre)"],["zona",r=>r.zona+Math.min(0,r.renta-r.interes-r.escrit),"var(--c-zona)"],["renta",r=>Math.max(0,r.renta-r.interes-r.escrit),"var(--c-renta)"]];
   let cum=M.map(()=>0);const paths=[];
@@ -461,9 +462,14 @@ function chart(R){
   const ticks=[0,.25,.5,.75,1].map(t=>{const v=maxY*t;return `<line x1="${L}" x2="${W-Rr}" y1="${y(v)}" y2="${y(v)}" stroke="#E6E0D2" stroke-dasharray="2 4"/><text x="${L-8}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="#8A8D88">${fmtK(v)}</text>`}).join("");
   const years=[0,1,2,3,4,5,6,7,8,9,10].map(a=>`<text x="${x(a*12)}" y="${Hh-12}" text-anchor="middle" font-size="11" fill="${[3,5,10].includes(a)?"#173F35":"#8A8D88"}" font-weight="${[3,5,10].includes(a)?"600":"400"}">${a===0?"Hoy":a+" a"}</text>`).join("");
   const hz=S.horizonte*12,Hh2=R["h"+S.horizonte];
-  const mark=`<rect x="${x(hz)}" y="${T}" width="${W-Rr-x(hz)}" height="${h}" fill="#FAF8F2" opacity=".55"/><line x1="${x(hz)}" x2="${x(hz)}" y1="${T}" y2="${T+h}" stroke="#B8956A" stroke-width="2"/><circle cx="${x(hz)}" cy="${y(Hh2.patrimonio)}" r="6" fill="#B8956A" stroke="#fff" stroke-width="2"/><g transform="translate(${Math.min(x(hz)+10,W-Rr-166)},${Math.max(T+14,y(Hh2.patrimonio)-28)})"><rect width="156" height="40" rx="8" fill="#173F35"/><text x="10" y="16" font-size="10" fill="#D9C9A8" font-weight="600" letter-spacing=".08em">TU PATRIMONIO · ${S.horizonte} AÑOS</text><text x="10" y="32" font-size="14" fill="#fff" font-family="Lora,serif">${fmt(Hh2.patrimonio)}</text></g>`;
+  const shade=`<rect x="${x(hz)}" y="${T}" width="${W-Rr-x(hz)}" height="${h}" fill="#FAF8F2" opacity=".55"/>`;
+  const mark=`<line x1="${x(hz)}" x2="${x(hz)}" y1="${T}" y2="${T+h}" stroke="#B8956A" stroke-width="2"/><circle cx="${x(hz)}" cy="${y(Hh2.patrimonio)}" r="6" fill="#B8956A" stroke="#fff" stroke-width="2"/><g transform="translate(${Math.min(x(hz)+10,W-Rr-166)},${Math.max(T+14,y(Hh2.patrimonio)-28)})"><rect width="156" height="40" rx="8" fill="#173F35"/><text x="10" y="16" font-size="10" fill="#D9C9A8" font-weight="600" letter-spacing=".08em">TU PATRIMONIO · ${S.horizonte} AÑOS</text><text x="10" y="32" font-size="14" fill="#fff" font-family="Lora,serif">${fmt(Hh2.patrimonio)}</text></g>`;
   const ent=R.PRE&&R.ent?`<line x1="${x(R.ent)}" x2="${x(R.ent)}" y1="${T}" y2="${T+h}" stroke="#8FB3A4" stroke-dasharray="3 3"/><text x="${x(R.ent)+4}" y="${T+12}" font-size="10" fill="#2F6B5B">Entrega</text>`:"";
-  return `<svg class="ch" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Crecimiento del patrimonio a 10 años">${ticks}${paths.join("")}${ent}<path d="${line("cetes")}" fill="none" stroke="#A8342A" stroke-width="1.6" stroke-dasharray="6 4"/><path d="${line("coche")}" fill="none" stroke="#B5651D" stroke-width="1.6" stroke-dasharray="2 4"/>${mark}${years}</svg>`;
+  // "Si no haces nada": el mismo dinero guardado pierde poder de compra; se pinta la pérdida entre lo que pusiste y lo que compra
+  const gap="M"+M.map((r,i)=>`${x(i).toFixed(1)},${y(r.capital).toFixed(1)}`).join("L")+"L"+M.slice().reverse().map((r,i)=>{const j=120-i;return `${x(j).toFixed(1)},${y(M[j].nada).toFixed(1)}`}).join("L")+"Z";
+  const py=Math.max(T+14,y(Hh2.patrimonio)-28);let ny=y(Hh2.nada)+10;if(ny<py+48)ny=py+48;if(ny>T+h-46)ny=T+h-46;
+  const nada=`<path d="${gap}" fill="#A8342A" opacity=".28"/><path d="${line("nada")}" fill="none" stroke="#A8342A" stroke-width="3"/><circle cx="${x(hz)}" cy="${y(Hh2.nada)}" r="6" fill="#A8342A" stroke="#fff" stroke-width="2"/><g transform="translate(${Math.min(x(hz)+10,W-Rr-206)},${ny})"><rect width="196" height="42" rx="8" fill="#A8342A"/><text x="10" y="16" font-size="10" fill="#F6D9D4" font-weight="600" letter-spacing=".08em">SI NO HACES NADA · ${S.horizonte} AÑOS</text><text x="10" y="33" font-size="13" fill="#fff" font-family="Lora,serif">${fmt(Hh2.nada)} · pierdes ${fmtK(Hh2.capital-Hh2.nada)}</text></g>`;
+  return `<svg class="ch" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Crecimiento del patrimonio a 10 años">${ticks}${paths.join("")}${ent}${shade}${nada}${mark}${years}</svg>`;
 }
 
 /* ---------- PDF ---------- */
@@ -502,7 +508,7 @@ table{font-size:9.5px}th{font-size:8.5px;padding:6px 8px}td{padding:4px 8px}.cmp
     <tr><td>Esquema de pago</td><td class="n" colspan="3">${pagoTxt}</td></tr>
     <tr>${R.PRE?`<td>Incremento de precios</td><td class="n">${S.pre}% hasta la entrega · entrega en ${S.entrega} meses</td>`:`<td></td><td></td>`}<td>Plusvalía de la zona</td><td class="n">${S.zona}% anual${R.PRE?" a partir de la entrega":""}</td></tr>
     ${R.bruta?`<tr><td>Renta ${S.renta_modo==="corta"?"corta estancia":"tradicional"}</td><td class="n">${S.renta_modo==="corta"?`${fmt(S.noche)} / noche · ${S.ocup}% ocupación → `:""}${fmt(R.bruta)} / mes bruta · ${S.gastos}% gastos → ${fmt(R.neta)} neta · +${S.incr}% anual</td><td>Empieza a rentar</td><td class="n">${R.PRE?"al entregarse":"mes "+S.inicio} · cap rate ${pct(R.cap)}</td></tr>`:""}
-    <tr><td>Gastos de escrituración</td><td class="n">${S.escrit}% (${fmt(R.G)}) al escriturar</td><td>Comparativos</td><td class="n">débito ${S.debito}% · CETES ${S.cetes}% · coche −${S.coche}% anual</td></tr>
+    <tr><td>Gastos de escrituración</td><td class="n">${S.escrit}% (${fmt(R.G)}) al escriturar</td><td>Comparativos</td><td class="n">inflación ${S.infl}% · débito ${S.debito}% · CETES ${S.cetes}% · coche −${S.coche}% anual</td></tr>
     <tr><td>Horizonte presentado</td><td class="n">${S.horizonte} años</td>${R.flip?`<td>Si escrituras y revendes</td><td class="n">pagas todo al escriturar y vendes ${R.flip.k} ${R.flip.k===1?"mes":"meses"} después</td>`:"<td></td><td></td>"}</tr>
   </tbody></table></div>
   <p class="note">Proyección ilustrativa elaborada con los supuestos anteriores; los rendimientos reales pueden variar y no constituyen garantía. ${R.G>0?`Incluye ${S.escrit}% de gastos de escrituración; no`:"No"} incluye impuestos ni comisiones por la venta, mantenimiento extraordinario${R.cred&&R.L>0?", ni seguros o comisiones del crédito":""}. Elaborado por ${esc(asesorActual()||"TRUST realtor")} · Promotora de Inmuebles TRUST, S.A. de C.V.</p></section></div></div>${pfoot}</div>
