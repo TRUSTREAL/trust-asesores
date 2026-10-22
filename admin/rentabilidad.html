@@ -60,7 +60,8 @@ body.present .lay{grid-template-columns:minmax(0,1fr)}body.present #panel{displa
 
 /* stage */
 .hero{background:linear-gradient(135deg,#143A30 0%,#1F5446 60%,#2F6B5B 100%);color:#fff;border-radius:22px;padding:26px 28px;position:relative;overflow:hidden}
-.hero::after{content:"";position:absolute;right:-80px;top:-80px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(217,201,168,.22),transparent 65%)}
+.hero::after{content:"";position:absolute;right:-80px;top:-80px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(217,201,168,.22),transparent 65%);pointer-events:none}
+.hero .hz,.hero .kp{position:relative;z-index:1}
 .hero .k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-3);font-weight:600}
 .hero .big{font-family:Lora,serif;font-size:clamp(38px,5.2vw,64px);line-height:1.02;margin:6px 0 4px;letter-spacing:-.01em}
 .hero .big small{font-size:.42em;color:var(--gold-3);font-family:Poppins,sans-serif;font-weight:500;margin-left:8px}
