@@ -162,6 +162,7 @@ th.hl,td.hl{background:#F6EEDC}
           <div class="f" id="box-tasa"><label>Tasa anual del crédito</label><div class="range"><input type="range" id="i-tasa" min="7" max="16" step="0.25" value="11.5"><output id="o-tasa">11.5%</output></div></div>
           <div class="f" id="box-plazo"><label>Plazo</label><select id="i-plazo"><option value="10">10 años</option><option value="15">15 años</option><option value="20" selected>20 años</option></select></div>
           <div class="f w" id="box-cred"><span class="sub" id="o-cred"></span></div>
+          <div class="f w"><label>Gastos de escrituración</label><div class="range"><input type="range" id="i-escrit" min="0" max="8" step="0.5" value="4"><output id="o-escrit">4%</output></div><span class="sub" id="o-escrit2"></span></div>
         </div>
       </div>
       <div class="sec" id="sec-pre">
@@ -169,6 +170,7 @@ th.hl,td.hl{background:#F6EEDC}
         <div class="fg">
           <div class="f w"><label>Incremento de precio hasta la entrega</label><div class="range"><input type="range" id="i-pre" min="0" max="60" step="1" value="20"><output id="o-pre">20%</output></div></div>
           <div class="f w"><label>Meses a la entrega</label><div class="range"><input type="range" id="i-entrega" min="0" max="48" step="1" value="18"><output id="o-entrega">18 m</output></div></div>
+          <div class="f w"><label>Si escrituras y revendes: meses para vender</label><div class="range"><input type="range" id="i-reventa" min="1" max="24" step="1" value="6"><output id="o-reventa">6 m</output></div><span class="sub" id="o-reventa2"></span></div>
         </div>
       </div>
       <div class="sec">
@@ -227,8 +229,8 @@ const pct=(v,d=1)=>((+v||0)*100).toFixed(d).replace(/\.0+$/,"")+"%";
 const todayISO=()=>{const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)};
 
 /* ---------- estado ---------- */
-const S={tipo:"preventa",cliente:"",unidad:"",lista:null,m2:null,desc_modo:"pct",desc:0,desc_m:null,pago_modo:"pct",eng:20,eng_m:null,obra:10,obra_m:null,saldo:"contado",escr:0,escr_m:null,tasa:11.5,plazo:20,pre:20,entrega:18,meses:18,meses_auto:true,zona:7,renta_modo:"trad",renta:null,noche:null,ocup:60,gastos:10,incr:5,inicio:1,debito:2,cetes:8,coche:15,horizonte:5};
-const BIND=[["cliente","i-cliente","s"],["unidad","i-unidad","s"],["lista","i-lista","m"],["m2","i-m2","n"],["desc","i-desc","r"],["desc_m","i-desc-m","m"],["eng","i-eng","r"],["eng_m","i-eng-m","m"],["obra","i-obra","r"],["obra_m","i-obra-m","m"],["escr","i-escr","r"],["escr_m","i-escr-m","m"],["tasa","i-tasa","r"],["plazo","i-plazo","n"],["pre","i-pre","r"],["entrega","i-entrega","r"],["meses","i-meses","r"],["zona","i-zona","r"],["renta","i-renta","m"],["noche","i-noche","m"],["ocup","i-ocup","r"],["gastos","i-gastos","r"],["incr","i-incr","r"],["inicio","i-inicio","r"],["debito","i-debito","r"],["cetes","i-cetes","r"],["coche","i-coche","r"]];
+const S={tipo:"preventa",cliente:"",unidad:"",lista:null,m2:null,desc_modo:"pct",desc:0,desc_m:null,pago_modo:"pct",eng:20,eng_m:null,obra:10,obra_m:null,saldo:"contado",escr:0,escr_m:null,tasa:11.5,plazo:20,escrit:4,pre:20,entrega:18,meses:18,meses_auto:true,reventa:6,zona:7,renta_modo:"trad",renta:null,noche:null,ocup:60,gastos:10,incr:5,inicio:1,debito:2,cetes:8,coche:15,horizonte:5};
+const BIND=[["cliente","i-cliente","s"],["unidad","i-unidad","s"],["lista","i-lista","m"],["m2","i-m2","n"],["desc","i-desc","r"],["desc_m","i-desc-m","m"],["eng","i-eng","r"],["eng_m","i-eng-m","m"],["obra","i-obra","r"],["obra_m","i-obra-m","m"],["escr","i-escr","r"],["escr_m","i-escr-m","m"],["tasa","i-tasa","r"],["escrit","i-escrit","r"],["plazo","i-plazo","n"],["pre","i-pre","r"],["entrega","i-entrega","r"],["meses","i-meses","r"],["reventa","i-reventa","r"],["zona","i-zona","r"],["renta","i-renta","m"],["noche","i-noche","m"],["ocup","i-ocup","r"],["gastos","i-gastos","r"],["incr","i-incr","r"],["inicio","i-inicio","r"],["debito","i-debito","r"],["cetes","i-cetes","r"],["coche","i-coche","r"]];
 function wire(){
   BIND.forEach(([k,id,t])=>{const el=document.getElementById(id);if(!el)return;
     el.oninput=()=>{S[k]=t==="s"?el.value:(t==="m"||t==="n")?num(el.value):+el.value;if(k==="eng"&&S.eng+S.obra>100){S.obra=100-S.eng;$("#i-obra").value=S.obra}if(k==="obra"&&S.eng+S.obra>100){S.obra=100-S.eng;el.value=S.obra}if(k==="meses")S.meses_auto=false;if(k==="entrega"&&S.meses_auto){S.meses=Math.max(1,S.entrega);$("#i-meses").value=S.meses}if(t==="r")outs();render()};
@@ -242,7 +244,7 @@ function wire(){
   $("#btn-pdf").onclick=pdf;$("#btn-save").onclick=guardar;$("#btn-esc").onclick=openEscenarios;
 }
 function outs(){
-  $("#o-desc").textContent=S.desc+"%";$("#o-eng").textContent=S.eng+"%";$("#o-obra").textContent=S.obra+"%";$("#o-escr").textContent=S.escr+"%";$("#o-tasa").textContent=S.tasa+"%";$("#o-pre").textContent=S.pre+"%";$("#o-entrega").textContent=S.entrega+" m";$("#o-meses").textContent=S.meses+" m";$("#o-zona").textContent=S.zona+"%";$("#o-ocup").textContent=S.ocup+"%";$("#o-gastos").textContent=S.gastos+"%";$("#o-incr").textContent=S.incr+"%";$("#o-inicio").textContent=S.inicio+" m";$("#o-debito").textContent=S.debito+"%";$("#o-cetes").textContent=S.cetes+"%";$("#o-coche").textContent="−"+S.coche+"%";
+  $("#o-desc").textContent=S.desc+"%";$("#o-eng").textContent=S.eng+"%";$("#o-obra").textContent=S.obra+"%";$("#o-escr").textContent=S.escr+"%";$("#o-tasa").textContent=S.tasa+"%";$("#o-escrit").textContent=S.escrit+"%";$("#o-pre").textContent=S.pre+"%";$("#o-entrega").textContent=S.entrega+" m";$("#o-meses").textContent=S.meses+" m";$("#o-reventa").textContent=S.reventa+" m";$("#o-zona").textContent=S.zona+"%";$("#o-ocup").textContent=S.ocup+"%";$("#o-gastos").textContent=S.gastos+"%";$("#o-incr").textContent=S.incr+"%";$("#o-inicio").textContent=S.inicio+" m";$("#o-debito").textContent=S.debito+"%";$("#o-cetes").textContent=S.cetes+"%";$("#o-coche").textContent="−"+S.coche+"%";
 }
 function syncUI(){
   const PRE=S.tipo==="preventa",cred=S.saldo==="credito",dm=S.desc_modo==="monto",pm=S.pago_modo==="monto";
@@ -289,6 +291,7 @@ function modelo(){
   // efectivo al escriturar: todo el saldo si es de contado; si hay crédito, la aportación opcional (preventa) o el enganche (corretaje)
   const escrCash=cred?Math.min(Sal,amt(PRE?S.escr:S.eng,PRE?S.escr_m:S.eng_m,compra,pm)):Sal;
   const L=cred?Math.max(0,Sal-escrCash):0;
+  const G=compra*((+S.escrit||0)/100);   // gastos de escrituración (notario, impuestos de adquisición, avalúo)
   const bruta=S.renta_modo==="trad"?(+S.renta||0):S.renta_modo==="corta"?(+S.noche||0)*30.4*(S.ocup/100):0;
   const neta=bruta*(1-S.gastos/100),ini=PRE?ent:S.inicio,inc=S.incr/100;
   const i=S.tasa/100/12,n=(+S.plazo||20)*12,P=L>0?(i>0?L*i/(1-Math.pow(1+i,-n)):L/n):0;
@@ -299,21 +302,29 @@ function modelo(){
     if(m===0)out+=E;
     if(PRE&&O>0&&m>=1&&m<=mp)out+=O/mp;
     if(m===ent&&escrCash>0)out+=escrCash;
-    pagado+=out;
+    if(m===ent&&G>0)out+=G;
+    pagado+=out-(m===ent?G:0);
     let rm=0;if(m>ini&&neta>0){const y=Math.floor((m-ini-1)/12);rm=neta*Math.pow(1+inc,y)}
     let pago=0,im=0;if(cred&&m>ent&&B>1e-6){im=B*i;let pr=Math.min(Math.max(P-im,0),B);pago=im+pr;B-=pr}
     const f=rm-pago;rentas+=rm;interes+=im;if(f>=0)inn+=f;else{out+=-f;aport+=-f}
     capital+=out;flujo+=inn;Object.keys(fv).forEach(k=>fv[k]=fv[k]*Math.pow(1+alts[k],1/12)+out);
     const pp=lista*pre*(ent?Math.min(m/ent,1):1),base=lista+pp,valor=base*Math.pow(1+zona,Math.max(0,m-ent)/12),pz=valor-base; // la zona corre a partir de la entrega
-    const gan=dsc+pp+pz+rentas-interes;
+    const gan=dsc+pp+pz+rentas-interes-(m>=ent?G:0);
     cf.push(inn-out);
-    M.push({m,valor,desc:dsc,pre:pp,zona:pz,renta:rentas,interes,capital,pagado,deuda:B,flujo,aport,gan,patrimonio:capital+gan,cetes:fv.cetes,debito:fv.debito,coche:fv.coche});
+    M.push({m,valor,desc:dsc,pre:pp,zona:pz,renta:rentas,interes,escrit:m>=ent?G:0,capital,pagado,deuda:B,flujo,aport,gan,patrimonio:capital+gan,cetes:fv.cetes,debito:fv.debito,coche:fv.coche});
   }
   const at=y=>{const k=Math.min(120,y*12),r=M[k];const unpaid=(PRE?O*Math.max(0,1-k/mp):0)+(k<ent?escrCash+L:0);   // mensualidades que faltan + lo que aún debe si no ha escriturado
     const fl=cf.slice(0,k+1);fl[k]+=r.valor-(k<ent?0:r.deuda)-unpaid;const tir=irr(fl);
     return {...r,anios:y,roi:r.capital?r.gan/r.capital:0,tir,cagr:r.capital>0&&r.patrimonio>0?Math.pow(r.patrimonio/r.capital,1/y)-1:0,mult:r.capital?r.patrimonio/r.capital:0}};
-  let flip=null;if(PRE&&ent>0&&E+O>0){const r=M[ent];const gan=r.valor-compra;const pagObra=O*Math.min(1,ent/mp);const fl=Array(ent+1).fill(0);fl[0]-=E;for(let m=1;m<=Math.min(ent,mp);m++)fl[m]-=O/mp;fl[ent]+=r.valor-Sal-(O-pagObra);const dinero=E+pagObra;flip=dinero>0?{ent,valor:r.valor,gan,dinero,roi:gan/dinero,tir:irr(fl)}:null}
-  return {lista,dsc,descPct,compra,E,O,Sal,escrCash,L,P,cred,PRE,ent,mp,bruta,neta,ini,cap:compra&&neta?neta*12/compra:0,cover:P>0?neta/P:null,M,h3:at(3),h5:at(5),h10:at(10),flip};
+  // Escenario "escrituras y revendes": el cliente paga TODO (mensualidades pendientes, saldo o aportación + crédito, y gastos de escrituración),
+  // escritura en la entrega y revende k meses después, sin rentar mientras vende. Si hay crédito, paga la mensualidad del banco esos meses y lo liquida al vender.
+  let flip=null;if(PRE&&ent>0&&compra>0){const k=Math.max(1,Math.min(+S.reventa||1,120-ent)),mv=ent+k,rv=M[mv];const pagObra=O*Math.min(1,ent/mp);
+    const fl=Array(mv+1).fill(0);fl[0]-=E;for(let m=1;m<=Math.min(ent,mp);m++)fl[m]-=O/mp;fl[ent]-=(O-pagObra)+escrCash+G;
+    let dinero=E+O+escrCash+G,banco=0,intK=0,deudaV=0;
+    if(cred&&L>0){for(let m=ent+1;m<=mv;m++){const pay=(M[m].interes-M[m-1].interes)+(M[m-1].deuda-M[m].deuda);fl[m]-=pay;banco+=pay}intK=M[mv].interes-M[ent].interes;deudaV=M[mv].deuda;dinero+=banco}
+    fl[mv]+=rv.valor-deudaV;const gan=rv.valor-compra-G-intK;
+    flip=dinero>0?{ent,mv,k,valor:rv.valor,gan,dinero,G,Sal,escrCash,L,banco,intK,deudaV,cred:cred&&L>0,roi:gan/dinero,tir:irr(fl)}:null}
+  return {lista,dsc,descPct,compra,E,O,Sal,escrCash,L,P,G,cred,PRE,ent,mp,bruta,neta,ini,cap:compra&&neta?neta*12/compra:0,cover:P>0?neta/P:null,M,h3:at(3),h5:at(5),h10:at(10),flip};
 }
 const rend=h=>h.tir!=null&&isFinite(h.tir)?h.tir:h.cagr;
 
@@ -327,6 +338,7 @@ const GEN=[{k:"desc",n:"Descuento",c:"var(--c-desc)",d:"Compras por debajo del p
 function pagosDe(R,H){ // de qué se compone lo que pone de su bolsa hasta el horizonte
   const p=[];if(R.E>0)p.push(`${fmt(R.E)} de enganche`);if(R.O>0)p.push(`${fmt(R.O)} en ${R.mp} mensualidades`);
   if(R.escrCash>0&&H.m>=R.ent)p.push(R.PRE?`${fmt(R.escrCash)} al escriturar`:(R.cred?`${fmt(R.escrCash)} de enganche`:`${fmt(R.escrCash)} de contado`));
+  if(R.G>0&&H.m>=R.ent)p.push(`${fmt(R.G)} de gastos de escrituración`);
   if(H.aport>0)p.push(`${fmt(H.aport)} para completar la mensualidad`);return p;
 }
 function leadTxt(R,H,T){
@@ -339,7 +351,7 @@ function leadTxt(R,H,T){
     return `${p.length?`Con ${lista_y(p)} te quedas`:"Te quedas"} con una propiedad de <b>${fmt(R.lista)}</b>${R.dsc?`, pagándola en ${fmt(R.compra)} (${pct(R.descPct,0)} de descuento)`:""}. El saldo de ${fmt(R.L)} lo financias a ${S.plazo} años${cover}. ${fin}, debes ${fmt(H.deuda)}${H.flujo>0?` y llevas <b>${fmt(H.flujo)}</b> de rentas en la bolsa`:""}.${cada}`;
   }
   if(R.PRE){
-    const p=[];if(R.E>0)p.push(`apartas con <b>${fmt(R.E)}</b>`);if(R.O>0)p.push(`pagas <b>${fmt(R.O)}</b> en ${R.mp} mensualidades`);if(R.escrCash>0)p.push(`liquidas ${fmt(R.escrCash)} al escriturar`);
+    const p=[];if(R.E>0)p.push(`apartas con <b>${fmt(R.E)}</b>`);if(R.O>0)p.push(`pagas <b>${fmt(R.O)}</b> en ${R.mp} mensualidades`);if(R.escrCash>0)p.push(`liquidas ${fmt(R.escrCash)} al escriturar${R.G>0?` (más ${fmt(R.G)} de gastos de escrituración)`:""}`);
     const s=lista_y(p);return `${s.charAt(0).toUpperCase()+s.slice(1)}: ${fmt(R.compra)} en total${lista}. ${fin}${H.renta>0?` más <b>${fmt(H.renta)}</b> cobrados en rentas`:""}.${cada}`;
   }
   return `Inviertes <b>${fmt(R.compra)}</b> hoy${lista} y en ${T} años tienes una propiedad que vale <b>${fmt(H.valor)}</b>${H.renta>0?` más <b>${fmt(H.renta)}</b> cobrados en rentas`:""}.${cada}`;
@@ -362,15 +374,17 @@ function heroHTML(R,H,forPdf){
 }
 function flipHTML(R){
   const F=R.flip;if(!F)return "";
-  return `<div class="flip"><div class="h">Si vendieras al entregarse <small>mes ${F.ent} · con ${S.pre}% de incremento de precios${R.dsc?` y ${pct(R.descPct,0)} de descuento`:""} · antes de comisiones e impuestos</small></div>
-    <div><span>Pones de tu bolsa</span><b>${fmtK(F.dinero)}</b></div><div><span>Ganas</span><b>${fmtK(F.gan)}</b></div><div><span>Sobre tu dinero</span><b>${pct(F.roi,0)}</b>${F.tir!=null?`<small style="display:block;font-size:11px;color:var(--muted)">≈ ${pct(F.tir,0)} anual</small>`:""}</div></div>`;
+  const paga=F.cred?`pones ${fmt(F.escrCash+F.G)} (aportación + escrituración), el banco financia ${fmt(F.L)} y pagas ${fmt(F.banco)} de mensualidades mientras vendes`:`liquidas el saldo de ${fmt(F.Sal)} y pagas ${fmt(F.G)} de escrituración (${S.escrit}%)`;
+  return `<div class="flip"><div class="h">Si escrituraras y revendieras <small>mes ${F.ent} · escrituras y pagas todo tú: ${paga} · revendes ${F.k} ${F.k===1?"mes":"meses"} después (mes ${F.mv}) en ${fmt(F.valor)}${F.cred?`, liquidas al banco ${fmt(F.deudaV)}`:""} · antes de comisiones e impuestos de la venta</small></div>
+    <div><span>Pones de tu bolsa</span><b>${fmtK(F.dinero)}</b><small style="display:block;font-size:10px;color:var(--muted)">${F.cred?"enganche + mensualidades + aportación + escrituración + banco":"precio completo + escrituración"} · lo pones tú, no el comprador</small></div><div><span>Ganas</span><b>${fmtK(F.gan)}</b><small style="display:block;font-size:10px;color:var(--muted)">en ${F.mv} meses</small></div><div><span>Sobre tu dinero</span><b>${pct(F.roi,0)}</b>${F.tir!=null?`<small style="display:block;font-size:11px;color:var(--muted)">≈ ${pct(F.tir,0)} anual</small>`:""}</div></div>`;
 }
 function gensHTML(R,H){
   const gens=GEN.map(g=>({...g,v:H[g.k]})).filter(g=>!(g.k==="pre"&&!R.PRE));const bruto=Math.max(gens.reduce((a,g)=>a+Math.max(g.v,0),0),1);
   let h=gens.map(g=>`<div class="gen ${g.v>0?"":"off"}" style="--c:${g.c}"><span class="n">${g.n}</span><span class="v">${fmtK(g.v)}</span><span class="pct">${g.v>0?Math.round(g.v/bruto*100)+"% de tu ganancia":"sin efecto en este escenario"}</span><div class="bar"><i style="width:${Math.min(100,Math.max(g.v,0)/bruto*100)}%"></i></div><span class="d">${g.d}</span></div>`).join("");
-  const cost=R.cred&&H.interes>0;
+  const cost=R.cred&&H.interes>0;const costG=H.escrit>0;
   if(cost)h+=`<div class="gen cost" style="--c:var(--c-cost)"><span class="n">Costo del crédito</span><span class="v">−${fmtK(H.interes)}</span><span class="pct">intereses en ${H.anios} años</span><div class="bar"><i style="width:${Math.min(100,H.interes/bruto*100)}%"></i></div><span class="d">Lo que le pagas al banco a cambio de poner solo una parte.</span></div>`;
-  return `<div class="gens" style="--n:${gens.length+(cost?1:0)}">${h}</div>`;
+  if(costG)h+=`<div class="gen cost" style="--c:var(--c-cost)"><span class="n">Escrituración</span><span class="v">−${fmtK(H.escrit)}</span><span class="pct">${S.escrit}% al escriturar</span><div class="bar"><i style="width:${Math.min(100,H.escrit/bruto*100)}%"></i></div><span class="d">Notario, impuestos de adquisición y avalúo. Se paga una vez.</span></div>`;
+  return `<div class="gens" style="--n:${gens.length+(cost?1:0)+(costG?1:0)}">${h}</div>`;
 }
 function legendHTML(R){
   return `<div class="legend"><span><i style="background:var(--c-base)"></i>Dinero de tu bolsa</span>${R.dsc?`<span><i style="background:var(--c-desc)"></i>Descuento</span>`:""}${R.PRE&&S.pre?`<span><i style="background:var(--c-pre)"></i>Incremento de precios</span>`:""}<span><i style="background:var(--c-zona)"></i>Plusvalía zona</span>${R.neta>0?`<span><i style="background:var(--c-renta)"></i>${R.cred&&R.L>0?"Rentas netas de intereses":"Rentas acumuladas"}</span>`:""}<span><i class="ln" style="border-top:2px dashed #A8342A"></i>Mismo dinero en CETES ${S.cetes}%</span><span><i class="ln" style="border-top:2px dotted var(--car)"></i>Mismo dinero en un coche</span></div>`;
@@ -389,10 +403,12 @@ function render(){
   const engAmt=R.PRE?R.E:R.escrCash;
   $("#o-eng2").textContent=R.lista?(pm?`${pct(R.compra?engAmt/R.compra:0,0)} del precio`:fmt(engAmt)):"";
   $("#o-obra2").textContent=R.lista&&R.O?`${pm?pct(R.compra?R.O/R.compra:0,0)+" del precio · ":fmt(R.O)+" · "}${R.mp} mensualidades de ${fmt(R.O/R.mp)}`:"";
+  $("#o-reventa2").textContent=R.flip?`Escrituras en el mes ${R.flip.ent} y vendes en el mes ${R.flip.mv}`:"";
   $("#o-meses2").textContent=R.lista&&R.O?(R.mp>R.ent?`Terminas de pagar ${R.mp-R.ent} meses después de la entrega`:R.mp<R.ent?`Terminas de pagar ${R.ent-R.mp} meses antes de la entrega`:"Terminas de pagar justo a la entrega"):"";
   $("#o-saldo").textContent=R.lista?(R.PRE?`${fmt(R.Sal)} (${pct(R.compra?R.Sal/R.compra:0,0)}) · ${R.cred?(R.L>0?`financia ${fmt(R.L)}`:"cubierto sin crédito"):"lo paga de contado"}`:(R.cred?`enganche ${fmt(R.escrCash)} · financia ${fmt(R.L)}`:`${fmt(R.compra)} de contado`)):"";
   $("#o-escr2").textContent=R.lista&&R.cred&&R.PRE?(pm?`${pct(R.compra?R.escrCash/R.compra:0,0)} del precio`:fmt(R.escrCash)):"";
   $("#o-cred").textContent=R.lista&&R.cred?(R.L>0?`Mensualidad ${fmt(R.P)}${R.cover!=null&&R.neta>0?` · la renta neta cubre el ${pct(Math.min(R.cover,9.99),0)}`:""}`:"El saldo queda cubierto; no se usa crédito."):"";
+  $("#o-escrit2").textContent=R.lista&&R.G>0?`≈ ${fmt(R.G)} al escriturar · notario, impuestos de adquisición y avalúo`:"";
   $("#o-renta").textContent=R.bruta?`Renta neta ${fmt(R.neta)} / mes · cap rate ${pct(R.cap)}`:"";
   if(!R.lista){st.innerHTML=`<div class="card" style="padding:40px;text-align:center"><h3 style="font-size:22px">Captura el precio de lista para empezar</h3><p class="hint">Con el precio, el esquema de pago, las plusvalías y la renta estimada, aquí se arma la historia de cómo gana dinero tu cliente.</p></div>`;return}
   const nm=nombre();
@@ -401,7 +417,7 @@ function render(){
   <div class="cmp">
     <section class="card"><h3 style="font-size:17px;margin-bottom:10px">Tu resumen a 3, 5 y 10 años</h3>${tabla(R)}</section>
     <section class="card"><h3 style="font-size:17px;margin-bottom:10px">¿Y si pusieras el mismo dinero en otra cosa?</h3>${altHTML(R,H)}
-      <p class="note">Proyección ilustrativa con los supuestos indicados; no es garantía de rendimiento. No incluye gastos de escrituración, impuestos${R.cred&&R.L>0?", seguros ni comisiones del crédito":" ni financiamiento"}.</p>
+      <p class="note">Proyección ilustrativa con los supuestos indicados; no es garantía de rendimiento. ${R.G>0?`Incluye ${S.escrit}% de gastos de escrituración; no`:"No"} incluye impuestos ni comisiones por la venta${R.cred&&R.L>0?", ni seguros o comisiones del crédito":""}.</p>
     </section>
   </div>`;
   $$("#s-h button").forEach(b=>b.onclick=()=>{S.horizonte=+b.dataset.v;render()});
@@ -414,6 +430,7 @@ function tabla(R){
   ${R.PRE&&(R.E+R.O)>0?row("Enganche"+(R.O?" + mensualidades pagadas":""),h=>fmt(R.E+R.O*Math.min(1,h.m/R.mp)),"sub"):""}
   ${R.PRE&&R.escrCash>0?row(R.cred?"Aportación al escriturar":"Liquidación al escriturar",h=>h.m>=R.ent?fmt(R.escrCash):"—","sub"):""}
   ${!R.PRE?row(R.cred?"Enganche":"Pago de contado",h=>fmt(R.escrCash),"sub"):""}
+  ${R.G>0?row("Gastos de escrituración",h=>h.escrit>0?fmt(h.escrit):"—","sub"):""}
   ${cr?row("Aportaciones a la mensualidad",h=>h.aport>0?fmt(h.aport):"—","sub"):""}
   ${row("Total de tu bolsa",h=>fmt(h.capital))}
   ${sec("Cómo ganas")}
@@ -422,6 +439,7 @@ function tabla(R){
   ${row("Plusvalía de la zona",h=>fmt(h.zona))}
   ${R.neta>0?row("Rentas netas acumuladas",h=>fmt(h.renta)):""}
   ${cr?row("Intereses del crédito",h=>"− "+fmt(h.interes),"neg"):""}
+  ${R.G>0?row("Gastos de escrituración",h=>h.escrit>0?"− "+fmt(h.escrit):"—","neg"):""}
   ${row("Tu ganancia total",h=>fmt(h.gan),"tot")}
   ${sec("Con qué te quedas")}
   ${row("Valor de tu propiedad",h=>fmt(h.valor),"sub")}
@@ -436,7 +454,7 @@ function chart(R){
   const W=860,Hh=320,L=70,Rr=16,T=16,B=34;const w=W-L-Rr,h=Hh-T-B;
   const M=R.M;const maxY=Math.max(...M.map(r=>Math.max(r.patrimonio,r.cetes)))*1.05||1;
   const x=m=>L+m/120*w,y=v=>T+h-Math.max(0,v)/maxY*h;
-  const layers=[["base",r=>r.capital,"var(--c-base)"],["desc",r=>r.desc,"var(--c-desc)"],["pre",r=>r.pre,"var(--c-pre)"],["zona",r=>r.zona+Math.min(0,r.renta-r.interes),"var(--c-zona)"],["renta",r=>Math.max(0,r.renta-r.interes),"var(--c-renta)"]];
+  const layers=[["base",r=>r.capital,"var(--c-base)"],["desc",r=>r.desc,"var(--c-desc)"],["pre",r=>r.pre,"var(--c-pre)"],["zona",r=>r.zona+Math.min(0,r.renta-r.interes-r.escrit),"var(--c-zona)"],["renta",r=>Math.max(0,r.renta-r.interes-r.escrit),"var(--c-renta)"]];
   let cum=M.map(()=>0);const paths=[];
   layers.forEach(([k,f,c])=>{const top=M.map((r,i)=>cum[i]+f(r));const d="M"+M.map((r,i)=>`${x(i).toFixed(1)},${y(top[i]).toFixed(1)}`).join("L")+"L"+M.slice().reverse().map((r,i)=>{const j=120-i;return `${x(j).toFixed(1)},${y(cum[j]).toFixed(1)}`}).join("L")+"Z";paths.push(`<path d="${d}" fill="${c}" opacity="${k==="base"?1:.92}"/>`);cum=top});
   const line=k=>"M"+M.map((r,i)=>`${x(i).toFixed(1)},${y(r[k]).toFixed(1)}`).join("L");
@@ -484,9 +502,10 @@ table{font-size:9.5px}th{font-size:8.5px;padding:6px 8px}td{padding:4px 8px}.cmp
     <tr><td>Esquema de pago</td><td class="n" colspan="3">${pagoTxt}</td></tr>
     <tr>${R.PRE?`<td>Incremento de precios</td><td class="n">${S.pre}% hasta la entrega · entrega en ${S.entrega} meses</td>`:`<td></td><td></td>`}<td>Plusvalía de la zona</td><td class="n">${S.zona}% anual${R.PRE?" a partir de la entrega":""}</td></tr>
     ${R.bruta?`<tr><td>Renta ${S.renta_modo==="corta"?"corta estancia":"tradicional"}</td><td class="n">${S.renta_modo==="corta"?`${fmt(S.noche)} / noche · ${S.ocup}% ocupación → `:""}${fmt(R.bruta)} / mes bruta · ${S.gastos}% gastos → ${fmt(R.neta)} neta · +${S.incr}% anual</td><td>Empieza a rentar</td><td class="n">${R.PRE?"al entregarse":"mes "+S.inicio} · cap rate ${pct(R.cap)}</td></tr>`:""}
-    <tr><td>Comparativos</td><td class="n">débito ${S.debito}% · CETES ${S.cetes}% · coche −${S.coche}% anual</td><td>Horizonte presentado</td><td class="n">${S.horizonte} años</td></tr>
+    <tr><td>Gastos de escrituración</td><td class="n">${S.escrit}% (${fmt(R.G)}) al escriturar</td><td>Comparativos</td><td class="n">débito ${S.debito}% · CETES ${S.cetes}% · coche −${S.coche}% anual</td></tr>
+    <tr><td>Horizonte presentado</td><td class="n">${S.horizonte} años</td>${R.flip?`<td>Si escrituras y revendes</td><td class="n">pagas todo al escriturar y vendes ${R.flip.k} ${R.flip.k===1?"mes":"meses"} después</td>`:"<td></td><td></td>"}</tr>
   </tbody></table></div>
-  <p class="note">Proyección ilustrativa elaborada con los supuestos anteriores; los rendimientos reales pueden variar y no constituyen garantía. No incluye gastos de escrituración, impuestos, mantenimiento extraordinario${R.cred&&R.L>0?", seguros ni comisiones del crédito":" ni costos de financiamiento"}. Elaborado por ${esc(asesorActual()||"TRUST realtor")} · Promotora de Inmuebles TRUST, S.A. de C.V.</p></section></div></div>${pfoot}</div>
+  <p class="note">Proyección ilustrativa elaborada con los supuestos anteriores; los rendimientos reales pueden variar y no constituyen garantía. ${R.G>0?`Incluye ${S.escrit}% de gastos de escrituración; no`:"No"} incluye impuestos ni comisiones por la venta, mantenimiento extraordinario${R.cred&&R.L>0?", ni seguros o comisiones del crédito":""}. Elaborado por ${esc(asesorActual()||"TRUST realtor")} · Promotora de Inmuebles TRUST, S.A. de C.V.</p></section></div></div>${pfoot}</div>
 <script>function fit(){document.querySelectorAll(".page").forEach(p=>{const pin=p.querySelector(".pin");pin.style.transform="";pin.style.width="";const lim=p.clientWidth*11/8.5-96-62;const h=pin.getBoundingClientRect().height;if(h>lim){const s=(lim/h).toFixed(3);pin.style.transform="scale("+s+")";pin.style.width=(100/s).toFixed(2)+"%"}})}let printed=false;const go=()=>{if(printed)return;printed=true;fit();window.print()};fit();document.addEventListener("DOMContentLoaded",fit);window.addEventListener("load",()=>{fit();setTimeout(go,600)});setTimeout(go,4000);<\/script></body></html>`;
   const w=window.open("","_blank");if(!w){toast("Permite las ventanas emergentes para generar el PDF",true);return}w.document.open();w.document.write(html);w.document.close();
 }
