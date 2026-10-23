@@ -2752,6 +2752,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
 }
 </style>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 
@@ -3979,11 +3980,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
   }
 
   // === REGISTRO DE COTIZACIONES ========================================
-  // URL del Web App de Google Apps Script que registra cada cotización
-  // en el Google Sheet "Registro Cotizaciones TRUST".
-  // ⚠️ CONFIGURAR: pegar aquí la URL que da Apps Script al hacer "Implementar".
-  // Si está vacío, el cotizador funciona normal pero no registra.
-  const REGISTRO_URL = 'https://script.google.com/macros/s/AKfycbxl2aQU6QvWeMNyZaERtbQshI9DKn8RwI7JBY_g6DCvaQyw-GWVgtLo3bGVn7mEnBcW/exec';
+  // Cada cotización descargada se guarda en el portal (Mis documentos).
 
   // --- Identidad del asesor (persistida en el dispositivo) ---
   const EQUIPO_ASESORES = ['Álvaro', 'Rodrigo', 'Majo', 'Fanny', 'María', 'Carlos', 'Ana Lu', 'Paola', 'Ramsés'];
@@ -4091,43 +4088,62 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     return document.getElementById('asesor-activo').value || '';
   }
 
-  // --- Envío del registro (fire-and-forget) ---
-  function registrarCotizacion() {
-    if (!REGISTRO_URL) return; // sin URL configurada, no registra
+  // --- Guardado en el portal (Supabase · tabla documentos + bucket "documentos") ---
+  const SB_URL = 'https://xshhjvdmkuqesdlvczbb.supabase.co';
+  const SB_KEY = 'sb_publishable_5erZfpELyuncW1nrReTaZw_BQj0bc-P';
+  let _sb = null; try { _sb = window.supabase.createClient(SB_URL, SB_KEY); } catch (e) { _sb = null; }
+  const _uuid = () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); }));
+  const _hoy = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
 
+  // "Foto" del documento: HTML autónomo con los mismos estilos, listo para volver a imprimir
+  function snapshotCotizacion(titulo) {
+    const head = [...document.querySelectorAll('head link[rel="stylesheet"], head link[rel="preconnect"], head style')].map(n => n.outerHTML).join('\n');
+    const wrap = document.querySelector('.step-panel[data-panel="4"] .preview-wrapper');
+    if (!wrap) return '';
+    const esc = s => String(s || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+    return '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' + esc(titulo) + '</title>\n' + head +
+      '\n<style>.snap-bar{position:sticky;top:0;z-index:50;display:flex;gap:10px;align-items:center;justify-content:space-between;background:#173F35;color:#fff;padding:10px 18px;font-family:Poppins,Montserrat,sans-serif;font-size:13px}.snap-bar button{border:1px solid #B8956A;background:#B8956A;color:#fff;border-radius:999px;padding:8px 16px;font:inherit;font-weight:600;cursor:pointer}@media print{.snap-bar{display:none!important}}</style></head>' +
+      '<body class="printing-quote"><div class="snap-bar"><span>' + esc(titulo) + '</span><button onclick="window.print()">⤓ Descargar PDF</button></div>' +
+      '<div class="wizard-shell"><div class="step-panel" data-panel="4"><div class="card"><div class="preview-wrapper">' + wrap.innerHTML + '</div></div></div></div>' +
+      '<script>if(location.search.indexOf("pdf=1")>-1){window.addEventListener("load",function(){setTimeout(function(){window.print()},700)})}<\/script></body></html>';
+  }
+
+  function registrarCotizacion() {
+    if (!_sb) return; // sin conexión al portal, no registra (nunca bloquea la descarga)
     try {
-      const payload = {
-        asesor: asesorActivo(),
-        cliente: (window._cotizacionData && window._cotizacionData.cliente) || '',
-        proyecto: (window._cotizacionData && window._cotizacionData.proyecto) || '',
-        modelo: document.getElementById('doc-modelo').textContent || '',
-        idUnidad: (document.getElementById('doc-id').textContent || '').replace('Unidad ', ''),
+      const data = window._cotizacionData || {};
+      const asesor = asesorActivo();
+      const cliente = data.cliente || '';
+      const proyecto = data.proyecto || '';
+      const modelo = document.getElementById('doc-modelo').textContent || '';
+      const idUnidad = (document.getElementById('doc-id').textContent || '').replace('Unidad ', '');
+      const datos = {
+        fecha: _hoy(), asesor: asesor, cliente: cliente, proyecto: proyecto, modelo: modelo, idUnidad: idUnidad,
         nivel: document.getElementById('doc-nivel').textContent || '',
         m2Total: document.getElementById('doc-m2-total').textContent || '',
-        precioLista: estadoPago.precioLista,
-        descuentoPct: estadoPago.descuentoPct,
-        descuentoMonto: estadoPago.descuentoMonto,
+        domicilio: [proyecto, modelo, idUnidad ? 'Unidad ' + idUnidad : ''].filter(Boolean).join(' · '),
+        precioLista: estadoPago.precioLista, descuentoPct: estadoPago.descuentoPct, descuentoMonto: estadoPago.descuentoMonto,
         estacionamientoPagado: estadoPago.incluyeEstacionamiento ? estadoPago.estacMonto : 0,
         bodegaPagada: estadoPago.incluyeBodega ? estadoPago.bodegaMonto : 0,
-        precioFinal: estadoPago.precioNeto,
-        engMonto: estadoPago.engMonto,
-        engPct: estadoPago.engPct,
+        precio: estadoPago.precioNeto, precioFinal: estadoPago.precioNeto,
+        engMonto: estadoPago.engMonto, engPct: estadoPago.engPct,
         mensNumero: estadoPago.incluyeMensualidades ? estadoPago.menNumero : 0,
         mensMonto: estadoPago.incluyeMensualidades ? estadoPago.menIndividual : 0,
-        escMonto: estadoPago.escMonto,
-        escPct: estadoPago.escPct,
+        escMonto: estadoPago.escMonto, escPct: estadoPago.escPct,
         precioM2: document.getElementById('doc-precio-m2').textContent || ''
       };
-
-      // no-cors: Apps Script no responde CORS; el registro llega igual.
-      fetch(REGISTRO_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-      }).catch(function() { /* silencioso: no bloquear la descarga */ });
+      const id = _uuid();
+      const archivo = 'cotizaciones/' + id + '.html';
+      const titulo = 'Cotización · ' + proyecto + ' · ' + cliente;
+      const html = snapshotCotizacion(titulo);
+      (async () => {
+        if (html) {
+          const up = await _sb.storage.from('documentos').upload(archivo, new Blob([html], { type: 'text/html;charset=utf-8' }), { contentType: 'text/html;charset=utf-8', upsert: true });
+          if (!up.error) datos.archivo = archivo;
+        }
+        await _sb.from('documentos').insert({ id: id, tipo: 'cotizacion', asesor: asesor, estatus: 'enviada', titulo: cliente || proyecto, datos: datos });
+      })().catch(function (e) { console.warn('No se guardó en el portal:', e); });
     } catch (err) {
-      // El registro nunca debe romper la descarga del PDF
       console.warn('Registro no enviado:', err);
     }
   }
