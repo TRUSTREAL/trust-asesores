@@ -142,6 +142,7 @@ const TOOLS=[
   {k:"oferta_renta",n:"Oferta de renta",d:"Oferta formal de arrendamiento: renta mensual, vigencia y depósito de seriedad.",ok:true,ic:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>'},
   {k:"aut_venta",n:"Autorización de venta",d:"Autorización abierta o carta convenio en exclusiva para comercializar el inmueble en venta.",ok:true,ic:'<path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7z"/><path d="M9 12l2 2 4-4"/>'},
   {k:"rentabilidad",n:"Cotizador de rentabilidad",d:"Escenarios a 3, 5 y 10 años: descuento, plusvalía por preventa, plusvalía de la zona y rentas. Para presentar y entregar en PDF.",ok:true,href:"rentabilidad.html",ic:'<path d="M3 20h18"/><path d="M5 16l4-5 3 3 5-7"/><path d="M14 7h3v3"/>'},
+  {k:"documentos",n:"Mis documentos",d:"Todo lo que has generado: cotizaciones, análisis de rentabilidad, ofertas, autorizaciones y cartas.",ok:true,href:"documentos.html",nodoc:true,ic:'<path d="M4 4h11l5 5v11H4z"/><path d="M15 4v5h5"/><path d="M8 13h8M8 17h5"/>'},
   {k:"politicas",n:"Políticas",d:"Políticas oficiales de TRUST: comisiones por supuesto, bono de autogeneración y TOP Realtor.",ok:true,href:"politicas.html",nodoc:true,ic:'<path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7z"/><path d="M9 11h6M9 14h4"/>'},
   {k:"aut_renta",n:"Autorización de renta",d:"Autorización del propietario para comercializar su inmueble en renta.",ok:false,ic:'<path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7z"/><path d="M8 12h8"/>'},
   {k:"carta_comision",n:"Carta de comisión",d:"Blinda la comisión de TRUST cuando traemos al comprador: con otra inmobiliaria o con el propietario.",ok:true,ic:'<path d="M3 6h18v12H3z"/><path d="M3 7l9 6 9-6"/>'},
@@ -153,13 +154,20 @@ const EST={borrador:"Borrador",enviada:"Enviada",aceptada:"Aceptada",rechazada:"
 /* ---------- estado ---------- */
 const KEY="trust_asesor_herr";
 const LS={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
+if(new URLSearchParams(location.search).has("quien")){try{localStorage.removeItem("trust_asesor_herr")}catch(e){}history.replaceState(null,"",location.pathname)}
 let ASESOR=ROLE==="admin"?"":(LS.get(KEY)||""), DOCS=[], TABLA_OK=true, filt={tipo:"",est:"",ase:"",q:""};
 async function load(){
   if(!sb||(ROLE!=="admin"&&!ASESOR))return;
   let q=sb.from("documentos").select("*").order("created_at",{ascending:false});if(ROLE!=="admin")q=q.eq("asesor",ASESOR);
   const r=await q;if(r.error){TABLA_OK=false;render();return}
-  TABLA_OK=true;DOCS=r.data||[];render();
+  TABLA_OK=true;DOCS=r.data||[];render();autoDoc();
 }
+function autoDoc(){const p=new URLSearchParams(location.search);const id=p.get("doc");if(!id)return;history.replaceState(null,"",location.pathname);const d=DOCS.find(x=>x.id===id);if(!d){toast("No encontré ese documento",true);return}const pdf=p.get("pdf")==="1";
+  if(d.tipo==="rentabilidad"){location.href="rentabilidad.html?doc="+d.id+(pdf?"&pdf=1":"");return}
+  const ab=()=>d.tipo==="aut_venta"?openAutorizacion(d):d.tipo==="carta_comision"?openCarta(d):openOferta(d);
+  const pd=()=>{window.PDF_INLINE=true;d.tipo==="aut_venta"?autorizacionPDF(d):d.tipo==="carta_comision"?cartaPDF(d):ofertaPDF(d)};
+  pdf?pd():ab()}
+
 const dat=d=>d.datos||{};
 const montoDe=d=>{const x=dat(d);return x.precio??x.renta??null};
 const venceDe=d=>{const x=dat(d);if(d.tipo==="aut_venta")return x.modalidad==="exclusiva"&&x.fecha&&x.plazo?sumar(x.fecha,+x.plazo):null;return x.fecha&&x.vigencia?sumar(x.fecha,+x.vigencia):null};
@@ -172,7 +180,7 @@ function render(){
   const cnt=k=>DOCS.filter(d=>d.tipo===k).length;
   let rows=DOCS.filter(d=>(!filt.tipo||d.tipo===filt.tipo)&&(!filt.est||d.estatus===filt.est)&&(!filt.ase||d.asesor===filt.ase)&&(!filt.q||[d.titulo,dat(d).domicilio,d.asesor].join(" ").toLowerCase().includes(filt.q.toLowerCase())));
   m.innerHTML=`
-  <div class="tools">${TOOLS.map(t=>`<button class="tool ${t.ok?"":"soon"}" data-tool="${t.k}" ${t.ok?"":"disabled"}>${cnt(t.k)?`<span class="cnt">${cnt(t.k)}</span>`:""}<div class="ic"><svg viewBox="0 0 24 24">${t.ic}</svg></div><h2>${t.n}</h2><p>${t.d}</p><span class="go">${t.ok?(ROLE==="admin"?"Ver documentos":"Crear"):"Próximamente"}</span></button>`).join("")}</div>
+  <div class="tools">${TOOLS.map(t=>`<button class="tool ${t.ok?"":"soon"}" data-tool="${t.k}" ${t.ok?"":"disabled"}>${cnt(t.k)?`<span class="cnt">${cnt(t.k)}</span>`:""}<div class="ic"><svg viewBox="0 0 24 24">${t.ic}</svg></div><h2>${t.n}</h2><p>${t.d}</p><span class="go">${t.ok?(t.href?"Abrir":ROLE==="admin"?"Ver documentos":"Crear"):"Próximamente"}</span></button>`).join("")}</div>
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">${ROLE==="admin"?"Documentos del equipo":"Mis documentos"}</h3>${ROLE==="admin"?"":`<span style="display:flex;gap:8px"><button class="btn primary" id="btn-new">+ Oferta de compra</button><button class="btn primary" id="btn-new-r">+ Oferta de renta</button><button class="btn primary" id="btn-new-av">+ Autorización de venta</button><button class="btn primary" id="btn-new-cc">+ Carta de comisión</button></span>`}</div>
     <div class="filters">
@@ -341,7 +349,7 @@ p{margin:0 0 5px}.dato{color:#173F35;font-weight:600;background:#FBF5E9;border-b
 </div>
 <script>window.addEventListener("load",()=>{const p=document.querySelector(".page");const H=p.clientHeight;const fit=()=>{p.style.zoom="";p.style.height="auto";const h=p.scrollHeight;if(h>H+1){p.style.zoom=(H/h*0.995).toFixed(3)}else p.style.height=""};fit();setTimeout(()=>{fit();window.print()},700)});<\/script>
 </body></html>`;
-  const w=window.open("","_blank");if(!w){toast("Permite las ventanas emergentes para generar el PDF",true);return}
+  const w=window.PDF_INLINE?window:window.open("","_blank");if(!w){toast("Permite las ventanas emergentes para generar el PDF",true);return}
   w.document.open();w.document.write(html);w.document.close();
 }
 
@@ -512,7 +520,7 @@ p{margin:0 0 6px}.dato{color:#173F35;font-weight:600;background:#FBF5E9;border-b
 </div>
 <script>window.addEventListener("load",()=>{document.querySelectorAll(".page").forEach(p=>{const H=p.clientHeight;p.style.height="auto";const h=p.scrollHeight;if(h>H+1)p.style.zoom=(H/h*0.995).toFixed(3);else p.style.height=""});setTimeout(()=>window.print(),700)});<\/script>
 </body></html>`;
-  const w=window.open("","_blank");if(!w){toast("Permite las ventanas emergentes para generar el PDF",true);return}
+  const w=window.PDF_INLINE?window:window.open("","_blank");if(!w){toast("Permite las ventanas emergentes para generar el PDF",true);return}
   w.document.open();w.document.write(html);w.document.close();
 }
 
@@ -655,7 +663,7 @@ p{margin:0 0 5px}.dato{color:#173F35;font-weight:600;background:#FBF5E9;border-b
         ${I?`<li><i>6</i><span><b class="t">Listing.</b> La Inmobiliaria declara contar con la autorización del propietario para comercializar el inmueble y es la responsable de la información y documentación del mismo.</span></li>`:`<li><i>6</i><span><b class="t">Propiedad.</b> Declaro bajo protesta de decir verdad que soy el propietario del inmueble o que estoy facultado para venderlo, y reconozco el carácter de intermediario de TRUST, lo que lo excluye de responsabilidad sobre el estado jurídico y físico del inmueble.</span></li>`}
       </ul>
       ${x.notas?`<div class="note"><span class="nl">Condiciones particulares</span>${esc(x.notas)}</div>`:""}
-      <p class="legal" style="margin-top:6px">En caso de atraso en el pago de cualquier cantidad aquí contemplada se devengará un interés moratorio del 3.5% mensual sobre saldos insolutos a partir del primer día de mora. Para la interpretación y cumplimiento de la presente, las partes se someten a la jurisdicción de los tribunales de Guadalajara, Jalisco, renunciando a cualquier otro fuero que pudiera corresponderles.</p>
+      <p class="legal" style="margin-top:6px">En caso de atraso en el pago de cualquier cantidad aquí contemplada se devengará un interés moratorio del 2% mensual sobre saldos insolutos a partir del primer día de mora. Para la interpretación y cumplimiento de la presente, las partes se someten a la jurisdicción de los tribunales de Guadalajara, Jalisco, renunciando a cualquier otro fuero que pudiera corresponderles.</p>
       </div>
     </div>
     <div class="box" style="margin-top:8px"><div class="bh"><b>Acepto</b><span>${I?"Datos de la inmobiliaria":"Datos del propietario"}</span></div><div class="bb">
@@ -673,7 +681,7 @@ p{margin:0 0 5px}.dato{color:#173F35;font-weight:600;background:#FBF5E9;border-b
 </div>
 <script>window.addEventListener("load",()=>{const p=document.querySelector(".page");const H=p.clientHeight;p.style.height="auto";const h=p.scrollHeight;if(h>H+1)p.style.zoom=(H/h*0.995).toFixed(3);else p.style.height="";setTimeout(()=>window.print(),700)});<\/script>
 </body></html>`;
-  const w=window.open("","_blank");if(!w){toast("Permite las ventanas emergentes para generar el PDF",true);return}
+  const w=window.PDF_INLINE?window:window.open("","_blank");if(!w){toast("Permite las ventanas emergentes para generar el PDF",true);return}
   w.document.open();w.document.write(html);w.document.close();
 }
 
