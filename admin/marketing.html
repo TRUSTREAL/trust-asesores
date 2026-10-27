@@ -78,7 +78,7 @@ tbody tr.subt td{background:var(--surface-2);font-weight:600;border-bottom:2px s
 .chk{display:flex;align-items:center;gap:8px;font-size:13px}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--green);color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:99}
 .toast.show{opacity:1;transform:translateX(-50%)}.toast.err{background:var(--bad)}
-.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(205px,1fr));gap:10px;margin-bottom:16px}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(205px,1fr));gap:10px;margin-bottom:16px}.pgrid4{grid-template-columns:repeat(4,minmax(0,1fr))}@media (max-width:860px){.pgrid4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .pcard{position:relative;text-align:left;background:var(--surface);border:1px solid var(--line-2);border-radius:14px;padding:12px 14px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;gap:3px;min-width:0}
 .pcard:hover{border-color:var(--green);box-shadow:var(--shadow)}.pcard.on{background:var(--green);border-color:var(--green);color:#fff}
 .pcard .n{font-family:Lora,serif;font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pcard .d{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600;min-height:14px}.pcard.on .d{color:#D9C9A8}
@@ -123,6 +123,7 @@ const PROYECTOS=["Tanhia","Balcana","Luciana Colomos","Luciana Providencia","Lá
 const PLATAFORMAS=["Meta Ads","Google Ads","TikTok Ads","Inmuebles24","Lamudi","Easy Broker","Influencers","Imprenta","Videógrafo / fotógrafo","Agencia","Diseño / producción","Otro"];
 // Proyectos In-House (los que administra TRUST): son los que llevan tarjeta arriba
 const IN_HOUSE=["Epicentria","Balcana","Luciana Providencia","VIM Tower"];
+const proyV=v=>(v.proyecto||"").trim()||(v.un==="Corretaje"?"Corretaje":"Otro");
 const CATEGORIAS=["Pauta digital","Producción audiovisual","Impresos y lonas","Promocionales","Eventos y activaciones","Diseño y renders","Otro gasto"];
 const catDe=x=>x.categoria||"Pauta digital";
 const REGLAS_DEF={"Balcana":{reembolsable:true,desarrollador:"Tazakan"},"Luciana Colomos":{reembolsable:true,desarrollador:"Valari"},"Luciana Providencia":{reembolsable:true,desarrollador:""},"Epicentria":{reembolsable:true,desarrollador:"Epicentria"},"TRUST":{reembolsable:false,desarrollador:""},"ILARA":{reembolsable:false,desarrollador:"INDEA"},"Tanhia":{reembolsable:false,desarrollador:"Celsius"},"Lázaro":{reembolsable:false,desarrollador:""},"Neza":{reembolsable:false,desarrollador:""},"Corretaje":{reembolsable:false,desarrollador:""},"Otro":{reembolsable:false,desarrollador:""}};
@@ -148,16 +149,18 @@ let INV=[], PAGOS=[], PAGOS_OK=true, REGLAS={...REGLAS_DEF}, TABLA_OK=true, CAT_
 let VENTAS=[], COBROS=[], VENTAS_OK=true;
 const FORMAS=["Transferencia","Efectivo","Cheque","Compensación con comisiones","Otro"];
 // P.anio="" = todo el periodo (todos los años)
-let P={anio:new Date().getFullYear(),mes:""}, filt={proy:"",cat:"",plat:"",reem:"",cob:"pend"}, VISTA="gastos";
+const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+let P={anio:new Date().getFullYear(),mes:""}, filt={proy:(IN_HOUSE.includes(LS("ap_proy"))?LS("ap_proy"):""),cat:"",plat:"",reem:"",cob:"pend"}, VISTA="gastos";
 async function loadAll(){
   if(!sb){toast("Sin conexión a Supabase",true);return}
   const [i,r,pg,v,c]=await Promise.all([sb.from("marketing_inversion").select("*").order("mes",{ascending:false}),sb.from("ventas_reglas").select("reglas").eq("id",1).maybeSingle(),sb.from("marketing_pagos").select("*").order("fecha",{ascending:false}),sb.from("ventas").select("*").order("fecha",{ascending:false}),sb.from("ventas_cobros").select("*")]);
-  if(i.error){TABLA_OK=false}else{TABLA_OK=true;INV=i.data||[];CAT_OK=!INV.length||("categoria" in INV[0])}
-  if(pg.error){PAGOS_OK=false;PAGOS=[]}else{PAGOS_OK=true;PAGOS=pg.data||[]}
-  if(v.error){VENTAS_OK=false;VENTAS=[]}else{VENTAS_OK=true;VENTAS=v.data||[]}
+  const inHouse=p=>IN_HOUSE.includes(p);
+  if(i.error){TABLA_OK=false}else{TABLA_OK=true;const all=i.data||[];CAT_OK=!all.length||("categoria" in all[0]);INV=all.filter(x=>inHouse(x.proyecto))}
+  if(pg.error){PAGOS_OK=false;PAGOS=[]}else{PAGOS_OK=true;PAGOS=(pg.data||[]).filter(g=>inHouse(g.proyecto))}
+  if(v.error){VENTAS_OK=false;VENTAS=[]}else{VENTAS_OK=true;VENTAS=(v.data||[]).filter(x=>inHouse(proyV(x)))}
   COBROS=c.error?[]:(c.data||[]);
   if(r.data&&r.data.reglas&&r.data.reglas.marketing)REGLAS={...REGLAS_DEF,...r.data.reglas.marketing};
-  REGLAS_ALL=(r.data&&r.data.reglas)||{};HIST=REGLAS_ALL.marketing_hist||{};
+  REGLAS_ALL=(r.data&&r.data.reglas)||{};HIST=Object.fromEntries(Object.entries(REGLAS_ALL.marketing_hist||{}).filter(([p])=>inHouse(p)));
   render();
 }
 let REGLAS_ALL={}, HIST={};
@@ -172,7 +175,6 @@ const reemEstado=x=>x.pagado_por!=="TRUST"?"dev":x.reembolsable?"re":"na";
 // Cuenta de gastos reembolsables por proyecto (cualquier fecha)
 const cuenta=p=>{const cargos=INV.filter(x=>esReemb(x)&&x.proyecto===p).reduce((a,x)=>a+(+x.monto||0),0);const abonos=PAGOS.filter(g=>g.proyecto===p).reduce((a,g)=>a+(+g.monto||0),0);return {cargos,abonos,saldo:cargos-abonos}};
 // Comisiones (ventas registradas en Administración; los cobros se capturan allá)
-const proyV=v=>(v.proyecto||"").trim()||(v.un==="Corretaje"?"Corretaje":"Otro");
 const comTotal=v=>v.comision_monto!=null&&v.comision_monto!==""?+v.comision_monto:(+v.monto||0)*(+v.comision_pct||0)/100;
 const cobradoDe=vid=>COBROS.filter(c=>c.venta_id===vid).reduce((a,c)=>a+(+c.monto||0),0);
 const cobradoFx=v=>{const c=cobradoDe(v.id);return (c<=0&&(v.cobro_estatus||"")==="pagada")?comTotal(v):Math.min(c,Math.max(comTotal(v),c))};
@@ -184,22 +186,20 @@ const cuentaCom=p=>{const vs=VENTAS.filter(v=>proyV(v)===p);const gen=vs.reduce(
 const fichaProy=p=>{const g=cuenta(p),c=cuentaCom(p);return {p,dev:(REGLAS[p]||{}).desarrollador||"",gSaldo:Math.max(g.saldo,0),cSaldo:c.saldo,total:Math.max(g.saldo,0)+c.saldo,gasto:INV.filter(x=>x.proyecto===p).reduce((a,x)=>a+(+x.monto||0),0),ventas:c.n,gen:c.gen}};
 // Tarjetas: solo In-House, en el orden definido
 const proyectosAdmin=()=>IN_HOUSE.map(fichaProy);
-// Todos los proyectos con movimientos (para el resumen de "lo que me deben")
-const proyectosTodos=()=>{const set=new Set([...IN_HOUSE,...INV.map(x=>x.proyecto),...PAGOS.map(g=>g.proyecto),...VENTAS.map(proyV)].filter(Boolean));return [...set].map(fichaProy).sort((a,b)=>b.total-a.total||b.gasto+b.gen-(a.gasto+a.gen)||a.p.localeCompare(b.p))};
+const proyectosTodos=proyectosAdmin;
 
 function renderProyectos(){
-  const el=$("#proyectos");const list=proyectosAdmin();const todos=proyectosTodos();
-  const S=l=>l.reduce((a,x)=>a+x,0);const tot=S(todos.map(x=>x.total)),tc=S(todos.map(x=>x.cSaldo)),tg=S(todos.map(x=>x.gSaldo));
+  const el=$("#proyectos");const list=proyectosAdmin();
   const card=(x)=>`<button class="pcard ${filt.proy===x.p?"on":""}" data-p="${esc(x.p)}"><span class="n">${esc(x.p)}</span><span class="d">${esc(x.dev||(x.p==="Corretaje"?"clientes":"\u00a0"))}</span><span class="t ${x.total>EPS?"":"ok"}">${x.total>EPS?fmtK(x.total):"Al corriente"}</span><span class="b">${x.cSaldo>EPS?`Comisiones ${fmtK(x.cSaldo)}`:"Sin comisiones pendientes"}<br>${x.gSaldo>EPS?`Gastos ${fmtK(x.gSaldo)}`:"Sin gastos por reembolsar"}</span></button>`;
-  el.innerHTML=`<div class="pgrid"><button class="pcard all ${filt.proy?"":"on"}" data-p=""><span class="n">Todos los proyectos</span><span class="d">In-House y demás</span><span class="t ${tot>EPS?"":"ok"}">${tot>EPS?fmtK(tot):"Al corriente"}</span><span class="b">Comisiones ${fmtK(tc)}<br>Gastos ${fmtK(tg)}</span></button>${list.map(card).join("")}</div>`;
-  el.querySelectorAll(".pcard").forEach(b=>b.onclick=()=>{filt.proy=b.dataset.p;render();window.scrollTo({top:el.offsetTop-10,behavior:"smooth"})});
+  el.innerHTML=`<div class="pgrid pgrid4">${list.map(card).join("")}</div>${filt.proy?"":`<div class="empty" style="margin-bottom:16px"><b>Elige un proyecto</b>Toca una tarjeta para ver sus gastos, reembolsos y comisiones.</div>`}`;
+  el.querySelectorAll(".pcard").forEach(b=>b.onclick=()=>{filt.proy=b.dataset.p;try{localStorage.setItem("ap_proy",filt.proy)}catch(e){}render()});
 }
 
 function renderPeriodBar(){
   const years=[...new Set(INV.map(x=>+String(x.mes).slice(0,4)).concat(VENTAS.map(v=>+String(v.fecha).slice(0,4))).concat([new Date().getFullYear()]))].filter(y=>y>2000).sort((a,b)=>b-a);
   $("#p-anio").innerHTML=`<option value="" ${P.anio?"":"selected"}>Todo el periodo</option>`+years.map(y=>`<option value="${y}" ${y===+P.anio?"selected":""}>${y}</option>`).join("");
   const ms=$("#p-mes");if(ms.options.length===1)MESES_L.forEach((m,i)=>{const o=document.createElement("option");o.value=i+1;o.textContent=m;ms.appendChild(o)});ms.value=P.mes;ms.disabled=!P.anio;ms.style.opacity=P.anio?"1":".5";
-  const proys=[...new Set(PROYECTOS.concat(INV.map(x=>x.proyecto).filter(Boolean)))];
+  const proys=IN_HOUSE.slice();
   $("#f-proy").innerHTML=`<option value="">Proyecto: todos</option>`+proys.map(p=>`<option ${filt.proy===p?"selected":""}>${esc(p)}</option>`).join("");
   $("#f-cat").innerHTML=`<option value="">Categoría: todas</option>`+[...new Set(CATEGORIAS.concat(INV.map(catDe)))].map(p=>`<option ${filt.cat===p?"selected":""}>${esc(p)}</option>`).join("");
   const plats=[...new Set(PLATAFORMAS.concat(INV.map(x=>x.plataforma).filter(Boolean)))];
@@ -215,6 +215,8 @@ $$("#vista button").forEach(b=>b.onclick=()=>{VISTA=b.dataset.v;render()});
 
 function render(){
   renderProyectos();renderPeriodBar();const el=$("#main");
+  $("#period-bar").style.display=filt.proy?"":"none";
+  if(!filt.proy){el.innerHTML="";return}
   el.innerHTML=resumenHTML()+(VISTA==="gastos"?gastosHTML():comisionesHTML());
   el.querySelectorAll(".edit").forEach(b=>b.onclick=()=>openInv(INV.find(x=>x.id===b.dataset.id)));
   el.querySelectorAll(".edo").forEach(b=>b.onclick=()=>estadoCuentaPDF(b.dataset.p));
@@ -229,7 +231,7 @@ function resumenHTML(){
   const list=proyectosTodos().filter(x=>!filt.proy||x.p===filt.proy).filter(x=>x.total>EPS);
   if(!list.length)return filt.proy?`<div class="card" style="margin-bottom:14px;border-color:var(--ok)"><h3 style="margin:0;color:var(--ok)">${esc(filt.proy)} está al corriente</h3><p class="hint" style="margin:4px 0 0">No tiene comisiones ni gastos pendientes de cobro.</p></div>`:"";
   const S=k=>list.reduce((a,x)=>a+x[k],0);
-  return `<div class="card" style="margin-bottom:14px;border-color:var(--bad)"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px"><h3 style="margin:0;color:var(--bad)">Lo que me deben${filt.proy?" · "+esc(filt.proy):" por proyecto"}</h3><span class="hint">Cualquier fecha · Comisiones: ventas registradas en Administración menos cobros · Gastos: reembolsable acumulado menos pagos recibidos</span></div>
+  return `<div class="card" style="margin-bottom:14px;border-color:var(--bad)"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px"><h3 style="margin:0;color:var(--bad)">Lo que me debe ${esc((REGLAS[filt.proy]||{}).desarrollador||"el desarrollador")} · ${esc(filt.proy)}</h3><span class="hint">Cualquier fecha · Comisiones: ventas registradas en Administración menos cobros · Gastos: reembolsables pagados por TRUST menos pagos recibidos</span></div>
   <div class="twrap"><table><thead><tr><th>Proyecto</th><th>Desarrollador</th><th class="num">Comisiones por cobrar</th><th class="num">Gastos por reembolsar</th><th class="num">Total pendiente</th><th></th></tr></thead><tbody>
   ${list.map(x=>`<tr><td><b>${esc(x.p)}</b></td><td class="dim">${esc(x.dev||"—")}</td><td class="num ${x.cSaldo>EPS?"money":"dim"}">${x.cSaldo>EPS?fmt(x.cSaldo):"—"}</td><td class="num ${x.gSaldo>EPS?"money":"dim"}">${x.gSaldo>EPS?fmt(x.gSaldo):"—"}</td><td class="num money" style="color:var(--bad)">${fmt(x.total)}</td><td style="text-align:right">${x.gSaldo>EPS?`<button class="btn sm pago-p" data-p="${esc(x.p)}">+ Pago de gastos</button> `:""}<button class="btn sm edo" data-p="${esc(x.p)}">⤓ Estado de cuenta</button></td></tr>`).join("")}
   ${list.length>1?`<tr class="subt"><td colspan="2">Total</td><td class="num">${fmt(S("cSaldo"))}</td><td class="num">${fmt(S("gSaldo"))}</td><td class="num" style="color:var(--bad)">${fmt(S("total"))}</td><td></td></tr>`:""}</tbody></table></div></div>`;
@@ -343,7 +345,7 @@ function openInv(x,pre){
     <header><h3>${isNew?"Registrar gasto":"Gasto · "+esc(x.proyecto)}</h3><button class="ico" id="d-close">✕</button></header>
     <div class="body"><div class="fg">
       <div class="f c4"><label>Mes</label><input type="month" id="i-mes" value="${String(x.mes||"").slice(0,7)}"></div>
-      <div class="f c4"><label>Proyecto</label><select id="i-proy">${opt([...new Set(IN_HOUSE.concat(PROYECTOS).concat(INV.map(v=>v.proyecto).filter(Boolean)).concat(VENTAS.map(proyV)))],x.proyecto,"Elegir…")}</select></div>
+      <div class="f c4"><label>Proyecto</label><select id="i-proy">${opt(IN_HOUSE,x.proyecto,"Elegir…")}</select></div>
       <div class="f c4"><label>Categoría</label><select id="i-cat">${opt([...new Set(CATEGORIAS.concat([catDe(x)]))],catDe(x))}</select></div>
       <div class="f c4"><label>Plataforma / proveedor</label><input id="i-plat" list="dl-plat" value="${esc(x.plataforma||"")}" placeholder="Meta Ads, imprenta, videógrafo…"><datalist id="dl-plat">${PLATAFORMAS.map(p=>`<option value="${esc(p)}">`).join("")}</datalist></div>
       <div class="f c8"><label>Concepto</label><input id="i-camp" value="${esc(x.campana||"")}" placeholder="Ej. Leads octubre · Video recorrido · 3 lonas 6×3 · 200 termos"></div>
@@ -377,7 +379,7 @@ function openInv(x,pre){
 /* ---------- pagos recibidos ---------- */
 function openPago(g,pre){
   const isNew=!g;g=g?{...g}:{fecha:todayISO(),proyecto:"",monto:null,forma_pago:"Transferencia",referencia:"",notas:"",...(pre||{})};
-  const root=$("#drawer-root");const proys=[...new Set(PROYECTOS.concat(INV.map(v=>v.proyecto).filter(Boolean)))];
+  const root=$("#drawer-root");const proys=IN_HOUSE.slice();
   const opt=(list,cur,blank)=>(blank?`<option value="">${blank}</option>`:"")+list.map(v=>`<option ${v===cur?"selected":""}>${esc(v)}</option>`).join("");
   const info=p=>{if(!p)return "";const c=cuenta(p);return `Reembolsable acumulado ${fmt(c.cargos)} · pagado ${fmt(c.abonos)} · <b>saldo ${fmt(Math.max(c.saldo,0))}</b>`};
   root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(520px,100%)">
@@ -403,27 +405,27 @@ $("#btn-pago").onclick=()=>openPago(null,{proyecto:filt.proy||""});
 
 /* ---------- históricos anuales ---------- */
 $("#btn-hist").onclick=()=>{
-  const root=$("#drawer-root");const proys=[...new Set(PROYECTOS.concat(Object.keys(HIST)).concat(INV.map(x=>x.proyecto).filter(Boolean)))];
+  const root=$("#drawer-root");const proys=IN_HOUSE.slice();
   root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(620px,100%)">
     <header><h3>Históricos anuales</h3><button class="ico" id="d-close">✕</button></header>
     <div class="body"><p class="hint" style="margin:0 0 12px">Total gastado (marketing y otros gastos del proyecto) por proyecto en cada año anterior. Sirve para el comparativo anual de la pantalla principal y del estado de cuenta del desarrollador. ${new Date().getFullYear()} se calcula solo con los registros mensuales.</p>
       <table><thead><tr><th>Proyecto</th>${HIST_YEARS.map(y=>`<th class="num">${y}</th>`).join("")}</tr></thead><tbody>${proys.map(p=>{const H=HIST[p]||{};return `<tr data-p="${esc(p)}"><td><b>${esc(p)}</b></td>${HIST_YEARS.map(y=>`<td class="num"><input class="h" data-y="${y}" inputmode="decimal" value="${H[y]?fmt(H[y]):""}" placeholder="$ 0" style="border:1px solid var(--line-2);border-radius:8px;padding:5px 8px;width:110px;text-align:right"></td>`).join("")}</tr>`}).join("")}</tbody></table></div>
     <footer><span></span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cancelar</button><button class="btn primary" id="d-save">Guardar históricos</button></span></footer></div>`;
   const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
-  $("#d-save").onclick=async()=>{const H={};root.querySelectorAll("tr[data-p]").forEach(tr=>{const o={};tr.querySelectorAll("input.h").forEach(i=>{const v=num(i.value);if(v)o[i.dataset.y]=v});if(Object.keys(o).length)H[tr.dataset.p]=o});
+  $("#d-save").onclick=async()=>{const H={...((REGLAS_ALL&&REGLAS_ALL.marketing_hist)||{})};root.querySelectorAll("tr[data-p]").forEach(tr=>{const o={};delete H[tr.dataset.p];tr.querySelectorAll("input.h").forEach(i=>{const v=num(i.value);if(v)o[i.dataset.y]=v});if(Object.keys(o).length)H[tr.dataset.p]=o});
     const reglas={...REGLAS_ALL,marketing_hist:H};const r=await sb.from("ventas_reglas").upsert({id:1,reglas,updated_at:new Date().toISOString()});if(r.error){toast("No se guardó: "+r.error.message,true);return}HIST=H;REGLAS_ALL=reglas;close();toast("Históricos guardados");render()};
 };
 
 /* ---------- reglas por proyecto ---------- */
 $("#btn-reglas").onclick=()=>{
-  const root=$("#drawer-root");const proys=[...new Set(PROYECTOS.concat(Object.keys(REGLAS)))];
+  const root=$("#drawer-root");const proys=IN_HOUSE.slice();
   root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(560px,100%)">
     <header><h3>Reglas por proyecto</h3><button class="ico" id="d-close">✕</button></header>
     <div class="body"><p class="hint" style="margin:0 0 12px">Quién absorbe los gastos de cada proyecto. Al registrar un gasto se precarga esta regla; la puedes cambiar en cada registro.</p>
       <table><thead><tr><th>Proyecto</th><th>Desarrollador</th><th>¿TRUST exige reembolso?</th></tr></thead><tbody>${proys.map(p=>{const R=REGLAS[p]||{};return `<tr data-p="${esc(p)}"><td><b>${esc(p)}</b></td><td><input class="dev" value="${esc(R.desarrollador||"")}" style="border:1px solid var(--line-2);border-radius:8px;padding:5px 8px;width:140px"></td><td><label class="chk"><input type="checkbox" class="re" ${R.reembolsable?"checked":""}> Sí, me lo reembolsan</label></td></tr>`}).join("")}</tbody></table></div>
     <footer><span></span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cancelar</button><button class="btn primary" id="d-save">Guardar reglas</button></span></footer></div>`;
   const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
-  $("#d-save").onclick=async()=>{const R={};root.querySelectorAll("tr[data-p]").forEach(tr=>R[tr.dataset.p]={desarrollador:tr.querySelector(".dev").value.trim(),reembolsable:tr.querySelector(".re").checked});
+  $("#d-save").onclick=async()=>{const R={...((REGLAS_ALL&&REGLAS_ALL.marketing)||{})};root.querySelectorAll("tr[data-p]").forEach(tr=>R[tr.dataset.p]={desarrollador:tr.querySelector(".dev").value.trim(),reembolsable:tr.querySelector(".re").checked});
     const reglas={...REGLAS_ALL,marketing:R};const r=await sb.from("ventas_reglas").upsert({id:1,reglas,updated_at:new Date().toISOString()});if(r.error){toast("No se guardó: "+r.error.message,true);return}REGLAS={...REGLAS_DEF,...R};REGLAS_ALL=reglas;close();toast("Reglas guardadas")};
 };
 
