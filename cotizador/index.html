@@ -520,6 +520,53 @@
     color: var(--trust-white);
   }
 
+  /* ===== DESCUENTOS ADICIONALES (paso 3) ===== */
+  .desc-add-btn {
+    margin-top: 18px;
+    background: transparent;
+    border: 1px dashed var(--trust-green);
+    color: var(--trust-green);
+    padding: 10px 18px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: var(--r-s, 8px);
+  }
+  .desc-add-btn:hover { background: var(--trust-green); color: var(--trust-white); }
+  .desc-add-btn.on { border-style: solid; }
+  #desc-adicionales { margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--trust-gray-light); }
+  #desc-adicionales .field-grid + .field-grid { margin-top: 18px; }
+  .desc-tag {
+    display: inline-block; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+    background: var(--trust-accent); color: #fff; padding: 2px 6px; border-radius: 4px; margin-left: 6px; vertical-align: middle;
+  }
+  .desc-resumen {
+    margin-top: 16px; font-family: 'Montserrat', sans-serif; font-size: 12px; color: var(--trust-gray);
+    display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline;
+  }
+  .desc-resumen b { color: var(--trust-green); font-weight: 600; }
+  .desc-resumen .esp { color: var(--trust-accent); font-weight: 600; }
+
+  /* ===== PAGOS ESPECIALES (paso 3) ===== */
+  .pt-row-especial .pt-cell-label { background: #FBF4E4; }
+  .pt-row-especial .pt-cell-label .desc-tag { margin-left: 8px; }
+  .pe-detalle { display: flex; gap: 10px; align-items: center; width: 100%; flex-wrap: wrap; font-style: normal; }
+  .pe-detalle .pt-input-small { width: 56px; }
+  .pe-concepto {
+    flex: 1; min-width: 120px; border: 1px solid var(--trust-gray-light); background: var(--trust-white);
+    padding: 6px 8px; font-family: 'Montserrat', sans-serif; font-size: 12px; color: var(--trust-black);
+  }
+  .pe-concepto:focus { outline: none; border-color: var(--trust-green); }
+  .pe-del { border: none; background: transparent; color: var(--trust-gray); cursor: pointer; font-size: 18px; line-height: 1; padding: 2px 6px; }
+  .pe-del:hover { color: #B3423A; }
+  .pe-hint { margin-top: 8px; font-family: 'Montserrat', sans-serif; font-size: 11px; color: var(--trust-gray); font-style: italic; }
+  .am-row.am-especial { background: #FBF4E4; font-weight: 600; }
+  .am-row.am-especial .am-cell { color: #9C7A4E; }
+
   /* ====================================================================== */
   /* ===== PASO 4 — COTIZACIÓN FORMATO CARTA (vista previa + PDF) ======== */
   /* ====================================================================== */
@@ -2034,6 +2081,17 @@
     font-size: 18px;
     font-weight: 400;
   }
+  /* Descuentos adicionales (especiales) en el documento */
+  .v15-hero-ahorro + .v15-hero-ahorro { margin-top: 6px; }
+  .v15-ahorro-especial .v15-ahorro-label { color: #E6CF9A; opacity: 1; }
+  .v15-ahorro-especial .v15-ahorro-monto { color: #E6CF9A; }
+  .v15-ahorro-tag {
+    display: inline-block; font-size: 7px; letter-spacing: 1.5px; padding: 2px 6px; margin-left: 8px;
+    border: 1px solid #E6CF9A; border-radius: 3px; color: #E6CF9A; vertical-align: middle; line-height: 1.2;
+  }
+  .v15-ahorro-total { margin-top: 8px; padding-top: 8px; border-top: 0.5px solid rgba(255,255,255,0.25); }
+  .v15-ahorro-total .v15-ahorro-label { opacity: 1; }
+  .v15-ahorro-total .v15-ahorro-monto { font-size: 22px; }
 
   /* ---- Esquema de pago (3 cards) ---- */
   .v15-esquema {
@@ -2198,6 +2256,10 @@
     background: transparent;
     border-color: transparent;
   }
+  /* Pagos especiales en el cronograma y en las tarjetas */
+  .v15-crono-cell.v15-crono-esp { background: #FBF4E4; border: 1px solid #B8956A; }
+  .v15-crono-cell.v15-crono-esp .v15-crono-label { color: #9C7A4E; font-weight: 600; }
+  .v15-esquema-card.v15-card-esp .v15-card-header { background: #B8956A; }
   .v15-crono-label {
     font-family: 'Montserrat', sans-serif;
     font-size: 8px;
@@ -2607,6 +2669,32 @@
     .v15-hero-divisor { margin: 10pt 0 8pt !important; }
     .v15-ahorro-label { font-size: 7pt !important; letter-spacing: 1.5pt !important; }
     .v15-ahorro-monto { font-size: 14pt !important; }
+    .v15-hero-ahorro + .v15-hero-ahorro { margin-top: 3pt !important; }
+    .v15-ahorro-tag { font-size: 5.5pt !important; padding: 1pt 4pt !important; }
+    .v15-ahorro-total { margin-top: 5pt !important; padding-top: 5pt !important; }
+    .v15-ahorro-total .v15-ahorro-monto { font-size: 16pt !important; }
+    /* Documento compacto: cuando hay descuentos adicionales (más filas en el hero), se recupera el espacio en el resto de la hoja */
+    .v15-doc-compacto .v15-cliente-asesor { padding: 0.14in 0.55in !important; }
+    .v15-doc-compacto .v15-ca-name { margin-top: 4pt !important; }
+    .v15-doc-compacto .v15-hero.v15-hero-multi { padding-top: 0.12in !important; padding-bottom: 0.12in !important; }
+    .v15-doc-compacto .v15-hero-lista { margin-top: 4pt !important; }
+    .v15-doc-compacto .v15-hero.v15-hero-multi .v15-hero-precio { font-size: 34pt !important; margin-top: 4pt !important; }
+    .v15-doc-compacto .v15-hero.v15-hero-multi .v15-hero-divisor { margin: 6pt 0 5pt !important; }
+    .v15-doc-compacto .v15-hero-ahorro + .v15-hero-ahorro { margin-top: 2pt !important; }
+    .v15-doc-compacto .v15-ahorro-monto { font-size: 12.5pt !important; }
+    .v15-doc-compacto .v15-ahorro-total { margin-top: 4pt !important; padding-top: 4pt !important; }
+    .v15-doc-compacto .v15-ahorro-total .v15-ahorro-monto { font-size: 15pt !important; }
+    .v15-doc-compacto .v15-esquema { padding-top: 0.11in !important; }
+    .v15-doc-compacto .v15-card-body { padding: 0.10in 0.1in 0.09in !important; }
+    .v15-doc-compacto .v15-card-monto { font-size: 18pt !important; }
+    .v15-doc-compacto .v15-card-sub { margin-top: 5pt !important; }
+    .v15-doc-compacto .v15-seccion { padding-top: 0.13in !important; }
+    .v15-doc-compacto .v15-det-card { min-height: 0.56in !important; padding: 7pt 6pt !important; }
+    .v15-doc-compacto .v15-amenidades { margin-top: 0.11in !important; padding: 6pt 0.14in !important; }
+    .v15-doc-compacto .v15-crono-cell { min-height: 0.25in !important; padding: 2pt 2pt !important; }
+    .v15-doc-compacto .v15-footer { margin-top: 0.11in !important; padding: 0.11in 0.55in !important; }
+    .v15-doc-compacto .v15-footer-legal { padding-top: 0.07in !important; }
+    .v15-doc-compacto .v15-footer-brand { padding-bottom: 0.09in !important; }
 
     .v15-esquema { padding: 0.16in 0.2in 0 !important; gap: 10px !important; }
     .v15-card-header { padding: 6pt 0 !important; font-size: 8pt !important; letter-spacing: 1.5pt !important; }
@@ -2753,6 +2841,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/auth.js"></script>
 </head>
 <body>
 
@@ -3072,22 +3161,57 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
       </div>
 
       <!-- BLOQUE 1: DESCUENTO -->
-      <div class="field-group">
+      <div class="field-group" id="bloque-descuento">
         <div class="field-group-title">Descuento</div>
         <div class="field-grid">
           <div class="field col-4 unit-suffix" data-suffix="%">
-            <label>Descuento %</label>
+            <label>Descuento por forma de pago %</label>
             <input type="number" step="0.01" value="0" id="desc-porcentaje" />
           </div>
           <div class="field col-4 unit-prefix" data-prefix="$">
-            <label>Descuento monto</label>
+            <label>Monto</label>
             <input type="text" value="0" id="desc-monto" />
           </div>
           <div class="field col-4">
-            <label>Precio neto</label>
+            <label>Precio final</label>
             <div class="result-box" id="precio-neto-box">$3,278,691</div>
           </div>
         </div>
+
+        <!-- Descuentos adicionales (promocionales / especiales) -->
+        <div id="desc-adicionales" style="display:none;">
+          <div class="field-grid">
+            <div class="field col-4">
+              <label>Descuento adicional 1 <span class="desc-tag">Especial</span></label>
+              <input type="text" id="desc1-concepto" placeholder="Concepto · ej. Promoción de lanzamiento" maxlength="60" />
+            </div>
+            <div class="field col-4 unit-suffix" data-suffix="%">
+              <label>%</label>
+              <input type="number" step="0.01" value="0" id="desc1-porcentaje" />
+            </div>
+            <div class="field col-4 unit-prefix" data-prefix="$">
+              <label>Monto</label>
+              <input type="text" value="0" id="desc1-monto" />
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field col-4">
+              <label>Descuento adicional 2 <span class="desc-tag">Especial</span></label>
+              <input type="text" id="desc2-concepto" placeholder="Concepto · ej. Buen Fin" maxlength="60" />
+            </div>
+            <div class="field col-4 unit-suffix" data-suffix="%">
+              <label>%</label>
+              <input type="number" step="0.01" value="0" id="desc2-porcentaje" />
+            </div>
+            <div class="field col-4 unit-prefix" data-prefix="$">
+              <label>Monto</label>
+              <input type="text" value="0" id="desc2-monto" />
+            </div>
+          </div>
+          <div class="desc-resumen" id="desc-resumen"></div>
+        </div>
+
+        <button type="button" class="desc-add-btn" id="btn-desc-adicionales" onclick="toggleDescAdicionales()">+ Agregar descuentos adicionales</button>
       </div>
 
       <!-- BLOQUE 2: ESTRUCTURA DEL PAGO -->
@@ -3185,6 +3309,9 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
             </div>
           </div>
 
+          <!-- Pagos especiales (se llenan con JS) -->
+          <div id="pe-rows"></div>
+
           <!-- A la escrituración -->
           <div class="pt-row">
             <div class="pt-cell-label">A la escrituración</div>
@@ -3209,6 +3336,9 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
             <div class="pt-cell pt-detail">= Precio neto</div>
           </div>
         </div>
+
+        <button type="button" class="desc-add-btn" id="btn-pago-especial" onclick="agregarPagoEspecial()">+ Agregar pago especial</button>
+        <div class="pe-hint">Pagos fuera de la política (p. ej. un aguinaldo o la venta de otro bien) en el mes que el cliente indique. La escrituración se ajusta sola.</div>
 
         <!-- Validación visual -->
         <div class="validation-banner validation-ok" id="validation-banner">
@@ -3314,6 +3444,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
                 <span class="v15-ahorro-label" id="doc-desc-pct">AHORRO CON DESCUENTO DEL 15%</span>
                 <span class="v15-ahorro-monto" id="doc-desc-amt">− $491,804 MXN</span>
               </div>
+              <div id="doc-hero-ahorro-extra"><!-- descuentos adicionales + total (JS) --></div>
               <!-- price-neto oculto pero necesario para el JS existente -->
               <span id="doc-precio-neto-amt" style="display:none;"></span>
               <!-- placeholder oculto para hero enganche/mensualidad legacy -->
@@ -3341,6 +3472,14 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
                   <div class="v15-card-monto" id="doc-struct-mens-amt">$61,929</div>
                   <div class="v15-card-sub"><span id="doc-struct-mens-num">18</span> PAGOS MENSUALES</div>
                   <div class="v15-card-desc" id="doc-struct-mens-total">Durante obra · sin intereses</div>
+                </div>
+              </div>
+              <div class="v15-esquema-card v15-card-blanco v15-card-esp" id="doc-struct-esp-card" style="display:none;">
+                <div class="v15-card-header">PAGOS ESPECIALES</div>
+                <div class="v15-card-body">
+                  <div class="v15-card-monto" id="doc-struct-esp-amt">$0</div>
+                  <div class="v15-card-sub"><span id="doc-struct-esp-num">0</span> PAGOS</div>
+                  <div class="v15-card-desc" id="doc-struct-esp-detail">—</div>
                 </div>
               </div>
               <div class="v15-esquema-card v15-card-blanco">
@@ -3636,6 +3775,11 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
   const _origGoToStep = goToStep;
   goToStep = function(n) {
     _origGoToStep(n);
+    if (n === 3) {
+      // Al entrar al paso 3, tomar el precio de lista vigente del paso 1 y
+      // recalcular descuentos (manteniendo sus %) y la distribución del pago.
+      try { sincronizarPrecioListaPaso3(); } catch (e) { console.warn('sync paso 3', e); }
+    }
     if (n === 4) {
       renderizarCotizacion();
     }
@@ -3761,15 +3905,41 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     const ahorroRow = document.getElementById('doc-hero-ahorro-row');
     const divisor = document.querySelector('#doc-hero .v15-hero-divisor');
 
-    if (estadoPago.descuentoPct > 0) {
+    const descTotal = descuentoTotal();
+    const extraWrap = document.getElementById('doc-hero-ahorro-extra');
+    const heroEl = document.getElementById('doc-hero');
+    extraWrap.innerHTML = '';
+    heroEl.classList.remove('v15-hero-multi');
+    heroEl.closest('.doc-carta').classList.remove('v15-doc-compacto');
+    if (descTotal > 0) {
       // Con descuento: mostrar precio de lista tachado y bloque de ahorro
       listaWrap.style.display = '';
-      ahorroRow.style.display = '';
       if (divisor) divisor.style.display = '';
       document.getElementById('doc-precio-lista-amt').textContent = '$' + formatNum(estadoPago.precioLista, 0);
-      const pctRounded = Math.round(estadoPago.descuentoPct * 100) / 100;
-      document.getElementById('doc-desc-pct').textContent = `AHORRO CON DESCUENTO DEL ${pctRounded}%`;
-      document.getElementById('doc-desc-amt').textContent = '− $' + formatNum(estadoPago.descuentoMonto, 0) + ' MXN';
+      const pctDe = m => estadoPago.precioLista > 0 ? Math.round(m / estadoPago.precioLista * 10000) / 100 : 0;
+      const adics = descuentosAdicionalesActivos();
+      const filas = (estadoPago.descuentoMonto > 0 ? 1 : 0) + adics.length;
+      if (estadoPago.descuentoMonto > 0) {
+        ahorroRow.style.display = '';
+        document.getElementById('doc-desc-pct').textContent = filas > 1
+          ? `DESCUENTO POR FORMA DE PAGO · ${pctDe(estadoPago.descuentoMonto)}%`
+          : `AHORRO CON DESCUENTO DEL ${pctDe(estadoPago.descuentoMonto)}%`;
+        document.getElementById('doc-desc-amt').textContent = '− $' + formatNum(estadoPago.descuentoMonto, 0) + ' MXN';
+      } else {
+        ahorroRow.style.display = 'none';
+      }
+      const escH = t => String(t || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+      let extra = '';
+      adics.forEach((d, i) => {
+        const nombre = (d.concepto || ('Descuento adicional ' + (i + 1))).toUpperCase();
+        extra += `<div class="v15-hero-ahorro v15-ahorro-especial"><span class="v15-ahorro-label">${escH(nombre)} · ${pctDe(d.monto)}%<span class="v15-ahorro-tag">ESPECIAL</span></span><span class="v15-ahorro-monto">− $${formatNum(d.monto, 0)} MXN</span></div>`;
+      });
+      if (filas > 1) {
+        extra += `<div class="v15-hero-ahorro v15-ahorro-total"><span class="v15-ahorro-label">AHORRO TOTAL · ${pctDe(descTotal)}%</span><span class="v15-ahorro-monto">− $${formatNum(descTotal, 0)} MXN</span></div>`;
+        heroEl.classList.add('v15-hero-multi');
+        heroEl.closest('.doc-carta').classList.add('v15-doc-compacto');
+      }
+      extraWrap.innerHTML = extra;
     } else {
       // Sin descuento: ocultar bloque de precio de lista y ahorro
       listaWrap.style.display = 'none';
@@ -3805,7 +3975,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
 
     // Leyenda del precio M²: solo mostrar "Precio con descuento" si hay descuento
     const precioM2Desc = document.getElementById('doc-precio-m2-desc');
-    if (estadoPago.descuentoPct > 0) {
+    if (descuentoTotal() > 0) {
       precioM2Desc.style.display = '';
       precioM2Desc.textContent = 'Precio con descuento';
     } else {
@@ -3851,6 +4021,25 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
       mensCard.style.display = 'none';
     }
 
+    // Pagos especiales: cuarta tarjeta (solo si hay)
+    const esps = especialesActivos();
+    const espCard = document.getElementById('doc-struct-esp-card');
+    if (esps.length) {
+      espCard.style.display = '';
+      document.getElementById('doc-struct-esp-amt').textContent = '$' + formatNum(estadoPago.espTotal, 0);
+      document.getElementById('doc-struct-esp-num').textContent = `${esps.length}`;
+      espCard.querySelector('.v15-card-sub').innerHTML = `<span id="doc-struct-esp-num">${esps.length}</span> ${esps.length === 1 ? 'PAGO' : 'PAGOS'} · ${(Math.round(estadoPago.espTotal / Math.max(1, estadoPago.precioNeto) * 10000) / 100)}%`;
+      const meses = esps.map(p => p.mes);
+      document.getElementById('doc-struct-esp-detail').textContent = esps.length === 1
+        ? `Mes ${meses[0]}${esps[0].concepto ? ' · ' + esps[0].concepto : ''}`
+        : `Meses ${meses.slice(0, -1).join(', ')} y ${meses[meses.length - 1]}`;
+      heroEl.closest('.doc-carta').classList.add('v15-doc-compacto');
+    } else {
+      espCard.style.display = 'none';
+    }
+    const nCards = 2 + (incluyeMens ? 1 : 0) + (esps.length ? 1 : 0);
+    structEl.style.gridTemplateColumns = `repeat(${nCards}, 1fr)`;
+
     // Escrituración absorbe el residual de redondeo de mensualidades
     const residualMens = incluyeMens ? (estadoPago.menMonto - estadoPago.menIndividual * estadoPago.menNumero) : 0;
     const escFinal = estadoPago.escMonto + residualMens;
@@ -3866,10 +4055,14 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     const pagos = [];
     pagos.push({ label: 'Enganche', monto: estadoPago.engMonto, key: true });
 
-    if (incluyeMens) {
-      for (let i = 1; i <= estadoPago.menNumero; i++) {
+    const maxMesCrono = Math.max(incluyeMens ? estadoPago.menNumero : 0, ...esps.map(p => p.mes));
+    for (let i = 1; i <= maxMesCrono; i++) {
+      if (incluyeMens && i <= estadoPago.menNumero) {
         pagos.push({ label: `Mes ${i}`, monto: estadoPago.menIndividual, key: false });
       }
+      esps.filter(p => p.mes === i).forEach(p => {
+        pagos.push({ label: `Mes ${i} · especial`, monto: p.monto, key: false, esp: true });
+      });
     }
 
     pagos.push({ label: 'Escrituración', monto: escFinal, key: true });
@@ -3900,6 +4093,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     pagos.forEach((p, idx) => {
       const classes = ['v15-crono-cell'];
       if (p.key) classes.push('v15-crono-key');
+      if (p.esp) classes.push('v15-crono-esp');
       // Etiquetas cortas para enganche/escrituración en el cronograma
       let label = p.label;
       if (label === 'Enganche') label = 'ENGANCHE';
@@ -4068,6 +4262,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
       document.getElementById('gate-otro-nombre').focus();
     });
     grid.appendChild(btnOtro);
+    if (window.AUTH && window.AUTH.nombre) { entrarComo(window.AUTH.nombre); }
 
     // Entrar con el nombre escrito (botón o Enter)
     function entrarConNombreLibre() {
@@ -4091,7 +4286,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
   // --- Guardado en el portal (Supabase · tabla documentos + bucket "documentos") ---
   const SB_URL = 'https://xshhjvdmkuqesdlvczbb.supabase.co';
   const SB_KEY = 'sb_publishable_5erZfpELyuncW1nrReTaZw_BQj0bc-P';
-  let _sb = null; try { _sb = window.supabase.createClient(SB_URL, SB_KEY); } catch (e) { _sb = null; }
+  let _sb = null; try { _sb = window.SBC || window.supabase.createClient(SB_URL, SB_KEY); } catch (e) { _sb = null; }
   const _uuid = () => (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); }));
   const _hoy = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
 
@@ -4123,6 +4318,8 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
         m2Total: document.getElementById('doc-m2-total').textContent || '',
         domicilio: [proyecto, modelo, idUnidad ? 'Unidad ' + idUnidad : ''].filter(Boolean).join(' · '),
         precioLista: estadoPago.precioLista, descuentoPct: estadoPago.descuentoPct, descuentoMonto: estadoPago.descuentoMonto,
+        descuentosAdicionales: descuentosAdicionalesActivos(), descuentoTotal: descuentoTotal(),
+        pagosEspeciales: especialesActivos(), pagosEspecialesTotal: estadoPago.espTotal,
         estacionamientoPagado: estadoPago.incluyeEstacionamiento ? estadoPago.estacMonto : 0,
         bodegaPagada: estadoPago.incluyeBodega ? estadoPago.bodegaMonto : 0,
         precio: estadoPago.precioNeto, precioFinal: estadoPago.precioNeto,
@@ -4203,8 +4400,13 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
   // Estado central del paso 3
   const estadoPago = {
     precioLista: 3278691,
-    descuentoPct: 0,
+    descuentoPct: 0,          // descuento por forma de pago (% sobre precio de lista)
     descuentoMonto: 0,
+    adicionales: false,       // descuentos adicionales (promocionales / especiales) habilitados
+    desc1Concepto: '', desc1Pct: 0, desc1Monto: 0,
+    desc2Concepto: '', desc2Pct: 0, desc2Monto: 0,
+    especiales: [],           // pagos especiales fuera de política: {mes, monto, concepto}
+    espTotal: 0,
     precioNeto: 3278691,
     incluyeEstacionamiento: false,
     estacMonto: 0,
@@ -4220,6 +4422,74 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     escPct: 0,
     escMonto: 0
   };
+
+  // Descuento total aplicado (forma de pago + adicionales si están habilitados)
+  function descuentoTotal() {
+    const extra = estadoPago.adicionales ? (estadoPago.desc1Monto + estadoPago.desc2Monto) : 0;
+    return Math.max(0, estadoPago.descuentoMonto + extra);
+  }
+  // Descuentos adicionales con monto (para documento y registro)
+  function descuentosAdicionalesActivos() {
+    if (!estadoPago.adicionales) return [];
+    const out = [];
+    if (estadoPago.desc1Monto > 0) out.push({ concepto: (estadoPago.desc1Concepto || '').trim(), pct: estadoPago.desc1Pct, monto: estadoPago.desc1Monto });
+    if (estadoPago.desc2Monto > 0) out.push({ concepto: (estadoPago.desc2Concepto || '').trim(), pct: estadoPago.desc2Pct, monto: estadoPago.desc2Monto });
+    return out;
+  }
+
+  // Pagos especiales: total y lista ordenada (solo los que tienen monto)
+  function totalEspeciales() {
+    return estadoPago.especiales.reduce((a, p) => a + (+p.monto || 0), 0);
+  }
+  function especialesActivos() {
+    return estadoPago.especiales.filter(p => p.monto > 0 && p.mes >= 1).slice().sort((a, b) => a.mes - b.mes);
+  }
+  function agregarPagoEspecial() {
+    const ult = estadoPago.especiales.length ? estadoPago.especiales[estadoPago.especiales.length - 1].mes : 2;
+    estadoPago.especiales.push({ mes: Math.min(120, ult + 4), monto: 0, concepto: '' });
+    renderPagosEspeciales();
+    recalcularPaso3();
+    const i = estadoPago.especiales.length - 1;
+    setTimeout(() => { const el = document.getElementById('pe-monto-' + i); if (el) el.focus(); }, 50);
+  }
+  function quitarPagoEspecial(i) {
+    estadoPago.especiales.splice(i, 1);
+    renderPagosEspeciales();
+    recalcularPaso3();
+  }
+  function onEspChange(i, campo, el) {
+    const p = estadoPago.especiales[i]; if (!p) return;
+    if (campo === 'mes') { let v = parseInt(el.value, 10); if (isNaN(v) || v < 1) v = 1; if (v > 120) v = 120; p.mes = v; }
+    else if (campo === 'monto') { p.monto = Math.max(0, leerNum('pe-monto-' + i)); }
+    else if (campo === 'concepto') { p.concepto = el.value; return; }
+    recalcularPaso3();
+  }
+  function renderPagosEspeciales() {
+    const cont = document.getElementById('pe-rows'); if (!cont) return;
+    const esc = t => String(t || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    cont.innerHTML = estadoPago.especiales.map((p, i) => `
+          <div class="pt-row pt-row-especial">
+            <div class="pt-cell-label">Pago especial ${i + 1}<span class="desc-tag">Especial</span></div>
+            <div class="pt-cell">
+              <div class="unit-suffix" data-suffix="%">
+                <input type="text" value="0" id="pe-pct-${i}" class="pt-input pt-readonly" readonly />
+              </div>
+            </div>
+            <div class="pt-cell">
+              <div class="unit-prefix" data-prefix="$">
+                <input type="text" value="${formatNum(p.monto, 0)}" id="pe-monto-${i}" class="pt-input" oninput="onEspChange(${i},'monto',this)" onblur="this.value=formatNum(leerNum('pe-monto-${i}'),0)" />
+              </div>
+            </div>
+            <div class="pt-cell pt-detail">
+              <div class="pe-detalle">
+                <span class="men-detalle-label">Mes</span>
+                <input type="number" min="1" max="120" step="1" value="${p.mes}" class="pt-input-small" oninput="onEspChange(${i},'mes',this)" />
+                <input type="text" class="pe-concepto" placeholder="Concepto · ej. Aguinaldo" maxlength="40" value="${esc(p.concepto)}" oninput="onEspChange(${i},'concepto',this)" />
+                <button type="button" class="pe-del" title="Quitar" onclick="quitarPagoEspecial(${i})">×</button>
+              </div>
+            </div>
+          </div>`).join('');
+  }
 
   // Lee un número desde un input (string con formato "1,234.56" o "1234")
   function leerNum(id) {
@@ -4255,9 +4525,10 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     // El descuento aplica solo sobre la unidad; estacionamiento y bodega son adicionales fijos.
     estadoPago.estacMonto = estadoPago.incluyeEstacionamiento ? leerNum('estac-monto') : 0;
     estadoPago.bodegaMonto = estadoPago.incluyeBodega ? leerNum('bodega-monto') : 0;
-    estadoPago.precioNeto = estadoPago.precioLista - estadoPago.descuentoMonto + estadoPago.estacMonto + estadoPago.bodegaMonto;
+    estadoPago.precioNeto = estadoPago.precioLista - descuentoTotal() + estadoPago.estacMonto + estadoPago.bodegaMonto;
     if (estadoPago.precioNeto < 0) estadoPago.precioNeto = 0;
     setTexto('precio-neto-box', '$' + formatNum(estadoPago.precioNeto, 0));
+    renderResumenDescuentos();
 
     // 3. Distribuir los montos/% de enganche, mensualidades y escrituración
     // Los % siempre son sobre precio neto.
@@ -4266,8 +4537,14 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     // La escrituración es el residual = precio neto - enganche - mensualidades
     const incluyeMens = estadoPago.incluyeMensualidades;
 
-    estadoPago.escMonto = estadoPago.precioNeto - estadoPago.engMonto - (incluyeMens ? estadoPago.menMonto : 0);
+    estadoPago.espTotal = totalEspeciales();
+    estadoPago.escMonto = estadoPago.precioNeto - estadoPago.engMonto - (incluyeMens ? estadoPago.menMonto : 0) - estadoPago.espTotal;
     estadoPago.escPct = estadoPago.precioNeto > 0 ? (estadoPago.escMonto / estadoPago.precioNeto) * 100 : 0;
+    // % de cada pago especial sobre el precio neto (solo informativo)
+    estadoPago.especiales.forEach((p, i) => {
+      const el = document.getElementById('pe-pct-' + i);
+      if (el) el.value = estadoPago.precioNeto > 0 ? (Math.round(p.monto / estadoPago.precioNeto * 10000) / 100).toString() : '0';
+    });
 
     // Actualizar UI escrituración
     setPorcentaje('esc-porcentaje', estadoPago.escPct);
@@ -4282,8 +4559,9 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     setMoneda('men-individual', estadoPago.menIndividual);
 
     // Calcular totales para validar
-    const totalPct = estadoPago.engPct + (incluyeMens ? estadoPago.menPct : 0) + estadoPago.escPct;
-    const totalMonto = estadoPago.engMonto + (incluyeMens ? estadoPago.menMonto : 0) + estadoPago.escMonto;
+    const espPct = estadoPago.precioNeto > 0 ? (estadoPago.espTotal / estadoPago.precioNeto) * 100 : 0;
+    const totalPct = estadoPago.engPct + (incluyeMens ? estadoPago.menPct : 0) + espPct + estadoPago.escPct;
+    const totalMonto = estadoPago.engMonto + (incluyeMens ? estadoPago.menMonto : 0) + estadoPago.espTotal + estadoPago.escMonto;
 
     setTexto('total-porcentaje', (Math.round(totalPct * 100) / 100).toFixed(2).replace(/\.?0+$/, '') + '%');
     setTexto('total-monto', '$' + formatNum(Math.round(totalMonto), 0));
@@ -4304,6 +4582,12 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     if (estadoPago.descuentoPct < 0 || estadoPago.descuentoPct > 100) {
       errores.push('El descuento debe estar entre 0% y 100%.');
     }
+    if (estadoPago.adicionales && (estadoPago.desc1Monto < 0 || estadoPago.desc2Monto < 0)) {
+      errores.push('Los descuentos adicionales no pueden ser negativos.');
+    }
+    if (estadoPago.precioLista > 0 && descuentoTotal() > estadoPago.precioLista) {
+      errores.push('La suma de los descuentos supera el precio de lista.');
+    }
 
     if (estadoPago.engPct < 0 || estadoPago.engPct > 100) {
       errores.push('El enganche no puede ser negativo ni mayor al precio neto.');
@@ -4317,8 +4601,13 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
       errores.push('Ingresa un número de mensualidades válido.');
     }
 
+    estadoPago.especiales.forEach((p, i) => {
+      if (!(p.monto > 0)) errores.push(`Captura el monto del pago especial ${i + 1} (o quítalo con ×).`);
+      else if (!(p.mes >= 1)) errores.push(`Indica el mes del pago especial ${i + 1}.`);
+    });
+
     if (estadoPago.escMonto < 0) {
-      errores.push('La suma de enganche + mensualidades excede el precio neto.');
+      errores.push('La suma de enganche + mensualidades + pagos especiales excede el precio neto.');
     }
 
     if (estadoPago.escPct > 100.01) {
@@ -4373,10 +4662,79 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     recalcularPaso3();
   }
 
+  // Precio de lista del paso 1 → estado del paso 3 (los % de descuento se conservan)
+  function sincronizarPrecioListaPaso3() {
+    const lista = parseNum(document.getElementById('precio-lista').value);
+    if (lista === estadoPago.precioLista) { recalcularPaso3(); return; }
+    estadoPago.precioLista = lista;
+    estadoPago.descuentoMonto = Math.round(lista * estadoPago.descuentoPct / 100);
+    setMoneda('desc-monto', estadoPago.descuentoMonto);
+    ['1', '2'].forEach(n => {
+      estadoPago['desc' + n + 'Monto'] = Math.round(lista * estadoPago['desc' + n + 'Pct'] / 100);
+      setMoneda('desc' + n + '-monto', estadoPago['desc' + n + 'Monto']);
+    });
+    actualizarMontosDesdePctSobreNeto();
+    recalcularPaso3();
+  }
+
+  // --- Descuentos adicionales (promocionales / especiales) ---
+  // Los % se calculan sobre el precio de lista, igual que el descuento por forma de pago.
+  function toggleDescAdicionales(forzar) {
+    const on = typeof forzar === 'boolean' ? forzar : !estadoPago.adicionales;
+    estadoPago.adicionales = on;
+    document.getElementById('desc-adicionales').style.display = on ? '' : 'none';
+    const btn = document.getElementById('btn-desc-adicionales');
+    btn.textContent = on ? '− Quitar descuentos adicionales' : '+ Agregar descuentos adicionales';
+    btn.classList.toggle('on', on);
+    if (!on) {
+      // Al quitarlos, se limpian para que no queden aplicados a escondidas
+      ['1', '2'].forEach(n => {
+        estadoPago['desc' + n + 'Pct'] = 0; estadoPago['desc' + n + 'Monto'] = 0; estadoPago['desc' + n + 'Concepto'] = '';
+        setPorcentaje('desc' + n + '-porcentaje', 0); setMoneda('desc' + n + '-monto', 0);
+        document.getElementById('desc' + n + '-concepto').value = '';
+      });
+    } else {
+      setTimeout(() => { const c = document.getElementById('desc1-concepto'); if (c) c.focus(); }, 50);
+    }
+    actualizarMontosDesdePctSobreNeto();
+    recalcularPaso3();
+  }
+  function onDescAdicPctChange(n) {
+    estadoPago['desc' + n + 'Pct'] = leerNum('desc' + n + '-porcentaje');
+    estadoPago['desc' + n + 'Monto'] = Math.round(estadoPago.precioLista * estadoPago['desc' + n + 'Pct'] / 100);
+    setMoneda('desc' + n + '-monto', estadoPago['desc' + n + 'Monto']);
+    actualizarMontosDesdePctSobreNeto();
+    recalcularPaso3();
+  }
+  function onDescAdicMontoChange(n) {
+    estadoPago['desc' + n + 'Monto'] = leerNum('desc' + n + '-monto');
+    estadoPago['desc' + n + 'Pct'] = estadoPago.precioLista > 0 ? (estadoPago['desc' + n + 'Monto'] / estadoPago.precioLista) * 100 : 0;
+    setPorcentaje('desc' + n + '-porcentaje', estadoPago['desc' + n + 'Pct']);
+    actualizarMontosDesdePctSobreNeto();
+    recalcularPaso3();
+  }
+  function onDescAdicConceptoChange(n) {
+    estadoPago['desc' + n + 'Concepto'] = document.getElementById('desc' + n + '-concepto').value;
+  }
+  // Línea resumen: lista − forma de pago − adicionales = precio final
+  function renderResumenDescuentos() {
+    const el = document.getElementById('desc-resumen');
+    if (!el) return;
+    if (!estadoPago.adicionales) { el.innerHTML = ''; return; }
+    const pct = m => estadoPago.precioLista > 0 ? (Math.round(m / estadoPago.precioLista * 10000) / 100) : 0;
+    const esc = t => String(t || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+    const partes = [`Precio de lista <b>$${formatNum(estadoPago.precioLista, 0)}</b>`];
+    if (estadoPago.descuentoMonto > 0) partes.push(`− forma de pago <b>$${formatNum(estadoPago.descuentoMonto, 0)}</b> (${pct(estadoPago.descuentoMonto)}%)`);
+    descuentosAdicionalesActivos().forEach((d, i) => partes.push(`− <span class="esp">${esc(d.concepto || ('adicional ' + (i + 1)))}</span> <b>$${formatNum(d.monto, 0)}</b> (${pct(d.monto)}%)`));
+    const total = descuentoTotal();
+    partes.push(`= descuento total <b>$${formatNum(total, 0)}</b> (${pct(total)}%) · precio final de la unidad <b>$${formatNum(Math.max(0, estadoPago.precioLista - total), 0)}</b>`);
+    el.innerHTML = partes.join(' ');
+  }
+
   // Helper: cuando cambia el precio neto, recalculamos los montos
   // de enganche y mensualidades manteniendo sus porcentajes
   function actualizarMontosDesdePctSobreNeto() {
-    const neto = estadoPago.precioLista - estadoPago.descuentoMonto;
+    const neto = estadoPago.precioLista - descuentoTotal();
     estadoPago.engMonto = Math.round(neto * estadoPago.engPct / 100);
     if (estadoPago.incluyeMensualidades) {
       estadoPago.menMonto = Math.round(neto * estadoPago.menPct / 100);
@@ -4483,12 +4841,13 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     recalcularPaso3();
   }
 
-  // Renderizar tabla de amortización
+  // Renderizar tabla de amortización (mensualidades y/o pagos especiales)
   function renderizarAmortizacion() {
     const cont = document.getElementById('amortizacion-table');
     const wrapper = document.getElementById('amortizacion-wrapper');
+    const esps = especialesActivos();
 
-    if (!estadoPago.incluyeMensualidades) {
+    if (!estadoPago.incluyeMensualidades && !esps.length) {
       wrapper.style.display = 'none';
       return;
     }
@@ -4502,17 +4861,19 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
       tipo: 'enganche'
     });
 
-    const mensualidadRedondeada = estadoPago.menIndividual;
-    const totalDesdeMensualidades = mensualidadRedondeada * estadoPago.menNumero;
+    const incluyeMens = estadoPago.incluyeMensualidades;
+    const mensualidadRedondeada = incluyeMens ? estadoPago.menIndividual : 0;
+    const totalDesdeMensualidades = incluyeMens ? mensualidadRedondeada * estadoPago.menNumero : 0;
     // Residual que absorberá A la escrituración
-    const residualMensualidades = estadoPago.menMonto - totalDesdeMensualidades;
+    const residualMensualidades = incluyeMens ? (estadoPago.menMonto - totalDesdeMensualidades) : 0;
 
-    for (let i = 1; i <= estadoPago.menNumero; i++) {
-      pagos.push({
-        num: i,
-        concepto: 'Mensualidad ' + i,
-        monto: mensualidadRedondeada,
-        tipo: 'mensualidad'
+    const maxMes = Math.max(incluyeMens ? estadoPago.menNumero : 0, ...esps.map(p => p.mes));
+    for (let i = 1; i <= maxMes; i++) {
+      if (incluyeMens && i <= estadoPago.menNumero) {
+        pagos.push({ num: i, concepto: 'Mensualidad ' + i, monto: mensualidadRedondeada, tipo: 'mensualidad' });
+      }
+      esps.filter(p => p.mes === i).forEach(p => {
+        pagos.push({ num: 'Mes ' + i, concepto: 'Pago especial' + (p.concepto ? ' · ' + p.concepto : ''), monto: p.monto, tipo: 'especial' });
       });
     }
 
@@ -4527,12 +4888,13 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
 
     let html = '<div class="am-row am-header"><div class="am-cell">#</div><div class="am-cell">Concepto</div><div class="am-cell am-right">Monto</div><div class="am-cell am-right">Acumulado</div></div>';
 
+    const escT = t => String(t || '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
     let acumulado = 0;
     pagos.forEach(p => {
       acumulado += p.monto;
       html += `<div class="am-row am-${p.tipo}">
         <div class="am-cell">${p.num}</div>
-        <div class="am-cell">${p.concepto}</div>
+        <div class="am-cell">${escT(p.concepto)}</div>
         <div class="am-cell am-right">$${formatNum(p.monto, 0)}</div>
         <div class="am-cell am-right">$${formatNum(acumulado, 0)}</div>
       </div>`;
@@ -4548,6 +4910,14 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     document.getElementById('desc-monto').addEventListener('input', onDescMontoChange);
     document.getElementById('desc-monto').addEventListener('blur', function(){
       this.value = formatNum(leerNum('desc-monto'), 0);
+    });
+    ['1', '2'].forEach(n => {
+      document.getElementById('desc' + n + '-porcentaje').addEventListener('input', () => onDescAdicPctChange(n));
+      document.getElementById('desc' + n + '-monto').addEventListener('input', () => onDescAdicMontoChange(n));
+      document.getElementById('desc' + n + '-monto').addEventListener('blur', function(){
+        this.value = formatNum(leerNum('desc' + n + '-monto'), 0);
+      });
+      document.getElementById('desc' + n + '-concepto').addEventListener('input', () => onDescAdicConceptoChange(n));
     });
 
     document.getElementById('eng-porcentaje').addEventListener('input', onEngPctChange);
