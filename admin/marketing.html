@@ -94,19 +94,18 @@ tbody tr.subt td{background:var(--surface-2);font-weight:600;border-bottom:2px s
 <body>
 <div class="wrap">
   <header class="top">
-    <div class="brand"><img class="logo" id="logo-img" alt="TRUST realtor"><h1>Admin Proyectos</h1><p>Control por proyecto: comisiones por cobrar, gastos (pauta, producción, impresos, promocionales…) y reembolsos de cada desarrollador</p></div>
-    <div class="topright"><a class="home-link" href="./">← Inicio</a><button class="btn" id="btn-hist">Históricos anuales</button><button class="btn" id="btn-reglas">Reglas por proyecto</button><button class="btn" id="btn-pago">+ Pago recibido</button><button class="btn primary" id="btn-new">+ Gasto</button></div>
+    <div class="brand"><img class="logo" id="logo-img" alt="TRUST realtor"><h1>Admin Proyectos</h1><p>Cuenta corriente por proyecto: comisiones y gastos que se le cargan al desarrollador, menos los pagos que te va haciendo</p></div>
+    <div class="topright"><a class="home-link" href="./">← Inicio</a><button class="btn" id="btn-hist">Históricos anuales</button><button class="btn" id="btn-reglas">Reglas por proyecto</button><button class="btn" id="btn-pago">+ Pago recibido</button><button class="btn" id="btn-com">+ Comisión</button><button class="btn primary" id="btn-new">+ Gasto</button></div>
   </header>
   <div id="proyectos"></div>
   <div class="filters" id="period-bar">
-    <span class="qseg" id="vista"><button data-v="gastos" class="on">Gastos</button><button data-v="comisiones">Comisiones</button></span>
+    <span class="qseg" id="vista"><button data-v="gastos" class="on">Gastos</button><button data-v="comisiones">Comisiones</button><button data-v="pagos">Pagos recibidos</button></span>
     <select id="p-anio"></select>
     <select id="p-mes"><option value="">Todo el año</option></select>
     <select id="f-proy" style="display:none"><option value="">Proyecto: todos</option></select>
     <select id="f-cat"><option value="">Categoría: todas</option></select>
     <select id="f-plat"><option value="">Plataforma / proveedor: todos</option></select>
     <select id="f-reem"><option value="">Reembolso: todos</option><option value="re">Reembolsables</option><option value="na">Sin reembolso</option><option value="dev">Pagó el desarrollador</option></select>
-    <select id="f-cob" style="display:none"><option value="pend">Ventas con saldo por cobrar</option><option value="">Todas las ventas</option></select>
     <span class="hint" id="period-txt" style="margin-left:auto"></span>
   </div>
   <div id="main"></div>
@@ -123,7 +122,6 @@ const PROYECTOS=["Tanhia","Balcana","Luciana Colomos","Luciana Providencia","Lá
 const PLATAFORMAS=["Meta Ads","Google Ads","TikTok Ads","Inmuebles24","Lamudi","Easy Broker","Influencers","Imprenta","Videógrafo / fotógrafo","Agencia","Diseño / producción","Otro"];
 // Proyectos In-House (los que administra TRUST): son los que llevan tarjeta arriba
 const IN_HOUSE=["Epicentria","Balcana","Luciana Providencia","VIM Tower"];
-const proyV=v=>(v.proyecto||"").trim()||(v.un==="Corretaje"?"Corretaje":"Otro");
 const CATEGORIAS=["Pauta digital","Producción audiovisual","Impresos y lonas","Promocionales","Eventos y activaciones","Diseño y renders","Otro gasto"];
 const catDe=x=>x.categoria||"Pauta digital";
 const REGLAS_DEF={"Balcana":{reembolsable:true,desarrollador:"Tazakan"},"Luciana Colomos":{reembolsable:true,desarrollador:"Valari"},"Luciana Providencia":{reembolsable:true,desarrollador:""},"Epicentria":{reembolsable:true,desarrollador:"Epicentria"},"TRUST":{reembolsable:false,desarrollador:""},"ILARA":{reembolsable:false,desarrollador:"INDEA"},"Tanhia":{reembolsable:false,desarrollador:"Celsius"},"Lázaro":{reembolsable:false,desarrollador:""},"Neza":{reembolsable:false,desarrollador:""},"Corretaje":{reembolsable:false,desarrollador:""},"Otro":{reembolsable:false,desarrollador:""}};
@@ -146,19 +144,18 @@ const fecha=d=>d?(()=>{const [y,m,dd]=String(d).slice(0,10).split("-");return `$
 
 
 let INV=[], PAGOS=[], PAGOS_OK=true, REGLAS={...REGLAS_DEF}, TABLA_OK=true, CAT_OK=true;
-let VENTAS=[], COBROS=[], VENTAS_OK=true;
+let COMS=[], COMS_OK=true;
 const FORMAS=["Transferencia","Efectivo","Cheque","Compensación con comisiones","Otro"];
 // P.anio="" = todo el periodo (todos los años)
 const LS=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
-let P={anio:new Date().getFullYear(),mes:""}, filt={proy:(IN_HOUSE.includes(LS("ap_proy"))?LS("ap_proy"):""),cat:"",plat:"",reem:"",cob:"pend"}, VISTA="gastos";
+let P={anio:new Date().getFullYear(),mes:""}, filt={proy:(IN_HOUSE.includes(LS("ap_proy"))?LS("ap_proy"):""),cat:"",plat:"",reem:""}, VISTA="gastos";
 async function loadAll(){
   if(!sb){toast("Sin conexión a Supabase",true);return}
-  const [i,r,pg,v,c]=await Promise.all([sb.from("marketing_inversion").select("*").order("mes",{ascending:false}),sb.from("ventas_reglas").select("reglas").eq("id",1).maybeSingle(),sb.from("marketing_pagos").select("*").order("fecha",{ascending:false}),sb.from("ventas").select("*").order("fecha",{ascending:false}),sb.from("ventas_cobros").select("*")]);
+  const [i,r,pg,cm]=await Promise.all([sb.from("marketing_inversion").select("*").order("mes",{ascending:false}),sb.from("ventas_reglas").select("reglas").eq("id",1).maybeSingle(),sb.from("marketing_pagos").select("*").order("fecha",{ascending:false}),sb.from("proyecto_comisiones").select("*").order("fecha",{ascending:false})]);
   const inHouse=p=>IN_HOUSE.includes(p);
   if(i.error){TABLA_OK=false}else{TABLA_OK=true;const all=i.data||[];CAT_OK=!all.length||("categoria" in all[0]);INV=all.filter(x=>inHouse(x.proyecto))}
   if(pg.error){PAGOS_OK=false;PAGOS=[]}else{PAGOS_OK=true;PAGOS=(pg.data||[]).filter(g=>inHouse(g.proyecto))}
-  if(v.error){VENTAS_OK=false;VENTAS=[]}else{VENTAS_OK=true;VENTAS=(v.data||[]).filter(x=>inHouse(proyV(x)))}
-  COBROS=c.error?[]:(c.data||[]);
+  if(cm.error){COMS_OK=false;COMS=[]}else{COMS_OK=true;COMS=(cm.data||[]).filter(x=>inHouse(x.proyecto))}
   if(r.data&&r.data.reglas&&r.data.reglas.marketing)REGLAS={...REGLAS_DEF,...r.data.reglas.marketing};
   REGLAS_ALL=(r.data&&r.data.reglas)||{};HIST=Object.fromEntries(Object.entries(REGLAS_ALL.marketing_hist||{}).filter(([p])=>inHouse(p)));
   render();
@@ -172,31 +169,23 @@ const periodoTxt=()=>!P.anio?"Todo el periodo":P.mes?`${MESES_L[+P.mes-1]} ${P.a
 const esReemb=x=>x.pagado_por==="TRUST"&&!!x.reembolsable;
 const EPS=0.005;
 const reemEstado=x=>x.pagado_por!=="TRUST"?"dev":x.reembolsable?"re":"na";
-// Cuenta de gastos reembolsables por proyecto (cualquier fecha)
-const cuenta=p=>{const cargos=INV.filter(x=>esReemb(x)&&x.proyecto===p).reduce((a,x)=>a+(+x.monto||0),0);const abonos=PAGOS.filter(g=>g.proyecto===p).reduce((a,g)=>a+(+g.monto||0),0);return {cargos,abonos,saldo:cargos-abonos}};
-// Comisiones (ventas registradas en Administración; los cobros se capturan allá)
-const comTotal=v=>v.comision_monto!=null&&v.comision_monto!==""?+v.comision_monto:(+v.monto||0)*(+v.comision_pct||0)/100;
-const cobradoDe=vid=>COBROS.filter(c=>c.venta_id===vid).reduce((a,c)=>a+(+c.monto||0),0);
-const cobradoFx=v=>{const c=cobradoDe(v.id);return (c<=0&&(v.cobro_estatus||"")==="pagada")?comTotal(v):Math.min(c,Math.max(comTotal(v),c))};
-const saldoV=v=>Math.max(0,comTotal(v)-cobradoFx(v));
-const estV=v=>{const t=comTotal(v),c=cobradoFx(v);if(t>0&&c+EPS>=t)return "pagada";if(c>0)return "parcial";return "pendiente"};
-const EST_TXT={pendiente:"Pendiente",parcial:"Pago parcial",pagada:"Cobrada"};
-const cuentaCom=p=>{const vs=VENTAS.filter(v=>proyV(v)===p);const gen=vs.reduce((a,v)=>a+comTotal(v),0);const cob=vs.reduce((a,v)=>a+cobradoFx(v),0);return {gen,cob,saldo:Math.max(0,gen-cob),n:vs.length,pend:vs.filter(v=>saldoV(v)>EPS).length}};
-// Ficha de cuenta por proyecto
-const fichaProy=p=>{const g=cuenta(p),c=cuentaCom(p);return {p,dev:(REGLAS[p]||{}).desarrollador||"",gSaldo:Math.max(g.saldo,0),cSaldo:c.saldo,total:Math.max(g.saldo,0)+c.saldo,gasto:INV.filter(x=>x.proyecto===p).reduce((a,x)=>a+(+x.monto||0),0),ventas:c.n,gen:c.gen}};
+// Cuenta corriente del proyecto (cualquier fecha): cargos = gastos reembolsables + comisiones; abonos = pagos recibidos (no van por partida)
+const cuenta=p=>{const gas=INV.filter(x=>esReemb(x)&&x.proyecto===p).reduce((a,x)=>a+(+x.monto||0),0);const com=COMS.filter(x=>x.proyecto===p).reduce((a,x)=>a+(+x.monto||0),0);const abonos=PAGOS.filter(g=>g.proyecto===p).reduce((a,g)=>a+(+g.monto||0),0);const cargos=gas+com;return {gas,com,cargos,abonos,saldo:cargos-abonos}};
+// Ficha por proyecto
+const fichaProy=p=>{const c=cuenta(p);return {p,dev:(REGLAS[p]||{}).desarrollador||"",...c,gasto:INV.filter(x=>x.proyecto===p).reduce((a,x)=>a+(+x.monto||0),0)}};
 // Tarjetas: solo In-House, en el orden definido
 const proyectosAdmin=()=>IN_HOUSE.map(fichaProy);
-const proyectosTodos=proyectosAdmin;
+
 
 function renderProyectos(){
   const el=$("#proyectos");const list=proyectosAdmin();
-  const card=(x)=>`<button class="pcard ${filt.proy===x.p?"on":""}" data-p="${esc(x.p)}"><span class="n">${esc(x.p)}</span><span class="d">${esc(x.dev||(x.p==="Corretaje"?"clientes":"\u00a0"))}</span><span class="t ${x.total>EPS?"":"ok"}">${x.total>EPS?fmtK(x.total):"Al corriente"}</span><span class="b">${x.cSaldo>EPS?`Comisiones ${fmtK(x.cSaldo)}`:"Sin comisiones pendientes"}<br>${x.gSaldo>EPS?`Gastos ${fmtK(x.gSaldo)}`:"Sin gastos por reembolsar"}</span></button>`;
+  const card=(x)=>`<button class="pcard ${filt.proy===x.p?"on":""}" data-p="${esc(x.p)}"><span class="n">${esc(x.p)}</span><span class="d">${esc(x.dev||"\u00a0")}</span><span class="t ${x.saldo>EPS?"":"ok"}">${x.saldo>EPS?fmtK(x.saldo):(x.saldo<-EPS?"A favor "+fmtK(-x.saldo):"Al corriente")}</span><span class="b">${x.cargos>EPS?`Comisiones ${fmtK(x.com)} · Gastos ${fmtK(x.gas)}<br>Pagado ${fmtK(x.abonos)}`:"Sin cargos registrados"}</span></button>`;
   el.innerHTML=`<div class="pgrid pgrid4">${list.map(card).join("")}</div>${filt.proy?"":`<div class="empty" style="margin-bottom:16px"><b>Elige un proyecto</b>Toca una tarjeta para ver sus gastos, reembolsos y comisiones.</div>`}`;
   el.querySelectorAll(".pcard").forEach(b=>b.onclick=()=>{filt.proy=b.dataset.p;try{localStorage.setItem("ap_proy",filt.proy)}catch(e){}render()});
 }
 
 function renderPeriodBar(){
-  const years=[...new Set(INV.map(x=>+String(x.mes).slice(0,4)).concat(VENTAS.map(v=>+String(v.fecha).slice(0,4))).concat([new Date().getFullYear()]))].filter(y=>y>2000).sort((a,b)=>b-a);
+  const years=[...new Set(INV.map(x=>+String(x.mes).slice(0,4)).concat(COMS.map(x=>+String(x.fecha).slice(0,4))).concat(PAGOS.map(g=>+String(g.fecha).slice(0,4))).concat([new Date().getFullYear()]))].filter(y=>y>2000).sort((a,b)=>b-a);
   $("#p-anio").innerHTML=`<option value="" ${P.anio?"":"selected"}>Todo el periodo</option>`+years.map(y=>`<option value="${y}" ${y===+P.anio?"selected":""}>${y}</option>`).join("");
   const ms=$("#p-mes");if(ms.options.length===1)MESES_L.forEach((m,i)=>{const o=document.createElement("option");o.value=i+1;o.textContent=m;ms.appendChild(o)});ms.value=P.mes;ms.disabled=!P.anio;ms.style.opacity=P.anio?"1":".5";
   const proys=IN_HOUSE.slice();
@@ -204,20 +193,22 @@ function renderPeriodBar(){
   $("#f-cat").innerHTML=`<option value="">Categoría: todas</option>`+[...new Set(CATEGORIAS.concat(INV.map(catDe)))].map(p=>`<option ${filt.cat===p?"selected":""}>${esc(p)}</option>`).join("");
   const plats=[...new Set(PLATAFORMAS.concat(INV.map(x=>x.plataforma).filter(Boolean)))];
   $("#f-plat").innerHTML=`<option value="">Plataforma / proveedor: todos</option>`+plats.map(p=>`<option ${filt.plat===p?"selected":""}>${esc(p)}</option>`).join("");
-  $("#f-reem").value=filt.reem;$("#f-cob").value=filt.cob;
-  const g=VISTA==="gastos";["f-cat","f-plat","f-reem"].forEach(id=>$("#"+id).style.display=g?"":"none");$("#f-cob").style.display=g?"none":"";
+  $("#f-reem").value=filt.reem;
+  const g=VISTA==="gastos";["f-cat","f-plat","f-reem"].forEach(id=>$("#"+id).style.display=g?"":"none");
   $$("#vista button").forEach(b=>b.classList.toggle("on",b.dataset.v===VISTA));
   $("#period-txt").textContent=periodoTxt()+(filt.proy?" · "+filt.proy:"");
 }
 $("#p-anio").onchange=e=>{P.anio=e.target.value?+e.target.value:"";if(!P.anio)P.mes="";render()};$("#p-mes").onchange=e=>{P.mes=e.target.value;render()};
-["proy","cat","plat","reem","cob"].forEach(k=>$("#f-"+k).onchange=e=>{filt[k]=e.target.value;render()});
+["proy","cat","plat","reem"].forEach(k=>$("#f-"+k).onchange=e=>{filt[k]=e.target.value;render()});
 $$("#vista button").forEach(b=>b.onclick=()=>{VISTA=b.dataset.v;render()});
 
 function render(){
   renderProyectos();renderPeriodBar();const el=$("#main");
   $("#period-bar").style.display=filt.proy?"":"none";
   if(!filt.proy){el.innerHTML="";return}
-  el.innerHTML=resumenHTML()+(VISTA==="gastos"?gastosHTML():comisionesHTML());
+  el.innerHTML=resumenHTML()+(VISTA==="gastos"?gastosHTML():VISTA==="comisiones"?comisionesHTML():pagosHTML());
+  el.querySelectorAll(".edit-com").forEach(b=>b.onclick=()=>openCom(COMS.find(x=>x.id===b.dataset.id)));
+  const bc=$("#btn-com2");if(bc)bc.onclick=()=>openCom(null,{proyecto:filt.proy||""});
   el.querySelectorAll(".edit").forEach(b=>b.onclick=()=>openInv(INV.find(x=>x.id===b.dataset.id)));
   el.querySelectorAll(".edo").forEach(b=>b.onclick=()=>estadoCuentaPDF(b.dataset.p));
   el.querySelectorAll(".pago-p").forEach(b=>b.onclick=()=>openPago(null,{proyecto:b.dataset.p,monto:Math.max(cuenta(b.dataset.p).saldo,0)}));
@@ -226,15 +217,19 @@ function render(){
   const bn=$("#btn-new2");if(bn)bn.onclick=()=>openInv(null,{proyecto:filt.proy||""});
 }
 
-/* ---------- resumen: lo que me deben por proyecto (cualquier fecha) ---------- */
+/* ---------- resumen: cuenta corriente del proyecto (cualquier fecha) ---------- */
 function resumenHTML(){
-  const list=proyectosTodos().filter(x=>!filt.proy||x.p===filt.proy).filter(x=>x.total>EPS);
-  if(!list.length)return filt.proy?`<div class="card" style="margin-bottom:14px;border-color:var(--ok)"><h3 style="margin:0;color:var(--ok)">${esc(filt.proy)} está al corriente</h3><p class="hint" style="margin:4px 0 0">No tiene comisiones ni gastos pendientes de cobro.</p></div>`:"";
-  const S=k=>list.reduce((a,x)=>a+x[k],0);
-  return `<div class="card" style="margin-bottom:14px;border-color:var(--bad)"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px"><h3 style="margin:0;color:var(--bad)">Lo que me debe ${esc((REGLAS[filt.proy]||{}).desarrollador||"el desarrollador")} · ${esc(filt.proy)}</h3><span class="hint">Cualquier fecha · Comisiones: ventas registradas en Administración menos cobros · Gastos: reembolsables pagados por TRUST menos pagos recibidos</span></div>
-  <div class="twrap"><table><thead><tr><th>Proyecto</th><th>Desarrollador</th><th class="num">Comisiones por cobrar</th><th class="num">Gastos por reembolsar</th><th class="num">Total pendiente</th><th></th></tr></thead><tbody>
-  ${list.map(x=>`<tr><td><b>${esc(x.p)}</b></td><td class="dim">${esc(x.dev||"—")}</td><td class="num ${x.cSaldo>EPS?"money":"dim"}">${x.cSaldo>EPS?fmt(x.cSaldo):"—"}</td><td class="num ${x.gSaldo>EPS?"money":"dim"}">${x.gSaldo>EPS?fmt(x.gSaldo):"—"}</td><td class="num money" style="color:var(--bad)">${fmt(x.total)}</td><td style="text-align:right">${x.gSaldo>EPS?`<button class="btn sm pago-p" data-p="${esc(x.p)}">+ Pago de gastos</button> `:""}<button class="btn sm edo" data-p="${esc(x.p)}">⤓ Estado de cuenta</button></td></tr>`).join("")}
-  ${list.length>1?`<tr class="subt"><td colspan="2">Total</td><td class="num">${fmt(S("cSaldo"))}</td><td class="num">${fmt(S("gSaldo"))}</td><td class="num" style="color:var(--bad)">${fmt(S("total"))}</td><td></td></tr>`:""}</tbody></table></div></div>`;
+  const p=filt.proy;const c=cuenta(p);const dev=(REGLAS[p]||{}).desarrollador||"el desarrollador";
+  const ult=PAGOS.filter(g=>g.proyecto===p).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)))[0];
+  const estado=c.saldo>EPS?`<span class="st pend">Saldo pendiente</span>`:c.saldo<-EPS?`<span class="st parcial">Saldo a favor del desarrollador</span>`:`<span class="st pagada">Al corriente</span>`;
+  return `<div class="card" style="margin-bottom:14px;border-color:${c.saldo>EPS?"var(--bad)":"var(--line)"}"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0;${c.saldo>EPS?"color:var(--bad)":""}">Cuenta con ${esc(dev)} · ${esc(p)} ${estado}</h3><span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="hint">Acumulado de cualquier fecha · los pagos bajan el total, no van por partida</span><button class="btn sm pago-p" data-p="${esc(p)}">+ Pago recibido</button><button class="btn sm edo" data-p="${esc(p)}">⤓ Estado de cuenta</button></span></div>
+  <div class="tiles" style="margin-bottom:0">
+    <div class="tile"><span class="l">Comisiones</span><span class="v">${fmtK(c.com)}</span><span class="s">${COMS.filter(x=>x.proyecto===p).length} registradas</span></div>
+    <div class="tile"><span class="l">Gastos reembolsables</span><span class="v">${fmtK(c.gas)}</span><span class="s">pagados por TRUST por cuenta del desarrollador</span></div>
+    <div class="tile dark"><span class="l">Total cargos</span><span class="v">${fmtK(c.cargos)}</span><span class="s">comisiones + gastos</span></div>
+    <div class="tile ok"><span class="l">Pagos recibidos</span><span class="v">${fmtK(c.abonos)}</span><span class="s">${ult?"último "+fecha(ult.fecha):"sin pagos aún"}</span></div>
+    <div class="tile ${c.saldo>EPS?"bad":"ok"}"><span class="l">Saldo pendiente</span><span class="v">${fmtK(Math.max(c.saldo,0))}</span><span class="s">${c.saldo<-EPS?"pagó de más: "+fmt(-c.saldo)+" a su favor":"lo que te debe hoy"}</span></div>
+  </div></div>`;
 }
 
 /* ---------- vista: gastos ---------- */
@@ -245,8 +240,6 @@ function gastosHTML(){
   const S=l=>l.reduce((a,x)=>a+(+x.monto||0),0);
   const total=S(yr),trust=S(yr.filter(x=>x.pagado_por==="TRUST")),dev=S(yr.filter(x=>x.pagado_por!=="TRUST"));
   const reemb=yr.filter(esReemb);
-  const pagosYr=PAGOS.filter(g=>inPeriodo(g.fecha)&&byProy(g)),pagosRows=pagosYr.slice().sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
-  const reembYr=pagosYr.reduce((a,g)=>a+(+g.monto||0),0);
   const neto=trust-S(reemb); // lo que de verdad absorbe TRUST
   const pauta=yr.filter(x=>catDe(x)==="Pauta digital");
   const byP={},byCat={},byPl={},byM=Array.from({length:12},()=>({t:0,r:0}));
@@ -262,7 +255,7 @@ function gastosHTML(){
     <div class="tile dark"><span class="l">Gasto total</span><span class="v">${fmtK(total)}</span><span class="s">${yr.length} registro${yr.length===1?"":"s"} · ${periodoTxt()}${filt.proy?" · "+esc(filt.proy):""}</span></div>
     <div class="tile"><span class="l">Pagado por TRUST</span><span class="v">${fmtK(trust)}</span><span class="s">${dev?"+ "+fmtK(dev)+" pagado por desarrolladores":"todo salió de TRUST"}</span></div>
     <div class="tile gold"><span class="l">Costo neto TRUST</span><span class="v">${fmtK(neto)}</span><span class="s">pagado por TRUST menos lo reembolsable</span></div>
-    <div class="tile ok"><span class="l">Reembolsado</span><span class="v">${fmtK(reembYr)}</span><span class="s">${pagosYr.length} pago${pagosYr.length===1?"":"s"} recibido${pagosYr.length===1?"":"s"} · ${periodoTxt()}</span></div>
+    <div class="tile"><span class="l">Reembolsable</span><span class="v">${fmtK(S(reemb))}</span><span class="s">se carga a la cuenta del desarrollador</span></div>
     <div class="tile"><span class="l">Pauta digital</span><span class="v">${fmtK(S(pauta))}</span><span class="s">${pct(S(pauta),total)} del gasto · ${L(pauta).toLocaleString("es-MX")} leads</span></div>
     <div class="tile gold"><span class="l">Costo por lead</span><span class="v">${cpl(S(pauta.filter(x=>+x.leads>0)),L(pauta))}</span><span class="s">${L(pauta)?"pauta con leads ÷ leads":"captura leads en la pauta"}</span></div>
   </div>
@@ -272,12 +265,6 @@ function gastosHTML(){
     <tbody>${rows.map(x=>`<tr><td class="dim">${fechaM(x.mes)}</td><td><b>${esc(x.proyecto)}</b></td><td>${esc(catDe(x))}</td><td class="dim">${esc(x.plataforma||"—")}</td><td class="dim">${esc(x.campana||"")}${x.notas?`<br><small>${esc(x.notas)}</small>`:""}</td><td class="num money">${fmt(x.monto)}</td><td>${x.pagado_por==="TRUST"?"TRUST":esc(x.pagado_por||"Desarrollador")}</td><td>${seg(x)}</td><td class="num">${x.leads??"—"}</td><td class="num dim">${cpl(+x.monto||0,+x.leads||0)}</td><td><button class="ico edit" data-id="${x.id}" title="Editar">✎</button></td></tr>`).join("")}
     ${rows.length?`<tr class="subt"><td colspan="5">Total</td><td class="num">${fmt(S(rows))}</td><td colspan="2"></td><td class="num">${L(rows).toLocaleString("es-MX")}</td><td class="num">${cpl(S(rows.filter(x=>+x.leads>0)),L(rows))}</td><td></td></tr>`:""}</tbody></table>
     ${rows.length?"":`<div class="empty"><b>Sin gastos</b>Registra el primero con “+ Gasto”.</div>`}</div>`:`<div class="empty"><b>Falta activar el módulo</b>Corre <code>marketing.sql</code> en Supabase → SQL Editor y recarga.</div>`}
-  </div>
-  <div class="card" style="margin-top:14px">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">Pagos recibidos (reembolsos de gastos) · ${periodoTxt()}${filt.proy?" · "+esc(filt.proy):""}</h3><span style="display:flex;gap:8px;align-items:center"><span class="hint">${pagosRows.length} pago${pagosRows.length===1?"":"s"}</span><button class="btn sm" id="btn-pago2">+ Pago recibido</button></span></div>
-    ${PAGOS_OK?(pagosRows.length?`<div class="twrap"><table><thead><tr><th>Fecha</th><th>Proyecto</th><th>Forma de pago</th><th>Referencia / notas</th><th class="num">Monto</th><th></th></tr></thead>
-    <tbody>${pagosRows.map(g=>`<tr><td class="dim">${fecha(g.fecha)}</td><td><b>${esc(g.proyecto)}</b> <small class="hint">${esc((REGLAS[g.proyecto]||{}).desarrollador||"")}</small></td><td>${esc(g.forma_pago||"—")}</td><td class="dim">${esc(g.referencia||"")}${g.notas?`<br><small>${esc(g.notas)}</small>`:""}</td><td class="num money">${fmt(g.monto)}</td><td><button class="ico edit-pago" data-id="${g.id}" title="Editar">✎</button></td></tr>`).join("")}
-    <tr class="subt"><td colspan="4">Total recibido</td><td class="num">${fmt(pagosRows.reduce((a,g)=>a+(+g.monto||0),0))}</td><td></td></tr></tbody></table></div>`:`<div class="empty"><b>Sin pagos en el periodo</b>Cuando el desarrollador te reembolse (uno o varios meses juntos), regístralo con “+ Pago recibido”.</div>`):`<div class="empty"><b>Falta activar los pagos</b>Corre <code>marketing_pagos.sql</code> en Supabase → SQL Editor y recarga.</div>`}
   </div>
   ${(()=>{if(!pauta.length)return "";const pp={};pauta.forEach(x=>{const k=x.proyecto;pp[k]=pp[k]||{m:0,l:0,ml:0};pp[k].m+=+x.monto||0;pp[k].l+=+x.leads||0;if(+x.leads>0)pp[k].ml+=+x.monto||0});
     const E=Object.entries(pp).sort((a,b)=>b[1].m-a[1].m);if(!E.length)return "";
@@ -302,38 +289,81 @@ function gastosHTML(){
   </div>`;
 }
 
-/* ---------- vista: comisiones (datos de Administración) ---------- */
+/* ---------- vista: comisiones (captura propia, independiente de Administración) ---------- */
 function comisionesHTML(){
-  if(!VENTAS_OK)return `<div class="card"><div class="empty"><b>No pude leer las ventas</b>Las comisiones salen del módulo Administración (tablas ventas y ventas_cobros).</div></div>`;
-  const byProy=v=>!filt.proy||proyV(v)===filt.proy;
-  const yr=VENTAS.filter(v=>inPeriodo(v.fecha)&&byProy(v));
-  const gen=yr.reduce((a,v)=>a+comTotal(v),0),cob=yr.reduce((a,v)=>a+cobradoFx(v),0),saldo=Math.max(0,gen-cob);
-  const todas=VENTAS.filter(byProy);const saldoAll=todas.reduce((a,v)=>a+saldoV(v),0);
-  const rows=yr.filter(v=>filt.cob!=="pend"||saldoV(v)>EPS).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
-  const pp={};yr.forEach(v=>{const k=proyV(v);pp[k]=pp[k]||{n:0,gen:0,cob:0};pp[k].n++;pp[k].gen+=comTotal(v);pp[k].cob+=cobradoFx(v)});
-  const E=Object.entries(pp).map(([k,v])=>[k,{...v,saldo:Math.max(0,v.gen-v.cob)}]).sort((a,b)=>b[1].saldo-a[1].saldo||b[1].gen-a[1].gen);
-  const estTag=v=>{const e=estV(v);return `<span class="st ${e==="pendiente"?"pend":e}">${EST_TXT[e]}</span>`};
-  const ultCobro=v=>{const cs=COBROS.filter(c=>c.venta_id===v.id).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));return cs.length?fecha(cs[0].fecha):"—"};
+  if(!COMS_OK)return `<div class="card"><div class="empty"><b>Falta activar las comisiones</b>Corre <code>proyecto_comisiones.sql</code> en Supabase → SQL Editor y recarga.</div></div>`;
+  const p=filt.proy;const all=COMS.filter(x=>x.proyecto===p);
+  const rows=all.filter(x=>inPeriodo(x.fecha)).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
+  const S=l=>l.reduce((a,x)=>a+(+x.monto||0),0);
+  // por año
+  const yy={};all.forEach(x=>{const k=String(x.fecha).slice(0,4);yy[k]=(yy[k]||0)+(+x.monto||0)});const ys=Object.keys(yy).sort();
   return `
   <div class="tiles">
-    <div class="tile dark"><span class="l">Comisiones generadas</span><span class="v">${fmtK(gen)}</span><span class="s">${yr.length} venta${yr.length===1?"":"s"} · ${periodoTxt()}${filt.proy?" · "+esc(filt.proy):""}</span></div>
-    <div class="tile ok"><span class="l">Cobrado</span><span class="v">${fmtK(cob)}</span><span class="s">${pct(cob,gen)} de lo generado</span></div>
-    <div class="tile bad"><span class="l">Por cobrar</span><span class="v">${fmtK(saldo)}</span><span class="s">${yr.filter(v=>saldoV(v)>EPS).length} venta${yr.filter(v=>saldoV(v)>EPS).length===1?"":"s"} con saldo · ${periodoTxt()}</span></div>
-    <div class="tile bad"><span class="l">Por cobrar · total</span><span class="v">${fmtK(saldoAll)}</span><span class="s">cualquier fecha${filt.proy?" · "+esc(filt.proy):""}</span></div>
+    <div class="tile dark"><span class="l">Comisiones · ${periodoTxt()}</span><span class="v">${fmtK(S(rows))}</span><span class="s">${rows.length} comisión${rows.length===1?"":"es"}</span></div>
+    <div class="tile"><span class="l">Acumulado total</span><span class="v">${fmtK(S(all))}</span><span class="s">${all.length} registradas · cualquier fecha</span></div>
+    ${ys.map(y=>`<div class="tile"><span class="l">${y}</span><span class="v">${fmtK(yy[y])}</span><span class="s">comisiones del año</span></div>`).join("")}
   </div>
   <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">Comisiones por proyecto · ${periodoTxt()}</h3><span class="hint">Las ventas y los cobros se capturan en <a href="/ventas/" style="color:var(--green)">Administración → Cobranza</a>; aquí solo se consultan.</span></div>
-    ${E.length?`<div class="twrap"><table><thead><tr><th>Proyecto</th><th>Desarrollador</th><th class="num">Ventas</th><th class="num">Comisión generada</th><th class="num">Cobrado</th><th class="num">Por cobrar</th><th></th></tr></thead><tbody>
-    ${E.map(([k,v])=>`<tr><td><b>${esc(k)}</b></td><td class="dim">${esc((REGLAS[k]||{}).desarrollador||"—")}</td><td class="num">${v.n}</td><td class="num money">${fmt(v.gen)}</td><td class="num" style="color:var(--ok)">${fmt(v.cob)}</td><td class="num money" style="color:${v.saldo>EPS?"var(--bad)":"var(--muted)"}">${v.saldo>EPS?fmt(v.saldo):"—"}</td><td style="text-align:right"><button class="btn sm edo" data-p="${esc(k)}">⤓ Estado de cuenta</button></td></tr>`).join("")}
-    <tr class="subt"><td colspan="2">Total</td><td class="num">${yr.length}</td><td class="num">${fmt(gen)}</td><td class="num">${fmt(cob)}</td><td class="num">${fmt(saldo)}</td><td></td></tr></tbody></table></div>`:`<div class="empty"><b>Sin ventas en el periodo</b>Cambia el periodo o selecciona “Todo el periodo”.</div>`}
-  </div>
-  <div class="card" style="margin-top:14px">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">${filt.cob==="pend"?"Ventas con saldo por cobrar":"Ventas"} · ${periodoTxt()}${filt.proy?" · "+esc(filt.proy):""}</h3><span class="hint">${rows.length} venta${rows.length===1?"":"s"}</span></div>
-    ${rows.length?`<div class="twrap"><table><thead><tr><th>Mes de venta</th><th>Proyecto</th><th>Cliente</th><th>Unidad</th><th>Asesor</th><th class="num">Monto de venta</th><th class="num">Comisión</th><th class="num">Cobrado</th><th class="num">Saldo</th><th>Estatus</th><th>Último cobro</th></tr></thead><tbody>
-    ${rows.map(v=>`<tr><td class="dim">${fechaM(v.fecha)}</td><td><b>${esc(proyV(v))}</b></td><td>${esc(v.cliente||"")}</td><td class="dim">${esc(v.unidad||v.inmueble||"")}</td><td class="dim">${esc(v.asesor||"")}</td><td class="num">${v.monto?fmt(v.monto):"—"}</td><td class="num money">${fmt(comTotal(v))}</td><td class="num" style="color:var(--ok)">${cobradoFx(v)?fmt(cobradoFx(v)):"—"}</td><td class="num money" style="color:${saldoV(v)>EPS?"var(--bad)":"var(--muted)"}">${saldoV(v)>EPS?fmt(saldoV(v)):"—"}</td><td>${estTag(v)}</td><td class="dim">${ultCobro(v)}</td></tr>`).join("")}
-    <tr class="subt"><td colspan="6">Total</td><td class="num">${fmt(rows.reduce((a,v)=>a+comTotal(v),0))}</td><td class="num">${fmt(rows.reduce((a,v)=>a+cobradoFx(v),0))}</td><td class="num">${fmt(rows.reduce((a,v)=>a+saldoV(v),0))}</td><td colspan="2"></td></tr></tbody></table></div>`:`<div class="empty"><b>${filt.cob==="pend"?"Nada pendiente de cobro":"Sin ventas"} en el periodo</b>${filt.cob==="pend"?"Todas las comisiones del periodo ya están cobradas.":"Cambia el periodo."}</div>`}
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">Comisiones · ${periodoTxt()} · ${esc(p)}</h3><span style="display:flex;gap:8px;align-items:center"><span class="hint">${rows.length} de ${all.length}</span><button class="btn sm" id="btn-com2">+ Comisión</button></span></div>
+    ${rows.length?`<div class="twrap"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Unidad</th><th>Concepto / notas</th><th class="num">Comisión</th><th></th></tr></thead><tbody>
+    ${rows.map(x=>`<tr><td class="dim">${fecha(x.fecha)}</td><td><b>${esc(x.cliente||"—")}</b></td><td>${esc(x.unidad||"—")}</td><td class="dim">${esc(x.concepto||"")}${x.notas?`<br><small>${esc(x.notas)}</small>`:""}</td><td class="num money">${fmt(x.monto)}</td><td><button class="ico edit-com" data-id="${x.id}" title="Editar">✎</button></td></tr>`).join("")}
+    <tr class="subt"><td colspan="4">Total</td><td class="num">${fmt(S(rows))}</td><td></td></tr></tbody></table></div>`:`<div class="empty"><b>Sin comisiones en el periodo</b>Registra cada comisión que el desarrollador te debe con “+ Comisión” (aunque ya te la haya pagado: el pago se registra aparte y baja el acumulado).</div>`}
   </div>`;
 }
+
+/* ---------- vista: pagos recibidos (bajan el acumulado de la cuenta) ---------- */
+function pagosHTML(){
+  const p=filt.proy;const c=cuenta(p);
+  const all=PAGOS.filter(g=>g.proyecto===p);const rows=all.filter(g=>inPeriodo(g.fecha)).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
+  const S=l=>l.reduce((a,g)=>a+(+g.monto||0),0);
+  // movimientos cronológicos con saldo corrido (cualquier fecha)
+  const movs=[...INV.filter(x=>esReemb(x)&&x.proyecto===p).map(x=>({f:String(x.mes).slice(0,10),t:"gasto",d:`${catDe(x)}${x.plataforma?" · "+x.plataforma:""}${x.campana?" · "+x.campana:""}`,m:+x.monto||0})),
+    ...COMS.filter(x=>x.proyecto===p).map(x=>({f:String(x.fecha).slice(0,10),t:"comision",d:`Comisión${x.cliente?" · "+x.cliente:""}${x.unidad?" · "+x.unidad:""}${x.concepto?" · "+x.concepto:""}`,m:+x.monto||0})),
+    ...all.map(g=>({f:String(g.fecha).slice(0,10),t:"pago",d:`Pago recibido${g.forma_pago?" · "+g.forma_pago:""}${g.referencia?" · "+g.referencia:""}`,m:-(+g.monto||0)}))].sort((a,b)=>a.f.localeCompare(b.f)||(a.t==="pago")-(b.t==="pago"));
+  let run=0;const movRows=movs.map(x=>{run+=x.m;return `<tr><td class="dim">${fecha(x.f)}</td><td>${x.t==="pago"?`<span class="st pagada">Pago</span>`:x.t==="comision"?`<span class="st re">Comisión</span>`:`<span class="st na">Gasto</span>`}</td><td class="dim">${esc(x.d)}</td><td class="num ${x.m<0?"":"money"}" style="${x.m<0?"color:var(--ok)":""}">${x.m<0?"− "+fmt(-x.m):fmt(x.m)}</td><td class="num money" style="color:${run>EPS?"var(--bad)":"var(--ok)"}">${fmt(run)}</td></tr>`}).reverse().join("");
+  return `
+  <div class="tiles">
+    <div class="tile ok"><span class="l">Pagos · ${periodoTxt()}</span><span class="v">${fmtK(S(rows))}</span><span class="s">${rows.length} pago${rows.length===1?"":"s"}</span></div>
+    <div class="tile"><span class="l">Pagado acumulado</span><span class="v">${fmtK(c.abonos)}</span><span class="s">de ${fmtK(c.cargos)} en cargos</span></div>
+    <div class="tile ${c.saldo>EPS?"bad":"ok"}"><span class="l">Saldo pendiente</span><span class="v">${fmtK(Math.max(c.saldo,0))}</span><span class="s">cargos − pagos</span></div>
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">Pagos recibidos · ${periodoTxt()} · ${esc(p)}</h3><span style="display:flex;gap:8px;align-items:center"><span class="hint">${rows.length} pago${rows.length===1?"":"s"}</span><button class="btn sm" id="btn-pago2">+ Pago recibido</button></span></div>
+    ${PAGOS_OK?(rows.length?`<div class="twrap"><table><thead><tr><th>Fecha</th><th>Forma de pago</th><th>Referencia / notas</th><th class="num">Monto</th><th></th></tr></thead>
+    <tbody>${rows.map(g=>`<tr><td class="dim">${fecha(g.fecha)}</td><td>${esc(g.forma_pago||"—")}</td><td class="dim">${esc(g.referencia||"")}${g.notas?`<br><small>${esc(g.notas)}</small>`:""}</td><td class="num money">${fmt(g.monto)}</td><td><button class="ico edit-pago" data-id="${g.id}" title="Editar">✎</button></td></tr>`).join("")}
+    <tr class="subt"><td colspan="3">Total recibido</td><td class="num">${fmt(S(rows))}</td><td></td></tr></tbody></table></div>`:`<div class="empty"><b>Sin pagos en el periodo</b>Cuando el desarrollador te deposite (uno o varios cargos juntos), regístralo con “+ Pago recibido”; baja el saldo total de la cuenta.</div>`):`<div class="empty"><b>Falta activar los pagos</b>Corre <code>marketing_pagos.sql</code> en Supabase → SQL Editor y recarga.</div>`}
+  </div>
+  <div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">Movimientos de la cuenta · ${esc(p)}</h3><span class="hint">Cualquier fecha · cargos (gastos y comisiones) y pagos, con saldo corrido</span></div>
+    ${movs.length?`<div class="twrap"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Detalle</th><th class="num">Cargo / pago</th><th class="num">Saldo</th></tr></thead><tbody>${movRows}</tbody></table></div>`:`<div class="empty"><b>Sin movimientos</b>Registra gastos reembolsables, comisiones y pagos para ver la cuenta.</div>`}
+  </div>`;
+}
+
+/* ---------- alta / edición de comisión ---------- */
+function openCom(x,pre){
+  const isNew=!x;x=x?{...x}:{fecha:todayISO(),proyecto:(pre&&pre.proyecto)||"",cliente:"",unidad:"",concepto:"",monto:null,notas:""};
+  const root=$("#drawer-root");
+  const opt=(list,cur,blank)=>(blank?`<option value="">${blank}</option>`:"")+list.map(v=>`<option ${v===cur?"selected":""}>${esc(v)}</option>`).join("");
+  root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(560px,100%)">
+    <header><h3>${isNew?"Registrar comisión":"Comisión · "+esc(x.proyecto)}</h3><button class="ico" id="d-close">✕</button></header>
+    <div class="body"><div class="fg">
+      <div class="f c6"><label>Proyecto</label><select id="c-proy">${opt(IN_HOUSE,x.proyecto,"Elegir…")}</select></div>
+      <div class="f c6"><label>Fecha</label><input type="date" id="c-fecha" value="${String(x.fecha||"").slice(0,10)}"></div>
+      <div class="f c6"><label>Cliente</label><input id="c-cliente" value="${esc(x.cliente||"")}" placeholder="Comprador"></div>
+      <div class="f c6"><label>Unidad</label><input id="c-unidad" value="${esc(x.unidad||"")}" placeholder="Ej. PB-05, 402"></div>
+      <div class="f c8"><label>Concepto</label><input id="c-conc" value="${esc(x.concepto||"")}" placeholder="Ej. Comisión 5% · venta depa 402"></div>
+      <div class="f c4"><label>Monto de la comisión</label><input id="c-monto" inputmode="decimal" value="${x.monto!=null?fmt(x.monto):""}" placeholder="$ 0"></div>
+      <div class="f c12"><label>Notas</label><input id="c-notas" value="${esc(x.notas||"")}"></div>
+    </div><p class="hint" style="margin:10px 0 0">La comisión se carga a la cuenta del desarrollador. Lo que te pague se registra en “+ Pago recibido” y baja el saldo total (no se asigna a una comisión en particular).</p></div>
+    <footer><span>${isNew?"":`<button class="btn danger" id="d-del">Eliminar</button>`}</span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cancelar</button><button class="btn primary" id="d-save">${isNew?"Registrar":"Guardar"}</button></span></footer></div>`;
+  const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
+  $("#c-monto").onchange=()=>{const v=num($("#c-monto").value);$("#c-monto").value=v==null?"":fmt(v)};
+  $("#d-save").onclick=async()=>{const row={proyecto:$("#c-proy").value,fecha:$("#c-fecha").value||todayISO(),cliente:$("#c-cliente").value.trim()||null,unidad:$("#c-unidad").value.trim()||null,concepto:$("#c-conc").value.trim()||null,monto:num($("#c-monto").value),notas:$("#c-notas").value.trim()||null};
+    if(!row.proyecto){toast("Elige el proyecto",true);return}if(!(row.monto>0)){toast("Captura el monto de la comisión",true);return}
+    const r=isNew?await sb.from("proyecto_comisiones").insert(row).select().single():await sb.from("proyecto_comisiones").update(row).eq("id",x.id).select().single();
+    if(r.error){toast("No se guardó: "+r.error.message,true);return}if(isNew)COMS.unshift(r.data);else Object.assign(COMS.find(y=>y.id===x.id),r.data);close();render();toast(isNew?"Comisión registrada":"Guardado")};
+  if(!isNew)$("#d-del").onclick=async()=>{if(!confirm("¿Eliminar esta comisión?"))return;const r=await sb.from("proyecto_comisiones").delete().eq("id",x.id);if(r.error){toast(r.error.message,true);return}COMS=COMS.filter(y=>y.id!==x.id);close();render();toast("Eliminada")};
+}
+$("#btn-com").onclick=()=>openCom(null,{proyecto:filt.proy||""});
 
 /* ---------- alta / edición ---------- */
 function openInv(x,pre){
@@ -381,7 +411,7 @@ function openPago(g,pre){
   const isNew=!g;g=g?{...g}:{fecha:todayISO(),proyecto:"",monto:null,forma_pago:"Transferencia",referencia:"",notas:"",...(pre||{})};
   const root=$("#drawer-root");const proys=IN_HOUSE.slice();
   const opt=(list,cur,blank)=>(blank?`<option value="">${blank}</option>`:"")+list.map(v=>`<option ${v===cur?"selected":""}>${esc(v)}</option>`).join("");
-  const info=p=>{if(!p)return "";const c=cuenta(p);return `Reembolsable acumulado ${fmt(c.cargos)} · pagado ${fmt(c.abonos)} · <b>saldo ${fmt(Math.max(c.saldo,0))}</b>`};
+  const info=p=>{if(!p)return "";const c=cuenta(p);return `Cargos ${fmt(c.cargos)} (comisiones ${fmt(c.com)} + gastos ${fmt(c.gas)}) · pagado ${fmt(c.abonos)} · <b>saldo ${fmt(Math.max(c.saldo,0))}</b>`};
   root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(520px,100%)">
     <header><h3>${isNew?"Registrar pago recibido":"Pago · "+esc(g.proyecto)}</h3><button class="ico" id="d-close">✕</button></header>
     <div class="body"><div class="fg">
@@ -391,7 +421,7 @@ function openPago(g,pre){
       <div class="f c6"><label>Forma de pago</label><select id="g-forma">${opt(FORMAS,g.forma_pago||"Transferencia")}</select></div>
       <div class="f c12"><label>Referencia</label><input id="g-ref" value="${esc(g.referencia||"")}" placeholder="Ej. folio de transferencia, factura, meses que cubre"></div>
       <div class="f c12"><label>Notas</label><input id="g-notas" value="${esc(g.notas||"")}"></div>
-    </div><p class="hint" style="margin:10px 0 0">Se maneja por acumulado: reembolsable del proyecto menos pagos recibidos. Un pago puede cubrir uno o varios meses.</p></div>
+    </div><p class="hint" style="margin:10px 0 0">Se maneja por acumulado: el pago baja el saldo total de la cuenta (comisiones + gastos), no se asigna a una partida.</p></div>
     <footer><span>${isNew?"":`<button class="btn danger" id="d-del">Eliminar</button>`}</span><span style="display:flex;gap:8px"><button class="btn" id="d-cancel">Cancelar</button><button class="btn primary" id="d-save">Guardar pago</button></span></footer></div>`;
   const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
   $("#g-proy").onchange=e=>{$("#g-info").innerHTML=info(e.target.value)};
@@ -434,8 +464,8 @@ function estadoCuentaPDF(proy){
   const R=REGLAS[proy]||{};const rows=INV.filter(x=>x.proyecto===proy&&esReemb(x)).sort((a,b)=>String(a.mes).localeCompare(String(b.mes)));
   const S=l=>l.reduce((a,x)=>a+(+x.monto||0),0);const c=cuenta(proy);const pagos=PAGOS.filter(g=>g.proyecto===proy).sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));
   const totalReemb=S(rows),pagado=c.abonos,saldo=Math.max(c.saldo,0);
-  const vPend=VENTAS.filter(v=>proyV(v)===proy&&saldoV(v)>EPS).sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));const cc=cuentaCom(proy);
-  const totalDebe=saldo+cc.saldo;
+  const coms=COMS.filter(x=>x.proyecto===proy).sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));const totalCom=S(coms);
+  const totalCargos=c.cargos,totalDebe=Math.max(c.saldo,0);
   const hoy=new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"});
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Estado de cuenta · ${esc(proy)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
@@ -450,18 +480,18 @@ table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #E3DD
 .foot{margin-top:18px;display:flex;justify-content:space-between;align-items:flex-end;font-size:9px;color:#6F726B}.foot img{width:64px}</style></head><body><div class="page">
 <div class="top"><img class="logo" src="data:image/png;base64,${LOGO_B64}"><div class="right">Proyecto<b>${esc(proy)}${R.desarrollador?" · "+esc(R.desarrollador):""}</b>Corte al<b>${hoy}</b></div></div>
 <div class="title">Estado de cuenta · <em>${esc(proy)}</em></div>
-<div class="sub">Gastos pagados por ${esc("Promotora de Inmuebles TRUST, S.A. de C.V.")} por cuenta del desarrollador (sujetos a reembolso)${cc.saldo>EPS?" y comisiones por cobrar":""}.</div>
-<div class="kpis"><div class="k"><span class="l">Gastos reembolsables</span><span class="v">${fmt(totalReemb)}</span><small style="color:#6F726B">− ${fmt(pagado)} pagados = <b>${fmt(saldo)}</b></small></div><div class="k"><span class="l">Comisiones por cobrar</span><span class="v">${fmt(cc.saldo)}</span><small style="color:#6F726B">${cc.pend} venta${cc.pend===1?"":"s"} con saldo</small></div><div class="k dark"><span class="l">Total pendiente a favor de TRUST</span><span class="v">${fmt(totalDebe)}</span></div></div>
-${rows.length?`<b style="display:block;font-family:Lora,serif;font-size:11px;color:#173F35;font-weight:500;margin:0 0 5px">Gastos reembolsables</b><table><thead><tr><th>Mes</th><th>Categoría</th><th>Plataforma / proveedor</th><th>Concepto</th><th class="n">Monto</th></tr></thead><tbody>
+<div class="sub">Cuenta corriente de ${esc("Promotora de Inmuebles TRUST, S.A. de C.V.")} con el desarrollador: comisiones y gastos pagados por su cuenta, menos los pagos recibidos.</div>
+<div class="kpis"><div class="k"><span class="l">Total cargos</span><span class="v">${fmt(totalCargos)}</span><small>comisiones ${fmt(totalCom)} + gastos ${fmt(totalReemb)}</small></div><div class="k ok"><span class="l">Pagos recibidos</span><span class="v">${fmt(pagado)}</span><small>${pagos.length} pago${pagos.length===1?"":"s"}</small></div><div class="k dark"><span class="l">Saldo pendiente a favor de TRUST</span><span class="v">${fmt(totalDebe)}</span>${c.saldo<-EPS?`<small style="color:#D9C9A8">saldo a favor del desarrollador: ${fmt(-c.saldo)}</small>`:""}</div></div>
+${coms.length?`<b style="display:block;font-family:Lora,serif;font-size:11px;color:#173F35;font-weight:500;margin:0 0 5px">Comisiones</b><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Unidad</th><th>Concepto</th><th class="n">Comisión</th></tr></thead><tbody>
+${coms.map(x=>`<tr><td>${fecha(x.fecha)}</td><td>${esc(x.cliente||"")}</td><td>${esc(x.unidad||"")}</td><td>${esc(x.concepto||"")}${x.notas?`<br><small style="color:#6F726B">${esc(x.notas)}</small>`:""}</td><td class="n">${fmt(x.monto)}</td></tr>`).join("")}
+<tr class="tot"><td colspan="4">Total comisiones</td><td class="n">${fmt(totalCom)}</td></tr></tbody></table>`:""}
+${rows.length?`<b style="display:block;font-family:Lora,serif;font-size:11px;color:#173F35;font-weight:500;margin:${coms.length?"12px":"0"} 0 5px">Gastos reembolsables</b><table><thead><tr><th>Mes</th><th>Categoría</th><th>Plataforma / proveedor</th><th>Concepto</th><th class="n">Monto</th></tr></thead><tbody>
 ${rows.map(x=>`<tr><td>${fechaM(x.mes)}</td><td>${esc(catDe(x))}</td><td>${esc(x.plataforma||"")}</td><td>${esc(x.campana||"")}${x.notas?`<br><small style="color:#6F726B">${esc(x.notas)}</small>`:""}</td><td class="n">${fmt(x.monto)}</td></tr>`).join("")}
-<tr class="tot"><td colspan="4">Total reembolsable</td><td class="n">${fmt(totalReemb)}</td></tr></tbody></table>`:""}
-${pagos.length?`<table style="margin-top:10px"><thead><tr><th>Fecha de pago</th><th>Forma de pago</th><th>Referencia</th><th class="n">Monto recibido</th></tr></thead><tbody>
+<tr class="tot"><td colspan="4">Total gastos reembolsables</td><td class="n">${fmt(totalReemb)}</td></tr></tbody></table>`:""}
+${pagos.length?`<b style="display:block;font-family:Lora,serif;font-size:11px;color:#173F35;font-weight:500;margin:12px 0 5px">Pagos recibidos</b><table><thead><tr><th>Fecha de pago</th><th>Forma de pago</th><th>Referencia</th><th class="n">Monto recibido</th></tr></thead><tbody>
 ${pagos.map(g=>`<tr><td>${fecha(g.fecha)}</td><td>${esc(g.forma_pago||"")}</td><td>${esc(g.referencia||"")}${g.notas?` <small style="color:#6F726B">· ${esc(g.notas)}</small>`:""}</td><td class="n">${fmt(g.monto)}</td></tr>`).join("")}
-<tr class="tot"><td colspan="3">Saldo pendiente de reembolso de gastos</td><td class="n">${fmt(saldo)}</td></tr></tbody></table>`:(rows.length?`<table style="margin-top:10px"><tbody><tr class="tot"><td colspan="3">Saldo pendiente de reembolso de gastos</td><td class="n" style="text-align:right">${fmt(saldo)}</td></tr></tbody></table>`:"")}
-${vPend.length?`<b style="display:block;font-family:Lora,serif;font-size:11px;color:#173F35;font-weight:500;margin:12px 0 5px">Comisiones por cobrar</b><table><thead><tr><th>Mes de venta</th><th>Cliente</th><th>Unidad</th><th class="n">Comisión</th><th class="n">Cobrado</th><th class="n">Saldo</th></tr></thead><tbody>
-${vPend.map(v=>`<tr><td>${fechaM(v.fecha)}</td><td>${esc(v.cliente||"")}</td><td>${esc(v.unidad||v.inmueble||"")}</td><td class="n">${fmt(comTotal(v))}</td><td class="n">${cobradoFx(v)?fmt(cobradoFx(v)):"—"}</td><td class="n">${fmt(saldoV(v))}</td></tr>`).join("")}
-<tr class="tot"><td colspan="5">Comisiones pendientes de pago a TRUST</td><td class="n">${fmt(cc.saldo)}</td></tr></tbody></table>`:""}
-<table style="margin-top:10px"><tbody><tr class="tot"><td colspan="3">TOTAL PENDIENTE A FAVOR DE TRUST (gastos + comisiones)</td><td class="n" style="text-align:right">${fmt(totalDebe)}</td></tr></tbody></table>
+<tr class="tot"><td colspan="3">Total pagado</td><td class="n">${fmt(pagado)}</td></tr></tbody></table>`:""}
+<table style="margin-top:10px"><tbody><tr><td>Total cargos (comisiones ${fmt(totalCom)} + gastos ${fmt(totalReemb)})</td><td class="n">${fmt(totalCargos)}</td></tr><tr><td>Pagos recibidos</td><td class="n">− ${fmt(pagado)}</td></tr><tr class="tot"><td>SALDO PENDIENTE A FAVOR DE TRUST</td><td class="n">${fmt(totalDebe)}</td></tr></tbody></table>
 ${(()=>{const ys=anios();const v=ys.map(y=>anual(proy,y));if(!v.some(x=>x))return "";const mx=Math.max(...v,1);return `<div class="cmp"><b>Gasto anual del proyecto · ${esc(proy)}</b><div class="bars">${ys.map((y,i)=>`<div class="bc"><span class="bv">${v[i]?fmt(v[i]):"—"}</span><i style="height:${Math.max(v[i]/mx*70,2)}px;${i===ys.length-1?"":"background:#2F5F52"}"></i><span class="by">${y}</span></div>`).join("")}</div><small>Años anteriores: totales anuales del proyecto. ${ys[ys.length-1]}: acumulado de lo registrado al corte (incluye gastos no reembolsables).</small></div>`})()}
 <div class="bank"><b>Datos para pago</b>PROMOTORA DE INMUEBLES TRUST SA DE CV · Banco BBVA · CLABE 0123 2000 1217 080823 · Cuenta 012 170 8082</div>
 <div class="foot"><div><b style="color:#173F35;letter-spacing:.14em;text-transform:uppercase">Confidencial</b> · hola@trustreal.mx · 33 3376 5616 · trustreal.mx</div><img src="data:image/png;base64,${LOGO_B64}"></div>
