@@ -470,32 +470,81 @@ function estadoCuentaPDF(proy){
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Estado de cuenta · ${esc(proy)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <style>@page{size:letter;margin:0}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}html{background:#FAF8F2}
-body{margin:0;font-family:Poppins,sans-serif;color:#1E241F;background:#FAF8F2;font-size:10px}.page{width:8.5in;min-height:11in;margin:0 auto;padding:.5in .6in .45in;background:#FAF8F2}@media print{.page{min-height:auto;height:11in;overflow:hidden}}
+body{margin:0;font-family:Poppins,sans-serif;color:#1E241F;background:#FAF8F2;font-size:10px}
+#src{width:8.5in;margin:0 auto;padding:.5in .6in .45in;background:#FAF8F2}
+.page{width:8.5in;height:11in;margin:0 auto;padding:.5in .6in .55in;background:#FAF8F2;overflow:hidden;position:relative;page-break-after:always;break-after:page}.page:last-child{page-break-after:auto;break-after:auto}
+.pnum{position:absolute;left:.6in;right:.6in;bottom:.22in;display:flex;justify-content:space-between;font-size:8px;color:#6F726B;letter-spacing:.04em}
+.cont{font-size:9px;color:#6F726B;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #E3DDD0}.cont b{font-family:Lora,serif;font-size:12px;color:#173F35;font-weight:500}
+table+table,b.sec+table{margin-top:0}b.sec{display:block;font-family:Lora,serif;font-size:11px;color:#173F35;font-weight:500;margin:12px 0 5px}b.sec.first{margin-top:0}
+tr{page-break-inside:avoid;break-inside:avoid}
+@media screen{.page{box-shadow:0 2px 14px rgba(0,0,0,.08);margin-bottom:14px}}
 .top{display:flex;justify-content:space-between;align-items:flex-start}.logo{width:110px}.right{text-align:right;font-size:10.5px;color:#6F726B;line-height:1.5}.right b{display:block;font-family:Lora,serif;font-size:13px;color:#173F35;font-weight:500}
 .title{margin:14px 0 2px;font-family:Lora,serif;font-size:28px;font-weight:500;color:#173F35}.title em{font-style:italic;color:#B8956A}.sub{font-size:11px;color:#6F726B;margin-bottom:14px}
 .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}.k{background:#fff;border:1px solid #E3DDD0;border-radius:8px;padding:8px 10px}.k .l{font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:#6F726B;font-weight:600;display:block}.k .v{font-family:Lora,serif;font-size:18px}.k small{display:block;font-size:8px;color:#6F726B;margin-top:3px}.k.dark{background:#173F35;border-color:#173F35;color:#fff}.k.dark .l{color:#D9C9A8}.k.bad .v{color:#A8342A}.k.ok .v{color:#2E7D5B}
 table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #E3DDD0;border-radius:8px;overflow:hidden}th{background:#EFEAE0;color:#4F534E;text-align:left;font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;padding:7px 8px}td{padding:6px 8px;border-bottom:1px solid #EEE9DE;font-size:9.5px}td.n,th.n{text-align:right;white-space:nowrap}tr.tot td{background:#173F35;color:#fff;font-weight:600}.tag{display:inline-block;padding:1px 6px;border-radius:999px;font-size:7.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}.tag.p{background:#F8E1DE;color:#A8342A}.tag.o{background:#E1F1E8;color:#2E7D5B}
 .bank{margin-top:14px;background:#fff;border:1px solid #E3DDD0;border-radius:8px;padding:10px 12px;font-size:9.5px}.bank b{font-family:Lora,serif;font-size:11px;color:#173F35;font-weight:500;display:block}
 .cmp{margin-top:14px;background:#fff;border:1px solid #E3DDD0;border-radius:8px;padding:10px 12px}.cmp>b{font-family:Lora,serif;font-size:11px;color:#173F35;font-weight:500;display:block;margin-bottom:6px}.cmp .bars{display:flex;gap:14px;align-items:flex-end;height:100px;padding:0 6px}.cmp .bc{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px}.cmp .bc i{display:block;width:100%;max-width:70px;background:#173F35;border-radius:4px 4px 0 0}.cmp .bv{font-size:9px;font-weight:600}.cmp .by{font-size:9px;color:#6F726B}.cmp small{display:block;margin-top:6px;font-size:8.5px;color:#6F726B}
-.foot{margin-top:18px;display:flex;justify-content:space-between;align-items:flex-end;font-size:9px;color:#6F726B}.foot img{width:64px}</style></head><body><div class="page">
+.foot{margin-top:18px;display:flex;justify-content:space-between;align-items:flex-end;font-size:9px;color:#6F726B}.foot img{width:64px}</style></head><body><div id="src">
 <div class="top"><img class="logo" src="data:image/png;base64,${LOGO_B64}"><div class="right">Proyecto<b>${esc(proy)}${R.desarrollador?" · "+esc(R.desarrollador):""}</b>Corte al<b>${hoy}</b></div></div>
 <div class="title">Estado de cuenta · <em>${esc(proy)}</em></div>
 <div class="sub">Cuenta corriente de ${esc("Promotora de Inmuebles TRUST, S.A. de C.V.")} con el desarrollador: comisiones y gastos pagados por su cuenta, menos los pagos recibidos.</div>
 <div class="kpis"><div class="k"><span class="l">Total cargos</span><span class="v">${fmt(totalCargos)}</span><small>comisiones ${fmt(totalCom)} + gastos ${fmt(totalReemb)}</small></div><div class="k ok"><span class="l">Pagos recibidos</span><span class="v">${fmt(pagado)}</span><small>${pagos.length} pago${pagos.length===1?"":"s"}</small></div><div class="k dark"><span class="l">Saldo pendiente a favor de TRUST</span><span class="v">${fmt(totalDebe)}</span>${c.saldo<-EPS?`<small style="color:#D9C9A8">saldo a favor del desarrollador: ${fmt(-c.saldo)}</small>`:""}</div></div>
-${coms.length?`<b style="display:block;font-family:Lora,serif;font-size:11px;color:#173F35;font-weight:500;margin:0 0 5px">Comisiones</b><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Unidad</th><th>Concepto</th><th class="n">Comisión</th></tr></thead><tbody>
+${coms.length?`<b class="sec first">Comisiones</b><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Unidad</th><th>Concepto</th><th class="n">Comisión</th></tr></thead><tbody>
 ${coms.map(x=>`<tr><td>${fecha(x.fecha)}</td><td>${esc(x.cliente||"")}</td><td>${esc(x.unidad||"")}</td><td>${esc(x.concepto||"")}${x.notas?`<br><small style="color:#6F726B">${esc(x.notas)}</small>`:""}</td><td class="n">${fmt(x.monto)}</td></tr>`).join("")}
 <tr class="tot"><td colspan="4">Total comisiones</td><td class="n">${fmt(totalCom)}</td></tr></tbody></table>`:""}
-${rows.length?`<b style="display:block;font-family:Lora,serif;font-size:11px;color:#173F35;font-weight:500;margin:${coms.length?"12px":"0"} 0 5px">Gastos reembolsables</b><table><thead><tr><th>Mes</th><th>Categoría</th><th>Plataforma / proveedor</th><th>Concepto</th><th class="n">Monto</th></tr></thead><tbody>
+${rows.length?`<b class="sec ${coms.length?"":"first"}">Gastos reembolsables</b><table><thead><tr><th>Mes</th><th>Categoría</th><th>Plataforma / proveedor</th><th>Concepto</th><th class="n">Monto</th></tr></thead><tbody>
 ${rows.map(x=>`<tr><td>${fechaM(x.mes)}</td><td>${esc(catDe(x))}</td><td>${esc(x.plataforma||"")}</td><td>${esc(x.campana||"")}${x.notas?`<br><small style="color:#6F726B">${esc(x.notas)}</small>`:""}</td><td class="n">${fmt(x.monto)}</td></tr>`).join("")}
 <tr class="tot"><td colspan="4">Total gastos reembolsables</td><td class="n">${fmt(totalReemb)}</td></tr></tbody></table>`:""}
-${pagos.length?`<b style="display:block;font-family:Lora,serif;font-size:11px;color:#173F35;font-weight:500;margin:12px 0 5px">Pagos recibidos</b><table><thead><tr><th>Fecha de pago</th><th>Forma de pago</th><th>Referencia</th><th class="n">Monto recibido</th></tr></thead><tbody>
+${pagos.length?`<b class="sec">Pagos recibidos</b><table><thead><tr><th>Fecha de pago</th><th>Forma de pago</th><th>Referencia</th><th class="n">Monto recibido</th></tr></thead><tbody>
 ${pagos.map(g=>`<tr><td>${fecha(g.fecha)}</td><td>${esc(g.forma_pago||"")}</td><td>${esc(g.referencia||"")}${g.notas?` <small style="color:#6F726B">· ${esc(g.notas)}</small>`:""}</td><td class="n">${fmt(g.monto)}</td></tr>`).join("")}
 <tr class="tot"><td colspan="3">Total pagado</td><td class="n">${fmt(pagado)}</td></tr></tbody></table>`:""}
 <table style="margin-top:10px"><tbody><tr><td>Total cargos (comisiones ${fmt(totalCom)} + gastos ${fmt(totalReemb)})</td><td class="n">${fmt(totalCargos)}</td></tr><tr><td>Pagos recibidos</td><td class="n">− ${fmt(pagado)}</td></tr><tr class="tot"><td>SALDO PENDIENTE A FAVOR DE TRUST</td><td class="n">${fmt(totalDebe)}</td></tr></tbody></table>
 ${(()=>{const ys=anios();const v=ys.map(y=>anual(proy,y));if(!v.some(x=>x))return "";const mx=Math.max(...v,1);return `<div class="cmp"><b>Gasto anual del proyecto · ${esc(proy)}</b><div class="bars">${ys.map((y,i)=>`<div class="bc"><span class="bv">${v[i]?fmt(v[i]):"—"}</span><i style="height:${Math.max(v[i]/mx*70,2)}px;${i===ys.length-1?"":"background:#2F5F52"}"></i><span class="by">${y}</span></div>`).join("")}</div><small>Años anteriores: totales anuales del proyecto. ${ys[ys.length-1]}: acumulado de lo registrado al corte (incluye gastos no reembolsables).</small></div>`})()}
 <div class="bank"><b>Datos para pago</b>PROMOTORA DE INMUEBLES TRUST SA DE CV · Banco BBVA · CLABE 0123 2000 1217 080823 · Cuenta 012 170 8082</div>
 <div class="foot"><div><b style="color:#173F35;letter-spacing:.14em;text-transform:uppercase">Confidencial</b> · hola@trustreal.mx · 33 3376 5616 · trustreal.mx</div><img src="data:image/png;base64,${LOGO_B64}"></div>
-</div><script>window.addEventListener("load",()=>setTimeout(()=>window.print(),600));<\/script></body></html>`;
+</div><div id="pages"></div>
+<script>
+// Paginación: reparte el contenido en hojas carta completas (las tablas se parten por renglón repitiendo su encabezado)
+function paginar(){
+  const src=document.getElementById("src"),out=document.getElementById("pages");if(!src||!out||out.children.length)return;
+  const titulo=${JSON.stringify("Estado de cuenta · "+proy)};
+  const pages=[];let page=null,body=null;
+  const nuevaPagina=()=>{page=document.createElement("div");page.className="page";body=document.createElement("div");body.className="pbody";page.appendChild(body);
+    if(pages.length){const c=document.createElement("div");c.className="cont";c.innerHTML="<b>"+titulo+"</b> · continuación";body.appendChild(c)}
+    out.appendChild(page);pages.push(page)};
+  const limite=()=>{const cs=getComputedStyle(page);return page.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)};
+  const cabe=()=>body.scrollHeight<=limite()+0.5;
+  nuevaPagina();
+  const atoms=[...src.children];
+  for(let i=0;i<atoms.length;i++){
+    const node=atoms[i];
+    if(node.tagName==="TABLE"){
+      const rowsAll=[...node.querySelectorAll("tbody > tr")];const thead=node.querySelector("thead");
+      const shell=()=>{const t=node.cloneNode(false);t.removeAttribute("style");t.style.marginTop=node.style.marginTop||"";if(thead)t.appendChild(thead.cloneNode(true));t.appendChild(document.createElement("tbody"));body.appendChild(t);return t};
+      let t=shell();
+      // si no cabe ni el encabezado + primer renglón, pasar a nueva página (llevándose la etiqueta de sección previa)
+      const prev=body.lastElementChild===t?t.previousElementSibling:null;
+      for(let r=0;r<rowsAll.length;r++){
+        const tr=rowsAll[r];t.tBodies[0].appendChild(tr);
+        if(!cabe()){
+          t.tBodies[0].removeChild(tr);
+          if(t.tBodies[0].children.length===0){ // ni un renglón cupo: mover tabla (y etiqueta) a nueva página
+            body.removeChild(t);const lbl=(prev&&prev.tagName==="B"&&prev.classList.contains("sec"))?prev:null;if(lbl)body.removeChild(lbl);
+            nuevaPagina();if(lbl){lbl.classList.add("first");body.appendChild(lbl)}t=shell();t.tBodies[0].appendChild(tr);
+          }else{nuevaPagina();t=shell();t.style.marginTop="0";t.tBodies[0].appendChild(tr)}
+        }
+      }
+      if(!t.tBodies[0].children.length)t.remove();
+    }else{
+      body.appendChild(node);
+      if(!cabe()&&body.children.length>1){body.removeChild(node);nuevaPagina();if(node.tagName==="B")node.classList.add("first");body.appendChild(node)}
+    }
+  }
+  pages.forEach((p,i)=>{const n=document.createElement("div");n.className="pnum";n.innerHTML="<span>"+titulo+"</span><span>Página "+(i+1)+" de "+pages.length+"</span>";p.appendChild(n)});
+  src.style.display="none";
+}
+window.addEventListener("load",()=>{const go=()=>{try{paginar()}catch(e){console.warn(e)}setTimeout(()=>window.print(),400)};(document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(()=>setTimeout(go,150))});
+<\/script></body></html>`;
   const w=window.open("","_blank");if(!w){toast("Permite las ventanas emergentes para generar el PDF",true);return}w.document.open();w.document.write(html);w.document.close();
 }
 $("#btn-new").onclick=()=>openInv(null,{proyecto:filt.proy||""});
