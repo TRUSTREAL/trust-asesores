@@ -10,10 +10,11 @@
     "María":"1990",
     "Majo":"9876",
     "Paola":"1973",
-    "Berna":"1597"
+    "Berna":"1597",
+    "Rodrigo":"9212"
   };
   /* quién puede entrar al panel de administración */
-  var ADMINS=["Álvaro","Berna"];
+  var ADMINS=["Álvaro","Berna","Rodrigo"];
   var IDENT=["trust_asesor_herr","trust_asesor_oo","trust_asesor_com","lst_me","trust_asesor"];
   var ADMIN_PREFIX=["/admin/","/ventas/"];
   var ADMIN_EXACT=["/leads/","/leads/index.html","/hotleads/","/hotleads/index.html","/inventario/","/inventario/index.html","/listings/","/listings/index.html"];
