@@ -354,7 +354,7 @@ function renderStaff(){
   const comPrev=years0(VN,pagos).filter(y=>y<Y).reduce((a,y)=>a+Array.from({length:12},(_,i)=>staffComMes(k,y,i+1)).reduce((x,z)=>x+z,0),0);
   const pagPrev=pagos.filter(p=>+String(p.fecha).slice(0,4)<Y).reduce((a,p)=>a+(+p.monto||0),0);
   const arr=comPrev-pagPrev;
-  const nMes=Y<yrNow?12:Y>yrNow?0:moNow;
+  const nMes=Y<yrNow?12:Y>yrNow?0:moNow-1; // solo meses cerrados (el mes en curso no cuenta)
   const ingT=ing.reduce((a,b)=>a+b,0),comT=com.reduce((a,b)=>a+b,0),pagT=pagMes.reduce((a,b)=>a+b,0);
   const saldo=arr+comT-pagT;
   const years=years0(VN,pagos);const promCom=nMes?comT/nMes:0;
@@ -368,7 +368,7 @@ function renderStaff(){
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="dim" style="font-size:13px">Esquema: <b>${esqTxt}</b></span><button class="btn sm" id="st-esq" title="Cambiar el % desde una fecha">% desde…</button><select id="st-anio">${years.map(y=>`<option value="${y}" ${y===Y?"selected":""}>${y}</option>`).join("")}</select></div></div>
   <div class="tiles t5">
     <div class="tile dark"><span class="l">Ingreso total generado</span><span class="v">${fmtK(ingT)}</span><span class="s">${Y} · ventas sin crédito</span></div>
-    <div class="tile"><span class="l">Ingreso promedio de ${esc(k)}</span><span class="v">${fmtK(promCom)}</span><span class="s">comisión mensual · ${nMes} mes${nMes===1?"":"es"} de ${Y}</span></div>
+    <div class="tile"><span class="l">Ingreso promedio de ${esc(k)}</span><span class="v">${fmtK(promCom)}</span><span class="s">comisión mensual · ${nMes} mes${nMes===1?"":"es"} cerrado${nMes===1?"":"s"} de ${Y}</span></div>
     <div class="tile gold"><span class="l">Comisión generada</span><span class="v">${fmtK(comT)}</span><span class="s">${esqTxt} · ${Y}</span></div>
     <div class="tile"><span class="l">Pagos realizados</span><span class="v">${fmtK(pagT)}</span><span class="s">${pY.length} pago${pY.length===1?"":"s"} en ${Y}</span></div>
     <div class="tile"><span class="l">Saldo por pagar</span><span class="v" style="color:${saldo>EPS?"var(--bad)":"var(--ok)"}">${fmtK(saldo)}</span><span class="s">acumulado histórico${Math.abs(arr)>EPS?` · arrastra ${fmt(arr)} de años anteriores`:""}</span></div>
@@ -384,8 +384,8 @@ function renderStaff(){
         <div class="f c4"><label>Fecha</label><input type="date" id="sp-fecha" value="${hoy}"></div>
         <div class="f c4"><label>Monto</label><input id="sp-m" inputmode="decimal" placeholder="0"></div>
         <div class="f c4"><label>Método</label>${dsel("sp-met",METODOS,"Transferencia")}</div>
-        <div class="f c8"><label>Nota</label><input id="sp-nota" placeholder="Comisión de octubre, anticipo…"></div>
-        <div class="f c4" style="display:flex;align-items:flex-end"><button class="btn primary" id="sp-save" style="width:100%">Registrar pago</button></div></div>
+        <div class="f c12"><label>Nota</label><input id="sp-nota" placeholder="Comisión de octubre, anticipo…"></div></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn primary" id="sp-save">Registrar pago</button></div>
       <div class="twrap" style="border:0;margin-top:12px"><table><thead><tr><th>Fecha</th><th>Método</th><th>Nota</th><th class="num">Monto</th><th></th></tr></thead>
       <tbody>${pY.slice().sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))).map(p=>`<tr><td class="dim">${fecha(p.fecha)}</td><td class="dim">${esc(p.metodo||"")}</td><td>${esc(p.nota||"")}</td><td class="num money">${fmt(p.monto)}</td><td><button class="ico delsp" data-id="${p.id}" title="Eliminar pago">×</button></td></tr>`).join("")}</tbody></table>
       ${pY.length?"":`<div class="empty">Sin pagos registrados a ${esc(k)} en ${Y}.</div>`}</div>`:faltaTabla("staff_pagos").replace("ventas_v6.sql","ventas_v9.sql")}</div>
