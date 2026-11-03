@@ -299,7 +299,8 @@ function render(){renderPeriodBar();({ventas:renderVentas,apartados:renderAparta
 
 /* ---------- finanzas (solo Álvaro, con PIN) ---------- */
 const FIN_PIN="1706";
-const finOK=()=>{try{return sessionStorage.getItem("fin_ok")==="1"}catch(e){return false}};
+let finUnlocked=false; // solo se abre con PIN en cada clic a la pestaña; no se recuerda
+const finOK=()=>finUnlocked;
 function pedirPIN(onOk){
   let pin="";const root=$("#drawer-root");
   root.innerHTML=`<div class="pinbox" id="pinbox"><div class="card"><h3>Finanzas</h3><p class="hint" style="margin:0">Escribe tu contraseña de 4 dígitos</p>
@@ -314,7 +315,7 @@ function pedirPIN(onOk){
     if(!/^\d$/.test(k)||pin.length>=4)return;
     pin+=k;paint();
     if(pin.length===4){
-      if(pin===FIN_PIN){try{sessionStorage.setItem("fin_ok","1")}catch(e){}cerrar();onOk&&onOk();}
+      if(pin===FIN_PIN){cerrar();onOk&&onOk();}
       else{dots.classList.add("err");setTimeout(()=>{dots.classList.remove("err");pin="";paint()},450);}
     }
   };
@@ -335,9 +336,7 @@ const staffComMes=(k,y,m)=>{const cfg=staffCfg(k),key=y+"-"+String(m).padStart(2
 function renderFinanzas(){
   const el=$("#pane-finanzas");
   el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-    <div class="qseg" id="fin-seg"><button data-v="staff" class="${finView==="staff"?"on":""}">Staff</button></div>
-    <button class="btn sm" id="btn-fin-lock" title="Volver a pedir la contraseña">🔒 Bloquear</button></div><div id="fin-body"></div>`;
-  $("#btn-fin-lock").onclick=()=>{try{sessionStorage.removeItem("fin_ok")}catch(e){}$$(".vseg button")[0].click();toast("Finanzas bloqueado")};
+    <div class="qseg" id="fin-seg"><button data-v="staff" class="${finView==="staff"?"on":""}">Staff</button></div></div><div id="fin-body"></div>`;
   el.querySelectorAll("#fin-seg button").forEach(b=>b.onclick=()=>{finView=b.dataset.v;renderFinanzas()});
   ({staff:renderStaff})[finView]();
 }
@@ -402,7 +401,7 @@ function renderStaff(){
     SPAGOS.push(r.data);toast("Pago registrado");renderStaff()};
   el.querySelectorAll(".delsp").forEach(b=>b.onclick=async()=>{if(!confirm("¿Eliminar este pago?"))return;const r=await sb.from("staff_pagos").delete().eq("id",b.dataset.id);if(r.error){toast(r.error.message,true);return}SPAGOS=SPAGOS.filter(p=>p.id!==b.dataset.id);toast("Pago eliminado");renderStaff()});
 }
-$$(".vseg button").forEach(b=>b.onclick=()=>{if(b.dataset.pane==="finanzas"&&!finOK()){pedirPIN(()=>b.click());return}PANE=b.dataset.pane;$$(".vseg button").forEach(x=>x.setAttribute("aria-pressed",x===b));$$(".pane").forEach(p=>p.classList.toggle("on",p.id==="pane-"+PANE));$("#period-bar").style.display=(PANE==="reglas"||PANE==="finanzas")?"none":"";render()});
+$$(".vseg button").forEach(b=>b.onclick=()=>{if(b.dataset.pane==="finanzas"&&!finOK()){pedirPIN(()=>{finUnlocked=true;b.click();finUnlocked=false});return}PANE=b.dataset.pane;$$(".vseg button").forEach(x=>x.setAttribute("aria-pressed",x===b));$$(".pane").forEach(p=>p.classList.toggle("on",p.id==="pane-"+PANE));$("#period-bar").style.display=(PANE==="reglas"||PANE==="finanzas")?"none":"";render()});
 
 function renderVentas(){
   const el=$("#pane-ventas");
