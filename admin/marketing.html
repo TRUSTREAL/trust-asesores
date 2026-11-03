@@ -399,7 +399,7 @@ function openInv(x,pre){
   g("proy").onchange=()=>{const R=REGLAS[g("proy").value];if(R&&isNew){g("reem").checked=!!R.reembolsable;g("regla").textContent=R.reembolsable?`Regla: ${g("proy").value} se le cobra a ${R.desarrollador||"el desarrollador"}.`:`Regla: ${g("proy").value} lo absorbe TRUST.`}else g("regla").textContent="";vis()};
   if(x.proyecto){const R=REGLAS[x.proyecto];if(R)g("regla").textContent=R.reembolsable?`Regla: se le cobra a ${R.desarrollador||"el desarrollador"}.`:"Regla: lo absorbe TRUST."}vis();
   const leer=()=>{const t=g("pago").value==="TRUST";const re=t&&g("reem").checked;const ok=false;const row={mes:(g("mes").value||todayISO().slice(0,7))+"-01",proyecto:g("proy").value,plataforma:g("plat").value.trim()||null,campana:g("camp").value.trim()||null,monto:num(g("monto").value),leads:g("cat").value==="Pauta digital"?num(g("leads").value):null,notas:g("notas").value.trim()||null,pagado_por:g("pago").value,reembolsable:re,reembolsado:ok,fecha_reembolso:null};if(CAT_OK)row.categoria=g("cat").value;return row};
-  $("#d-save").onclick=async()=>{const row=leer();if(!row.proyecto){toast("Falta el proyecto",true);return}if(!row.monto){toast("Falta el monto",true);return}
+  $("#d-save").onclick=async()=>{const row=leer();if(!row.proyecto){toast("Falta el proyecto",true);return}if(row.monto==null||row.monto<0){toast("Falta el monto (puede ser 0)",true);return}
     const r=isNew?await sb.from("marketing_inversion").insert(row).select().single():await sb.from("marketing_inversion").update(row).eq("id",x.id).select().single();
     if(r.error){toast("No se guardó: "+r.error.message,true);return}
     if(isNew)INV.unshift(r.data);else INV[INV.findIndex(y=>y.id===x.id)]=r.data;close();render();toast(isNew?"Gasto registrado":"Guardado")};
