@@ -102,6 +102,19 @@ table .trk{height:8px;background:var(--surface-2);border-radius:4px;overflow:hid
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--green);vertical-align:-1px;margin-right:4px}
 .legend i.p{background:var(--gold)}
 
+/* finanzas (PIN) */
+.pinbox{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(14,42,35,.55)}
+.pinbox .card{width:min(360px,92%);text-align:center;padding:28px 24px}
+.pinbox h3{margin:0 0 6px}
+.pinbox .dots{display:flex;justify-content:center;gap:14px;margin:18px 0 10px}
+.pinbox .dots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--green);display:block}
+.pinbox .dots i.on{background:var(--green)}
+.pinbox .dots.err i{border-color:var(--bad);animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pinbox .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.pinbox .pad button{border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:14px 0;font-size:18px;font-weight:600}
+.pinbox .pad button:hover{background:var(--green);color:#fff}
+.vseg button .lock{font-size:12px;margin-left:4px;opacity:.8}
 /* drawer */
 .scrim{position:fixed;inset:0;background:rgba(14,42,35,.45);z-index:20}
 .drawer{position:fixed;top:0;right:0;bottom:0;width:min(800px,100%);background:var(--surface);z-index:21;box-shadow:var(--shadow);display:flex;flex-direction:column}
@@ -149,6 +162,8 @@ tr.gtot td.money,tr.gtot td.com,tr.gtot td.paid{color:#fff}
 .paid{color:var(--ok);font-weight:600}
 @media (max-width:860px){.tiles,.tiles.t5{grid-template-columns:repeat(2,1fr)}.grid2,.grid3,.grid4{grid-template-columns:1fr}.c8,.c6,.c4,.c3,.c2{grid-column:span 12}.cobros .row{grid-template-columns:1fr 1fr}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/auth.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -165,6 +180,7 @@ tr.gtot td.money,tr.gtot td.com,tr.gtot td.paid{color:#fff}
     <button data-pane="empresa" aria-pressed="false">Empresa</button>
     <button data-pane="asesores" aria-pressed="false">Asesores</button>
     <button data-pane="reglas" aria-pressed="false">Reglas</button>
+    <button data-pane="finanzas" aria-pressed="false">Finanzas<span class="lock">🔒</span></button>
   </div>
   <div class="filters" id="period-bar">
     <select id="p-anio"></select>
@@ -180,6 +196,7 @@ tr.gtot td.money,tr.gtot td.com,tr.gtot td.paid{color:#fff}
   <section class="pane" id="pane-empresa"></section>
   <section class="pane" id="pane-asesores"></section>
   <section class="pane" id="pane-reglas"></section>
+  <section class="pane" id="pane-finanzas"></section>
 </div>
 <div id="drawer-root"></div>
 <div class="toast" id="toast"></div>
@@ -200,7 +217,7 @@ const MESES_L=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto"
 const REGLAS_DEF={proy_vendedor:30,proy_opcionador:10,corr_trust_vendedor:25,corr_trust_opcionador:25,corr_otra_vendedor:50,autogenerada:5,staff:[{nombre:"Berna",pct:1},{nombre:"Rodrigo",pct:5},{nombre:"Aly",pct:0.5},{nombre:"Majo",pct:5}],objetivos:[1500000,1500000,2000000,2000000]};
 const objQ=i=>+((REGLAS.objetivos||REGLAS_DEF.objetivos)[i])||0;
 
-let sb=null; try{ sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); }catch(e){}
+let sb=null; try{ sb=(window.SBC||window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY)); }catch(e){}
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 $("#logo-img").src="data:image/png;base64,"+LOGO_B64;
 let tt; function toast(m,err){const t=$("#toast");t.textContent=m;t.classList.toggle("err",!!err);t.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("show"),err?3600:2200);}
@@ -278,8 +295,40 @@ function renderPeriodBar(){
 $("#p-anio").onchange=e=>{P.anio=+e.target.value;render()};$("#p-mes").onchange=e=>{P.mes=e.target.value;render()};$$("#p-trim button").forEach(b=>b.onclick=()=>{const q=+b.dataset.q;if(!q)P.trims=[];else P.trims=P.trims.includes(q)?P.trims.filter(x=>x!==q):P.trims.concat([q]).sort();render()});
 
 /* ---------- render ---------- */
-function render(){renderPeriodBar();({ventas:renderVentas,apartados:renderApartados,cobranza:renderCobranza,comisiones:renderComisiones,gastos:renderGastos,empresa:renderEmpresa,asesores:renderAsesores,reglas:renderReglas})[PANE]();}
-$$(".vseg button").forEach(b=>b.onclick=()=>{PANE=b.dataset.pane;$$(".vseg button").forEach(x=>x.setAttribute("aria-pressed",x===b));$$(".pane").forEach(p=>p.classList.toggle("on",p.id==="pane-"+PANE));$("#period-bar").style.display=PANE==="reglas"?"none":"";render()});
+function render(){renderPeriodBar();({ventas:renderVentas,apartados:renderApartados,cobranza:renderCobranza,comisiones:renderComisiones,gastos:renderGastos,empresa:renderEmpresa,asesores:renderAsesores,reglas:renderReglas,finanzas:renderFinanzas})[PANE]();}
+
+/* ---------- finanzas (solo Álvaro, con PIN) ---------- */
+const FIN_PIN="1706";
+const finOK=()=>{try{return sessionStorage.getItem("fin_ok")==="1"}catch(e){return false}};
+function pedirPIN(onOk){
+  let pin="";const root=$("#drawer-root");
+  root.innerHTML=`<div class="pinbox" id="pinbox"><div class="card"><h3>Finanzas</h3><p class="hint" style="margin:0">Escribe tu contraseña de 4 dígitos</p>
+    <div class="dots" id="pin-dots"><i></i><i></i><i></i><i></i></div>
+    <div class="pad">${[1,2,3,4,5,6,7,8,9].map(n=>`<button data-k="${n}">${n}</button>`).join("")}<button data-k="x" title="Borrar">⌫</button><button data-k="0">0</button><button data-k="c" title="Cancelar">✕</button></div></div></div>`;
+  const dots=$("#pin-dots");
+  const paint=()=>dots.querySelectorAll("i").forEach((d,i)=>d.classList.toggle("on",i<pin.length));
+  const cerrar=()=>{root.innerHTML="";document.removeEventListener("keydown",onKey)};
+  const tecla=k=>{
+    if(k==="c"){cerrar();return}
+    if(k==="x"){pin=pin.slice(0,-1);paint();return}
+    if(!/^\d$/.test(k)||pin.length>=4)return;
+    pin+=k;paint();
+    if(pin.length===4){
+      if(pin===FIN_PIN){try{sessionStorage.setItem("fin_ok","1")}catch(e){}cerrar();onOk&&onOk();}
+      else{dots.classList.add("err");setTimeout(()=>{dots.classList.remove("err");pin="";paint()},450);}
+    }
+  };
+  root.querySelectorAll(".pad button").forEach(b=>b.onclick=()=>tecla(b.dataset.k));
+  const onKey=e=>{if(e.key==="Escape")tecla("c");else if(e.key==="Backspace")tecla("x");else tecla(e.key)};
+  document.addEventListener("keydown",onKey);
+  $("#pinbox").onclick=e=>{if(e.target.id==="pinbox")cerrar()};
+}
+function renderFinanzas(){
+  $("#pane-finanzas").innerHTML=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Finanzas</h3><button class="btn sm" id="btn-fin-lock" title="Volver a pedir la contraseña">🔒 Bloquear</button></div>
+    <div class="empty" style="margin-top:14px"><b>Módulo en construcción</b>Aquí irá el control financiero de TRUST. Solo tú tienes acceso.</div></div>`;
+  $("#btn-fin-lock").onclick=()=>{try{sessionStorage.removeItem("fin_ok")}catch(e){}$$(".vseg button")[0].click();toast("Finanzas bloqueado")};
+}
+$$(".vseg button").forEach(b=>b.onclick=()=>{if(b.dataset.pane==="finanzas"&&!finOK()){pedirPIN(()=>b.click());return}PANE=b.dataset.pane;$$(".vseg button").forEach(x=>x.setAttribute("aria-pressed",x===b));$$(".pane").forEach(p=>p.classList.toggle("on",p.id==="pane-"+PANE));$("#period-bar").style.display=(PANE==="reglas"||PANE==="finanzas")?"none":"";render()});
 
 function renderVentas(){
   const el=$("#pane-ventas");
