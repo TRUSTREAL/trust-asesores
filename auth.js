@@ -11,7 +11,8 @@
     "Majo":"9876",
     "Paola":"1973",
     "Berna":"1597",
-    "Rodrigo":"9212"
+    "Rodrigo":"9212",
+    "Álvaro":"1706"
   };
   /* quién puede entrar al panel de administración */
   var ADMINS=["Álvaro","Berna","Rodrigo"];
