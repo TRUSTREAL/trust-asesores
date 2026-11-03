@@ -235,7 +235,7 @@ const fechaM=d=>d?(()=>{const [y,m]=String(d).slice(0,7).split("-");return `${ME
 const uid=()=>"p"+Math.random().toString(36).slice(2,9);
 
 let VENTAS=[], PAGOS=[], COBROS=[], REGLAS={...REGLAS_DEF}, PANE="ventas";
-let OTROS=[], GASTOS=[], GPAGOS=[], APARTADOS=[], TABLAS_OK={otros:true,gastos:true,gpagos:true,apartados:true};
+let OTROS=[], GASTOS=[], GPAGOS=[], APARTADOS=[], SPAGOS=[], TABLAS_OK={otros:true,gastos:true,gpagos:true,apartados:true,staff:true};
 let P={anio:new Date().getFullYear(),mes:"",trims:[]}; // periodo: Ventas y Empresa por trimestre; el resto por mes
 const useQ=()=>PANE==="empresa"||PANE==="asesores";
 let filt={q:"",un:"",asesor:"",estatus:""}, sort={k:"fecha",dir:"desc"};
@@ -243,10 +243,10 @@ let filt={q:"",un:"",asesor:"",estatus:""}, sort={k:"fecha",dir:"desc"};
 /* ---------- carga ---------- */
 async function loadAll(){
   if(!sb){toast("Sin conexión a Supabase",true);return}
-  const [v,p,c,r,o,g,ap,gp]=await Promise.all([sb.from("ventas").select("*").order("fecha",{ascending:false}),sb.from("ventas_pagos").select("*").order("fecha"),sb.from("ventas_cobros").select("*").order("fecha"),sb.from("ventas_reglas").select("*").eq("id",1).maybeSingle(),sb.from("otros_ingresos").select("*").order("fecha",{ascending:false}),sb.from("gastos").select("*").order("fecha",{ascending:false}),sb.from("apartados").select("*").order("fecha",{ascending:false}),sb.from("gastos_pagos").select("*").order("fecha")]);
+  const [v,p,c,r,o,g,ap,gp,sp]=await Promise.all([sb.from("ventas").select("*").order("fecha",{ascending:false}),sb.from("ventas_pagos").select("*").order("fecha"),sb.from("ventas_cobros").select("*").order("fecha"),sb.from("ventas_reglas").select("*").eq("id",1).maybeSingle(),sb.from("otros_ingresos").select("*").order("fecha",{ascending:false}),sb.from("gastos").select("*").order("fecha",{ascending:false}),sb.from("apartados").select("*").order("fecha",{ascending:false}),sb.from("gastos_pagos").select("*").order("fecha"),sb.from("staff_pagos").select("*").order("fecha")]);
   if(v.error){toast("Error: "+v.error.message,true);return}
   VENTAS=v.data||[];PAGOS=p.data||[];COBROS=c.error?[]:(c.data||[]);
-  OTROS=o.error?[]:(o.data||[]);GASTOS=g.error?[]:(g.data||[]);APARTADOS=ap.error?[]:(ap.data||[]);GPAGOS=gp.error?[]:(gp.data||[]);TABLAS_OK={otros:!o.error,gastos:!g.error,apartados:!ap.error,gpagos:!gp.error};
+  OTROS=o.error?[]:(o.data||[]);GASTOS=g.error?[]:(g.data||[]);APARTADOS=ap.error?[]:(ap.data||[]);GPAGOS=gp.error?[]:(gp.data||[]);SPAGOS=sp.error?[]:(sp.data||[]);TABLAS_OK={otros:!o.error,gastos:!g.error,apartados:!ap.error,gpagos:!gp.error,staff:!sp.error};
   if(r.data&&r.data.reglas)REGLAS={...REGLAS_DEF,...r.data.reglas};
   render();
 }
@@ -323,10 +323,72 @@ function pedirPIN(onOk){
   document.addEventListener("keydown",onKey);
   $("#pinbox").onclick=e=>{if(e.target.id==="pinbox")cerrar()};
 }
+const STAFF=[{k:"Rodrigo",pct:5},{k:"Bernardette",pct:1}];
+let finView="staff", staffSel="Rodrigo", staffAnio=new Date().getFullYear();
+const staffPct=k=>{const o=(REGLAS.staff_pct||{})[k];return o!=null?+o:(STAFF.find(x=>x.k===k)||{}).pct||0};
 function renderFinanzas(){
-  $("#pane-finanzas").innerHTML=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Finanzas</h3><button class="btn sm" id="btn-fin-lock" title="Volver a pedir la contraseña">🔒 Bloquear</button></div>
-    <div class="empty" style="margin-top:14px"><b>Módulo en construcción</b>Aquí irá el control financiero de TRUST. Solo tú tienes acceso.</div></div>`;
+  const el=$("#pane-finanzas");
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+    <div class="qseg" id="fin-seg"><button data-v="staff" class="${finView==="staff"?"on":""}">Staff</button></div>
+    <button class="btn sm" id="btn-fin-lock" title="Volver a pedir la contraseña">🔒 Bloquear</button></div><div id="fin-body"></div>`;
   $("#btn-fin-lock").onclick=()=>{try{sessionStorage.removeItem("fin_ok")}catch(e){}$$(".vseg button")[0].click();toast("Finanzas bloqueado")};
+  el.querySelectorAll("#fin-seg button").forEach(b=>b.onclick=()=>{finView=b.dataset.v;renderFinanzas()});
+  ({staff:renderStaff})[finView]();
+}
+/* ----- Staff: comisión sobre ingreso mensual (Rodrigo, Bernardette) ----- */
+function renderStaff(){
+  const el=$("#fin-body");const k=staffSel,pct=staffPct(k),Y=+staffAnio,hoy=todayISO(),yrNow=+hoy.slice(0,4),moNow=+hoy.slice(5,7);
+  const VN=VENTAS.filter(v=>!esCredito(v));
+  const ingMes=y=>{const a=Array(12).fill(0);VN.filter(v=>+String(v.fecha).slice(0,4)===y).forEach(v=>a[+String(v.fecha).slice(5,7)-1]+=comTotal(v));return a};
+  const ing=ingMes(Y),com=ing.map(x=>x*pct/100);
+  const pagos=SPAGOS.filter(p=>p.persona===k),pY=pagos.filter(p=>+String(p.fecha).slice(0,4)===Y);
+  const pagMes=Array(12).fill(0);pY.forEach(p=>pagMes[+String(p.fecha).slice(5,7)-1]+=+p.monto||0);
+  // saldo arrastrado de años anteriores
+  const comPrev=VN.filter(v=>+String(v.fecha).slice(0,4)<Y).reduce((a,v)=>a+comTotal(v),0)*pct/100;
+  const pagPrev=pagos.filter(p=>+String(p.fecha).slice(0,4)<Y).reduce((a,p)=>a+(+p.monto||0),0);
+  const arr=comPrev-pagPrev;
+  const nMes=Y<yrNow?12:Y>yrNow?0:moNow;
+  const ingT=ing.reduce((a,b)=>a+b,0),comT=com.reduce((a,b)=>a+b,0),pagT=pagMes.reduce((a,b)=>a+b,0);
+  const prom=nMes?ingT/nMes:0;
+  const saldo=arr+comT-pagT;
+  const years=[...new Set(VN.map(v=>+String(v.fecha).slice(0,4)).concat(pagos.map(p=>+String(p.fecha).slice(0,4))).concat([yrNow]).filter(y=>y>2000))].sort((a,b)=>b-a);
+  let acC=arr,acP=0;
+  const rows=ing.map((x,i)=>{const show=Y<yrNow||(Y===yrNow&&i<moNow)||pagMes[i]>0||x>0;acC+=com[i];acP+=pagMes[i];const sd=acC-acP;return `<tr class="${show?"":"dimrow"}"><td><b>${MESES_L[i]}</b></td><td class="num">${x?fmt(x):"—"}</td><td class="num com">${com[i]?fmt(com[i]):"—"}</td><td class="num ${pagMes[i]?"paid":""}">${pagMes[i]?fmt(pagMes[i]):"—"}</td><td class="num dim">${fmt(acC)}</td><td class="num dim">${fmt(acP)}</td><td class="num money" style="color:${sd>EPS?"var(--bad)":sd<-EPS?"var(--ok)":"inherit"}">${fmt(sd)}</td></tr>`}).join("");
+  el.innerHTML=`
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+    <div class="qseg" id="st-seg">${STAFF.map(x=>`<button data-k="${x.k}" class="${x.k===k?"on":""}">${x.k}</button>`).join("")}</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label class="dim" style="font-size:13px">Comisión <input id="st-pct" inputmode="decimal" value="${pct}" style="width:56px;text-align:right"> %</label><select id="st-anio">${years.map(y=>`<option value="${y}" ${y===Y?"selected":""}>${y}</option>`).join("")}</select></div></div>
+  <div class="tiles t5">
+    <div class="tile dark"><span class="l">Ingreso total generado</span><span class="v">${fmtK(ingT)}</span><span class="s">${Y} · ventas sin crédito</span></div>
+    <div class="tile"><span class="l">Ingreso promedio</span><span class="v">${fmtK(prom)}</span><span class="s">mensual · ${nMes} mes${nMes===1?"":"es"}</span></div>
+    <div class="tile gold"><span class="l">Comisión generada</span><span class="v">${fmtK(comT)}</span><span class="s">${pct}% del ingreso · ${Y}</span></div>
+    <div class="tile"><span class="l">Pagos realizados</span><span class="v">${fmtK(pagT)}</span><span class="s">${pY.length} pago${pY.length===1?"":"s"} en ${Y}</span></div>
+    <div class="tile"><span class="l">Saldo por pagar</span><span class="v" style="color:${saldo>EPS?"var(--bad)":"var(--ok)"}">${fmtK(saldo)}</span><span class="s">acumulado histórico${Math.abs(arr)>EPS?` · arrastra ${fmt(arr)} de años anteriores`:""}</span></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>${esc(k)} · por mes ${Y}</h3>
+      <p class="hint" style="margin:6px 0 10px">Ingreso = comisión generada por las ventas registradas (fecha de cierre). Comisión = ${pct}% de ese ingreso. El saldo acumula comisión menos pagos.</p>
+      <div class="twrap" style="border:0"><table><thead><tr><th>Mes</th><th class="num">Ingreso</th><th class="num">Comisión ${pct}%</th><th class="num">Pagado</th><th class="num">Acum. comisión</th><th class="num">Acum. pagos</th><th class="num">Saldo</th></tr></thead>
+      <tbody>${Math.abs(arr)>EPS?`<tr class="dimrow"><td><i>Saldo anterior a ${Y}</i></td><td></td><td></td><td></td><td class="num dim">${fmt(arr>0?arr:0)}</td><td class="num dim">${fmt(arr<0?-arr:0)}</td><td class="num money">${fmt(arr)}</td></tr>`:""}${rows}
+      <tr style="font-weight:600;border-top:2px solid var(--line-2)"><td>Total ${Y}</td><td class="num">${fmt(ingT)}</td><td class="num com">${fmt(comT)}</td><td class="num">${fmt(pagT)}</td><td></td><td></td><td class="num money">${fmt(saldo)}</td></tr></tbody></table></div></div>
+    <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Pagos a ${esc(k)} · ${Y}</h3></div>
+      ${TABLAS_OK.staff?`<div class="fg" style="margin-top:10px">
+        <div class="f c4"><label>Fecha</label><input type="date" id="sp-fecha" value="${hoy}"></div>
+        <div class="f c4"><label>Monto</label><input id="sp-m" inputmode="decimal" placeholder="0"></div>
+        <div class="f c4"><label>Método</label>${dsel("sp-met",METODOS,"Transferencia")}</div>
+        <div class="f c8"><label>Nota</label><input id="sp-nota" placeholder="Comisión de octubre, anticipo…"></div>
+        <div class="f c4" style="display:flex;align-items:flex-end"><button class="btn primary" id="sp-save" style="width:100%">Registrar pago</button></div></div>
+      <div class="twrap" style="border:0;margin-top:12px"><table><thead><tr><th>Fecha</th><th>Método</th><th>Nota</th><th class="num">Monto</th><th></th></tr></thead>
+      <tbody>${pY.slice().sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))).map(p=>`<tr><td class="dim">${fecha(p.fecha)}</td><td class="dim">${esc(p.metodo||"")}</td><td>${esc(p.nota||"")}</td><td class="num money">${fmt(p.monto)}</td><td><button class="ico delsp" data-id="${p.id}" title="Eliminar pago">×</button></td></tr>`).join("")}</tbody></table>
+      ${pY.length?"":`<div class="empty">Sin pagos registrados a ${esc(k)} en ${Y}.</div>`}</div>`:faltaTabla("staff_pagos").replace("ventas_v6.sql","ventas_v9.sql")}</div>
+  </div>`;
+  el.querySelectorAll("#st-seg button").forEach(b=>b.onclick=()=>{staffSel=b.dataset.k;renderStaff()});
+  $("#st-anio").onchange=e=>{staffAnio=+e.target.value;renderStaff()};
+  $("#st-pct").onchange=async e=>{const v=num(e.target.value);if(v==null||v<0){toast("Porcentaje inválido",true);return}REGLAS.staff_pct={...(REGLAS.staff_pct||{}),[k]:v};const r=await sb.from("ventas_reglas").upsert({id:1,reglas:REGLAS,updated_at:new Date().toISOString()});if(r.error){toast("No se guardó el %: "+r.error.message,true);return}toast("Porcentaje de "+k+" guardado");renderStaff()};
+  const sv=$("#sp-save");if(sv)sv.onclick=async()=>{const m=num($("#sp-m").value);if(!m||m<=0){toast("Falta el monto",true);return}
+    const r=await sb.from("staff_pagos").insert({persona:k,fecha:$("#sp-fecha").value||hoy,monto:m,metodo:$("#sp-met").value||null,nota:$("#sp-nota").value.trim()||null}).select().single();if(r.error){toast("No se guardó: "+r.error.message,true);return}
+    SPAGOS.push(r.data);toast("Pago registrado");renderStaff()};
+  el.querySelectorAll(".delsp").forEach(b=>b.onclick=async()=>{if(!confirm("¿Eliminar este pago?"))return;const r=await sb.from("staff_pagos").delete().eq("id",b.dataset.id);if(r.error){toast(r.error.message,true);return}SPAGOS=SPAGOS.filter(p=>p.id!==b.dataset.id);toast("Pago eliminado");renderStaff()});
 }
 $$(".vseg button").forEach(b=>b.onclick=()=>{if(b.dataset.pane==="finanzas"&&!finOK()){pedirPIN(()=>b.click());return}PANE=b.dataset.pane;$$(".vseg button").forEach(x=>x.setAttribute("aria-pressed",x===b));$$(".pane").forEach(p=>p.classList.toggle("on",p.id==="pane-"+PANE));$("#period-bar").style.display=(PANE==="reglas"||PANE==="finanzas")?"none":"";render()});
 
