@@ -8,27 +8,32 @@
   /* PIN por asesor. Quien aún no tenga PIN entra sin contraseña (mientras se asignan todos). */
   var PINS={
     "María":"1990",
-    "Majo":"9876"
+    "Majo":"9876",
+    "Paola":"1973",
+    "Berna":"1597"
   };
-  var KEY="trust_pin_user";
+  /* quién puede entrar al panel de administración */
+  var ADMINS=["Álvaro","Berna"];
   var IDENT=["trust_asesor_herr","trust_asesor_oo","trust_asesor_com","lst_me","trust_asesor"];
   var ADMIN_PREFIX=["/admin/","/ventas/"];
   var ADMIN_EXACT=["/leads/","/leads/index.html","/hotleads/","/hotleads/index.html","/inventario/","/inventario/index.html","/listings/","/listings/index.html"];
   var p=location.pathname;
-  if(ADMIN_PREFIX.some(function(a){return p.indexOf(a)===0})||ADMIN_EXACT.indexOf(p)>=0) return;
+  var ES_ADMIN=ADMIN_PREFIX.some(function(a){return p.indexOf(a)===0})||ADMIN_EXACT.indexOf(p)>=0;
+  var KEY=ES_ADMIN?"trust_pin_admin":"trust_pin_user";   // sesiones separadas: la de asesores no abre admin
+  var NOMBRES=ES_ADMIN?ADMINS:ASESORES;
 
   var LS={get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}},del:function(k){try{localStorage.removeItem(k)}catch(e){}}};
   var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
   var user=LS.get(KEY);
-  if(user&&ASESORES.indexOf(user)<0){user=null;LS.del(KEY)}
+  if(user&&NOMBRES.indexOf(user)<0){user=null;LS.del(KEY)}
 
   function fijar(n){IDENT.forEach(function(k){LS.set(k,n)});}
-  function salir(){LS.del(KEY);IDENT.forEach(function(k){LS.del(k)});location.href="/";}
+  function salir(){LS.del(KEY);if(!ES_ADMIN)IDENT.forEach(function(k){LS.del(k)});location.href=ES_ADMIN?"/admin/":"/";}
   window.logout=salir;
 
   if(user){
-    fijar(user);
-    window.AUTH={nombre:user,rol:user==="Álvaro"?"admin":"asesor"};
+    if(!ES_ADMIN)fijar(user);
+    window.AUTH={nombre:user,rol:ADMINS.indexOf(user)>=0?"admin":"asesor"};
     document.addEventListener("DOMContentLoaded",function(){
       var st=document.createElement("style");
       st.textContent="#btn-switch,#btn-cambiar,#tabSwitch,.auth-hide{display:none!important}"+
@@ -68,17 +73,17 @@
     "#pin-gate .foot{margin-top:18px;font-size:11px;color:#9C7A4E;letter-spacing:.08em;text-transform:uppercase}";
   document.head.appendChild(st);
 
-  function entrar(n){fijar(n);LS.set(KEY,n);location.reload();}
+  function entrar(n){if(!ES_ADMIN)fijar(n);LS.set(KEY,n);location.reload();}
 
   function render(){
     var g=document.getElementById("pin-gate");if(!g){g=document.createElement("div");g.id="pin-gate";document.body.appendChild(g)}
-    g.innerHTML='<div class="box"><div class="eyebrow">TRUST realtor · Asesores</div><h1>¿Quién eres?</h1><p class="sub">Elige tu nombre para entrar al portal.</p>'+
-      '<div class="names">'+ASESORES.map(function(n){return '<button type="button" data-n="'+esc(n)+'">'+esc(n)+'</button>'}).join("")+'</div><div class="foot">Uso interno</div></div>';
+    g.innerHTML='<div class="box"><div class="eyebrow">TRUST realtor · '+(ES_ADMIN?"Administración":"Asesores")+'</div><h1>¿Quién eres?</h1><p class="sub">Elige tu nombre para entrar'+(ES_ADMIN?" al panel de administración":" al portal")+'.</p>'+
+      '<div class="names">'+NOMBRES.map(function(n){return '<button type="button" data-n="'+esc(n)+'">'+esc(n)+'</button>'}).join("")+'</div><div class="foot">Uso interno</div></div>';
     Array.prototype.forEach.call(g.querySelectorAll(".names button"),function(b){b.onclick=function(){var n=b.getAttribute("data-n");if(!PINS[n]){entrar(n);return}pedirPIN(n)}});
   }
   function pedirPIN(n){
     var g=document.getElementById("pin-gate"),pin="";
-    g.innerHTML='<div class="box"><div class="eyebrow">TRUST realtor · Asesores</div><h1>Hola, <span class="who">'+esc(n)+'</span></h1><p class="sub">Escribe tu contraseña de 4 dígitos</p>'+
+    g.innerHTML='<div class="box"><div class="eyebrow">TRUST realtor · '+(ES_ADMIN?"Administración":"Asesores")+'</div><h1>Hola, <span class="who">'+esc(n)+'</span></h1><p class="sub">Escribe tu contraseña de 4 dígitos</p>'+
       '<div class="dots" id="pin-dots"><i></i><i></i><i></i><i></i></div>'+
       '<div class="pad">'+[1,2,3,4,5,6,7,8,9].map(function(x){return '<button type="button" data-k="'+x+'">'+x+'</button>'}).join("")+'<button type="button" data-k="x" title="Borrar">⌫</button><button type="button" data-k="0">0</button><button type="button" data-k="c" title="Cancelar">✕</button></div>'+
       '<button type="button" class="back" id="pin-back">← No soy '+esc(n)+'</button></div>';
