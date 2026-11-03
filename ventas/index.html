@@ -323,9 +323,15 @@ function pedirPIN(onOk){
   document.addEventListener("keydown",onKey);
   $("#pinbox").onclick=e=>{if(e.target.id==="pinbox")cerrar()};
 }
-const STAFF=[{k:"Rodrigo",pct:5},{k:"Bernardette",pct:1}];
+const STAFF=[{k:"Rodrigo",pct:5,tramos:[{desde:"2026-09-15",pct:7}],fijos:{"2026-09":47905.95}},{k:"Bernardette",pct:1,tramos:[],fijos:{}}];
 let finView="staff", staffSel="Rodrigo", staffAnio=new Date().getFullYear();
-const staffPct=k=>{const o=(REGLAS.staff_pct||{})[k];return o!=null?+o:(STAFF.find(x=>x.k===k)||{}).pct||0};
+// Config de cada persona: % base, tramos (desde fecha → %) y montos fijos por mes (YYYY-MM). Lo guardado en reglas (staff_cfg) manda sobre lo de código.
+const staffCfg=k=>{const d=STAFF.find(x=>x.k===k)||{pct:0,tramos:[],fijos:{}};const o=(REGLAS.staff_cfg||{})[k];return o?{pct:o.pct!=null?+o.pct:d.pct,tramos:o.tramos||d.tramos||[],fijos:o.fijos||d.fijos||{}}:{pct:d.pct,tramos:d.tramos||[],fijos:d.fijos||{}}};
+const staffPctEn=(cfg,f)=>{let p=cfg.pct;cfg.tramos.slice().sort((a,b)=>String(a.desde).localeCompare(String(b.desde))).forEach(t=>{if(String(f).slice(0,10)>=t.desde)p=+t.pct});return p};
+const staffPct=k=>staffPctEn(staffCfg(k),todayISO());
+async function staffSaveCfg(k,cfg){REGLAS.staff_cfg={...(REGLAS.staff_cfg||{}),[k]:cfg};const r=await sb.from("ventas_reglas").upsert({id:1,reglas:REGLAS,updated_at:new Date().toISOString()});if(r.error){toast("No se guardó: "+r.error.message,true);return false}return true}
+// comisión de una persona en un mes: monto fijo si existe; si no, suma venta por venta con el % vigente en su fecha
+const staffComMes=(k,y,m)=>{const cfg=staffCfg(k),key=y+"-"+String(m).padStart(2,"0");if(cfg.fijos[key]!=null)return +cfg.fijos[key];return VENTAS.filter(v=>!esCredito(v)&&String(v.fecha).slice(0,7)===key).reduce((a,v)=>a+comTotal(v)*staffPctEn(cfg,v.fecha)/100,0)};
 function renderFinanzas(){
   const el=$("#pane-finanzas");
   el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
@@ -337,38 +343,40 @@ function renderFinanzas(){
 }
 /* ----- Staff: comisión sobre ingreso mensual (Rodrigo, Bernardette) ----- */
 function renderStaff(){
-  const el=$("#fin-body");const k=staffSel,pct=staffPct(k),Y=+staffAnio,hoy=todayISO(),yrNow=+hoy.slice(0,4),moNow=+hoy.slice(5,7);
+  const el=$("#fin-body");const k=staffSel,cfg=staffCfg(k),pct=staffPct(k),Y=+staffAnio,hoy=todayISO(),yrNow=+hoy.slice(0,4),moNow=+hoy.slice(5,7);
   const VN=VENTAS.filter(v=>!esCredito(v));
   const ingMes=y=>{const a=Array(12).fill(0);VN.filter(v=>+String(v.fecha).slice(0,4)===y).forEach(v=>a[+String(v.fecha).slice(5,7)-1]+=comTotal(v));return a};
-  const ing=ingMes(Y),com=ing.map(x=>x*pct/100);
+  const ing=ingMes(Y),com=ing.map((x,i)=>staffComMes(k,Y,i+1)),fijo=ing.map((x,i)=>cfg.fijos[Y+"-"+String(i+1).padStart(2,"0")]!=null);
+  const years0=(vn,pg)=>[...new Set(vn.map(v=>+String(v.fecha).slice(0,4)).concat(pg.map(p=>+String(p.fecha).slice(0,4))).concat([yrNow]).filter(y=>y>2000))].sort((a,b)=>b-a);
   const pagos=SPAGOS.filter(p=>p.persona===k),pY=pagos.filter(p=>+String(p.fecha).slice(0,4)===Y);
   const pagMes=Array(12).fill(0);pY.forEach(p=>pagMes[+String(p.fecha).slice(5,7)-1]+=+p.monto||0);
   // saldo arrastrado de años anteriores
-  const comPrev=VN.filter(v=>+String(v.fecha).slice(0,4)<Y).reduce((a,v)=>a+comTotal(v),0)*pct/100;
+  const comPrev=years0(VN,pagos).filter(y=>y<Y).reduce((a,y)=>a+Array.from({length:12},(_,i)=>staffComMes(k,y,i+1)).reduce((x,z)=>x+z,0),0);
   const pagPrev=pagos.filter(p=>+String(p.fecha).slice(0,4)<Y).reduce((a,p)=>a+(+p.monto||0),0);
   const arr=comPrev-pagPrev;
   const nMes=Y<yrNow?12:Y>yrNow?0:moNow;
   const ingT=ing.reduce((a,b)=>a+b,0),comT=com.reduce((a,b)=>a+b,0),pagT=pagMes.reduce((a,b)=>a+b,0);
-  const prom=nMes?ingT/nMes:0;
   const saldo=arr+comT-pagT;
-  const years=[...new Set(VN.map(v=>+String(v.fecha).slice(0,4)).concat(pagos.map(p=>+String(p.fecha).slice(0,4))).concat([yrNow]).filter(y=>y>2000))].sort((a,b)=>b-a);
+  const years=years0(VN,pagos);const promCom=nMes?comT/nMes:0;
+  const tr=cfg.tramos.slice().sort((a,b)=>String(a.desde).localeCompare(String(b.desde)));
+  const esqTxt=tr.length?`${cfg.pct}% → ${tr.map(t=>t.pct+"% desde "+fecha(t.desde)).join(" → ")}`:`${cfg.pct}% del ingreso`;
   let acC=arr,acP=0;
-  const rows=ing.map((x,i)=>{const show=Y<yrNow||(Y===yrNow&&i<moNow)||pagMes[i]>0||x>0;acC+=com[i];acP+=pagMes[i];const sd=acC-acP;return `<tr class="${show?"":"dimrow"}"><td><b>${MESES_L[i]}</b></td><td class="num">${x?fmt(x):"—"}</td><td class="num com">${com[i]?fmt(com[i]):"—"}</td><td class="num ${pagMes[i]?"paid":""}">${pagMes[i]?fmt(pagMes[i]):"—"}</td><td class="num dim">${fmt(acC)}</td><td class="num dim">${fmt(acP)}</td><td class="num money" style="color:${sd>EPS?"var(--bad)":sd<-EPS?"var(--ok)":"inherit"}">${fmt(sd)}</td></tr>`}).join("");
+  const rows=ing.map((x,i)=>{const show=Y<yrNow||(Y===yrNow&&i<moNow)||pagMes[i]>0||x>0;acC+=com[i];acP+=pagMes[i];const sd=acC-acP;return `<tr class="${show?"":"dimrow"}"><td><b>${MESES_L[i]}</b></td><td class="num">${x?fmt(x):"—"}</td><td class="num com" style="white-space:nowrap">${com[i]?fmt(com[i]):"—"}${fijo[i]?` <span class="dim" title="Monto fijo capturado" style="font-weight:400">fijo</span>`:""} <button class="ico fijocom" data-m="${i+1}" title="${fijo[i]?"Editar o quitar monto fijo":"Fijar un monto para este mes"}">✎</button></td><td class="num ${pagMes[i]?"paid":""}">${pagMes[i]?fmt(pagMes[i]):"—"}</td><td class="num dim">${fmt(acC)}</td><td class="num dim">${fmt(acP)}</td><td class="num money" style="color:${sd>EPS?"var(--bad)":sd<-EPS?"var(--ok)":"inherit"}">${fmt(sd)}</td></tr>`}).join("");
   el.innerHTML=`
   <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
     <div class="qseg" id="st-seg">${STAFF.map(x=>`<button data-k="${x.k}" class="${x.k===k?"on":""}">${x.k}</button>`).join("")}</div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label class="dim" style="font-size:13px">Comisión <input id="st-pct" inputmode="decimal" value="${pct}" style="width:56px;text-align:right"> %</label><select id="st-anio">${years.map(y=>`<option value="${y}" ${y===Y?"selected":""}>${y}</option>`).join("")}</select></div></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="dim" style="font-size:13px">Esquema: <b>${esqTxt}</b></span><button class="btn sm" id="st-esq" title="Cambiar el % desde una fecha">% desde…</button><select id="st-anio">${years.map(y=>`<option value="${y}" ${y===Y?"selected":""}>${y}</option>`).join("")}</select></div></div>
   <div class="tiles t5">
     <div class="tile dark"><span class="l">Ingreso total generado</span><span class="v">${fmtK(ingT)}</span><span class="s">${Y} · ventas sin crédito</span></div>
-    <div class="tile"><span class="l">Ingreso promedio</span><span class="v">${fmtK(prom)}</span><span class="s">mensual · ${nMes} mes${nMes===1?"":"es"}</span></div>
-    <div class="tile gold"><span class="l">Comisión generada</span><span class="v">${fmtK(comT)}</span><span class="s">${pct}% del ingreso · ${Y}</span></div>
+    <div class="tile"><span class="l">Ingreso promedio de ${esc(k)}</span><span class="v">${fmtK(promCom)}</span><span class="s">comisión mensual · ${nMes} mes${nMes===1?"":"es"} de ${Y}</span></div>
+    <div class="tile gold"><span class="l">Comisión generada</span><span class="v">${fmtK(comT)}</span><span class="s">${esqTxt} · ${Y}</span></div>
     <div class="tile"><span class="l">Pagos realizados</span><span class="v">${fmtK(pagT)}</span><span class="s">${pY.length} pago${pY.length===1?"":"s"} en ${Y}</span></div>
     <div class="tile"><span class="l">Saldo por pagar</span><span class="v" style="color:${saldo>EPS?"var(--bad)":"var(--ok)"}">${fmtK(saldo)}</span><span class="s">acumulado histórico${Math.abs(arr)>EPS?` · arrastra ${fmt(arr)} de años anteriores`:""}</span></div>
   </div>
   <div class="grid2">
     <div class="card"><h3>${esc(k)} · por mes ${Y}</h3>
-      <p class="hint" style="margin:6px 0 10px">Ingreso = comisión generada por las ventas registradas (fecha de cierre). Comisión = ${pct}% de ese ingreso. El saldo acumula comisión menos pagos.</p>
-      <div class="twrap" style="border:0"><table><thead><tr><th>Mes</th><th class="num">Ingreso</th><th class="num">Comisión ${pct}%</th><th class="num">Pagado</th><th class="num">Acum. comisión</th><th class="num">Acum. pagos</th><th class="num">Saldo</th></tr></thead>
+      <p class="hint" style="margin:6px 0 10px">Ingreso = comisión generada por las ventas registradas (fecha de cierre). Comisión = % vigente en la fecha de cada venta (${esqTxt}); con ✎ puedes fijar un monto manual para un mes. El saldo acumula comisión menos pagos.</p>
+      <div class="twrap" style="border:0"><table><thead><tr><th>Mes</th><th class="num">Ingreso</th><th class="num">Comisión</th><th class="num">Pagado</th><th class="num">Acum. comisión</th><th class="num">Acum. pagos</th><th class="num">Saldo</th></tr></thead>
       <tbody>${Math.abs(arr)>EPS?`<tr class="dimrow"><td><i>Saldo anterior a ${Y}</i></td><td></td><td></td><td></td><td class="num dim">${fmt(arr>0?arr:0)}</td><td class="num dim">${fmt(arr<0?-arr:0)}</td><td class="num money">${fmt(arr)}</td></tr>`:""}${rows}
       <tr style="font-weight:600;border-top:2px solid var(--line-2)"><td>Total ${Y}</td><td class="num">${fmt(ingT)}</td><td class="num com">${fmt(comT)}</td><td class="num">${fmt(pagT)}</td><td></td><td></td><td class="num money">${fmt(saldo)}</td></tr></tbody></table></div></div>
     <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Pagos a ${esc(k)} · ${Y}</h3></div>
@@ -384,7 +392,11 @@ function renderStaff(){
   </div>`;
   el.querySelectorAll("#st-seg button").forEach(b=>b.onclick=()=>{staffSel=b.dataset.k;renderStaff()});
   $("#st-anio").onchange=e=>{staffAnio=+e.target.value;renderStaff()};
-  $("#st-pct").onchange=async e=>{const v=num(e.target.value);if(v==null||v<0){toast("Porcentaje inválido",true);return}REGLAS.staff_pct={...(REGLAS.staff_pct||{}),[k]:v};const r=await sb.from("ventas_reglas").upsert({id:1,reglas:REGLAS,updated_at:new Date().toISOString()});if(r.error){toast("No se guardó el %: "+r.error.message,true);return}toast("Porcentaje de "+k+" guardado");renderStaff()};
+  $("#st-esq").onclick=async()=>{const d=prompt("¿Desde qué fecha aplica el nuevo %? (AAAA-MM-DD)\nDeja vacío para cambiar el % base (desde siempre).",hoy);if(d===null)return;const pv=prompt("Nuevo porcentaje para "+k+":",String(pct));if(pv===null)return;const v=num(pv);if(v==null||v<0){toast("Porcentaje inválido",true);return}
+    const c={...cfg,tramos:cfg.tramos.slice()};if(!d.trim())c.pct=v;else{if(!/^\d{4}-\d{2}-\d{2}$/.test(d.trim())){toast("Fecha inválida",true);return}c.tramos=c.tramos.filter(t=>t.desde!==d.trim()).concat([{desde:d.trim(),pct:v}])}
+    if(await staffSaveCfg(k,c)){toast("Esquema de "+k+" guardado");renderStaff()}};
+  el.querySelectorAll(".fijocom").forEach(b=>b.onclick=async()=>{const m=+b.dataset.m,key=Y+"-"+String(m).padStart(2,"0"),cur=cfg.fijos[key];const pv=prompt("Monto fijo de comisión para "+MESES_L[m-1]+" "+Y+" (deja vacío para quitarlo y volver al cálculo por %):",cur!=null?fmtN(cur):"");if(pv===null)return;const c={...cfg,fijos:{...cfg.fijos}};if(!pv.trim())delete c.fijos[key];else{const v=num(pv);if(v==null||v<0){toast("Monto inválido",true);return}c.fijos[key]=v}
+    if(await staffSaveCfg(k,c)){toast(pv.trim()?"Monto fijo guardado":"Monto fijo quitado");renderStaff()}});
   const sv=$("#sp-save");if(sv)sv.onclick=async()=>{const m=num($("#sp-m").value);if(!m||m<=0){toast("Falta el monto",true);return}
     const r=await sb.from("staff_pagos").insert({persona:k,fecha:$("#sp-fecha").value||hoy,monto:m,metodo:$("#sp-met").value||null,nota:$("#sp-nota").value.trim()||null}).select().single();if(r.error){toast("No se guardó: "+r.error.message,true);return}
     SPAGOS.push(r.data);toast("Pago registrado");renderStaff()};
