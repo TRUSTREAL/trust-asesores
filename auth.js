@@ -7,7 +7,8 @@
   var ASESORES=["Ana Lu","Carlos","Fanny","María","Paola","Ramsés","Rodrigo","Álvaro","Majo","Berna"];
   /* PIN por asesor. Quien aún no tenga PIN entra sin contraseña (mientras se asignan todos). */
   var PINS={
-    "María":"1990"
+    "María":"1990",
+    "Majo":"9876"
   };
   var KEY="trust_pin_user";
   var IDENT=["trust_asesor_herr","trust_asesor_oo","trust_asesor_com","lst_me","trust_asesor"];
