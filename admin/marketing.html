@@ -87,6 +87,7 @@ tbody tr.subt td{background:var(--surface-2);font-weight:600;border-bottom:2px s
 .pcard.all{background:var(--surface-2)}.pcard.all.on{background:var(--green)}
 .st.pend{background:var(--bad-bg);color:var(--bad)}.st.parcial{background:var(--warn-bg);color:var(--warn)}.st.pagada{background:var(--ok-bg);color:var(--ok)}
 @media (max-width:860px){.grid3{grid-template-columns:1fr}.c8,.c6,.c4,.c3{grid-column:span 12}}
+.pill{display:inline-block;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:600;background:var(--surface-2);color:var(--muted)}.pill.ok{background:#E3F0E9;color:#2E7D5B}.btn.sm{padding:5px 9px;font-size:12px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/auth.js"></script>
@@ -95,7 +96,7 @@ tbody tr.subt td{background:var(--surface-2);font-weight:600;border-bottom:2px s
 <div class="wrap">
   <header class="top">
     <div class="brand"><img class="logo" id="logo-img" alt="TRUST realtor"><h1>Admin Proyectos</h1><p>Cuenta corriente por proyecto: comisiones y gastos que se le cargan al desarrollador, menos los pagos que te va haciendo</p></div>
-    <div class="topright"><a class="home-link" href="./">← Inicio</a><button class="btn" id="btn-hist">Históricos anuales</button><button class="btn" id="btn-reglas">Reglas por proyecto</button><button class="btn" id="btn-pago">+ Pago recibido</button><button class="btn" id="btn-com">+ Comisión</button><button class="btn primary" id="btn-new">+ Gasto</button></div>
+    <div class="topright"><a class="home-link" href="./">← Inicio</a><button class="btn" id="btn-hist">Históricos anuales</button><button class="btn" id="btn-reglas">Reglas por proyecto</button><button class="btn" id="btn-links">Links para desarrolladores</button><button class="btn" id="btn-pago">+ Pago recibido</button><button class="btn" id="btn-com">+ Comisión</button><button class="btn primary" id="btn-new">+ Gasto</button></div>
   </header>
   <div id="proyectos"></div>
   <div class="filters" id="period-bar">
@@ -457,6 +458,40 @@ $("#btn-reglas").onclick=()=>{
   const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
   $("#d-save").onclick=async()=>{const R={...((REGLAS_ALL&&REGLAS_ALL.marketing)||{})};root.querySelectorAll("tr[data-p]").forEach(tr=>R[tr.dataset.p]={desarrollador:tr.querySelector(".dev").value.trim(),reembolsable:tr.querySelector(".re").checked});
     const reglas={...REGLAS_ALL,marketing:R};const r=await sb.from("ventas_reglas").upsert({id:1,reglas,updated_at:new Date().toISOString()});if(r.error){toast("No se guardó: "+r.error.message,true);return}REGLAS={...REGLAS_DEF,...R};REGLAS_ALL=reglas;close();toast("Reglas guardadas")};
+};
+
+/* ---------- links para desarrolladores (Lead Management) ---------- */
+const DEV_BASE=location.origin+location.pathname.replace(/admin\/[^/]*$/,"");
+function devURL(r){ return r.proyecto==="Tanhia"&&r.key==="tanhia-JenZ37kQoxRQ" ? DEV_BASE+"leads/tanhia.html?k="+encodeURIComponent(r.key) : DEV_BASE+"leads/desarrollador.html?p="+encodeURIComponent(r.proyecto)+"&k="+encodeURIComponent(r.key); }
+function devKey(p){ const a=new Uint8Array(9);crypto.getRandomValues(a);const s=btoa(String.fromCharCode(...a)).replace(/[+/=]/g,"");return p.normalize("NFD").replace(/[^a-zA-Z]/g,"").toLowerCase().slice(0,6)+"-"+s; }
+$("#btn-links").onclick=async()=>{
+  const root=$("#drawer-root");
+  const paint=async()=>{
+    const {data,error}=await sb.from("dev_links").select("*").order("proyecto");
+    if(error){toast("No se pudo leer dev_links: "+error.message,true);return}
+    const rows=data||[];const usados=new Set(rows.map(r=>r.proyecto));
+    const libres=PROYECTOS.filter(p=>!usados.has(p)&&p!=="Otro"&&p!=="TRUST"&&p!=="Corretaje");
+    root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(720px,100%)">
+      <header><h3>Links para desarrolladores</h3><button class="ico" id="d-close">✕</button></header>
+      <div class="body"><p class="hint" style="margin:0 0 12px">Cada desarrollador recibe una liga de solo lectura con el tablero y la base de prospectos de su proyecto (Lead Management). Si la liga se filtra, <b>Regenerar</b> crea una nueva y la anterior deja de funcionar.</p>
+        <table><thead><tr><th>Proyecto</th><th style="width:44%">Liga</th><th>Estado</th><th></th></tr></thead><tbody>${rows.length?rows.map(r=>`<tr data-p="${esc(r.proyecto)}">
+          <td><b>${esc(r.proyecto)}</b><div class="hint">${r.ultimo_acceso?"Último acceso "+new Date(r.ultimo_acceso).toLocaleDateString("es-MX",{day:"numeric",month:"short",year:"numeric"}):"Sin accesos aún"}</div></td>
+          <td><input readonly value="${esc(devURL(r))}" style="width:100%;font-size:12px" onclick="this.select()"></td>
+          <td>${r.activo?'<span class="pill ok">Activa</span>':'<span class="pill">Desactivada</span>'}</td>
+          <td style="white-space:nowrap"><button class="btn sm" data-a="copy">Copiar</button> <button class="btn sm" data-a="regen">Regenerar</button> <button class="btn sm" data-a="tog">${r.activo?"Desactivar":"Activar"}</button></td></tr>`).join(""):`<tr><td colspan="4" class="hint">Aún no hay ligas. Corre el SQL de dev_links o agrega una abajo.</td></tr>`}</tbody></table>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:14px"><select id="dl-new"><option value="">Agregar liga para…</option>${libres.map(p=>`<option>${esc(p)}</option>`).join("")}</select><button class="btn primary" id="dl-add">+ Generar liga</button></div>
+      </div>
+      <footer><span class="hint">Las ligas abren <code>leads/desarrollador.html</code>; Tanhia conserva su liga original.</span><button class="btn" id="d-cancel">Cerrar</button></footer></div>`;
+    const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
+    root.querySelectorAll("tr[data-p] button").forEach(b=>b.onclick=async()=>{
+      const p=b.closest("tr").dataset.p;const r=rows.find(x=>x.proyecto===p);
+      if(b.dataset.a==="copy"){try{await navigator.clipboard.writeText(devURL(r));toast("Liga copiada")}catch(e){toast("Selecciona y copia la liga",true)}return}
+      if(b.dataset.a==="regen"){if(!confirm("¿Generar una liga nueva para "+p+"? La anterior dejará de funcionar."))return;const q=await sb.from("dev_links").update({key:devKey(p),activo:true}).eq("proyecto",p);if(q.error){toast(q.error.message,true);return}toast("Liga regenerada");paint();return}
+      if(b.dataset.a==="tog"){const q=await sb.from("dev_links").update({activo:!r.activo}).eq("proyecto",p);if(q.error){toast(q.error.message,true);return}paint();return}
+    });
+    $("#dl-add").onclick=async()=>{const p=$("#dl-new").value;if(!p){toast("Elige un proyecto",true);return}const q=await sb.from("dev_links").insert({proyecto:p,key:devKey(p),activo:true});if(q.error){toast(q.error.message,true);return}toast("Liga creada para "+p);paint();};
+  };
+  paint();
 };
 
 /* ---------- estado de cuenta de reembolso (PDF) ---------- */
