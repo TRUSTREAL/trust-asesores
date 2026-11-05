@@ -372,7 +372,7 @@ function save(){ // modo local: todo; modo Supabase: solo la vista (categoría /
   try{ if(sb) localStorage.setItem(KEY+"-ui",JSON.stringify({cat:S.cat,sel:S.sel})); else localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){}
 }
 function restoreUI(){ try{const r=localStorage.getItem(KEY+"-ui");if(r){const u=JSON.parse(r);S.cat=u.cat||S.cat;S.sel=u.sel||S.sel}}catch(e){} }
-const rowP=p=>({id:p.id,nombre:p.nombre,cat:p.cat,giro:p.giro,desarrollador:p.desarrollador||"",ubicacion:p.ubicacion||"",lista:p.lista||"",notas:p.notas||"",enganche:p.enganche==null||p.enganche===""?5:+p.enganche,nota_lista:p.nota_lista||"",politica:p.politica||"",politicas:Array.isArray(p.politicas)?p.politicas:[]});
+const rowP=p=>({id:p.id,nombre:p.nombre,cat:p.cat,giro:p.giro,desarrollador:p.desarrollador||"",ubicacion:p.ubicacion||"",lista:p.lista||"",notas:p.notas||"",enganche:p.enganche==null||p.enganche===""?5:+p.enganche,nota_lista:p.nota_lista||"",comision_broker:p.comision_broker||"",politica:p.politica||"",politicas:Array.isArray(p.politicas)?p.politicas:[]});
 const rowU=(u,pid)=>({id:u.id,proyecto_id:pid,estatus:u.estatus,tipo:u.tipo,torre:u.torre||"",nivel:u.nivel,vista:u.vista||"",m2int:u.m2int,m2terr:u.m2terr,m2desc:u.m2desc??null,m2tot:u.m2tot,parking:u.parking,precio:u.precio,recamaras:u.recamaras,banos:u.banos,
   precio_cierre:u.precio_cierre??null,fecha_cierre:u.fecha_cierre||null,comprador:u.comprador||null,asesor_cierre:u.asesor_cierre||null,notas_cierre:u.notas_cierre||null});
 const ASESORES=["Ana Lu","Carlos","Fanny","María","Paola","Ramsés","Rodrigo","Álvaro","Majo","Berna","EX"];
@@ -843,6 +843,7 @@ function openProject(p){
     fsel("giro","Giro",p?.giro||giros[0],giros)+
     fld("desarrollador","Desarrollador",p?.desarrollador||"")+
     fld("ubicacion","Ubicación",p?.ubicacion||"")+
+    fld("comision_broker","Comisión compartida con brokers",p?.comision_broker||"","placeholder='Ej. 2% · se muestra en el portal de brokers'")+
     fld("lista","Lista de precios vigente",p?.lista||"","placeholder='Ej. Lista 6 · Sep–Dic 2026'")+
     fld("nota_lista","Nota adicional al pie del PDF",p?.nota_lista||"","placeholder='Opcional, ej. Entrega estimada diciembre 2027'",true)+
     `<div class="f full"><label for="fx-notas">Notas</label><textarea id="fx-notas" name="notas">${esc(p?.notas||"")}</textarea></div>`,

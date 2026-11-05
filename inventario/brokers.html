@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -198,6 +198,31 @@ select.st{padding-right:10px}
 
 /* documentos */
 .docs{margin-top:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+/* portada brokers */
+.hb{margin-top:22px}
+.hb h2{font-size:26px;color:var(--green)}
+.hb .sub{color:var(--muted);font-size:13px;margin-top:4px}
+.cards{margin-top:18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.card{display:flex;flex-direction:column;text-align:left;padding:0;border:1px solid var(--line-2);border-radius:14px;background:var(--surface);overflow:hidden;box-shadow:var(--shadow);transition:transform .15s,border-color .15s,box-shadow .15s;cursor:pointer;font:inherit;color:inherit}
+.card:hover{transform:translateY(-3px);border-color:var(--gold);box-shadow:0 14px 34px rgba(23,63,53,.14)}
+.card .img{aspect-ratio:16/10;background:linear-gradient(135deg,#173F35,#2E6B58);position:relative;overflow:hidden}
+.card .img img{width:100%;height:100%;object-fit:cover;display:block}
+.card .img .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:Lora,serif;font-size:34px;color:rgba(250,248,242,.35);letter-spacing:.04em}
+.card .img .cnt{position:absolute;top:12px;left:12px;background:rgba(250,248,242,.94);color:var(--green);border-radius:999px;padding:4px 10px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.card .body{padding:16px 18px 18px;display:flex;flex-direction:column;gap:6px;flex:1}
+.card .body .eyebrow{margin-bottom:2px}
+.card h3{font-size:22px;color:var(--green);line-height:1.15}
+.card .loc{color:var(--muted);font-size:13px}
+.card .dev{color:var(--faint);font-size:12px}
+.card .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.card .kv{display:flex;flex-direction:column;gap:2px}
+.card .kv .l{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.card .kv .v{font-family:Lora,serif;font-size:19px;color:var(--text)}
+.card .kv .v.gold{color:var(--gold-2)}
+.card .go{margin-top:14px;font-size:13px;font-weight:600;color:var(--green)}
+.card .go::after{content:" \2192"}
+.card.empty-p{opacity:.75}
+.btn.back{margin-bottom:12px}
 .doc{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-decoration:none;color:var(--text);transition:border-color .15s}
 .doc:hover{border-color:var(--gold)}
 .doc .ext{flex:none;width:40px;height:40px;border-radius:8px;background:var(--surface-2);color:var(--green);font-size:10px;font-weight:700;letter-spacing:.06em;display:flex;align-items:center;justify-content:center;text-transform:uppercase}
@@ -368,7 +393,7 @@ let lastSync=null;
 function save(){ // modo local: todo; modo Supabase: solo la vista (categoría / proyecto elegido)
   try{ if(sb) localStorage.setItem(KEY+"-ui",JSON.stringify({cat:S.cat,sel:S.sel})); else localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){}
 }
-function restoreUI(){ S.cat="In House"; try{const r=localStorage.getItem(KEY+"-ui");if(r){const u=JSON.parse(r);S.sel=u.sel||S.sel}}catch(e){} }
+function restoreUI(){ S.cat="In House"; S.sel=null; }
 const rowP=p=>({id:p.id,nombre:p.nombre,cat:p.cat,giro:p.giro,desarrollador:p.desarrollador||"",ubicacion:p.ubicacion||"",lista:p.lista||"",notas:p.notas||"",enganche:p.enganche==null||p.enganche===""?5:+p.enganche,nota_lista:p.nota_lista||"",politica:p.politica||"",politicas:Array.isArray(p.politicas)?p.politicas:[]});
 const rowU=(u,pid)=>({id:u.id,proyecto_id:pid,estatus:u.estatus,tipo:u.tipo,torre:u.torre||"",nivel:u.nivel,vista:u.vista||"",m2int:u.m2int,m2terr:u.m2terr,m2desc:u.m2desc??null,m2tot:u.m2tot,parking:u.parking,precio:u.precio,recamaras:u.recamaras,banos:u.banos,
   precio_cierre:u.precio_cierre??null,fecha_cierre:u.fecha_cierre||null,comprador:u.comprador||null,asesor_cierre:u.asesor_cierre||null,notas_cierre:u.notas_cierre||null});
@@ -384,7 +409,7 @@ async function loadAll(){
   (us||[]).sort((a,b)=>nivKey(a.nivel)-nivKey(b.nivel)).forEach(u=>{const p=byId[u.proyecto_id];if(p)p.units.push({id:u.id,estatus:u.estatus,tipo:u.tipo,torre:u.torre,nivel:u.nivel,vista:u.vista,m2int:+u.m2int||0,m2terr:+u.m2terr||0,m2desc:u.m2desc!=null?+u.m2desc:null,m2tot:(+u.m2desc>0)?+((+u.m2int||0)+(+u.m2terr||0)+(+u.m2desc)).toFixed(2):(+u.m2tot||0),parking:u.parking,precio:+u.precio||0,recamaras:u.recamaras,banos:u.banos,
     precio_cierre:u.precio_cierre!=null?+u.precio_cierre:null,fecha_cierre:u.fecha_cierre||null,comprador:u.comprador||null,asesor_cierre:u.asesor_cierre||null,notas_cierre:u.notas_cierre||null})});
   lastSync=new Date(); setSync();
-  S.projects.forEach(p=>{ if(!docs[p.id]) loadDocs(p.id).then(()=>{ if(p.id===S.sel && !$("#drawer-root").innerHTML && document.activeElement?.id!=="f-q") renderMain(); }); });
+  S.projects.forEach(p=>{ if(!docs[p.id]) loadDocs(p.id).then(()=>{ if(!S.sel) renderHome(); else if(p.id===S.sel && !$("#drawer-root").innerHTML && document.activeElement?.id!=="f-q") renderMain(); }); });
 }
 function setSync(msg){const el=$("#sync");if(!el)return;const rb=$("#btn-refresh"),rs=$("#btn-reset");if(rb)rb.hidden=!sb;if(rs)rs.hidden=!!sb;el.textContent=msg||(sb?"Supabase · "+lastSync.toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"}):"Modo local · los cambios se guardan solo en este navegador");}
 function db(fn){ if(!sb)return; fn().then(({error})=>{ if(error){alert("No se pudo guardar en Supabase: "+error.message);loadAll().then(render)} else {lastSync=new Date();setSync()} }).catch(err=>alert("Sin conexión: "+err.message)); }
@@ -418,11 +443,33 @@ let docs={}; // proyecto_id -> [{name,url,size,updated}]
 let sort={k:null,dir:"asc"};
 
 // ---------- render ----------
+let portada={}; // proyecto_id -> url del render (archivo "portada.*" en Documentos del proyecto)
 function render(){
-  document.querySelectorAll(".seg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.cat===S.cat));
   const list=S.projects.filter(p=>p.cat===S.cat);
-  if(!list.find(p=>p.id===S.sel)) S.sel=list[0]?.id||null;
+  if(S.sel&&!list.find(p=>p.id===S.sel)) S.sel=null;
+  if(!S.sel){renderHome();return}
   renderMain();
+}
+function minDisp(p){const v=p.units.filter(u=>u.estatus==="Disponible").map(u=>u.precio).filter(x=>x>0);return v.length?Math.min(...v):null}
+function renderHome(){
+  const list=S.projects.filter(p=>p.cat==="In House");
+  const m=$("#main");
+  const cards=list.map(p=>{const c=counts(p),renta=isRenta(p),mn=minDisp(p),img=portada[p.id];
+    return `<button class="card ${p.units.length?"":"empty-p"}" data-open="${p.id}">
+      <div class="img">${img?`<img src="${img}" alt="${esc(p.nombre)}" loading="lazy">`:`<div class="ph">${esc(p.nombre.slice(0,2).toUpperCase())}</div>`}<span class="cnt">${p.units.length?`${c.Disponible} disponible${c.Disponible===1?"":"s"}`:"Próximamente"}</span></div>
+      <div class="body">
+        <span class="eyebrow">${esc(p.giro||"Proyecto")}</span>
+        <h3>${esc(p.nombre)}</h3>
+        ${p.ubicacion?`<span class="loc">${esc(p.ubicacion)}</span>`:""}
+        ${p.desarrollador?`<span class="dev">Desarrolla ${esc(p.desarrollador)}</span>`:""}
+        <div class="row">
+          <div class="kv"><span class="l">${renta?"Renta desde":"Desde"}</span><span class="v">${mn?fmt(mn):"—"}</span></div>
+          <div class="kv"><span class="l">Comisión compartida</span><span class="v gold">${p.comision_broker?esc(p.comision_broker):"Consultar"}</span></div>
+        </div>
+        <span class="go">Ver inventario</span>
+      </div></button>`}).join("");
+  m.innerHTML=`<div class="hb"><span class="eyebrow">Proyectos In House</span><h2>Elige un proyecto</h2><div class="sub">${list.length} proyecto${list.length===1?"":"s"} en comercialización exclusiva por TRUST. Toca uno para ver unidades, precios, políticas de pago y documentos.</div></div>
+    ${list.length?`<div class="cards">${cards}</div>`:`<div class="empty"><b>Sin proyectos disponibles</b>Pronto verás aquí los proyectos In House de TRUST.</div>`}`;
 }
 function pickerHTML(){
   const list=S.projects.filter(p=>p.cat===S.cat);
@@ -443,7 +490,7 @@ function renderMain(){
   const m=$("#main");
   if(!p){m.innerHTML=`<div class="phead"><div class="left">${pickerHTML()}</div></div><div class="empty"><b>Sin proyectos disponibles</b>Pronto verás aquí los proyectos In House de TRUST.</div>`;return}
   const c=counts(p), n=p.units.length, renta=isRenta(p), eng=engMin(p);
-  const meta=[["Giro",p.giro],["Desarrollador",p.desarrollador],["Ubicación",p.ubicacion],["Lista vigente",p.lista]].filter(x=>x[1]).map(x=>`<span>${x[0]}: <b>${esc(x[1])}</b></span>`).join("");
+  const meta=[["Giro",p.giro],["Desarrollador",p.desarrollador],["Ubicación",p.ubicacion],["Lista vigente",p.lista],["Comisión compartida",p.comision_broker]].filter(x=>x[1]).map(x=>`<span>${x[0]}: <b>${esc(x[1])}</b></span>`).join("");
   const labelSold=renta?"Rentado":"Vendido";
   const tiles=`
     <div class="tiles">
@@ -488,6 +535,7 @@ function renderMain(){
   const minP=Math.min(...p.units.filter(u=>u.estatus==="Disponible").map(u=>u.precio).concat([Infinity]));
   const pol=(pols.length?`<div class="pols">${pols.map(x=>polCard(x,isFinite(minP)?minP:null)).join("")}</div>`:`<div class="pol empty"><b>Sin políticas de venta</b>${READONLY?"Pronto estarán disponibles para este proyecto.":"Usa \"Editar políticas\" para capturarlas."}</div>`)+(p.politica?`<div class="polnote">${polHTML(p.politica)}</div>`:"");
   m.innerHTML=`
+    <button class="btn back" id="btn-home">← Todos los proyectos</button>
     <div class="phead">
       <div class="left">${pickerHTML()}
         <div class="meta">${meta||`<span>Sin datos generales</span>`}</div></div>
@@ -553,6 +601,8 @@ document.addEventListener("click",e=>{
   if(!t)return;
   if(t.dataset.cat){S.cat=t.dataset.cat;filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};save();render();return}
   if(t.id==="btn-ventas"){VENTAS=!VENTAS;try{localStorage.setItem("inv_ventas",VENTAS?"1":"0")}catch(e){}filt.estatus="";renderMain();return}
+  if(t.id==="btn-home"){S.sel=null;filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};save();render();window.scrollTo(0,0);return}
+  if(t.dataset.open){S.sel=t.dataset.open;vista="precios";filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};sort={k:null,dir:"asc"};save();render();window.scrollTo(0,0);return}
   if(t.id==="pbtn"){const pk=$("#picker");const open=pk.toggleAttribute("open");t.setAttribute("aria-expanded",open);if(open)($("#picker .pitem[aria-current='true']")||$("#picker .pitem"))?.focus();return}
   if(t.classList.contains("pitem")){S.sel=t.dataset.id;vista="precios";delete docs[t.dataset.id];filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};sort={k:null,dir:"asc"};save();render();return}
   if(t.dataset.vista){vista=t.dataset.vista;renderMain();return}
@@ -747,6 +797,8 @@ async function loadDocs(pid){
   const {data,error}=await sb.storage.from(BUCKET).list(pid,{limit:200,sortBy:{column:"name",order:"asc"}});
   if(error){docs[pid]=[];setSync("Documentos: "+error.message);return}
   docs[pid]=(data||[]).filter(f=>f.name&&!f.name.startsWith(".")).map(f=>({name:f.name,size:f.metadata?.size||0,updated:f.updated_at||f.created_at,url:sb.storage.from(BUCKET).getPublicUrl(pid+"/"+f.name).data.publicUrl}));
+  const pf=docs[pid].find(f=>/^portada\.(jpe?g|png|webp)$/i.test(f.name));
+  if(pf){portada[pid]=pf.url;docs[pid]=docs[pid].filter(f=>f!==pf)}
 }
 function docsHTML(p){
   const list=docs[p.id];
@@ -912,6 +964,8 @@ function startApp(){
     #bgate .link{display:block;margin:14px auto 0;background:none;border:0;font-size:12px;color:var(--muted);text-decoration:underline}
     #bgate .foot{margin-top:18px;font-size:11px;color:var(--gold-2);letter-spacing:.08em;text-transform:uppercase;text-align:center}
     @media (max-width:860px){#bgate{grid-template-columns:1fr;grid-template-rows:max-content max-content;align-content:start}#bgate .hero{min-height:max-content;padding:28px 22px 32px;gap:22px}#bgate .hero h1{font-size:36px}#bgate .hero ul{display:none}#bgate .hero .tag{margin-top:22px}#bgate .side{padding:18px 16px 40px}}
+    #bgate .pend{display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text);margin-top:14px}
+    #bgate .pend .dot{width:10px;height:10px;border-radius:50%;background:#C9A961;box-shadow:0 0 0 4px rgba(201,169,97,.25);flex:none}
     .topright .who{font-size:13px;color:var(--muted)}.topright .who b{color:var(--green);font-weight:600}`;
   document.head.appendChild(st);
   const LOGO=document.querySelector(".brand .logo")?.getAttribute("src")||"";
@@ -932,7 +986,7 @@ function startApp(){
         </div>
       </section>
       <section class="side"><div class="box">
-      <h2>${modo==="registro"?"Acepta tu invitación":"Qué gusto verte"}</h2><p class="sub">${modo==="registro"?"Crea tu acceso en un minuto. Es personal e intransferible.":"Entra con el correo y la contraseña que registraste."}</p>
+      <h2>${modo==="registro"?"Acepta tu invitación":"Qué gusto verte"}</h2><p class="sub">${modo==="registro"?"Déjanos tus datos; TRUST aprueba tu acceso y te avisa. Es personal e intransferible.":"Entra con el correo y la contraseña que registraste."}</p>
       <div class="tabs"><button type="button" data-m="registro" aria-pressed="${modo==="registro"}">Soy nuevo</button><button type="button" data-m="entrar" aria-pressed="${modo==="entrar"}">Ya tengo acceso</button></div>
       <form id="bform" autocomplete="on">
         ${modo==="registro"?`<label for="b-nombre">Nombre completo</label><input id="b-nombre" name="name" required autocomplete="name">
@@ -940,7 +994,7 @@ function startApp(){
         <label for="b-cel">Celular (WhatsApp)</label><input id="b-cel" name="tel" inputmode="tel" autocomplete="tel">`:""}
         <label for="b-mail">Correo</label><input id="b-mail" type="email" name="email" required autocomplete="email">
         <label for="b-pass">Contraseña${modo==="registro"?" (mínimo 6 caracteres)":""}</label><input id="b-pass" type="password" name="password" required minlength="6" autocomplete="${modo==="registro"?"new-password":"current-password"}">
-        <button class="go" type="submit">${modo==="registro"?"Entrar a TRUST":"Entrar"}</button>
+        <button class="go" type="submit">${modo==="registro"?"Enviar mi solicitud":"Entrar"}</button>
         <div class="msg" id="b-msg"></div>
       </form>
       ${modo==="entrar"?`<button class="link" type="button" id="b-olvide">Olvidé mi contraseña</button>`:""}
@@ -948,6 +1002,29 @@ function startApp(){
     gate.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{modo=b.dataset.m;ui()});
     gate.querySelector("#bform").onsubmit=submit;
     const ol=gate.querySelector("#b-olvide");if(ol)ol.onclick=olvide;
+  }
+  function pendiente(row,session){
+    const des=row.estado==="desactivado";
+    gate.hidden=false;
+    gate.innerHTML=`<section class="hero">
+        <div><img class="logo" src="${LOGO}" alt="TRUST realtor"></div>
+        <div>
+          <div class="eyebrow">${des?"Acceso en pausa":"Solicitud enviada"}</div>
+          <h1>${des?"Tu acceso está <em>en pausa.</em>":"Gracias, <em>"+esc((row.nombre||"").split(" ")[0]||"broker")+".</em>"}</h1>
+          <p class="lead">${des?"Tu acceso al inventario está desactivado por el momento. Si crees que es un error, escríbenos.":"Enviamos tu solicitud de colaboración a TRUST. En cuanto el equipo la apruebe, podrás entrar al inventario con el mismo correo y contraseña. Te avisamos por WhatsApp o correo."}</p>
+          <div class="tag">bb@trustreal.mx · 33 3376 5616</div>
+        </div>
+      </section>
+      <section class="side"><div class="box">
+        <h2>${des?"Acceso desactivado":"Pendiente de aprobación"}</h2>
+        <p class="sub">${esc(row.nombre||session.user.email)}${row.inmobiliaria?" · "+esc(row.inmobiliaria):""}</p>
+        <div class="pend"><span class="dot"></span>${des?"Contacta a TRUST para reactivarlo":"Estamos revisando tu solicitud"}</div>
+        <button class="go" type="button" id="b-recheck">${des?"Volver a intentar":"Ya me aprobaron, entrar"}</button>
+        <div class="msg" id="b-msg"></div>
+        <button class="link" type="button" id="b-out">Salir</button>
+        <div class="foot">TRUST realtor · Guadalajara</div></div></section>`;
+    gate.querySelector("#b-recheck").onclick=async()=>{msg("Revisando…");const {data}=await sa.from("brokers").select("estado").eq("id",session.user.id).maybeSingle();if(data&&data.estado==="activo")abrir();else msg(des?"Sigue desactivado.":"Aún no está aprobada. Te avisamos en cuanto esté lista.","err")};
+    gate.querySelector("#b-out").onclick=async()=>{await sa.auth.signOut();location.reload()};
   }
   const msg=(t,c)=>{const m=gate.querySelector("#b-msg");if(m){m.textContent=t;m.className="msg "+(c||"")}};
   const errTxt=e=>{const t=(e&&e.message)||"";if(/Invalid login/i.test(t))return "Correo o contraseña incorrectos.";if(/already registered/i.test(t))return "Ese correo ya tiene acceso. Usa Entrar.";if(/Email not confirmed/i.test(t))return "Confirma tu correo desde el mensaje que te enviamos y vuelve a entrar.";if(/rate limit/i.test(t))return "Demasiados intentos. Espera unos minutos.";return t||"No se pudo completar."};
@@ -978,8 +1055,8 @@ function startApp(){
   async function ensureRow(user){
     const md=user.user_metadata||{};
     const row={id:user.id,correo:user.email,nombre:md.nombre||"",inmobiliaria:md.inmobiliaria||"",celular:md.celular||null};
-    const {data}=await sa.from("brokers").select("id,nombre,inmobiliaria,activo").eq("id",user.id).maybeSingle();
-    if(!data){const {error}=await sa.from("brokers").insert(row);if(error)throw error;return {...row,activo:true}}
+    const {data}=await sa.from("brokers").select("id,nombre,inmobiliaria,estado").eq("id",user.id).maybeSingle();
+    if(!data){const {error}=await sa.from("brokers").insert(row);if(error)throw error;return {...row,estado:"pendiente"}}
     return data;
   }
   async function abrir(){
@@ -987,7 +1064,7 @@ function startApp(){
     if(!session){ui();return}
     let row;
     try{row=await ensureRow(session.user)}catch(e){msg("No se pudo cargar tu registro: "+e.message,"err");return}
-    if(row.activo===false){await sa.auth.signOut();modo="entrar";ui();msg("Tu acceso está desactivado. Escríbenos a bb@trustreal.mx.","err");return}
+    if(row.estado!=="activo"){pendiente(row,session);return}
     sa.from("brokers").update({ultimo_acceso:new Date().toISOString()}).eq("id",session.user.id).then(()=>{});
     const w=document.getElementById("who");if(w)w.innerHTML="<b>"+esc(row.nombre||session.user.email)+"</b>"+(row.inmobiliaria?" · "+esc(row.inmobiliaria):"");
     gate.hidden=true;
