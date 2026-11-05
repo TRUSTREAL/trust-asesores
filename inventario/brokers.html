@@ -221,7 +221,10 @@ select.st{padding-right:10px}
 .card .kv .v.gold{color:var(--gold-2)}
 .card .go{margin-top:14px;font-size:13px;font-weight:600;color:var(--green)}
 .card .go::after{content:" \2192"}
-.card.empty-p{opacity:.75}
+.card.soon{cursor:default}.card.soon:hover{transform:none;border-color:var(--line-2);box-shadow:var(--shadow)}
+.card.soon .img img{filter:grayscale(.3)}
+.card.soon .go{color:var(--muted)}.card.soon .go::after{content:""}
+.card .img .cnt.soon{background:var(--green);color:#fff}
 .btn.back{margin-bottom:12px}
 .doc{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-decoration:none;color:var(--text);transition:border-color .15s}
 .doc:hover{border-color:var(--gold)}
@@ -447,7 +450,7 @@ let sort={k:null,dir:"asc"};
 let portada={}; // proyecto_id -> url del render (archivo "portada.*" en Documentos del proyecto)
 function render(){
   const list=S.projects.filter(p=>p.cat===S.cat);
-  if(S.sel&&!list.find(p=>p.id===S.sel)) S.sel=null;
+  if(S.sel&&!list.find(p=>p.id===S.sel&&!p.proximamente)) S.sel=null;
   if(!S.sel){renderHome();return}
   renderMain();
 }
@@ -455,25 +458,25 @@ function minDisp(p){const v=p.units.filter(u=>u.estatus==="Disponible").map(u=>u
 function renderHome(){
   const list=S.projects.filter(p=>p.cat==="In House");
   const m=$("#main");
-  const cards=list.map(p=>{const c=counts(p),renta=isRenta(p),mn=minDisp(p),img=portada[p.id];
-    return `<button class="card ${p.units.length?"":"empty-p"}" data-open="${p.id}">
-      <div class="img">${img?`<img src="${img}" alt="${esc(p.nombre)}" loading="lazy">`:`<div class="ph">${esc(p.nombre.slice(0,2).toUpperCase())}</div>`}<span class="cnt">${p.units.length?`${c.Disponible} disponible${c.Disponible===1?"":"s"}`:"Próximamente"}</span></div>
+  const cards=list.map(p=>{const c=counts(p),renta=isRenta(p),mn=minDisp(p),img=portada[p.id],soon=!!p.proximamente;
+    return `<button class="card ${soon?"soon":""}" data-open="${p.id}" ${soon?'disabled aria-disabled="true"':""}>
+      <div class="img">${img?`<img src="${img}" alt="${esc(p.nombre)}" loading="lazy">`:`<div class="ph">${esc(p.nombre.slice(0,2).toUpperCase())}</div>`}<span class="cnt ${soon?"soon":""}">${soon?"Próximamente":p.units.length?`${c.Disponible} disponible${c.Disponible===1?"":"s"}`:"Sin unidades"}</span></div>
       <div class="body">
         <span class="eyebrow">${esc(p.giro||"Proyecto")}</span>
         <h3>${esc(p.nombre)}</h3>
         ${p.ubicacion?`<span class="loc">${esc(p.ubicacion)}</span>`:""}
         ${p.desarrollador?`<span class="dev">Desarrolla ${esc(p.desarrollador)}</span>`:""}
         <div class="row">
-          <div class="kv"><span class="l">${renta?"Renta desde":"Desde"}</span><span class="v">${mn?fmt(mn):"—"}</span></div>
+          <div class="kv"><span class="l">${renta?"Renta desde":"Desde"}</span><span class="v">${soon?"Por definir":mn?fmt(mn):"—"}</span></div>
           <div class="kv"><span class="l">Comisión compartida</span><span class="v gold">${p.comision_broker?esc(p.comision_broker):"Consultar"}</span></div>
         </div>
-        <span class="go">Ver inventario</span>
+        <span class="go">${soon?"Lanzamiento próximamente":"Ver inventario"}</span>
       </div></button>`}).join("");
   m.innerHTML=`<div class="hb"><span class="eyebrow">Proyectos In House</span><h2>Elige un proyecto</h2><div class="sub">${list.length} proyecto${list.length===1?"":"s"} en comercialización exclusiva por TRUST. Toca uno para ver unidades, precios, políticas de pago y documentos.</div></div>
     ${list.length?`<div class="cards">${cards}</div>`:`<div class="empty"><b>Sin proyectos disponibles</b>Pronto verás aquí los proyectos In House de TRUST.</div>`}`;
 }
 function pickerHTML(){
-  const list=S.projects.filter(p=>p.cat===S.cat);
+  const list=S.projects.filter(p=>p.cat===S.cat&&!p.proximamente);
   const cur=list.find(p=>p.id===S.sel);
   return `<div class="picker" id="picker">
     <button class="pbtn" id="pbtn" aria-haspopup="listbox" aria-expanded="false">
@@ -613,7 +616,7 @@ document.addEventListener("click",e=>{
   if(t.dataset.cat){S.cat=t.dataset.cat;filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};save();render();return}
   if(t.id==="btn-ventas"){VENTAS=!VENTAS;try{localStorage.setItem("inv_ventas",VENTAS?"1":"0")}catch(e){}filt.estatus="";renderMain();return}
   if(t.id==="btn-home"){S.sel=null;filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};save();render();window.scrollTo(0,0);return}
-  if(t.dataset.open){S.sel=t.dataset.open;vista="precios";filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};sort={k:null,dir:"asc"};save();render();window.scrollTo(0,0);return}
+  if(t.dataset.open){const pp=S.projects.find(x=>x.id===t.dataset.open);if(pp&&pp.proximamente)return;S.sel=t.dataset.open;vista="precios";filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};sort={k:null,dir:"asc"};save();render();window.scrollTo(0,0);return}
   if(t.id==="pbtn"){const pk=$("#picker");const open=pk.toggleAttribute("open");t.setAttribute("aria-expanded",open);if(open)($("#picker .pitem[aria-current='true']")||$("#picker .pitem"))?.focus();return}
   if(t.classList.contains("pitem")){S.sel=t.dataset.id;vista="precios";delete docs[t.dataset.id];filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};sort={k:null,dir:"asc"};save();render();return}
   if(t.dataset.vista){vista=t.dataset.vista;renderMain();return}
