@@ -6,6 +6,8 @@
 <meta name="theme-color" content="#FAF8F2">
 <title>Inventario | TRUST · Asesores</title>
 <link rel="icon" href="data:,">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/auth.js"></script>
 </head>
 <body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap">
@@ -365,7 +367,7 @@ function seed(){
 // ---------- persistencia ----------
 const SUPABASE_URL="https://xshhjvdmkuqesdlvczbb.supabase.co";
 const SUPABASE_KEY="sb_publishable_5erZfpELyuncW1nrReTaZw_BQj0bc-P";
-let sb=null; try{ if(window.supabase&&SUPABASE_URL&&SUPABASE_KEY) sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); }catch(e){ sb=null; }
+let sb=null; try{ if(window.supabase&&SUPABASE_URL&&SUPABASE_KEY) sb=(window.SBC||window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY)); }catch(e){ sb=null; }
 let S={cat:"In House",sel:null,projects:[]};
 let lastSync=null;
 function save(){ // modo local: todo; modo Supabase: solo la vista (categoría / proyecto elegido)

@@ -408,6 +408,7 @@ async function loadAll(){
   const byId=Object.fromEntries(S.projects.map(p=>[p.id,p]));
   (us||[]).sort((a,b)=>nivKey(a.nivel)-nivKey(b.nivel)).forEach(u=>{const p=byId[u.proyecto_id];if(p)p.units.push({id:u.id,estatus:u.estatus,tipo:u.tipo,torre:u.torre,nivel:u.nivel,vista:u.vista,m2int:+u.m2int||0,m2terr:+u.m2terr||0,m2desc:u.m2desc!=null?+u.m2desc:null,m2tot:(+u.m2desc>0)?+((+u.m2int||0)+(+u.m2terr||0)+(+u.m2desc)).toFixed(2):(+u.m2tot||0),parking:u.parking,precio:+u.precio||0,recamaras:u.recamaras,banos:u.banos,
     precio_cierre:u.precio_cierre!=null?+u.precio_cierre:null,fecha_cierre:u.fecha_cierre||null,comprador:u.comprador||null,asesor_cierre:u.asesor_cierre||null,notas_cierre:u.notas_cierre||null})});
+  S.projects.forEach(p=>{p.units=p.units.filter(u=>u.estatus==="Disponible")}); // brokers: solo disponibles
   lastSync=new Date(); setSync();
   S.projects.forEach(p=>{ if(!docs[p.id]) loadDocs(p.id).then(()=>{ if(!S.sel) renderHome(); else if(p.id===S.sel && !$("#drawer-root").innerHTML && document.activeElement?.id!=="f-q") renderMain(); }); });
 }
@@ -435,7 +436,7 @@ function visibleRows(p){
 }
 function counts(p){const c={Disponible:0,Apartado:0,Vendido:0,Bloqueado:0,Aportante:0,dispVal:0};p.units.forEach(u=>{c[u.estatus]=(c[u.estatus]||0)+1;if(u.estatus==="Disponible")c.dispVal+=u.precio||0});return c}
 let filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};
-let VENTAS=false;
+let VENTAS=true; // brokers: solo unidades disponibles, sin columna de estatus
 let vista="precios"; // precios | politica | docs | ventas (solo admin)
 let vsort={k:"fecha_cierre",dir:"desc"};
 const sold=u=>u.estatus==="Vendido";
@@ -484,6 +485,16 @@ function pickerHTML(){
         <span class="k">${p.units.length?`<b>${c.Disponible}</b> disp. de ${p.units.length}`:"sin unidades"}</span></button>`}).join("")}
       ${READONLY?"":`<hr><button class="addp" id="btn-add-project">+ Agregar proyecto</button>`}
     </div></div>`;
+}
+function tilesB(p,renta,eng){
+  const d=p.units.filter(u=>u.estatus==="Disponible"),pr=d.map(u=>u.precio).filter(x=>x>0),m2=d.map(u=>u.m2tot).filter(x=>x>0);
+  const fm2=v=>v.toLocaleString("es-MX",{maximumFractionDigits:0})+" m²";
+  return `<div class="tiles">
+      <div class="tile disp"><span class="l">Disponibles</span><span class="v">${d.length}</span><span class="s">unidad${d.length===1?"":"es"} a la venta</span></div>
+      <div class="tile"><span class="l">${renta?"Renta desde":"Precio desde"}</span><span class="v">${pr.length?fmtM(Math.min(...pr)):"—"}</span><span class="s">${pr.length>1?"hasta "+fmtM(Math.max(...pr)):""}</span></div>
+      <div class="tile"><span class="l">Superficie</span><span class="v">${m2.length?fm2(Math.min(...m2)):"—"}</span><span class="s">${m2.length>1?"hasta "+fm2(Math.max(...m2)):""}</span></div>
+      ${renta?"":`<div class="tile"><span class="l">Enganche mínimo</span><span class="v">${eng}%</span><span class="s">${pr.length?"desde "+fmt(Math.min(...pr)*eng/100):""}</span></div>`}
+    </div>`;
 }
 function renderMain(){
   const p=S.projects.find(x=>x.id===S.sel);
@@ -542,7 +553,7 @@ function renderMain(){
       <div class="actions"><button class="btn" id="btn-pdf" ${rows.length?"":"disabled"} title="Lista de precios de las unidades que se muestran en la tabla">⤓ Lista de precios (PDF)</button>${READONLY?"":`<button class="btn" id="btn-edit-project">Editar proyecto</button>${renta?"":`<button class="btn" id="btn-edit-pol">Editar políticas</button>`}<button class="btn" id="btn-import">⇪ Importar</button><button class="btn primary" id="btn-add-unit">+ Unidad</button>`}</div>
     </div>
     ${seg}
-    ${vista==="precios"?(VENTAS?"":tiles)+table+(p.notas?`<div class="notes"><span class="eyebrow">Notas</span><p>${esc(p.notas)}</p></div>`:""):vista==="politica"?pol:vista==="ventas"?ventasHTML(p):docsHTML(p)}`;
+    ${vista==="precios"?tilesB(p,renta,eng)+table+(p.notas?`<div class="notes"><span class="eyebrow">Notas</span><p>${esc(p.notas)}</p></div>`:""):vista==="politica"?pol:vista==="ventas"?ventasHTML(p):docsHTML(p)}`;
   if(vista==="docs"&&sb&&!docs[p.id])loadDocs(p.id).then(()=>{if(vista==="docs")renderMain()});
 }
 
@@ -932,61 +943,79 @@ function startApp(){
   window.SB_AUTH=sa;
   const gate=document.createElement("div");gate.id="bgate";document.body.appendChild(gate);
   const st=document.createElement("style");st.textContent=`
-    #bgate{position:fixed;inset:0;z-index:99999;display:grid;grid-template-columns:1.1fr 1fr;background:var(--bg);overflow:auto}
+    #bgate{position:fixed;inset:0;z-index:99999;background:#0F2A23;overflow:auto;color:#FAF8F2;font-family:Poppins,"Segoe UI",system-ui,sans-serif}
     #bgate[hidden]{display:none}
-    #bgate .hero{position:relative;background:#173F35;color:#FAF8F2;padding:clamp(28px,6vw,72px);display:flex;flex-direction:column;justify-content:space-between;min-height:100vh;overflow:hidden}
-    #bgate .hero::before{content:"";position:absolute;inset:-40% -30% auto auto;width:70vmin;height:70vmin;border-radius:50%;border:1px solid rgba(201,169,97,.35)}
-    #bgate .hero::after{content:"";position:absolute;inset:auto auto -45% -25%;width:80vmin;height:80vmin;border-radius:50%;border:1px solid rgba(201,169,97,.25)}
-    #bgate .hero>*{position:relative}
+    #bgate .bgs{position:fixed;inset:0;z-index:0;background:#0F2A23}
+    #bgate .bgs img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.8s ease;transform:scale(1.04)}
+    #bgate .bgs img.on{opacity:1;animation:kb 24s ease-in-out forwards}
+    @keyframes kb{from{transform:scale(1.04)}to{transform:scale(1.12)}}
+    #bgate .bgs img{filter:grayscale(1) contrast(1.05)}
+    #bgate .bgs::after{content:"";position:absolute;inset:0;background:#173F35;mix-blend-mode:color;opacity:.9}
+    #bgate .veil{position:fixed;inset:0;z-index:1;background:linear-gradient(90deg,rgba(23,63,53,.7) 0%,rgba(23,63,53,.4) 45%,rgba(23,63,53,.15) 100%)}
+    #bgate .grid{position:relative;z-index:2;min-height:100vh;display:grid;grid-template-columns:1.15fr .85fr;align-items:stretch}
+    #bgate .hero{padding:clamp(28px,5vw,64px);display:flex;flex-direction:column;justify-content:space-between;min-height:100vh}
+    #bgate .hero .tag{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:rgba(250,248,242,.55)}
     #bgate .hero .logo{width:150px;filter:brightness(0) invert(.96)}
-    #bgate .hero .eyebrow{color:#C9A961;margin-bottom:18px}
-    #bgate .hero h1{font-family:Lora,Georgia,serif;font-weight:500;font-size:clamp(38px,5.2vw,64px);line-height:1.05;color:#FAF8F2;margin:0 0 18px}
-    #bgate .hero h1 em{font-style:italic;color:#C9A961}
-    #bgate .hero .lead{font-size:clamp(16px,1.5vw,19px);line-height:1.5;color:rgba(250,248,242,.88);max-width:34ch;margin:0 0 28px}
-    #bgate .hero ul{list-style:none;margin:0;padding:0;display:grid;gap:10px;max-width:42ch}
-    #bgate .hero li{display:flex;gap:12px;align-items:flex-start;font-size:14px;color:rgba(250,248,242,.8)}
-    #bgate .hero li::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:#C9A961;margin-top:7px}
-    #bgate .hero .tag{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(250,248,242,.55);margin-top:36px}
+    #bgate .hero .eyebrow{color:#FAF8F2;margin-bottom:18px;font-size:14px;letter-spacing:.22em;text-transform:uppercase;font-weight:600}
+    #bgate .hero h1{font-family:Lora,Georgia,serif;font-weight:500;font-size:clamp(44px,6.4vw,84px);line-height:.98;color:#FAF8F2;margin:0 0 18px;text-wrap:balance;max-width:11ch}
+    #bgate .hero h1 em{font-style:italic;color:#FAF8F2}
+    #bgate .hero .lead{font-size:clamp(17px,1.5vw,21px);line-height:1.4;color:rgba(250,248,242,.9);max-width:30ch;margin:0}
+    #bgate .hero .cap{margin-top:34px;display:flex;align-items:center;gap:12px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:rgba(250,248,242,.7);min-height:18px}
+    #bgate .hero .cap i{width:28px;height:1px;background:rgba(250,248,242,.6);display:block}
     #bgate .side{display:flex;align-items:center;justify-content:center;padding:28px 20px}
-    #bgate .box{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:30px 28px 22px;box-shadow:0 18px 50px rgba(23,63,53,.10)}
-    #bgate .box h2{font-size:24px;color:var(--green);margin:0 0 4px}
-    #bgate .box .sub{color:var(--muted);font-size:13px;margin:0 0 18px}
-    #bgate .tabs{display:flex;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px;margin-bottom:18px}
-    #bgate .tabs button{flex:1;border:0;background:transparent;border-radius:999px;padding:8px;color:var(--muted);font-weight:500;font-size:13px}
-    #bgate .tabs button[aria-pressed="true"]{background:var(--green);color:#fff}
-    #bgate label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin:10px 0 4px}
-    #bgate input{width:100%;border:1px solid var(--line-2);background:var(--surface);border-radius:10px;padding:10px 12px;font-size:14px}
-    #bgate input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(23,63,53,.12)}
-    #bgate .go{width:100%;margin-top:18px;border:0;background:var(--green);color:#fff;border-radius:10px;padding:13px;font-weight:600;font-size:14px}
-    #bgate .go:hover{background:var(--green-2)}#bgate .go[disabled]{opacity:.6;cursor:wait}
-    #bgate .msg{margin-top:12px;font-size:13px;text-align:center;color:var(--muted);min-height:18px}
-    #bgate .msg.err{color:var(--st-bloq)}#bgate .msg.ok{color:var(--st-disp)}
-    #bgate .link{display:block;margin:14px auto 0;background:none;border:0;font-size:12px;color:var(--muted);text-decoration:underline}
-    #bgate .foot{margin-top:18px;font-size:11px;color:var(--gold-2);letter-spacing:.08em;text-transform:uppercase;text-align:center}
-    @media (max-width:860px){#bgate{grid-template-columns:1fr;grid-template-rows:max-content max-content;align-content:start}#bgate .hero{min-height:max-content;padding:28px 22px 32px;gap:22px}#bgate .hero h1{font-size:36px}#bgate .hero ul{display:none}#bgate .hero .tag{margin-top:22px}#bgate .side{padding:18px 16px 40px}}
-    #bgate .pend{display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text);margin-top:14px}
-    #bgate .pend .dot{width:10px;height:10px;border-radius:50%;background:#C9A961;box-shadow:0 0 0 4px rgba(201,169,97,.25);flex:none}
+    #bgate .box{width:100%;max-width:420px;background:linear-gradient(135deg,rgba(250,248,242,.5) 0%,rgba(250,248,242,.33) 100%);-webkit-backdrop-filter:blur(30px) saturate(1.5);backdrop-filter:blur(30px) saturate(1.5);color:#0F2A23;border:1px solid rgba(255,255,255,.45);border-radius:24px;padding:32px 30px 24px;box-shadow:inset 1.5px 1.5px 0 rgba(255,255,255,.75),inset -1px -1px 0 rgba(255,255,255,.15),0 30px 70px rgba(0,0,0,.28)}
+    #bgate .box h2{font-family:Lora,Georgia,serif;font-weight:500;font-size:24px;color:#0F2A23;margin:0 0 4px}
+    #bgate .box .sub{color:#2F3D37;font-size:13px;margin:0 0 18px}
+    #bgate .tabs{display:flex;background:rgba(255,255,255,.28);border:1px solid rgba(255,255,255,.5);border-radius:999px;padding:3px;gap:2px;margin-bottom:22px}
+    #bgate .tabs button{flex:1;border:0;background:transparent;border-radius:999px;padding:8px;color:#2F3D37;font-weight:500;font-size:13px;font:inherit;cursor:pointer}
+    #bgate .tabs button[aria-pressed="true"]{background:#173F35;color:#fff}
+    #bgate label{display:block;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#2F3D37;margin:14px 0 2px}
+    #bgate input{width:100%;border:0;border-bottom:1px solid rgba(23,63,53,.45);background:transparent;color:#0F2A23;border-radius:0;padding:8px 0 9px;font-size:15px;font:inherit;transition:border-color .15s}
+    #bgate input:focus{outline:none;border-bottom:1.5px solid #173F35}
+    #bgate .go{width:100%;margin-top:26px;border:0;background:#173F35;color:#fff;border-radius:999px;padding:14px;font-weight:600;font-size:14px;letter-spacing:.02em;font-family:inherit;cursor:pointer;transition:background .15s,transform .15s}
+    #bgate .go:active{transform:scale(.99)}
+    #bgate .go:hover{background:#1F5446}#bgate .go[disabled]{opacity:.6;cursor:wait}
+    #bgate .msg{margin-top:12px;font-size:13px;text-align:center;color:#2F3D37;min-height:18px}
+    #bgate .msg.err{color:#A8342A}#bgate .msg.ok{color:#2E7D5B}
+    #bgate .link{display:block;margin:14px auto 0;background:none;border:0;font-size:12px;color:#2F3D37;text-decoration:underline;font-family:inherit;cursor:pointer}
+    #bgate .foot{margin-top:18px;font-size:11px;color:#3F4D47;letter-spacing:.08em;text-transform:uppercase;text-align:center}
+    #bgate .pend{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.5);border-radius:10px;padding:12px 14px;font-size:13px;color:#1E241F;margin-top:14px}
+    #bgate .pend .dot{width:10px;height:10px;border-radius:50%;background:#173F35;box-shadow:0 0 0 4px rgba(23,63,53,.18);flex:none}
+    @media (max-width:860px){
+      #bgate .grid{grid-template-columns:1fr;grid-template-rows:max-content max-content;align-content:start}
+      #bgate .veil{background:linear-gradient(0deg,rgba(23,63,53,.95) 0%,rgba(23,63,53,.6) 40%,rgba(23,63,53,.2) 100%)}
+      #bgate .hero{min-height:58vh;padding:24px 22px 26px;gap:30px}
+      #bgate .hero .logo{width:120px}
+      #bgate .hero h1{font-size:46px}#bgate .hero .lead{font-size:16px}#bgate .hero .cap{margin-top:18px}
+      #bgate .side{padding:0 16px 40px}
+    }
     .topright .who{font-size:13px;color:var(--muted)}.topright .who b{color:var(--green);font-weight:600}`;
   document.head.appendChild(st);
   const LOGO=document.querySelector(".brand .logo")?.getAttribute("src")||"";
   let modo="registro";
-  function ui(){
-    gate.innerHTML=`<section class="hero">
+
+  /* ---- fondo: foto fija del repo (inventario/brokers-hero.jpg); para cambiarla basta subir otra con el mismo nombre ---- */
+  const bg=document.createElement("div");bg.className="bgs";bg.innerHTML='<img src="brokers-hero.jpg" alt="" class="on">';
+  const veil=document.createElement("div");veil.className="veil";
+  const grid=document.createElement("div");grid.className="grid";
+  gate.appendChild(bg);gate.appendChild(veil);gate.appendChild(grid);
+
+  function heroHTML(eyebrow,h1,lead,cap){
+    return `<section class="hero">
         <div><img class="logo" src="${LOGO}" alt="TRUST realtor"></div>
         <div>
-          <div class="eyebrow">Invitación · Brokers aliados</div>
-          <h1>Bienvenido a <em>TRUST.</em></h1>
-          <p class="lead">Nos encanta colaborar contigo. Aquí tienes, en tiempo real, el inventario de los proyectos que comercializamos en exclusiva.</p>
-          <ul>
-            <li>Unidades disponibles con precio vigente y enganche mínimo</li>
-            <li>Políticas de pago y descuentos de cada desarrollador</li>
-            <li>Brochures, planos y listas de precios en PDF para tus clientes</li>
-          </ul>
-          <div class="tag">Asesoramos, no vendemos · We are trustworthy</div>
+          <div class="eyebrow">${eyebrow}</div>
+          <h1>${h1}</h1>
+          <p class="lead">${lead}</p>
+          ${cap?`<div class="cap" id="b-cap">${cap}</div>`:""}
         </div>
-      </section>
-      <section class="side"><div class="box">
-      <h2>${modo==="registro"?"Acepta tu invitación":"Qué gusto verte"}</h2><p class="sub">${modo==="registro"?"Déjanos tus datos; TRUST aprueba tu acceso y te avisa. Es personal e intransferible.":"Entra con el correo y la contraseña que registraste."}</p>
+        <div class="tag">We are trustworthy</div>
+      </section>`;
+  }
+  function ui(){
+    grid.innerHTML=heroHTML("Brokers aliados","Bienvenido a <em>TRUST.</em>","Nos encanta colaborar contigo.")+
+      `<section class="side"><div class="box">
+      <h2>${modo==="registro"?"Acepta tu invitación":"Qué gusto verte"}</h2><p class="sub">${modo==="registro"?"Déjanos tus datos; TRUST aprueba tu acceso y te avisa.":"Entra con el correo y la contraseña que registraste."}</p>
       <div class="tabs"><button type="button" data-m="registro" aria-pressed="${modo==="registro"}">Soy nuevo</button><button type="button" data-m="entrar" aria-pressed="${modo==="entrar"}">Ya tengo acceso</button></div>
       <form id="bform" autocomplete="on">
         ${modo==="registro"?`<label for="b-nombre">Nombre completo</label><input id="b-nombre" name="name" required autocomplete="name">
@@ -999,22 +1028,17 @@ function startApp(){
       </form>
       ${modo==="entrar"?`<button class="link" type="button" id="b-olvide">Olvidé mi contraseña</button>`:""}
       <div class="foot">TRUST realtor · Guadalajara</div></div></section>`;
-    gate.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{modo=b.dataset.m;ui()});
-    gate.querySelector("#bform").onsubmit=submit;
-    const ol=gate.querySelector("#b-olvide");if(ol)ol.onclick=olvide;
+    grid.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{modo=b.dataset.m;ui()});
+    grid.querySelector("#bform").onsubmit=submit;
+    const ol=grid.querySelector("#b-olvide");if(ol)ol.onclick=olvide;
   }
   function pendiente(row,session){
     const des=row.estado==="desactivado";
     gate.hidden=false;
-    gate.innerHTML=`<section class="hero">
-        <div><img class="logo" src="${LOGO}" alt="TRUST realtor"></div>
-        <div>
-          <div class="eyebrow">${des?"Acceso en pausa":"Solicitud enviada"}</div>
-          <h1>${des?"Tu acceso está <em>en pausa.</em>":"Gracias, <em>"+esc((row.nombre||"").split(" ")[0]||"broker")+".</em>"}</h1>
-          <p class="lead">${des?"Tu acceso al inventario está desactivado por el momento. Si crees que es un error, escríbenos.":"Enviamos tu solicitud de colaboración a TRUST. En cuanto el equipo la apruebe, podrás entrar al inventario con el mismo correo y contraseña. Te avisamos por WhatsApp o correo."}</p>
-          <div class="tag">bb@trustreal.mx · 33 3376 5616</div>
-        </div>
-      </section>
+    grid.innerHTML=heroHTML(des?"Acceso en pausa":"Solicitud enviada",
+        des?"Tu acceso está <em>en pausa.</em>":"Gracias, <em>"+esc((row.nombre||"").split(" ")[0]||"broker")+".</em>",
+        des?"Tu acceso al inventario está desactivado por el momento. Si crees que es un error, escríbenos.":"Enviamos tu solicitud de colaboración a TRUST. En cuanto la aprobemos, entras con tu correo y contraseña. Te avisamos por WhatsApp.",
+        "<i></i>bb@trustreal.mx · 33 3376 5616")+`
       <section class="side"><div class="box">
         <h2>${des?"Acceso desactivado":"Pendiente de aprobación"}</h2>
         <p class="sub">${esc(row.nombre||session.user.email)}${row.inmobiliaria?" · "+esc(row.inmobiliaria):""}</p>
@@ -1023,8 +1047,8 @@ function startApp(){
         <div class="msg" id="b-msg"></div>
         <button class="link" type="button" id="b-out">Salir</button>
         <div class="foot">TRUST realtor · Guadalajara</div></div></section>`;
-    gate.querySelector("#b-recheck").onclick=async()=>{msg("Revisando…");const {data}=await sa.from("brokers").select("estado").eq("id",session.user.id).maybeSingle();if(data&&data.estado==="activo")abrir();else msg(des?"Sigue desactivado.":"Aún no está aprobada. Te avisamos en cuanto esté lista.","err")};
-    gate.querySelector("#b-out").onclick=async()=>{await sa.auth.signOut();location.reload()};
+    grid.querySelector("#b-recheck").onclick=async()=>{msg("Revisando…");const {data}=await sa.from("brokers").select("estado").eq("id",session.user.id).maybeSingle();if(data&&data.estado==="activo")abrir();else msg(des?"Sigue desactivado.":"Aún no está aprobada. Te avisamos en cuanto esté lista.","err")};
+    grid.querySelector("#b-out").onclick=async()=>{await sa.auth.signOut();location.reload()};
   }
   const msg=(t,c)=>{const m=gate.querySelector("#b-msg");if(m){m.textContent=t;m.className="msg "+(c||"")}};
   const errTxt=e=>{const t=(e&&e.message)||"";if(/Invalid login/i.test(t))return "Correo o contraseña incorrectos.";if(/already registered/i.test(t))return "Ese correo ya tiene acceso. Usa Entrar.";if(/Email not confirmed/i.test(t))return "Confirma tu correo desde el mensaje que te enviamos y vuelve a entrar.";if(/rate limit/i.test(t))return "Demasiados intentos. Espera unos minutos.";return t||"No se pudo completar."};
