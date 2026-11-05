@@ -876,47 +876,75 @@ function startApp(){
 /* ---------- acceso de brokers aliados (Supabase Auth, correo + contraseña) ----------
    Sesión guardada en el llavero "trust_broker" para no mezclarse con el portal de asesores. */
 (function(){
-  const sa=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{storageKey:"trust_broker",persistSession:true,autoRefreshToken:true}});
+  const sa=window.supabase?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{storageKey:"trust_broker",persistSession:true,autoRefreshToken:true}}):null;
   window.SB_AUTH=sa;
   const gate=document.createElement("div");gate.id="bgate";document.body.appendChild(gate);
   const st=document.createElement("style");st.textContent=`
-    #bgate{position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;align-items:flex-start;justify-content:center;padding:28px 16px;overflow:auto}
+    #bgate{position:fixed;inset:0;z-index:99999;display:grid;grid-template-columns:1.1fr 1fr;background:var(--bg);overflow:auto}
     #bgate[hidden]{display:none}
-    #bgate .box{width:100%;max-width:440px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:28px 26px 22px;box-shadow:0 18px 50px rgba(23,63,53,.10)}
-    #bgate .logo{width:120px;display:block;margin:0 auto 14px}
-    #bgate h1{font-size:24px;text-align:center;color:var(--green);margin-bottom:4px}
-    #bgate .sub{color:var(--muted);font-size:13px;text-align:center;margin:0 0 18px}
+    #bgate .hero{position:relative;background:#173F35;color:#FAF8F2;padding:clamp(28px,6vw,72px);display:flex;flex-direction:column;justify-content:space-between;min-height:100vh;overflow:hidden}
+    #bgate .hero::before{content:"";position:absolute;inset:-40% -30% auto auto;width:70vmin;height:70vmin;border-radius:50%;border:1px solid rgba(201,169,97,.35)}
+    #bgate .hero::after{content:"";position:absolute;inset:auto auto -45% -25%;width:80vmin;height:80vmin;border-radius:50%;border:1px solid rgba(201,169,97,.25)}
+    #bgate .hero>*{position:relative}
+    #bgate .hero .logo{width:150px;filter:brightness(0) invert(.96)}
+    #bgate .hero .eyebrow{color:#C9A961;margin-bottom:18px}
+    #bgate .hero h1{font-family:Lora,Georgia,serif;font-weight:500;font-size:clamp(38px,5.2vw,64px);line-height:1.05;color:#FAF8F2;margin:0 0 18px}
+    #bgate .hero h1 em{font-style:italic;color:#C9A961}
+    #bgate .hero .lead{font-size:clamp(16px,1.5vw,19px);line-height:1.5;color:rgba(250,248,242,.88);max-width:34ch;margin:0 0 28px}
+    #bgate .hero ul{list-style:none;margin:0;padding:0;display:grid;gap:10px;max-width:42ch}
+    #bgate .hero li{display:flex;gap:12px;align-items:flex-start;font-size:14px;color:rgba(250,248,242,.8)}
+    #bgate .hero li::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:#C9A961;margin-top:7px}
+    #bgate .hero .tag{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(250,248,242,.55);margin-top:36px}
+    #bgate .side{display:flex;align-items:center;justify-content:center;padding:28px 20px}
+    #bgate .box{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:30px 28px 22px;box-shadow:0 18px 50px rgba(23,63,53,.10)}
+    #bgate .box h2{font-size:24px;color:var(--green);margin:0 0 4px}
+    #bgate .box .sub{color:var(--muted);font-size:13px;margin:0 0 18px}
     #bgate .tabs{display:flex;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px;margin-bottom:18px}
     #bgate .tabs button{flex:1;border:0;background:transparent;border-radius:999px;padding:8px;color:var(--muted);font-weight:500;font-size:13px}
     #bgate .tabs button[aria-pressed="true"]{background:var(--green);color:#fff}
     #bgate label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin:10px 0 4px}
     #bgate input{width:100%;border:1px solid var(--line-2);background:var(--surface);border-radius:10px;padding:10px 12px;font-size:14px}
     #bgate input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(23,63,53,.12)}
-    #bgate .go{width:100%;margin-top:18px;border:0;background:var(--green);color:#fff;border-radius:10px;padding:12px;font-weight:600;font-size:14px}
+    #bgate .go{width:100%;margin-top:18px;border:0;background:var(--green);color:#fff;border-radius:10px;padding:13px;font-weight:600;font-size:14px}
     #bgate .go:hover{background:var(--green-2)}#bgate .go[disabled]{opacity:.6;cursor:wait}
     #bgate .msg{margin-top:12px;font-size:13px;text-align:center;color:var(--muted);min-height:18px}
     #bgate .msg.err{color:var(--st-bloq)}#bgate .msg.ok{color:var(--st-disp)}
     #bgate .link{display:block;margin:14px auto 0;background:none;border:0;font-size:12px;color:var(--muted);text-decoration:underline}
     #bgate .foot{margin-top:18px;font-size:11px;color:var(--gold-2);letter-spacing:.08em;text-transform:uppercase;text-align:center}
+    @media (max-width:860px){#bgate{grid-template-columns:1fr;grid-template-rows:max-content max-content;align-content:start}#bgate .hero{min-height:max-content;padding:28px 22px 32px;gap:22px}#bgate .hero h1{font-size:36px}#bgate .hero ul{display:none}#bgate .hero .tag{margin-top:22px}#bgate .side{padding:18px 16px 40px}}
     .topright .who{font-size:13px;color:var(--muted)}.topright .who b{color:var(--green);font-weight:600}`;
   document.head.appendChild(st);
   const LOGO=document.querySelector(".brand .logo")?.getAttribute("src")||"";
-  let modo="entrar";
+  let modo="registro";
   function ui(){
-    gate.innerHTML=`<div class="box"><img class="logo" src="${LOGO}" alt="TRUST realtor">
-      <h1>Inventario para brokers</h1><p class="sub">Proyectos In House de TRUST: precios, políticas de pago y documentos.</p>
-      <div class="tabs"><button type="button" data-m="entrar" aria-pressed="${modo==="entrar"}">Entrar</button><button type="button" data-m="registro" aria-pressed="${modo==="registro"}">Registrarme</button></div>
+    gate.innerHTML=`<section class="hero">
+        <div><img class="logo" src="${LOGO}" alt="TRUST realtor"></div>
+        <div>
+          <div class="eyebrow">Invitación · Brokers aliados</div>
+          <h1>Bienvenido a <em>TRUST.</em></h1>
+          <p class="lead">Nos encanta colaborar contigo. Aquí tienes, en tiempo real, el inventario de los proyectos que comercializamos en exclusiva.</p>
+          <ul>
+            <li>Unidades disponibles con precio vigente y enganche mínimo</li>
+            <li>Políticas de pago y descuentos de cada desarrollador</li>
+            <li>Brochures, planos y listas de precios en PDF para tus clientes</li>
+          </ul>
+          <div class="tag">Asesoramos, no vendemos · We are trustworthy</div>
+        </div>
+      </section>
+      <section class="side"><div class="box">
+      <h2>${modo==="registro"?"Acepta tu invitación":"Qué gusto verte"}</h2><p class="sub">${modo==="registro"?"Crea tu acceso en un minuto. Es personal e intransferible.":"Entra con el correo y la contraseña que registraste."}</p>
+      <div class="tabs"><button type="button" data-m="registro" aria-pressed="${modo==="registro"}">Soy nuevo</button><button type="button" data-m="entrar" aria-pressed="${modo==="entrar"}">Ya tengo acceso</button></div>
       <form id="bform" autocomplete="on">
         ${modo==="registro"?`<label for="b-nombre">Nombre completo</label><input id="b-nombre" name="name" required autocomplete="name">
         <label for="b-inmo">Inmobiliaria</label><input id="b-inmo" name="organization" required autocomplete="organization">
         <label for="b-cel">Celular (WhatsApp)</label><input id="b-cel" name="tel" inputmode="tel" autocomplete="tel">`:""}
         <label for="b-mail">Correo</label><input id="b-mail" type="email" name="email" required autocomplete="email">
         <label for="b-pass">Contraseña${modo==="registro"?" (mínimo 6 caracteres)":""}</label><input id="b-pass" type="password" name="password" required minlength="6" autocomplete="${modo==="registro"?"new-password":"current-password"}">
-        <button class="go" type="submit">${modo==="registro"?"Crear mi acceso":"Entrar"}</button>
+        <button class="go" type="submit">${modo==="registro"?"Entrar a TRUST":"Entrar"}</button>
         <div class="msg" id="b-msg"></div>
       </form>
       ${modo==="entrar"?`<button class="link" type="button" id="b-olvide">Olvidé mi contraseña</button>`:""}
-      <div class="foot">TRUST realtor · brokers aliados</div></div>`;
+      <div class="foot">TRUST realtor · Guadalajara</div></div></section>`;
     gate.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{modo=b.dataset.m;ui()});
     gate.querySelector("#bform").onsubmit=submit;
     const ol=gate.querySelector("#b-olvide");if(ol)ol.onclick=olvide;
@@ -959,7 +987,7 @@ function startApp(){
     if(!session){ui();return}
     let row;
     try{row=await ensureRow(session.user)}catch(e){msg("No se pudo cargar tu registro: "+e.message,"err");return}
-    if(row.activo===false){await sa.auth.signOut();ui();msg("Tu acceso está desactivado. Escríbenos a bb@trustreal.mx.","err");return}
+    if(row.activo===false){await sa.auth.signOut();modo="entrar";ui();msg("Tu acceso está desactivado. Escríbenos a bb@trustreal.mx.","err");return}
     sa.from("brokers").update({ultimo_acceso:new Date().toISOString()}).eq("id",session.user.id).then(()=>{});
     const w=document.getElementById("who");if(w)w.innerHTML="<b>"+esc(row.nombre||session.user.email)+"</b>"+(row.inmobiliaria?" · "+esc(row.inmobiliaria):"");
     gate.hidden=true;
@@ -973,7 +1001,7 @@ function startApp(){
       if(np&&np.length>=6)sa.auth.updateUser({password:np}).then(({error})=>{alert(error?"No se pudo cambiar: "+error.message:"Contraseña actualizada.");abrir()});
     }
   });
-  ui();abrir();
+  ui();if(sa)abrir();else msg("Sin conexión. Revisa tu internet y recarga la página.","err");
 })();
 </script>
 
