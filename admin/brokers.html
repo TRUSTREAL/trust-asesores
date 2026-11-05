@@ -68,6 +68,12 @@ tr.pen td{background:#FFFBF0!important}
 .pc .edit a{color:var(--green)}
 .pc .st{position:absolute;top:10px;left:10px;background:rgba(250,248,242,.94);color:var(--green);border-radius:999px;padding:3px 9px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
 .pc .st.soon{background:var(--green);color:#fff}
+.pc .grip{position:absolute;top:10px;right:10px;z-index:2;background:rgba(250,248,242,.94);color:var(--green);border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600;cursor:grab;user-select:none;display:flex;gap:6px;align-items:center;letter-spacing:-.05em}
+.pc .grip span{letter-spacing:0;font-family:Lora,serif;font-size:13px}
+.pc{position:relative;transition:transform .15s,box-shadow .15s,opacity .15s}
+.pc.dragging{opacity:.4}
+.pc.over{box-shadow:0 0 0 3px var(--gold);transform:scale(1.01)}
+.pc[draggable]{cursor:grab}.pc input,.pc button,.pc label{cursor:auto}.pc button{cursor:pointer}
 .sw{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:center;font-size:13px;margin-top:12px;cursor:pointer;position:relative}
 .sw b{font-weight:500}.sw small{grid-column:2;color:var(--muted);font-size:12px}
 .sw span{grid-row:1/3}
@@ -196,7 +202,8 @@ async function loadP(){
   renderP();
 }
 function renderP(){
-  $("#pcards").innerHTML=P.length?P.map((p,i)=>`<div class="pc" data-id="${p.id}">
+  $("#pcards").innerHTML=P.length?P.map((p,i)=>`<div class="pc" data-id="${p.id}" draggable="true">
+    <div class="grip" title="Arrastra para cambiar el orden">⋮⋮ <span>${i+1}</span></div>
     <div class="img">${p.portada?`<img src="${p.portada.url}" alt="">`:`<div class="ph">Sin render de portada.<br>Sube una imagen horizontal (JPG o PNG).</div>`}
       <span class="st ${p.proximamente?"soon":""}">${p.proximamente?"Próximamente":p.disp+" disponible"+(p.disp===1?"":"s")}</span>
       <div class="act"><button class="btn" data-up="${p.id}">${p.portada?"Cambiar render":"Subir render"}</button>${p.portada?`<button class="btn danger" data-del="${p.id}">Quitar</button>`:""}</div></div>
@@ -211,17 +218,31 @@ function renderP(){
       </div>
       <label class="sw"><input type="checkbox" data-soon="${p.id}" ${p.proximamente?"checked":""}><span></span><b>Próximamente</b><small>El broker ve la tarjeta, no el inventario</small></label>
       <div class="row"><button class="btn primary" data-save="${p.id}">Guardar cambios</button>
-        <span class="ord"><button class="btn" data-mv="${p.id}" data-d="-1" ${i===0?"disabled":""} title="Subir en la portada">↑</button><button class="btn" data-mv="${p.id}" data-d="1" ${i===P.length-1?"disabled":""} title="Bajar en la portada">↓</button></span></div>
+        <span class="edit">Arrastra la tarjeta para cambiar el orden</span></div>
     </div></div>`).join(""):`<div class="empty">No hay proyectos In House en el Inventario.</div>`;
 }
-let upFor=null;
+let upFor=null,dragId=null;
+const grid=$("#pcards");
+grid.addEventListener("dragstart",e=>{const c=e.target.closest(".pc");if(!c||e.target.closest("input,button"))return e.preventDefault();dragId=c.dataset.id;c.classList.add("dragging");e.dataTransfer.effectAllowed="move";try{e.dataTransfer.setData("text/plain",dragId)}catch(x){}});
+grid.addEventListener("dragend",e=>{grid.querySelectorAll(".pc").forEach(c=>c.classList.remove("dragging","over"));dragId=null});
+grid.addEventListener("dragover",e=>{const c=e.target.closest(".pc");if(!c||!dragId||c.dataset.id===dragId)return;e.preventDefault();e.dataTransfer.dropEffect="move";grid.querySelectorAll(".pc.over").forEach(x=>x!==c&&x.classList.remove("over"));c.classList.add("over")});
+grid.addEventListener("dragleave",e=>{const c=e.target.closest(".pc");if(c&&!c.contains(e.relatedTarget))c.classList.remove("over")});
+grid.addEventListener("drop",async e=>{const c=e.target.closest(".pc");if(!c||!dragId||c.dataset.id===dragId)return;e.preventDefault();
+  const from=P.findIndex(x=>x.id===dragId),to=P.findIndex(x=>x.id===c.dataset.id);const [m]=P.splice(from,1);P.splice(to,0,m);P.forEach((p,k)=>p.orden=k+1);renderP();
+  const rs=await Promise.all(P.map(p=>sb.from("proyectos").update({orden:p.orden}).eq("id",p.id)));const err=rs.find(r=>r.error);if(err)alert("No se pudo guardar el orden: "+err.error.message);});
+/* táctil (iPad/celular): tocar y mantener la pestaña ⋮⋮ y arrastrar */
+let tDrag=null;
+grid.addEventListener("touchstart",e=>{const g=e.target.closest(".grip");if(!g)return;const c=g.closest(".pc");tDrag=c.dataset.id;c.classList.add("dragging")},{passive:true});
+grid.addEventListener("touchmove",e=>{if(!tDrag)return;e.preventDefault();const t=e.touches[0];const el=document.elementFromPoint(t.clientX,t.clientY);const c=el&&el.closest(".pc");grid.querySelectorAll(".pc.over").forEach(x=>x.classList.remove("over"));if(c&&c.dataset.id!==tDrag)c.classList.add("over")},{passive:false});
+grid.addEventListener("touchend",async e=>{if(!tDrag)return;const c=grid.querySelector(".pc.over");const id=tDrag;tDrag=null;grid.querySelectorAll(".pc").forEach(x=>x.classList.remove("dragging","over"));if(!c)return;
+  const from=P.findIndex(x=>x.id===id),to=P.findIndex(x=>x.id===c.dataset.id);const [m]=P.splice(from,1);P.splice(to,0,m);P.forEach((p,k)=>p.orden=k+1);renderP();
+  await Promise.all(P.map(p=>sb.from("proyectos").update({orden:p.orden}).eq("id",p.id)));});
 document.addEventListener("click",async e=>{
   const b=e.target.closest("button");if(!b)return;
   if(b.dataset.up){upFor=b.dataset.up;$("#pfile").value="";$("#pfile").click();return}
   if(b.dataset.del){if(!confirm("¿Quitar el render de portada?"))return;const p=P.find(x=>x.id===b.dataset.del);const {error}=await sb.storage.from(BUCKET).remove([p.id+"/"+p.portada.name]);if(error){alert("No se pudo quitar: "+error.message);return}p.portada=null;renderP();return}
   if(b.dataset.save){const p=P.find(x=>x.id===b.dataset.save);const patch={};document.querySelectorAll(`input[data-p="${p.id}"]`).forEach(i=>patch[i.dataset.k]=i.value.trim());if(!patch.comision_broker)patch.comision_broker=null;patch.proximamente=!!$(`input[data-soon="${p.id}"]`).checked;const {error}=await sb.from("proyectos").update(patch).eq("id",p.id);if(error){alert("No se pudo guardar: "+error.message);return}Object.assign(p,patch);renderP();return}
   if(e.target.closest("input[data-soon]"))return;
-  if(b.dataset.mv){const i=P.findIndex(x=>x.id===b.dataset.mv),j=i+(+b.dataset.d);if(j<0||j>=P.length)return;[P[i],P[j]]=[P[j],P[i]];P.forEach((p,k)=>p.orden=k+1);renderP();await Promise.all(P.map(p=>sb.from("proyectos").update({orden:p.orden}).eq("id",p.id)));return}
 });
 $("#pfile").addEventListener("change",async()=>{
   const f=$("#pfile").files[0];if(!f||!upFor)return;
