@@ -132,8 +132,8 @@ a.tool:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   try{
     const r=await fetch(URL+"/rest/v1/listings?select=estatus,created_at,easybroker_url",{headers:{apikey:KEY,Authorization:"Bearer "+KEY}});
     const L=await r.json();if(!Array.isArray(L))return;
-    const ver=L.filter(l=>l.estatus==="verificacion").length,fic=L.filter(l=>l.estatus==="ficha").length,nuevos=seen?L.filter(l=>l.created_at>seen).length:0;
-    const pend=ver+fic;const parts=[];if(ver)parts.push(ver+" por verificar");if(fic)parts.push(fic+" ficha por hacer");if(nuevos)parts.push(nuevos+" nuevo"+(nuevos===1?"":"s")+" desde tu última visita");
+    const nv=L.filter(l=>["nuevo","verificacion","ficha"].includes(l.estatus)).length,nuevos=seen?L.filter(l=>l.created_at>seen).length:0;
+    const pend=nv;const parts=[];if(nv)parts.push(nv+(nv===1?" listing nuevo por dar de alta":" listings nuevos por dar de alta"));if(nuevos)parts.push(nuevos+" capturado"+(nuevos===1?"":"s")+" desde tu última visita");
     if(pend||nuevos){badge.textContent=pend||nuevos;badge.hidden=false;badge.title=parts.join(" · ");sub.textContent=parts.join(" · ");sub.hidden=false}
   }catch(e){}
 })();
