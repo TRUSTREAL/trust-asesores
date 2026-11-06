@@ -145,6 +145,38 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
 .fslot .ph{width:96px;height:72px;border-radius:8px;background:var(--line);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px}
 .fslot b{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.fslot span{font-size:12.5px;color:var(--text)}
 
+/* túnel */
+.steps:empty{display:none}
+.dz{display:block}
+.steps{display:flex;gap:0;margin:0 0 16px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:10px 12px;box-shadow:var(--shadow);overflow-x:auto}
+.steps button{flex:1;min-width:120px;border:0;background:transparent;display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:12px;color:var(--muted);font-weight:500;font-size:13px;text-align:left;white-space:nowrap}
+.steps button i{width:26px;height:26px;border-radius:50%;border:2px solid var(--line-2);display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:12px;font-weight:600;flex:none}
+.steps button.done{color:var(--text)}.steps button.done i{background:var(--green);border-color:var(--green);color:#fff}
+.steps button.cur{background:var(--surface-2);color:var(--green)}.steps button.cur i{border-color:var(--green);color:var(--green)}
+.steps button:disabled{opacity:.45;cursor:not-allowed}
+.ptitle{font-size:20px;margin-bottom:2px}
+.nav{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:16px;flex-wrap:wrap}
+.nav .r{display:flex;gap:10px;align-items:center;margin-left:auto}
+.st.nuevo{background:var(--info-bg);color:var(--info)}
+.rev{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px 18px}
+.rev div{font-size:13px}.rev b{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.rev .miss{color:var(--bad)}
+.check{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.ck{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--surface)}
+.ck i{width:28px;height:28px;border-radius:50%;border:2px solid var(--line-2);display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-weight:600;font-size:13px;flex:none;color:var(--muted)}
+.ck.ok{border-color:var(--ok)}.ck.ok i{background:var(--ok);border-color:var(--ok);color:#fff}
+.ck.cur{border-color:var(--green);box-shadow:0 0 0 3px rgba(23,63,53,.08)}
+.ck .b{flex:1}.ck .b b{display:block;font-size:14px}.ck .b .hint{margin-top:2px}
+.ck .act{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.ck .act input{flex:1;min-width:220px;border:1px solid var(--line-2);border-radius:10px;padding:8px 12px}
+.sent{text-align:center;padding:40px 20px}
+.sent .big{width:64px;height:64px;border-radius:50%;background:var(--ok);color:#fff;font-size:30px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px}
+.sent h2{font-size:26px;margin-bottom:8px}
+.tl2{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0 18px}
+.tl2 .s{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--surface);font-size:13px}
+.tl2 .s b{display:block;font-size:13px;margin-bottom:2px}.tl2 .s small{color:var(--muted)}
+.tl2 .s.done{border-color:var(--ok);background:var(--ok-bg)}.tl2 .s.cur{border-color:var(--green);box-shadow:0 0 0 3px rgba(23,63,53,.08)}
+@media (max-width:700px){.tl2{grid-template-columns:1fr 1fr}}
 /* timeline (admin) */
 .tl{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
 .tl .step{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface)}
@@ -246,58 +278,45 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
       </div>
       <div class="actions" style="margin:0" id="ed-actions"></div>
     </div>
-    <div class="progress card" id="progress"></div>
-    <div class="vseg" role="tablist">
-      <button data-pane="prop" aria-pressed="true">Propiedad</button>
-      <button data-pane="docs" aria-pressed="false">Documentos y fotos</button>
-      <button data-pane="com" aria-pressed="false">Comercial</button>
-      <button data-pane="proceso" aria-pressed="false">Proceso</button>
-    </div>
+    <div class="steps" id="steps"></div>
+    <div id="track"></div>
 
-    <div class="pane card on" id="pane-prop">
+    <div class="pane card" id="pane-alta"><div id="alta-body"></div></div>
+
+    <div class="pane card" id="pane-1">
+      <h3 class="ptitle">Propiedad</h3><p class="hint">Lo básico del anuncio. Con esto se crea el listing.</p>
       <div class="grid">
         <div class="f c6"><label class="req">Título del anuncio</label><input id="titulo" placeholder="Ej. Casa frente a la UP"></div>
         <div class="f c3"><label class="req">Tipo</label><select id="tipo"><option>Venta</option><option>Renta</option></select></div>
         <div class="f c3"><label class="req">Precio</label><input id="precio" inputmode="numeric" placeholder="$"></div>
+        <div class="f c12"><label class="req">Dirección completa</label><input id="direccion" placeholder="Calle y número, colonia, ciudad, estado"></div>
+        <div class="f c12"><label class="req">Liga de Google Maps</label><input id="maps_url" placeholder="https://maps.app.goo.gl/… o https://www.google.com/maps/…"><span class="hint">Pega la liga tal cual; de ahí sacamos la ubicación para la ficha.</span></div>
+      </div>
+    </div>
+
+    <div class="pane card" id="pane-2">
+      <h3 class="ptitle">Detalles</h3><p class="hint">Datos duros y descripción. Es lo que sale en la ficha y en los portales.</p>
+      <div class="grid">
         <div class="f c12"><label>Descripción del anuncio</label><textarea id="descripcion" placeholder="Sé creativo: qué la hace especial, distribución por planta, entorno…"></textarea></div>
-        <div class="f c3"><label>Si es venta, expectativa de renta</label><input id="renta_esperada" inputmode="numeric" placeholder="$ mensual"></div>
-        <div class="f c3"><label>Mantenimiento</label><input id="mantenimiento" inputmode="numeric" placeholder="$ mensual"></div>
-        <div class="f c3"><label>Año de construcción</label><input id="anio" inputmode="numeric"></div>
-        <div class="f c3"><label>Nivel (si aplica)</label><input id="nivel" placeholder="PB, 3, PH…"></div>
         <div class="f c2"><label>Recámaras</label><input id="recamaras" inputmode="numeric"></div>
         <div class="f c2"><label>Baños completos</label><input id="banos" inputmode="numeric"></div>
         <div class="f c2"><label>Medios baños</label><input id="medios_banos" inputmode="numeric"></div>
         <div class="f c2"><label>Estacionamientos</label><input id="estacionamientos" inputmode="numeric"></div>
         <div class="f c2"><label>m² construcción</label><input id="m2_construccion" inputmode="decimal"></div>
         <div class="f c2"><label>m² terreno</label><input id="m2_terreno" inputmode="decimal"></div>
-        <div class="f c12"><label class="req">Dirección completa</label><input id="direccion" placeholder="Calle y número, colonia, ciudad, estado"></div>
-        <div class="f c12"><label class="req">Liga de Google Maps</label><input id="maps_url" placeholder="https://maps.app.goo.gl/… o https://www.google.com/maps/…"><span class="hint">Pega la liga tal cual; de ahí sacamos la ubicación para la ficha.</span></div>
+        <div class="f c3"><label>Año de construcción</label><input id="anio" inputmode="numeric"></div>
+        <div class="f c3"><label>Nivel (si aplica)</label><input id="nivel" placeholder="PB, 3, PH…"></div>
+        <div class="f c3"><label>Si es venta, expectativa de renta</label><input id="renta_esperada" inputmode="numeric" placeholder="$ mensual"></div>
+        <div class="f c3"><label>Mantenimiento</label><input id="mantenimiento" inputmode="numeric" placeholder="$ mensual"></div>
       </div>
       <div class="sect"><h3>Características de la propiedad</h3><div class="chips" id="chips-car"></div>
         <div class="f" style="margin-top:10px"><input id="car_otros" placeholder="Otras (separadas por coma)"></div></div>
       <div class="sect"><h3>Amenidades (si aplica)</h3><div class="chips" id="chips-ame"></div>
         <div class="f" style="margin-top:10px"><input id="ame_otros" placeholder="Otras (separadas por coma)"></div></div>
-      <div class="actions"><button class="btn primary" id="btn-save-prop">Guardar</button><span class="hint" id="save-hint"></span></div>
     </div>
 
-    <div class="pane card" id="pane-docs">
-      <div class="sect" style="margin-top:0;padding-top:0;border:0"><h3 class="req">Autorización de venta / exclusiva firmada</h3>
-        <p class="hint">Sin firma, no se avanza. PDF o foto.</p>
-        <label class="dz" data-kind="autorizacion">⇪ Subir autorización<input type="file" accept=".pdf,image/*"></label>
-        <div class="doclist" id="docs-autorizacion"></div></div>
-      <div class="sect"><h3>Información del cliente</h3><p class="hint">INE, comprobante de domicilio, escritura, predial… lo que aplique.</p>
-        <label class="dz" data-kind="cliente">⇪ Subir documentos del cliente<input type="file" multiple accept=".pdf,image/*"></label>
-        <div class="doclist" id="docs-cliente"></div></div>
-      <div class="sect"><h3>Fotos horizontales (5 a 20)</h3><p class="hint">Se enumeran en el orden en que las acomodes. Marca <b>Portada</b> e <b>Interior</b>: son las que usa la ficha.</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label class="dz" data-kind="foto_h" style="flex:1">⇪ Subir fotos horizontales<input type="file" multiple accept="image/*"></label><button type="button" class="btn dl-all" data-kind="foto_h" title="Descarga todas las fotos horizontales en un .zip">⤓ Descargar todas</button></div>
-        <div class="photos" id="docs-foto_h"></div></div>
-      <div class="sect"><h3>Fotos verticales para redes</h3>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label class="dz" data-kind="foto_v" style="flex:1">⇪ Subir fotos verticales<input type="file" multiple accept="image/*"></label><button type="button" class="btn dl-all" data-kind="foto_v" title="Descarga todas las fotos verticales en un .zip">⤓ Descargar todas</button></div>
-        <div class="photos" id="docs-foto_v"></div></div>
-    </div>
-
-    <div class="pane card" id="pane-com">
-      <p class="hint" style="margin-top:0">Información interna. No sale en el anuncio ni en la ficha.</p>
+    <div class="pane card" id="pane-3">
+      <h3 class="ptitle">Comercial</h3><p class="hint">Información interna. No sale en el anuncio ni en la ficha.</p>
       <div class="grid">
         <div class="f c3"><label>Comisión TRUST (%)</label><input id="comision_pct" inputmode="decimal"></div>
         <div class="f c3"><label>¿Cuánto se comparte? (%)</label><input id="comparte_pct" inputmode="decimal"></div>
@@ -307,14 +326,33 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
         <div class="f c6"><label>Horario de atención</label><input id="horario" placeholder="Ej. L–V 10:00–18:00, con cita"></div>
         <div class="f c12"><label>Notas internas</label><textarea id="notas" style="min-height:80px"></textarea></div>
       </div>
-      <div class="actions"><button class="btn primary" id="btn-save-com">Guardar</button></div>
     </div>
 
-    <div class="pane card" id="pane-proceso">
-      <div class="tl" id="timeline"></div>
-      <div id="proceso-body" style="margin-top:18px"></div>
+    <div class="pane card" id="pane-4">
+      <h3 class="ptitle">Documentos</h3><p class="hint">Si ya tienes la autorización firmada, súbela aquí; si no, puedes seguir y agregarla después.</p>
+      <div class="sect" style="margin-top:14px"><h3>Autorización de venta / exclusiva firmada</h3>
+        <p class="hint">PDF o foto. Opcional para enviar, pero necesaria para publicar.</p>
+        <label class="dz" data-kind="autorizacion">⇪ Subir autorización<input type="file" accept=".pdf,image/*"></label>
+        <div class="doclist" id="docs-autorizacion"></div></div>
+      <div class="sect"><h3>Información del cliente</h3><p class="hint">INE, comprobante de domicilio, escritura, predial… lo que aplique.</p>
+        <label class="dz" data-kind="cliente">⇪ Subir documentos del cliente<input type="file" multiple accept=".pdf,image/*"></label>
+        <div class="doclist" id="docs-cliente"></div></div>
     </div>
-  </section>
+
+    <div class="pane card" id="pane-5">
+      <h3 class="ptitle">Fotos</h3><p class="hint">Mínimo 5 horizontales. Se enumeran en el orden en que las acomodes. Marca <b>Portada</b> e <b>Interior</b>: son las que usa la ficha.</p>
+      <div class="sect" style="margin-top:14px"><h3>Fotos horizontales (5 a 20)</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label class="dz" data-kind="foto_h" style="flex:1">⇪ Subir fotos horizontales<input type="file" multiple accept="image/*"></label><button type="button" class="btn dl-all" data-kind="foto_h" title="Descarga todas las fotos horizontales en un .zip">⤓ Descargar todas</button></div>
+        <div class="photos" id="docs-foto_h"></div></div>
+      <div class="sect"><h3>Fotos verticales para redes (opcional)</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label class="dz" data-kind="foto_v" style="flex:1">⇪ Subir fotos verticales<input type="file" multiple accept="image/*"></label><button type="button" class="btn dl-all" data-kind="foto_v" title="Descarga todas las fotos verticales en un .zip">⤓ Descargar todas</button></div>
+        <div class="photos" id="docs-foto_v"></div></div>
+    </div>
+
+    <div class="pane card" id="pane-6"><div id="review-body"></div></div>
+
+    <div class="nav" id="nav"></div>
+  </section></section>
 </div>
 
 <div id="ficha-stage"></div>
@@ -331,8 +369,9 @@ const LOGO_B64="iVBORw0KGgoAAAANSUhEUgAAAtAAAACTCAYAAACnBC53AABDfklEQVR42u2de3yc
 const ASESORES=["Ana Lu","Carlos","Fanny","María","Paola","Ramsés","Rodrigo","Álvaro","Majo","Berna"];
 const CARACT=["Balcón","Cisterna","Garaje","Jardín","Patio","Roof garden","Terraza","Aire acondicionado","Alarma","Amueblado","Bodega","Cocina equipada","Cocina integral","Fraccionamiento privado","Panel solar","Penthouse","Recámara en planta baja","Seguridad 12 hrs","Seguridad 24 hrs","No se aceptan mascotas","Mascotas permitidas"];
 const AMEN=["Alberca","Área de juegos infantiles","Cancha de tenis","Cancha de pádel","Cine","Gimnasio","Jacuzzi","Salón de usos múltiples"];
-const STAGES=[["documentacion","Documentación"],["verificacion","Verificación"],["ficha","Ficha técnica"],["activo","Activo"]];
-const ESTATUS_LABEL={borrador:"Borrador",documentacion:"Documentación",verificacion:"En verificación",ficha:"Ficha pendiente",activo:"Activo",pausado:"Pausado",cerrado:"Cerrado"};
+const STAGES=[["borrador","En captura"],["nuevo","Por dar de alta"],["activo","Activo"]];
+const NORM={documentacion:"borrador",verificacion:"nuevo",ficha:"nuevo"};
+const ESTATUS_LABEL={borrador:"En captura",nuevo:"Nuevo · por dar de alta",activo:"Activo",pausado:"Pausado",cerrado:"Cerrado"};
 const CONTACTO={tel:"33 3376 5616",mail:"bb@trustreal.mx",web:"www.trustreal.mx"};
 
 let sb=null; try{ sb=(window.SBC||window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY)); }catch(e){}
@@ -353,7 +392,7 @@ async function load(){
   let q=sb.from("listings").select("*").order("created_at",{ascending:false});
   if(ROLE!=="admin") q=q.eq("asesor",ME);
   const {data,error}=await q; if(error){toast("No se pudo cargar: "+error.message,true);return}
-  LISTINGS=data||[];
+  LISTINGS=(data||[]).map(l=>({...l,estatus:NORM[l.estatus]||l.estatus}));
   const ids=LISTINGS.map(l=>l.id);
   if(ids.length){const r=await sb.from("listing_docs").select("*").in("listing_id",ids).order("orden");DOCS={};(r.data||[]).forEach(d=>{(DOCS[d.listing_id]=DOCS[d.listing_id]||[]).push(d)});}
   renderList();
@@ -365,8 +404,8 @@ function cover(l){const p=docsOf(l.id,"foto_h");const c=p.find(d=>d.etiqueta==="
 /* ---------- views ---------- */
 function show(v){["pick","list","ed"].forEach(k=>{const el=$("#view-"+k);el.style.display=k===v?"":"none";if(k==="ed")el.classList.toggle("on",v==="ed")});window.scrollTo(0,0)}
 function init(){
-  if(ROLE==="admin"){$("#page-title").textContent="Listings";$("#page-sub").textContent="Tablero de alta de propiedades · administración";$("#who").textContent="";load();show("list");return}
-  $("#page-title").textContent="Mis listings";
+  if(ROLE==="admin"){$("#btn-back").textContent="← Listings";$("#page-title").textContent="Listings";$("#page-sub").textContent="Tablero de alta de propiedades · administración";$("#who").textContent="";load();show("list");return}
+  $("#page-title").textContent="Mis listings";$("#page-sub").textContent="Captura tu propiedad paso a paso y envíala a TRUST";
   if(!ME){renderPick();show("pick");return}
   $("#who").textContent=ME;$("#btn-cambiar").style.display="";load();show("list");
 }
@@ -379,7 +418,7 @@ function renderList(){
   const sel=$("#f-est");if(sel.options.length<=1){Object.entries(ESTATUS_LABEL).forEach(([k,v])=>{const o=document.createElement("option");o.value=k;o.textContent=v;sel.appendChild(o)})}
   if(ROLE==="admin"){
     const c=k=>LISTINGS.filter(l=>l.estatus===k).length;
-    $("#tiles").innerHTML=[["verificacion","Por verificar"],["ficha","Ficha por hacer"],["activo","Activos"],["documentacion","En captura"],["","Todos"]].map(([k,l])=>`<div class="tile ${filt.est===k?"sel":""}" data-k="${k}"><span class="l">${l}</span><span class="v">${k?c(k):LISTINGS.length}</span></div>`).join("");
+    $("#tiles").innerHTML=[["nuevo","Nuevos por dar de alta"],["activo","Activos"],["borrador","En captura (asesor)"],["pausado","Pausados"],["","Todos"]].map(([k,l])=>`<div class="tile ${filt.est===k?"sel":""}" data-k="${k}"><span class="l">${l}</span><span class="v">${k?c(k):LISTINGS.length}</span></div>`).join("");
   } else $("#tiles").innerHTML="";
   const rows=LISTINGS.filter(l=>(!filt.tipo||l.tipo===filt.tipo)&&(!filt.est||l.estatus===filt.est)&&(!filt.q||[l.titulo,l.direccion,l.asesor].join(" ").toLowerCase().includes(filt.q.toLowerCase())));
   $("#count").textContent=`${rows.length} de ${LISTINGS.length}`;
@@ -390,7 +429,7 @@ function renderList(){
   :`<div class="empty" style="grid-column:1/-1"><b>Sin listings</b>${ROLE==="admin"?"Todavía no hay propiedades capturadas.":"Captura tu primera propiedad con “+ Nuevo listing”."}</div>`;
 }
 function stageIdx(l){return Math.max(0,STAGES.findIndex(s=>s[0]===l.estatus))}
-function stagesHTML(l){const i=l.estatus==="activo"?4:stageIdx(l);return `<div class="stages">${STAGES.map((s,k)=>`<i class="${k<i?"on":k===i&&l.estatus!=="activo"?"cur":""}"></i>`).join("")}</div>`}
+function stagesHTML(l){const i=["activo","pausado","cerrado"].includes(l.estatus)?3:stageIdx(l);return `<div class="stages">${STAGES.map((s,k)=>`<i class="${k<i?"on":k===i?"cur":""}"></i>`).join("")}</div>`}
 $("#tiles").addEventListener("click",e=>{const t=e.target.closest(".tile");if(!t)return;filt.est=filt.est===t.dataset.k?"":t.dataset.k;$("#f-est").value=filt.est;renderList()});
 $("#f-q").addEventListener("input",e=>{filt.q=e.target.value;renderList()});
 $("#f-tipo").addEventListener("change",e=>{filt.tipo=e.target.value;renderList()});
@@ -399,129 +438,196 @@ $("#list").addEventListener("click",e=>{const c=e.target.closest(".lcard");if(c)
 $("#btn-new").onclick=()=>openEd(null);
 $("#btn-back").onclick=()=>{load();show("list")};
 
-/* ---------- editor ---------- */
+/* ---------- editor (túnel) ---------- */
 const FIELDS=["titulo","tipo","precio","descripcion","renta_esperada","mantenimiento","anio","nivel","recamaras","banos","medios_banos","estacionamientos","m2_construccion","m2_terreno","direccion","maps_url","comision_pct","comparte_pct","exclusiva","gravamen","gravamen_detalle","horario","notas"];
 const NUMS=["precio","renta_esperada","mantenimiento","anio","recamaras","banos","medios_banos","estacionamientos","m2_construccion","m2_terreno","comision_pct","comparte_pct"];
+const PASOS=[[1,"Propiedad"],[2,"Detalles"],[3,"Comercial"],[4,"Documentos"],[5,"Fotos"],[6,"Revisión y envío"]];
+let step=1;
 function chipsRender(id,list,sel){$("#"+id).innerHTML=list.map(v=>`<button type="button" class="chip" aria-pressed="${sel.includes(v)}" data-v="${esc(v)}">${esc(v)}</button>`).join("")}
 $$("#chips-car,#chips-ame").forEach(el=>el.addEventListener("click",e=>{const b=e.target.closest(".chip");if(b)b.setAttribute("aria-pressed",b.getAttribute("aria-pressed")!=="true")}));
 function chipsVal(id,list,otrosId){const on=$$("#"+id+" .chip[aria-pressed='true']").map(b=>b.dataset.v);const ot=($("#"+otrosId).value||"").split(",").map(s=>s.trim()).filter(Boolean);return on.concat(ot)}
 function chipsSet(id,list,otrosId,vals){vals=vals||[];chipsRender(id,list,vals);$("#"+otrosId).value=vals.filter(v=>!list.includes(v)).join(", ")}
+const editable=()=>ROLE==="admin"||cur.estatus==="borrador";
 
 function openEd(l){
-  cur=l?{...l}:{id:null,asesor:ME,estatus:"borrador",tipo:"Venta",caracteristicas:[],amenidades:[]};
+  cur=l?{...l}:{id:null,asesor:ME,estatus:"borrador",tipo:"Venta",caracteristicas:[],amenidades:[],paso:1};
   $("#ed-title").textContent=cur.id?(cur.titulo||"Sin título"):"Nuevo listing";
-  $("#ed-sub").innerHTML=cur.id?`<span class="st ${cur.estatus}">${ESTATUS_LABEL[cur.estatus]}</span> &nbsp;·&nbsp; ${esc(cur.asesor)} · creado ${fecha(cur.created_at)}`:"Captura la propiedad; puedes guardar y seguir después.";
-  FIELDS.forEach(k=>{const el=$("#"+k);if(!el)return;let v=cur[k];if(NUMS.includes(k)&&v!=null)v=k.startsWith("m2")||k.includes("pct")?v:v;el.value=v==null?"":(k==="precio"||k==="renta_esperada"||k==="mantenimiento"?fmt(v).replace("—",""):String(v))});
+  FIELDS.forEach(k=>{const el=$("#"+k);if(!el)return;let v=cur[k];el.value=v==null?"":(k==="precio"||k==="renta_esperada"||k==="mantenimiento"?fmt(v).replace("—",""):String(v))});
   $("#exclusiva").value=cur.exclusiva==null?"":String(cur.exclusiva);$("#gravamen").value=cur.gravamen==null?"":String(cur.gravamen);
   chipsSet("chips-car",CARACT,"car_otros",cur.caracteristicas);chipsSet("chips-ame",AMEN,"ame_otros",cur.amenidades);
-  $$(".pane").forEach(p=>p.classList.toggle("on",p.id==="pane-prop"));$$(".vseg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.pane==="prop"));
-  renderProgress();renderDocs();renderProceso();renderActions();
+  step=ROLE==="admin"?0:Math.min(Math.max(cur.paso||1,1),6);
+  renderDocs();refresh();
   show("ed");
 }
-$$(".vseg button").forEach(b=>b.onclick=()=>{$$(".vseg button").forEach(x=>x.setAttribute("aria-pressed",x===b));$$(".pane").forEach(p=>p.classList.toggle("on",p.id==="pane-"+b.dataset.pane));if(b.dataset.pane==="docs"&&!cur.id)toast("Guarda primero la propiedad para poder subir archivos",true)});
-
+function subHTML(){return cur.id?`<span class="st ${cur.estatus}">${ESTATUS_LABEL[cur.estatus]||cur.estatus}</span> &nbsp;·&nbsp; ${esc(cur.asesor)} · creado ${fecha(cur.created_at)}`:"Captura la propiedad paso a paso; puedes guardar y seguir después."}
+function refresh(){
+  $("#ed-sub").innerHTML=subHTML();
+  const track=$("#track"),steps=$("#steps"),nav=$("#nav");
+  if(ROLE!=="admin"&&cur.estatus!=="borrador"){ // asesor: ya enviado → seguimiento
+    steps.innerHTML="";nav.innerHTML="";$$(".pane").forEach(p=>p.classList.remove("on"));$("#ed-actions").innerHTML="";
+    track.innerHTML=trackHTML();bindTrack();return;
+  }
+  track.innerHTML="";
+  renderSteps();renderPane();renderNav();
+}
+/* requisitos */
+function okProp(o){o=o||collect();return !!(o.titulo&&o.tipo&&o.precio&&o.direccion&&o.maps_url)}
+function okFotos(){const fh=docsOf(cur.id,"foto_h");return fh.length>=5&&fh.some(d=>d.etiqueta==="portada")&&fh.some(d=>d.etiqueta==="interior")}
+function faltas(){
+  const o=collect(),f=[];
+  if(!o.titulo)f.push("título");if(!o.precio)f.push("precio");if(!o.direccion)f.push("dirección");if(!o.maps_url)f.push("liga de Google Maps");
+  const fh=docsOf(cur.id,"foto_h");if(fh.length<5)f.push(`fotos horizontales (${fh.length} de 5)`);
+  else{if(!fh.some(d=>d.etiqueta==="portada"))f.push("marcar portada");if(!fh.some(d=>d.etiqueta==="interior"))f.push("marcar interior")}
+  return f;
+}
+function renderSteps(){
+  const maxp=Math.max(cur.paso||1,step);
+  const list=ROLE==="admin"?[[0,"Alta"]].concat(PASOS.slice(0,5)):PASOS;
+  $("#steps").innerHTML=list.map(([n,lab])=>{
+    const done=ROLE==="admin"?false:(n<maxp&&n!==step);
+    const dis=ROLE!=="admin"&&(n>maxp||(n>1&&!cur.id));
+    return `<button data-n="${n}" class="${n===step?"cur":done?"done":""}" ${dis?"disabled":""}><i>${n===0?"★":done?"✓":n}</i>${lab}</button>`}).join("");
+  $$("#steps button").forEach(b=>b.onclick=()=>goStep(+b.dataset.n));
+}
+function renderPane(){
+  $$(".pane").forEach(p=>p.classList.toggle("on",p.id==="pane-"+(step===0?"alta":step)));
+  if(step===0)renderAlta();
+  if(step===6)$("#review-body").innerHTML=reviewHTML(true);
+  if(step===4||step===5)renderDocs();
+}
+function renderNav(){
+  const nav=$("#nav");
+  if(ROLE==="admin"){
+    nav.innerHTML=step===0?"":`<span class="hint">Los cambios se guardan al picar Guardar.</span><div class="r"><button class="btn primary" id="nv-save">Guardar cambios</button></div>`;
+    const s=$("#nv-save");if(s)s.onclick=async()=>{if(await save())toast("Guardado")};
+    $("#ed-actions").innerHTML="";return;
+  }
+  const prev=step>1?`<button class="btn" id="nv-prev">← Anterior</button>`:"<span></span>";
+  let next="";
+  if(step<6)next=`<button class="btn" id="nv-draft">Guardar borrador</button><button class="btn primary" id="nv-next">${step===1&&!cur.id?"Crear listing y continuar →":"Guardar y continuar →"}</button>`;
+  else{const f=faltas();next=`<button class="btn primary" id="nv-send" ${f.length?"disabled":""} title="${f.length?"Falta: "+f.join(", "):""}">Enviar a TRUST ✓</button>`}
+  nav.innerHTML=prev+`<div class="r">${next}</div>`;
+  const on=(id,fn)=>{const b=$("#"+id);if(b)b.onclick=fn};
+  on("nv-prev",()=>goStep(step-1));
+  on("nv-draft",async()=>{if(await save(true))toast("Borrador guardado")});
+  on("nv-next",async()=>{
+    if(step===1&&!okProp()){toast("Completa título, precio, dirección y liga de Maps",true);return}
+    if(step===5&&!okFotos()){toast("Sube mínimo 5 fotos horizontales y marca portada e interior",true);return}
+    if(!(await save(true,step+1)))return;
+    goStep(step+1);
+  });
+  on("nv-send",enviar);
+  $("#ed-actions").innerHTML="";
+}
+function goStep(n){
+  if(ROLE!=="admin"){const maxp=Math.max(cur.paso||1,1);if(n>maxp||(n>1&&!cur.id)){toast("Primero completa el paso anterior",true);return}}
+  step=n;refresh();window.scrollTo({top:0,behavior:"smooth"});
+}
 function collect(){
   const o={};FIELDS.forEach(k=>{const el=$("#"+k);if(!el)return;let v=el.value.trim();if(NUMS.includes(k))v=num(v);else if(k==="exclusiva"||k==="gravamen")v=v===""?null:v==="true";else v=v||null;o[k]=v});
   o.caracteristicas=chipsVal("chips-car",CARACT,"car_otros");o.amenidades=chipsVal("chips-ame",AMEN,"ame_otros");
   return o;
 }
-async function save(silent){
+async function save(silent,nextPaso){
+  if(!editable())return true; // asesor con listing enviado: no toca datos
   const o=collect();
   if(!o.titulo){toast("Falta el título",true);return false}
   const row={...o,asesor:cur.asesor||ME,estatus:cur.estatus||"borrador"};
-  if(row.estatus==="borrador"&&o.titulo&&o.direccion&&o.maps_url&&o.precio)row.estatus="documentacion";
+  if(nextPaso)row.paso=Math.max(cur.paso||1,nextPaso);
   let res;
   if(cur.id)res=await sb.from("listings").update(row).eq("id",cur.id).select().single();
   else res=await sb.from("listings").insert(row).select().single();
   if(res.error){toast("No se guardó: "+res.error.message,true);return false}
-  const isNew=!cur.id;cur=res.data;
+  const isNew=!cur.id;cur={...res.data,estatus:NORM[res.data.estatus]||res.data.estatus};
   const i=LISTINGS.findIndex(l=>l.id===cur.id);if(i>=0)LISTINGS[i]=cur;else LISTINGS.unshift(cur);
-  $("#ed-title").textContent=cur.titulo;$("#ed-sub").innerHTML=`<span class="st ${cur.estatus}">${ESTATUS_LABEL[cur.estatus]}</span> &nbsp;·&nbsp; ${esc(cur.asesor)}`;
-  renderProgress();renderProceso();renderActions();
-  if(!silent)toast(isNew?"Listing creado. Ahora sube documentos y fotos.":"Guardado");
+  $("#ed-title").textContent=cur.titulo;$("#ed-sub").innerHTML=subHTML();
+  if(!silent)toast(isNew?"Listing creado":"Guardado");
   return true;
 }
-$("#btn-save-prop").onclick=()=>save();$("#btn-save-com").onclick=()=>save();
+async function patch(f){const r=await sb.from("listings").update(f).eq("id",cur.id).select().single();if(r.error){toast("No se guardó: "+r.error.message,true);return false}cur={...r.data,estatus:NORM[r.data.estatus]||r.data.estatus};const i=LISTINGS.findIndex(l=>l.id===cur.id);if(i>=0)LISTINGS[i]=cur;refresh();return true}
+async function enviar(){
+  const f=faltas();if(f.length){toast("Falta: "+f.join(", "),true);return}
+  if(!(await save(true,6)))return;
+  if(!confirm("¿Enviar la propiedad a TRUST para darla de alta? Después de enviarla ya no podrás editarla; cualquier cambio lo hace TRUST."))return;
+  if(await patch({estatus:"nuevo",enviado_en:new Date().toISOString()})){step=6;refresh();}
+}
 
-/* ---------- requirements ---------- */
-function reqs(){
-  const l=cur,fh=docsOf(l.id,"foto_h");
-  return [
-    ["Título, tipo y precio",!!(l.titulo&&l.tipo&&l.precio)],
-    ["Dirección y liga de Google Maps",!!(l.direccion&&l.maps_url)],
-    ["Autorización / exclusiva firmada",docsOf(l.id,"autorizacion").length>0],
-    ["Fotos horizontales (mínimo 5)",fh.length>=5],
-    ["Portada e interior marcadas",fh.some(d=>d.etiqueta==="portada")&&fh.some(d=>d.etiqueta==="interior")],
-  ];
+/* ---------- revisión (asesor) ---------- */
+function reviewHTML(conChecklist){
+  const l=editable()?{...cur,...collect()}:cur,fh=docsOf(cur.id,"foto_h"),fv=docsOf(cur.id,"foto_v"),au=docsOf(cur.id,"autorizacion"),cl=docsOf(cur.id,"cliente");
+  const v=(x,s)=>x==null||x===""?`<span class="miss">—</span>`:esc(s||x);
+  const f=faltas();
+  return `<h3 class="ptitle">${conChecklist?"Revisión":"Resumen de la propiedad"}</h3>${conChecklist?`<p class="hint">Revisa que todo esté correcto. Al enviar, TRUST da de alta la propiedad en Easy Broker, genera la ficha y la activa.</p>`:`<p class="hint">Así se envió. Si necesitas corregir algo, avisa a TRUST.</p>`}
+    ${conChecklist?(f.length?`<div class="lock" style="margin:12px 0">Para enviar falta: <b>${f.join(", ")}</b></div>`:`<div class="okbox" style="margin:12px 0">Todo listo para enviar.</div>`):""}
+    <div class="rev" style="margin-top:14px">
+      <div><b>Título</b>${v(l.titulo)}</div><div><b>Tipo</b>${v(l.tipo)}</div><div><b>Precio</b>${v(l.precio,fmt(l.precio))}</div>
+      <div style="grid-column:1/-1"><b>Dirección</b>${v(l.direccion)}</div><div style="grid-column:1/-1"><b>Google Maps</b>${l.maps_url?`<a href="${esc(l.maps_url)}" target="_blank" rel="noopener">${esc(l.maps_url)}</a>`:`<span class="miss">—</span>`}</div>
+      <div><b>Recámaras</b>${v(l.recamaras)}</div><div><b>Baños</b>${v(l.banos)}${l.medios_banos?" + "+l.medios_banos+"½":""}</div><div><b>Estacionamientos</b>${v(l.estacionamientos)}</div>
+      <div><b>m² construcción</b>${v(l.m2_construccion)}</div><div><b>m² terreno</b>${v(l.m2_terreno)}</div><div><b>Año</b>${v(l.anio)}</div>
+      <div style="grid-column:1/-1"><b>Descripción</b>${l.descripcion?esc(l.descripcion).replace(/\n/g,"<br>"):`<span class="miss">Sin descripción (recomendada)</span>`}</div>
+      <div style="grid-column:1/-1"><b>Características y amenidades</b>${(l.caracteristicas||[]).concat(l.amenidades||[]).map(esc).join(" · ")||`<span class="miss">—</span>`}</div>
+      <div><b>Comisión / comparte</b>${v(l.comision_pct)}% / ${v(l.comparte_pct)}%</div><div><b>Exclusiva</b>${l.exclusiva==null?"—":l.exclusiva?"Sí":"No"}</div><div><b>Gravamen</b>${l.gravamen==null?"—":l.gravamen?"Sí"+(l.gravamen_detalle?" · "+esc(l.gravamen_detalle):""):"No"}</div>
+      <div><b>Autorización firmada</b>${au.length?"Subida":`<span class="miss">Pendiente</span>`}</div><div><b>Docs del cliente</b>${cl.length} archivo${cl.length===1?"":"s"}</div>
+      <div><b>Fotos horizontales</b>${fh.length}${fh.length<5?` <span class="miss">(mínimo 5)</span>`:""}</div><div><b>Fotos verticales</b>${fv.length}</div>
+    </div>
+    ${fh.length?`<div class="photos" style="margin-top:14px">${fh.slice(0,12).map((d,i)=>`<div class="pho"><img src="${pubUrl(d.path)}" loading="lazy"><span class="n">${i+1}</span>${d.etiqueta?`<span class="tag" style="top:8px;left:auto;right:8px">${d.etiqueta}</span>`:""}</div>`).join("")}</div>`:""}`;
 }
-function renderProgress(){
-  const r=reqs(),ok=r.filter(x=>x[1]).length;
-  $("#progress").innerHTML=`<div class="eyebrow">Requisitos para enviar a verificación · ${ok} de ${r.length}</div>
-    <div class="stages" style="margin-top:8px">${r.map(x=>`<i class="${x[1]?"on":""}"></i>`).join("")}</div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:10px;font-size:12.5px">${r.map(x=>`<span style="color:${x[1]?"var(--ok)":"var(--muted)"}">${x[1]?"✓":"○"} ${x[0]}</span>`).join("")}</div>`;
+
+/* ---------- seguimiento (asesor, ya enviado) ---------- */
+function trackHTML(){
+  const l=cur;
+  const s1=true,s2=!!l.easybroker_url,s3=!!l.ficha_generada,s4=["activo","pausado","cerrado"].includes(l.estatus);
+  const curI=!s2?1:!s3?2:!s4?3:4;
+  const box=(k,done,title,sub)=>`<div class="s ${done?"done":k===curI?"cur":""}"><b>${done?"✓ ":""}${title}</b><small>${sub}</small></div>`;
+  let h=`<div class="card"><div class="sent" style="padding:18px 10px 6px">${l.estatus==="activo"?`<div class="big">✓</div><h2>Tu propiedad está activa</h2><p class="hint">Genera la ficha cuando la necesites; si TRUST cambia precio o fotos, vuelve a generarla.</p>`:l.estatus==="borrador"?"":["pausado","cerrado"].includes(l.estatus)?`<h2>Listing ${l.estatus}</h2>`:`<div class="big">✓</div><h2>Listo, TRUST está dando de alta tu propiedad</h2><p class="hint">Te avisamos cuando esté activa. Enviada ${l.enviado_en?"el "+fecha(l.enviado_en):""}.</p>`}</div>
+    <div class="tl2">${box(1,s1,"Enviada","Captura completa")}${box(2,s2,"Alta en Easy Broker",s2?`<a href="${esc(l.easybroker_url)}" target="_blank" rel="noopener">Ver anuncio ↗</a>`:"TRUST la está cargando")}${box(3,s3,"Ficha técnica",s3?"Generada":"Pendiente")}${box(4,s4,"Activa","Publicada en portales")}</div>
+    <div class="actions" style="margin-top:4px">${s3||s4?`<button class="btn gold" id="act-ficha">⤓ Generar ficha</button>`:""}${l.estatus==="activo"&&!l.lona_solicitada?`<button class="btn" id="act-lona">Solicitar lona</button>`:""}</div>
+    ${l.lona_solicitada?`<div class="sect"><h3>Lona</h3><p class="hint">Lona solicitada${l.lona_entregada?" y entregada":""}. Al colocarla, sube el video de la zona.</p><label class="dz" data-kind="video_lona">⇪ Video de colocación de lona<input type="file" accept="video/*,image/*"></label><div class="doclist" id="docs-video_lona"></div></div>`:""}
+  </div>
+  <div class="card" style="margin-top:14px">${reviewHTML(false)}</div>`;
+  return h;
 }
-function renderActions(){
-  const a=$("#ed-actions");const l=cur;if(!l.id){a.innerHTML="";return}
-  const ready=reqs().every(x=>x[1]);
-  let h="";
-  if(ROLE!=="admin"){
-    if(["borrador","documentacion"].includes(l.estatus))h+=`<button class="btn primary" id="act-enviar" ${ready?"":"disabled"} title="${ready?"":"Completa los requisitos"}">Enviar a verificación →</button>`;
-    if(l.estatus==="verificacion"&&l.easybroker_url)h+=`<a class="btn" href="${esc(l.easybroker_url)}" target="_blank" rel="noopener">Ver en Easy Broker ↗</a><button class="btn primary" id="act-corroboro">Corroboré la información ✓</button>`;
-    if(["ficha","activo"].includes(l.estatus))h+=`<button class="btn gold" id="act-ficha">⤓ Generar ficha</button>`;
-    if(l.estatus==="activo"&&!l.lona_solicitada)h+=`<button class="btn" id="act-lona">Solicitar lona</button>`;
-  } else {
-    if(l.estatus==="verificacion")h+=`<button class="btn primary" id="act-ficha-ok" ${l.verificado?"":"disabled"} title="${l.verificado?"":"El asesor aún no corrobora"}">Pasar a ficha →</button>`;
-    if(l.estatus==="ficha")h+=`<button class="btn gold" id="act-ficha">⤓ Generar ficha</button><button class="btn primary" id="act-activar">Activar listing ✓</button>`;
-    if(l.estatus==="activo")h+=`<button class="btn gold" id="act-ficha">⤓ Generar ficha</button><button class="btn" id="act-pausar">Pausar</button><button class="btn" id="act-cerrar">Cerrar (vendido/rentado)</button>`;
-    if(["pausado","cerrado"].includes(l.estatus))h+=`<button class="btn" id="act-reactivar">Reactivar</button>`;
-  }
-  a.innerHTML=h;
+function bindTrack(){
   const on=(id,fn)=>{const b=$("#"+id);if(b)b.onclick=fn};
-  on("act-enviar",()=>setEstatus("verificacion","Enviado a verificación. Bernardette lo verá en su tablero."));
-  on("act-corroboro",async()=>{await patch({verificado:true});toast("Listo. Bernardette puede pasar a ficha.")});
-  on("act-ficha-ok",()=>setEstatus("ficha","Listo para ficha técnica."));
-  on("act-activar",()=>setEstatus("activo","Listing activo."));
-  on("act-pausar",()=>setEstatus("pausado","Pausado."));
-  on("act-cerrar",()=>setEstatus("cerrado","Cerrado."));
-  on("act-reactivar",()=>setEstatus("activo","Reactivado."));
-  on("act-lona",async()=>{await patch({lona_solicitada:true});toast("Lona solicitada.")});
   on("act-ficha",generarFicha);
+  on("act-lona",async()=>{if(await patch({lona_solicitada:true}))toast("Lona solicitada")});
+  renderDocList("video_lona");
 }
-async function patch(f){const r=await sb.from("listings").update(f).eq("id",cur.id).select().single();if(r.error){toast("No se guardó: "+r.error.message,true);return false}cur=r.data;const i=LISTINGS.findIndex(l=>l.id===cur.id);if(i>=0)LISTINGS[i]=cur;renderActions();renderProceso();$("#ed-sub").innerHTML=`<span class="st ${cur.estatus}">${ESTATUS_LABEL[cur.estatus]}</span> &nbsp;·&nbsp; ${esc(cur.asesor)}`;return true}
-async function setEstatus(e,msg){if(!(await save(true)))return;if(await patch({estatus:e}))toast(msg)}
 
-/* ---------- fotos de la ficha (portada / interior) ---------- */
+/* ---------- alta (admin) ---------- */
+function renderAlta(){
+  const l=cur,b=$("#alta-body");
+  if(!l.id){b.innerHTML=`<div class="infobox">Guarda la propiedad para iniciar el alta.</div>`;return}
+  const s1=!!l.easybroker_url,s2=!!l.ficha_generada,s3=["activo","pausado","cerrado"].includes(l.estatus);
+  const curI=!s1?1:!s2?2:!s3?3:0;
+  const ck=(n,done,title,sub,act)=>`<div class="ck ${done?"ok":n===curI?"cur":""}"><i>${done?"✓":n}</i><div class="b"><b>${title}</b><div class="hint">${sub}</div>${act?`<div class="act">${act}</div>`:""}</div></div>`;
+  let h=`<h3 class="ptitle">Alta de la propiedad</h3><p class="hint">${l.estatus==="borrador"?"El asesor todavía está capturando; el alta se activa cuando la envíe.":l.estatus==="nuevo"?`Enviada por ${esc(l.asesor)} ${l.enviado_en?"el "+fecha(l.enviado_en):""}. Sigue los 3 pasos en orden.`:"Alta completada."}</p>
+    <div class="check">
+    ${ck(1,s1,"Cargar en Easy Broker","Pega la liga del anuncio ya publicado.",`<input id="eb_url" value="${esc(l.easybroker_url||"")}" placeholder="https://www.easybroker.com/…"><button class="btn primary" id="eb_save">Guardar liga</button>${s1?`<a class="btn" href="${esc(l.easybroker_url)}" target="_blank" rel="noopener">Abrir ↗</a>`:""}`)}
+    ${ck(2,s2,"Ficha técnica","Se genera desde aquí con la portada e interior elegidas abajo. Puedes regenerarla las veces que quieras.",`<button class="btn gold" id="act-ficha">⤓ Generar ficha</button>${s2?`<span class="hint">Generada ✓</span>`:""}`)}
+    ${ck(3,s3,"Activar listing","Queda visible como activo para el asesor y en el tablero.",s3?(l.estatus==="activo"?`<span class="st activo">Activo</span><button class="btn" id="act-pausar">Pausar</button><button class="btn" id="act-cerrar">Cerrar (vendido/rentado)</button>`:`<span class="st ${l.estatus}">${ESTATUS_LABEL[l.estatus]}</span><button class="btn" id="act-reactivar">Reactivar</button>`):`<button class="btn primary" id="act-activar" ${s1&&s2?"":"disabled"} title="${s1&&s2?"":"Primero la liga y la ficha"}">Activar listing ✓</button>`)}
+    </div>
+    <div class="sect">${fichaFotosHTML(l)}</div>
+    <div class="sect"><h3>Lona</h3><div class="actions" style="margin-top:0">${l.lona_solicitada?`<span class="hint">Solicitada por el asesor${l.lona_entregada?" · entregada":""}</span>`:`<span class="hint">El asesor no la ha solicitado</span>`}${l.lona_solicitada&&!l.lona_entregada?`<button class="btn" id="lona_ok">Marcar lona entregada</button>`:""}</div>
+      <label class="dz" data-kind="video_lona" style="margin-top:10px">⇪ Video de colocación de lona<input type="file" accept="video/*,image/*"></label><div class="doclist" id="docs-video_lona"></div></div>`;
+  b.innerHTML=h;
+  const on=(id,fn)=>{const x=$("#"+id);if(x)x.onclick=fn};
+  on("eb_save",async()=>{const u=$("#eb_url").value.trim();if(!u){toast("Pega la liga",true);return}if(await patch({easybroker_url:u}))toast("Liga guardada")});
+  on("act-ficha",generarFicha);
+  on("act-activar",async()=>{if(await patch({estatus:"activo"}))toast("Listing activo")});
+  on("act-pausar",async()=>{if(await patch({estatus:"pausado"}))toast("Pausado")});
+  on("act-cerrar",async()=>{if(confirm("¿Cerrar el listing (vendido o rentado)?")&&await patch({estatus:"cerrado"}))toast("Cerrado")});
+  on("act-reactivar",async()=>{if(await patch({estatus:"activo"}))toast("Reactivado")});
+  on("lona_ok",async()=>{if(await patch({lona_entregada:true}))toast("Lona entregada")});
+  renderDocList("video_lona");
+}
 function fichaFotosHTML(l){
   const fh=docsOf(l.id,"foto_h");
   const por=fh.find(d=>d.etiqueta==="portada"),inte=fh.find(d=>d.etiqueta==="interior");
   const slot=(k,d,lab)=>`<div class="fslot">${d?`<img src="${pubUrl(d.path)}">`:`<div class="ph">Sin elegir</div>`}<div><b>${lab}</b><span>${d?"Foto "+(fh.indexOf(d)+1):"Elige una foto abajo"}</span></div></div>`;
-  return `<div class="sect" style="margin-top:0"><h3>Fotos para la ficha</h3><p class="hint" style="margin-top:0">La ficha usa una <b>portada</b> (hero) y una foto <b>interior</b>. ${ROLE==="admin"?"Puedes cambiarlas aquí aunque el asesor ya las haya marcado.":"Si no las marcas, la ficha usa las dos primeras."}</p>
+  return `<h3>Fotos para la ficha</h3><p class="hint" style="margin-top:0">La ficha usa una <b>portada</b> (hero) y una foto <b>interior</b>. Puedes cambiarlas aunque el asesor ya las haya marcado.</p>
     <div class="fslots">${slot("portada",por,"Portada")}${slot("interior",inte,"Interior")}</div>
-    ${fh.length?`<div class="photos" id="ficha-fotos">${fh.map((d,i)=>`<div class="pho ${d.etiqueta?"sel-"+d.etiqueta:""}" data-id="${d.id}"><img src="${pubUrl(d.path)}" loading="lazy"><span class="n">${i+1}</span>${d.etiqueta?`<span class="tag">${d.etiqueta}</span>`:""}<div class="lab"><button data-act="portada">Portada</button><button data-act="interior">Interior</button></div></div>`).join("")}</div>`:`<div class="hint">El asesor aún no sube fotos horizontales.</div>`}</div>`;
-}
-/* ---------- proceso ---------- */
-function renderProceso(){
-  const l=cur;const idx=l.estatus==="activo"||["pausado","cerrado"].includes(l.estatus)?4:stageIdx(l);
-  const steps=[["Documentación","Captura, autorización y fotos"],["Verificación","Bernardette carga Easy Broker; tú corroboras"],["Ficha técnica","Se genera desde el portal"],["Activo","Publicado en marketplaces"]];
-  $("#timeline").innerHTML=steps.map((s,k)=>`<div class="step ${k<idx?"done":k===idx?"cur":""}"><b>${k+1}. ${s[0]}</b><small>${s[1]}</small></div>`).join("")+`<div class="step ${l.lona_entregada?"done":""}"><b>Lona</b><small>${l.lona_entregada?"Entregada":l.lona_solicitada?"Solicitada":"Opcional"}</small></div>`;
-  const b=$("#proceso-body");
-  if(!l.id){b.innerHTML=`<div class="infobox">Guarda la propiedad para iniciar el proceso.</div>`;return}
-  let h=fichaFotosHTML(l);
-  if(ROLE==="admin"){
-    h+=`<div class="grid"><div class="f c8" style="grid-column:span 8"><label>Liga de Easy Broker</label><input id="eb_url" value="${esc(l.easybroker_url||"")}" placeholder="https://www.easybroker.com/…"></div><div class="f c4"><label>&nbsp;</label><button class="btn primary" id="eb_save">Guardar liga</button></div></div>
-      <p class="hint">Al guardar la liga, el asesor la ve en su listing y puede corroborar. ${l.verificado?'<b style="color:var(--ok)">El asesor ya corroboró.</b>':"El asesor aún no corrobora."}</p>
-      <div class="sect"><h3>Lona</h3><div class="actions" style="margin-top:0">${l.lona_solicitada?`<span class="hint">Solicitada${l.lona_entregada?" · entregada":""}</span>`:`<span class="hint">No solicitada</span>`}${l.lona_solicitada&&!l.lona_entregada?`<button class="btn" id="lona_ok">Marcar lona entregada</button>`:""}</div>
-      <label class="dz" data-kind="video_lona" style="margin-top:10px">⇪ Video de colocación de lona<input type="file" accept="video/*,image/*"></label><div class="doclist" id="docs-video_lona"></div></div>`;
-  } else {
-    h+=l.estatus==="verificacion"?(l.easybroker_url?`<div class="infobox">Bernardette ya cargó la propiedad en Easy Broker. Revisa que todo esté correcto y pica <b>Corroboré la información</b> arriba.</div>`:`<div class="lock">Enviado. Bernardette está cargando tu propiedad en Easy Broker; cuando esté, aquí aparecerá la liga.</div>`):"";
-    if(l.estatus==="ficha")h+=`<div class="infobox">Tu ficha ya se puede generar con el botón <b>Generar ficha</b>. Bernardette activará el listing.</div>`;
-    if(l.estatus==="activo")h+=`<div class="okbox">Tu propiedad está activa. Genera la ficha cuando la necesites; si cambias precio o fotos, vuelve a generarla.</div>`;
-    h+=`<div class="sect"><h3>Lona</h3>${l.lona_solicitada?`<p class="hint">Lona solicitada${l.lona_entregada?" y entregada":""}. Al colocarla, sube el video de la zona.</p><label class="dz" data-kind="video_lona">⇪ Video de colocación de lona<input type="file" accept="video/*,image/*"></label><div class="doclist" id="docs-video_lona"></div>`:`<p class="hint">Cuando el listing esté activo podrás solicitar la lona desde el botón de arriba.</p>`}</div>`;
-  }
-  b.innerHTML=h;
-  const s=$("#eb_save");if(s)s.onclick=async()=>{await patch({easybroker_url:$("#eb_url").value.trim()||null});toast("Liga guardada")};
-  const lo=$("#lona_ok");if(lo)lo.onclick=async()=>{await patch({lona_entregada:true});toast("Lona entregada")};
-  renderDocList("video_lona");
+    ${fh.length?`<div class="photos" id="ficha-fotos">${fh.map((d,i)=>`<div class="pho ${d.etiqueta?"sel-"+d.etiqueta:""}" data-id="${d.id}"><img src="${pubUrl(d.path)}" loading="lazy"><span class="n">${i+1}</span>${d.etiqueta?`<span class="tag">${d.etiqueta}</span>`:""}<div class="lab"><button data-act="portada">Portada</button><button data-act="interior">Interior</button></div></div>`).join("")}</div>`:`<div class="hint">El asesor aún no sube fotos horizontales.</div>`}`;
 }
 
 /* ---------- docs & photos ---------- */
@@ -538,7 +644,7 @@ document.addEventListener("change",async e=>{
     if(r.error){toast("No se registró "+f.name,true);continue}
     (DOCS[cur.id]=DOCS[cur.id]||[]).push(r.data);
   }
-  inp.value="";renderDocs();renderProgress();renderActions();toast("Archivos subidos");
+  inp.value="";renderDocs();refresh();toast("Archivos subidos");
 });
 function renderDocs(){["autorizacion","cliente","foto_h","foto_v","video_lona"].forEach(renderDocList)}
 function renderDocList(kind){
@@ -558,7 +664,7 @@ document.addEventListener("click",async e=>{
   if(act==="del"){if(!confirm("¿Eliminar este archivo?"))return;await sb.storage.from(BUCKET).remove([d.path]);await sb.from("listing_docs").delete().eq("id",id);DOCS[cur.id]=list.filter(x=>x.id!==id)}
   else if(act==="portada"||act==="interior"){const prev=list.filter(x=>x.tipo===d.tipo&&x.etiqueta===act);for(const p of prev){p.etiqueta=null;await sb.from("listing_docs").update({etiqueta:null}).eq("id",p.id)}d.etiqueta=act;await sb.from("listing_docs").update({etiqueta:act}).eq("id",id)}
   else if(act==="up"||act==="down"){const same=list.filter(x=>x.tipo===d.tipo).sort((a,b)=>a.orden-b.orden);const i=same.indexOf(d),j=act==="up"?i-1:i+1;if(j<0||j>=same.length)return;[same[i].orden,same[j].orden]=[same[j].orden,same[i].orden];await sb.from("listing_docs").update({orden:same[i].orden}).eq("id",same[i].id);await sb.from("listing_docs").update({orden:same[j].orden}).eq("id",same[j].id);DOCS[cur.id]=list.slice().sort((a,b)=>a.orden-b.orden)}
-  renderDocs();renderProgress();renderActions();if(b.closest("#proceso-body"))renderProceso();
+  renderDocs();refresh();
 });
 
 /* ---------- descarga de fotos ---------- */
@@ -631,6 +737,7 @@ async function generarFicha(){
     const url=await htmlToImage.toPng(el,{width:1080,height:1920,pixelRatio:1,cacheBust:true});
     const a=document.createElement("a");a.href=url;a.download=`Ficha_${(cur.titulo||"TRUST").replace(/[^\wáéíóúñ]+/gi,"_")}.png`;a.click();
     toast("Ficha descargada");
+    if(ROLE==="admin"&&!cur.ficha_generada)await patch({ficha_generada:true});
   }catch(e){console.error(e);toast("No se pudo generar la ficha: "+(e.message||e),true)}
   st.innerHTML="";
 }
