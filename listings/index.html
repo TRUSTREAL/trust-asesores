@@ -134,7 +134,10 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
 .pho.v{aspect-ratio:9/16}
 .pho .tools button.w{width:auto;padding:0 8px;font-size:11px;font-weight:600;color:var(--green)}
 .pho.sel-portada{outline:3px solid var(--gold);outline-offset:-3px}.pho.sel-interior{outline:3px solid var(--green);outline-offset:-3px}
-.pho .tag{left:auto;right:8px;top:8px;bottom:auto}
+.pho .tag{top:34px;bottom:auto}
+.pho .lab{position:absolute;right:6px;top:6px;display:flex;gap:4px}
+.pho .lab button{border:0;background:rgba(255,255,255,.92);border-radius:8px;height:24px;padding:0 8px;font-size:11px;font-weight:600;color:var(--green);cursor:pointer}
+.pho .lab button:hover{background:var(--green);color:#fff}
 #ficha-fotos{margin-bottom:18px}
 .fslots{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 14px}
 .fslot{border:1px dashed var(--line);border-radius:12px;padding:10px;display:flex;gap:10px;align-items:center;background:var(--surface-2)}
@@ -494,7 +497,7 @@ function fichaFotosHTML(l){
   const slot=(k,d,lab)=>`<div class="fslot">${d?`<img src="${pubUrl(d.path)}">`:`<div class="ph">Sin elegir</div>`}<div><b>${lab}</b><span>${d?"Foto "+(fh.indexOf(d)+1):"Elige una foto abajo"}</span></div></div>`;
   return `<div class="sect" style="margin-top:0"><h3>Fotos para la ficha</h3><p class="hint" style="margin-top:0">La ficha usa una <b>portada</b> (hero) y una foto <b>interior</b>. ${ROLE==="admin"?"Puedes cambiarlas aquí aunque el asesor ya las haya marcado.":"Si no las marcas, la ficha usa las dos primeras."}</p>
     <div class="fslots">${slot("portada",por,"Portada")}${slot("interior",inte,"Interior")}</div>
-    ${fh.length?`<div class="photos" id="ficha-fotos">${fh.map((d,i)=>`<div class="pho ${d.etiqueta?"sel-"+d.etiqueta:""}" data-id="${d.id}"><img src="${pubUrl(d.path)}" loading="lazy"><span class="n">${i+1}</span>${d.etiqueta?`<span class="tag">${d.etiqueta}</span>`:""}<div class="tools"><button class="w" data-act="portada">Portada</button><button class="w" data-act="interior">Interior</button></div></div>`).join("")}</div>`:`<div class="hint">El asesor aún no sube fotos horizontales.</div>`}</div>`;
+    ${fh.length?`<div class="photos" id="ficha-fotos">${fh.map((d,i)=>`<div class="pho ${d.etiqueta?"sel-"+d.etiqueta:""}" data-id="${d.id}"><img src="${pubUrl(d.path)}" loading="lazy"><span class="n">${i+1}</span>${d.etiqueta?`<span class="tag">${d.etiqueta}</span>`:""}<div class="lab"><button data-act="portada">Portada</button><button data-act="interior">Interior</button></div></div>`).join("")}</div>`:`<div class="hint">El asesor aún no sube fotos horizontales.</div>`}</div>`;
 }
 /* ---------- proceso ---------- */
 function renderProceso(){
@@ -543,7 +546,7 @@ function renderDocList(kind){
   const list=docsOf(cur.id,kind);
   if(kind==="foto_h"||kind==="foto_v"){
     el.innerHTML=list.map((d,i)=>`<div class="pho ${kind==="foto_v"?"v":""} ${d.etiqueta?"sel-"+d.etiqueta:""}" data-id="${d.id}"><img src="${pubUrl(d.path)}" loading="lazy"><span class="n">${i+1}</span>${d.etiqueta?`<span class="tag">${d.etiqueta}</span>`:""}
-      <div class="tools"><button data-act="dl" title="Descargar esta foto">⤓</button>${kind==="foto_h"?`<button class="w" data-act="portada" title="Usar como portada de la ficha">Portada</button><button class="w" data-act="interior" title="Usar como foto interior de la ficha">Interior</button>`:""}<button data-act="up" title="Mover antes">‹</button><button data-act="down" title="Mover después">›</button><button data-act="del" title="Eliminar">×</button></div></div>`).join("")||`<div class="hint">Sin fotos todavía.</div>`;
+      ${kind==="foto_h"?`<div class="lab"><button data-act="portada" title="Usar como portada de la ficha">Portada</button><button data-act="interior" title="Usar como foto interior de la ficha">Interior</button></div>`:""}<div class="tools"><button data-act="dl" title="Descargar esta foto">⤓</button><button data-act="up" title="Mover antes">‹</button><button data-act="down" title="Mover después">›</button><button data-act="del" title="Eliminar">×</button></div></div>`).join("")||`<div class="hint">Sin fotos todavía.</div>`;
   } else {
     el.innerHTML=list.map(d=>`<div class="doc" data-id="${d.id}">📄 <a href="${pubUrl(d.path)}" target="_blank" rel="noopener">${esc(d.nombre)}</a><span class="hint">${fecha(d.created_at)}</span><button class="x" data-act="del" title="Eliminar">×</button></div>`).join("")||`<div class="hint">Nada subido todavía.</div>`;
   }
