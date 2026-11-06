@@ -132,6 +132,15 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
 .pho .tools button{border:0;background:rgba(255,255,255,.92);border-radius:8px;width:26px;height:26px;font-size:13px}
 .pho .tag{position:absolute;left:8px;bottom:8px;background:var(--gold);color:#fff;font-size:10px;font-weight:600;padding:2px 8px;border-radius:999px}
 .pho.v{aspect-ratio:9/16}
+.pho .tools button.w{width:auto;padding:0 8px;font-size:11px;font-weight:600;color:var(--green)}
+.pho.sel-portada{outline:3px solid var(--gold);outline-offset:-3px}.pho.sel-interior{outline:3px solid var(--green);outline-offset:-3px}
+.pho .tag{left:auto;right:8px;top:8px;bottom:auto}
+#ficha-fotos{margin-bottom:18px}
+.fslots{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 14px}
+.fslot{border:1px dashed var(--line);border-radius:12px;padding:10px;display:flex;gap:10px;align-items:center;background:var(--surface-2)}
+.fslot img{width:96px;height:72px;object-fit:cover;border-radius:8px;display:block}
+.fslot .ph{width:96px;height:72px;border-radius:8px;background:var(--line);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px}
+.fslot b{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.fslot span{font-size:12.5px;color:var(--text)}
 
 /* timeline (admin) */
 .tl{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
@@ -189,6 +198,8 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
   .tl{grid-template-columns:1fr}
 }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/auth.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -321,7 +332,7 @@ const STAGES=[["documentacion","Documentación"],["verificacion","Verificación"
 const ESTATUS_LABEL={borrador:"Borrador",documentacion:"Documentación",verificacion:"En verificación",ficha:"Ficha pendiente",activo:"Activo",pausado:"Pausado",cerrado:"Cerrado"};
 const CONTACTO={tel:"33 3376 5616",mail:"bb@trustreal.mx",web:"www.trustreal.mx"};
 
-let sb=null; try{ sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); }catch(e){}
+let sb=null; try{ sb=(window.SBC||window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY)); }catch(e){}
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 $("#logo-img").src="data:image/png;base64,"+LOGO_B64;
 let tt; function toast(m,err){const t=$("#toast");t.textContent=m;t.classList.toggle("err",!!err);t.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("show"),err?3600:2200);}
@@ -476,6 +487,15 @@ function renderActions(){
 async function patch(f){const r=await sb.from("listings").update(f).eq("id",cur.id).select().single();if(r.error){toast("No se guardó: "+r.error.message,true);return false}cur=r.data;const i=LISTINGS.findIndex(l=>l.id===cur.id);if(i>=0)LISTINGS[i]=cur;renderActions();renderProceso();$("#ed-sub").innerHTML=`<span class="st ${cur.estatus}">${ESTATUS_LABEL[cur.estatus]}</span> &nbsp;·&nbsp; ${esc(cur.asesor)}`;return true}
 async function setEstatus(e,msg){if(!(await save(true)))return;if(await patch({estatus:e}))toast(msg)}
 
+/* ---------- fotos de la ficha (portada / interior) ---------- */
+function fichaFotosHTML(l){
+  const fh=docsOf(l.id,"foto_h");
+  const por=fh.find(d=>d.etiqueta==="portada"),inte=fh.find(d=>d.etiqueta==="interior");
+  const slot=(k,d,lab)=>`<div class="fslot">${d?`<img src="${pubUrl(d.path)}">`:`<div class="ph">Sin elegir</div>`}<div><b>${lab}</b><span>${d?"Foto "+(fh.indexOf(d)+1):"Elige una foto abajo"}</span></div></div>`;
+  return `<div class="sect" style="margin-top:0"><h3>Fotos para la ficha</h3><p class="hint" style="margin-top:0">La ficha usa una <b>portada</b> (hero) y una foto <b>interior</b>. ${ROLE==="admin"?"Puedes cambiarlas aquí aunque el asesor ya las haya marcado.":"Si no las marcas, la ficha usa las dos primeras."}</p>
+    <div class="fslots">${slot("portada",por,"Portada")}${slot("interior",inte,"Interior")}</div>
+    ${fh.length?`<div class="photos" id="ficha-fotos">${fh.map((d,i)=>`<div class="pho ${d.etiqueta?"sel-"+d.etiqueta:""}" data-id="${d.id}"><img src="${pubUrl(d.path)}" loading="lazy"><span class="n">${i+1}</span>${d.etiqueta?`<span class="tag">${d.etiqueta}</span>`:""}<div class="tools"><button class="w" data-act="portada">Portada</button><button class="w" data-act="interior">Interior</button></div></div>`).join("")}</div>`:`<div class="hint">El asesor aún no sube fotos horizontales.</div>`}</div>`;
+}
 /* ---------- proceso ---------- */
 function renderProceso(){
   const l=cur;const idx=l.estatus==="activo"||["pausado","cerrado"].includes(l.estatus)?4:stageIdx(l);
@@ -483,7 +503,7 @@ function renderProceso(){
   $("#timeline").innerHTML=steps.map((s,k)=>`<div class="step ${k<idx?"done":k===idx?"cur":""}"><b>${k+1}. ${s[0]}</b><small>${s[1]}</small></div>`).join("")+`<div class="step ${l.lona_entregada?"done":""}"><b>Lona</b><small>${l.lona_entregada?"Entregada":l.lona_solicitada?"Solicitada":"Opcional"}</small></div>`;
   const b=$("#proceso-body");
   if(!l.id){b.innerHTML=`<div class="infobox">Guarda la propiedad para iniciar el proceso.</div>`;return}
-  let h="";
+  let h=fichaFotosHTML(l);
   if(ROLE==="admin"){
     h+=`<div class="grid"><div class="f c8" style="grid-column:span 8"><label>Liga de Easy Broker</label><input id="eb_url" value="${esc(l.easybroker_url||"")}" placeholder="https://www.easybroker.com/…"></div><div class="f c4"><label>&nbsp;</label><button class="btn primary" id="eb_save">Guardar liga</button></div></div>
       <p class="hint">Al guardar la liga, el asesor la ve en su listing y puede corroborar. ${l.verificado?'<b style="color:var(--ok)">El asesor ya corroboró.</b>':"El asesor aún no corrobora."}</p>
@@ -522,8 +542,8 @@ function renderDocList(kind){
   const el=$("#docs-"+kind);if(!el)return;
   const list=docsOf(cur.id,kind);
   if(kind==="foto_h"||kind==="foto_v"){
-    el.innerHTML=list.map((d,i)=>`<div class="pho ${kind==="foto_v"?"v":""}" data-id="${d.id}"><img src="${pubUrl(d.path)}" loading="lazy"><span class="n">${i+1}</span>${d.etiqueta?`<span class="tag">${d.etiqueta}</span>`:""}
-      <div class="tools"><button data-act="dl" title="Descargar esta foto">⤓</button>${kind==="foto_h"?`<button data-act="portada" title="Marcar como portada">★</button><button data-act="interior" title="Marcar como interior">◧</button>`:""}<button data-act="up" title="Mover antes">‹</button><button data-act="down" title="Mover después">›</button><button data-act="del" title="Eliminar">×</button></div></div>`).join("")||`<div class="hint">Sin fotos todavía.</div>`;
+    el.innerHTML=list.map((d,i)=>`<div class="pho ${kind==="foto_v"?"v":""} ${d.etiqueta?"sel-"+d.etiqueta:""}" data-id="${d.id}"><img src="${pubUrl(d.path)}" loading="lazy"><span class="n">${i+1}</span>${d.etiqueta?`<span class="tag">${d.etiqueta}</span>`:""}
+      <div class="tools"><button data-act="dl" title="Descargar esta foto">⤓</button>${kind==="foto_h"?`<button class="w" data-act="portada" title="Usar como portada de la ficha">Portada</button><button class="w" data-act="interior" title="Usar como foto interior de la ficha">Interior</button>`:""}<button data-act="up" title="Mover antes">‹</button><button data-act="down" title="Mover después">›</button><button data-act="del" title="Eliminar">×</button></div></div>`).join("")||`<div class="hint">Sin fotos todavía.</div>`;
   } else {
     el.innerHTML=list.map(d=>`<div class="doc" data-id="${d.id}">📄 <a href="${pubUrl(d.path)}" target="_blank" rel="noopener">${esc(d.nombre)}</a><span class="hint">${fecha(d.created_at)}</span><button class="x" data-act="del" title="Eliminar">×</button></div>`).join("")||`<div class="hint">Nada subido todavía.</div>`;
   }
@@ -535,7 +555,7 @@ document.addEventListener("click",async e=>{
   if(act==="del"){if(!confirm("¿Eliminar este archivo?"))return;await sb.storage.from(BUCKET).remove([d.path]);await sb.from("listing_docs").delete().eq("id",id);DOCS[cur.id]=list.filter(x=>x.id!==id)}
   else if(act==="portada"||act==="interior"){const prev=list.filter(x=>x.tipo===d.tipo&&x.etiqueta===act);for(const p of prev){p.etiqueta=null;await sb.from("listing_docs").update({etiqueta:null}).eq("id",p.id)}d.etiqueta=act;await sb.from("listing_docs").update({etiqueta:act}).eq("id",id)}
   else if(act==="up"||act==="down"){const same=list.filter(x=>x.tipo===d.tipo).sort((a,b)=>a.orden-b.orden);const i=same.indexOf(d),j=act==="up"?i-1:i+1;if(j<0||j>=same.length)return;[same[i].orden,same[j].orden]=[same[j].orden,same[i].orden];await sb.from("listing_docs").update({orden:same[i].orden}).eq("id",same[i].id);await sb.from("listing_docs").update({orden:same[j].orden}).eq("id",same[j].id);DOCS[cur.id]=list.slice().sort((a,b)=>a.orden-b.orden)}
-  renderDocs();renderProgress();renderActions();
+  renderDocs();renderProgress();renderActions();if(b.closest("#proceso-body"))renderProceso();
 });
 
 /* ---------- descarga de fotos ---------- */
