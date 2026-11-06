@@ -198,7 +198,7 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
 .ficha .hero .grad{position:absolute;inset:0;background:linear-gradient(180deg,rgba(23,63,53,.55) 0%,rgba(23,63,53,0) 30%,rgba(23,63,53,0) 55%,rgba(23,63,53,.92) 100%)}
 .ficha .ftop{position:absolute;top:54px;left:64px;right:64px;display:flex;justify-content:space-between;align-items:flex-start;z-index:2}
 .ficha .ftop img{width:190px}
-.ficha .badge{background:rgba(250,248,242,.92);color:#173F35;font-size:22px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:12px 22px;border-radius:999px}
+.ficha .badge{white-space:nowrap;background:rgba(250,248,242,.92);color:#173F35;font-size:22px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:12px 22px;border-radius:999px}
 .ficha .title{position:absolute;left:64px;right:64px;bottom:140px;z-index:2;color:#fff}
 .ficha .title h1{font-family:Lora,serif;font-weight:500;font-size:66px;line-height:1.08;max-width:900px;color:#fff}
 .ficha .title .addr{margin-top:16px;font-size:26px;color:#D9C9A8}
@@ -382,6 +382,7 @@ const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&g
 const fmt=v=>v==null||v===""?"—":"$ "+Math.round(+v).toLocaleString("es-MX");
 const num=s=>{const x=parseFloat(String(s??"").replace(/[^0-9.]/g,""));return isNaN(x)?null:x};
 const fecha=d=>d?new Date(d).toLocaleDateString("es-MX",{day:"numeric",month:"short"}):"";
+const limpia=s=>String(s??"").replace(/\*\*|__|^#+\s*/gm,"").replace(/^\s*[-•]\s+/gm,"• ");
 
 let ME=ROLE==="admin"?"admin":(localStorage.getItem("lst_me")||"");
 let LISTINGS=[], DOCS={}, cur=null, filt={q:"",tipo:"",est:""};
@@ -561,10 +562,10 @@ function reviewHTML(conChecklist){
     ${conChecklist?(f.length?`<div class="lock" style="margin:12px 0">Para enviar falta: <b>${f.join(", ")}</b></div>`:`<div class="okbox" style="margin:12px 0">Todo listo para enviar.</div>`):""}
     <div class="rev" style="margin-top:14px">
       <div><b>Título</b>${v(l.titulo)}</div><div><b>Tipo</b>${v(l.tipo)}</div><div><b>Precio</b>${v(l.precio,fmt(l.precio))}</div>
-      <div style="grid-column:1/-1"><b>Dirección</b>${v(l.direccion)}</div><div style="grid-column:1/-1"><b>Google Maps</b>${l.maps_url?`<a href="${esc(l.maps_url)}" target="_blank" rel="noopener">${esc(l.maps_url)}</a>`:`<span class="miss">—</span>`}</div>
+      <div style="grid-column:1/-1"><b>Dirección</b>${v(l.direccion)}</div><div style="grid-column:1/-1"><b>Google Maps</b>${l.maps_url?`<a href="${esc(l.maps_url)}" target="_blank" rel="noopener" style="color:var(--green);font-weight:500">Abrir ubicación en Google Maps ↗</a>`:`<span class="miss">—</span>`}</div>
       <div><b>Recámaras</b>${v(l.recamaras)}</div><div><b>Baños</b>${v(l.banos)}${l.medios_banos?" + "+l.medios_banos+"½":""}</div><div><b>Estacionamientos</b>${v(l.estacionamientos)}</div>
       <div><b>m² construcción</b>${v(l.m2_construccion)}</div><div><b>m² terreno</b>${v(l.m2_terreno)}</div><div><b>Año</b>${v(l.anio)}</div>
-      <div style="grid-column:1/-1"><b>Descripción</b>${l.descripcion?esc(l.descripcion).replace(/\n/g,"<br>"):`<span class="miss">Sin descripción (recomendada)</span>`}</div>
+      <div style="grid-column:1/-1"><b>Descripción</b>${l.descripcion?esc(limpia(l.descripcion)).replace(/\n/g,"<br>"):`<span class="miss">Sin descripción (recomendada)</span>`}</div>
       <div style="grid-column:1/-1"><b>Características y amenidades</b>${(l.caracteristicas||[]).concat(l.amenidades||[]).map(esc).join(" · ")||`<span class="miss">—</span>`}</div>
       <div><b>Comisión / comparte</b>${v(l.comision_pct)}% / ${v(l.comparte_pct)}%</div><div><b>Exclusiva</b>${l.exclusiva==null?"—":l.exclusiva?"Sí":"No"}</div><div><b>Gravamen</b>${l.gravamen==null?"—":l.gravamen?"Sí"+(l.gravamen_detalle?" · "+esc(l.gravamen_detalle):""):"No"}</div>
       <div><b>Autorización firmada</b>${au.length?"Subida":`<span class="miss">Pendiente</span>`}</div><div><b>Docs del cliente</b>${cl.length} archivo${cl.length===1?"":"s"}</div>
@@ -706,13 +707,13 @@ function mapHTML(l){
 }
 function fichaHTML(l){
   const fh=docsOf(l.id,"foto_h");const por=fh.find(d=>d.etiqueta==="portada")||fh[0],inte=fh.find(d=>d.etiqueta==="interior")||fh[1];
-  const paras=(l.descripcion||"").split(/\n+/).filter(Boolean).slice(0,3);
+  const paras=limpia(l.descripcion||"").split(/\n+/).filter(Boolean).slice(0,3);
   const car=(l.caracteristicas||[]).concat(l.amenidades||[]).slice(0,10);
   const specs=[[l.recamaras,"recámaras"],[l.banos!=null?(l.banos+(l.medios_banos?" + "+l.medios_banos+"½":"")):null,"baños"],[l.estacionamientos,l.estacionamientos===1?"cajón":"cajones"],[l.m2_construccion,"m² constr."],[l.m2_terreno,"m² terreno"],[l.anio,"año"]].filter(s=>s[0]!=null&&s[0]!=="");
   const title=esc(l.titulo||"");
   return `<div class="ficha" id="ficha-el">
     <div class="hero">${por?`<img crossorigin="anonymous" src="${pubUrl(por.path)}">`:""}<div class="grad"></div>
-      <div class="ftop"><img src="data:image/png;base64,${LOGO_W}"><span class="badge">${esc(l.tipo)}${l.recamaras!=null?" · Casa/Depto":""}</span></div>
+      <div class="ftop"><img src="data:image/png;base64,${LOGO_W}"><span class="badge">${esc(l.tipo)}</span></div>
       <div class="title"><h1>${title}</h1><div class="addr">📍 ${esc(l.direccion||"")}</div></div>
       <div class="price"><small>${l.tipo==="Renta"?"Renta mensual":"Precio de venta"}</small>${fmt(l.precio)}</div>
     </div>
@@ -725,16 +726,31 @@ function fichaHTML(l){
 }
 let LOGO_W="";
 (function(){const im=new Image();im.onload=()=>{const c=document.createElement("canvas");c.width=im.width;c.height=im.height;const x=c.getContext("2d");x.drawImage(im,0,0);const d=x.getImageData(0,0,c.width,c.height);for(let i=0;i<d.data.length;i+=4){if(d.data[i+3]>0){d.data[i]=255;d.data[i+1]=255;d.data[i+2]=255}}x.putImageData(d,0,0);LOGO_W=c.toDataURL("image/png").split(",")[1]};im.src="data:image/png;base64,"+LOGO_B64})();
+let FONT_CSS=null;
+async function fontCSS(){
+  if(FONT_CSS!=null)return FONT_CSS;
+  try{
+    const css=await (await fetch("https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap")).text();
+    let out=css;
+    for(const u of new Set([...css.matchAll(/url\((https:[^)]+)\)/g)].map(m=>m[1]))){
+      try{const b=await (await fetch(u)).blob();const d=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(b)});out=out.split(u).join(d)}catch(e){}
+    }
+    FONT_CSS=out;
+  }catch(e){FONT_CSS=""}
+  return FONT_CSS;
+}
 async function generarFicha(){
   if(!(await save(true)))return;
   const fh=docsOf(cur.id,"foto_h");if(!fh.length){toast("Sube al menos una foto horizontal",true);return}
   toast("Generando ficha…");
   const st=$("#ficha-stage");st.innerHTML=fichaHTML(cur);
   const el=$("#ficha-el");
+  const fcss=await fontCSS();
+  try{await document.fonts.load("500 66px Lora");await document.fonts.load("500 20px Poppins");await document.fonts.ready}catch(e){}
   await Promise.all([...el.querySelectorAll("img")].map(i=>i.complete?1:new Promise(r=>{i.onload=i.onerror=r})));
   await new Promise(r=>setTimeout(r,300));
   try{
-    const url=await htmlToImage.toPng(el,{width:1080,height:1920,pixelRatio:1,cacheBust:true});
+    const url=await htmlToImage.toPng(el,{width:1080,height:1920,pixelRatio:1,cacheBust:true,fontEmbedCSS:fcss});
     const a=document.createElement("a");a.href=url;a.download=`Ficha_${(cur.titulo||"TRUST").replace(/[^\wáéíóúñ]+/gi,"_")}.png`;a.click();
     toast("Ficha descargada");
     if(ROLE==="admin"&&!cur.ficha_generada)await patch({ficha_generada:true});
