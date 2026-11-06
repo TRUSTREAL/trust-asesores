@@ -19,7 +19,7 @@
   --trust-gray:#97999B; --trust-gray-light:#E5E5E6; --trust-gray-bg:#F7F7F5;
   --trust-cream:#FAF8F3; --trust-accent:#C9A961;
   --ink:#1B1F1E; --ok:#2E7D5B; --err:#B3423A;
-  --st-nc:#97999B; --st-seg:#2F6FB5; --st-hot:#B5406B; --st-cita:#E07B2A; --st-apa:#E9C33A; --st-venta:#2E7D5B; --st-perd:#B3423A; --st-fut:#5B7C99;
+  --st-nc:#97999B; --st-seg:#2F6FB5; --st-hot:#B5406B; --st-cita:#E07B2A; --st-apa:#E9C33A; --st-venta:#2E7D5B; --st-perd:#B3423A; --st-fut:#5B7C99; --st-vis:#A8471C;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
@@ -143,6 +143,7 @@ td.m{color:var(--trust-gray)}
 .flag.on.h{background:var(--st-hot);border-color:var(--st-hot)}
 .flag.on.s{background:var(--st-seg);border-color:var(--st-seg)}
 .flag.on.c{background:var(--st-cita);border-color:var(--st-cita)}
+.flag.on.vi{background:var(--st-vis);border-color:var(--st-vis)}
 .flag.on.a{background:var(--st-apa);border-color:var(--st-apa);color:var(--ink)}
 .flag.on.v{background:var(--st-venta);border-color:var(--st-venta)}
 .flag.on.p{background:var(--st-perd);border-color:var(--st-perd)}
@@ -154,7 +155,7 @@ td.m{color:var(--trust-gray)}
 .fun.n{border-top-color:var(--st-nc)}.fun.n b{color:var(--st-nc)}
 .fun.h{border-top-color:var(--st-hot)}.fun.h b{color:var(--st-hot)}
 .fun.s{border-top-color:var(--st-seg)}.fun.s b{color:var(--st-seg)}
-.fun.c{border-top-color:var(--st-cita)}.fun.c b{color:var(--st-cita)}
+.fun.c{border-top-color:var(--st-cita)}.fun.c b{color:var(--st-cita)}.fun.vi{border-top-color:var(--st-vis)}.fun.vi b{color:var(--st-vis)}
 .fun.a{border-top-color:var(--st-apa)}.fun.a b{color:#B8951D}
 .fun.p{border-top-color:var(--st-perd)}.fun.p b{color:var(--st-perd)}
 .funnel{display:grid;grid-template-columns:repeat(7,1fr);gap:16px}
@@ -187,7 +188,7 @@ td.m{color:var(--trust-gray)}
 .repnum{border:1px solid var(--trust-gray-light);padding:12px 14px}
 .repnum b{display:block;font-family:Lora,serif;font-size:28px;font-weight:600;color:var(--trust-green);line-height:1.05}
 .repnum span{font-size:11px;color:var(--trust-gray)}
-.repnum.n b{color:var(--st-nc)}.repnum.h b{color:var(--st-hot)}.repnum.s b{color:var(--st-seg)}.repnum.c b{color:var(--st-cita)}.repnum.a b{color:#B8951D}.repnum.v b{color:var(--st-venta)}.repnum.p b{color:var(--st-perd)}
+.repnum.n b{color:var(--st-nc)}.repnum.h b{color:var(--st-hot)}.repnum.s b{color:var(--st-seg)}.repnum.c b{color:var(--st-cita)}.repnum.vi b{color:var(--st-vis)}.repnum.a b{color:#B8951D}.repnum.v b{color:var(--st-venta)}.repnum.p b{color:var(--st-perd)}
 .repgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
 .repbox{border:1px solid var(--trust-gray-light);padding:14px 16px}
 .repbox h2{font-size:15px;margin-bottom:8px}
@@ -280,6 +281,7 @@ td.m{color:var(--trust-gray)}
 th.sortable{cursor:pointer;user-select:none;white-space:nowrap}th.sortable:hover{color:var(--trust-green)}th.sortable.on{color:var(--trust-green)}
 .dd{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .dd.g{background:#E1F1E8;color:#2E7D5B}.dd.y{background:#FBF0D6;color:#B27A0F}.dd.r{background:#F8E1DE;color:#A8342A}
+.vis{font-weight:400;font-size:12px;color:var(--st-vis);margin-top:2px;white-space:normal;max-width:260px}
 .razon{font-weight:400;font-size:12px;color:var(--trust-gray);margin-top:2px;white-space:normal;max-width:260px}
 #aList table,#aCitas table,#baseList table{min-width:820px}
 .flags{flex-wrap:nowrap}
@@ -421,7 +423,7 @@ h1,h2,.today b,.kpi b,.fun b,.repnum b,.frate b,.fo b,.fstep .fp,.proj td.big{fo
 .fstack{overflow:hidden}
 .fstep .fb{border-radius:6px}
 .fun{border-top:0;border-left:3px solid var(--trust-green);padding-left:12px;padding-top:4px}
-.fun.n{border-left-color:var(--st-nc)}.fun.h{border-left-color:var(--st-hot)}.fun.s{border-left-color:var(--st-seg)}.fun.c{border-left-color:var(--st-cita)}.fun.a{border-left-color:var(--st-apa)}.fun.p{border-left-color:var(--st-perd)}.fun.v{border-left-color:var(--st-venta)}
+.fun.n{border-left-color:var(--st-nc)}.fun.h{border-left-color:var(--st-hot)}.fun.s{border-left-color:var(--st-seg)}.fun.c{border-left-color:var(--st-cita)}.fun.vi{border-left-color:var(--st-vis)}.fun.a{border-left-color:var(--st-apa)}.fun.p{border-left-color:var(--st-perd)}.fun.v{border-left-color:var(--st-venta)}
 th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
 @media (max-width:900px){
   .topbar{padding:10px 16px 0;padding-top:calc(10px + env(safe-area-inset-top))}
@@ -432,6 +434,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
 }
 </style>
 
+<script src="/auth.js"></script>
 </head>
 <body>
 
@@ -571,7 +574,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
       <select id="bTipoF" class="sbtn" onchange="basePage=0;renderBase()"><option value="">Tipo: todos</option><option>Directo</option><option>Broker</option></select>
       <input type="date" id="bD1" class="sbtn" style="background-image:none;padding-right:10px" onchange="basePage=0;renderBase()" title="Desde"> <span class="hint">a</span>
       <input type="date" id="bD2" class="sbtn" style="background-image:none;padding-right:10px" onchange="basePage=0;renderBase()" title="Hasta">
-      <select id="bEstF" class="sbtn" onchange="basePage=0;renderBase()"><option value="">Estatus: todos</option><option value="sin">Sin estatus</option><option value="nc">No contestó</option><option value="seguimiento">Seguimiento</option><option value="hot">Hot Lead</option><option value="cita">Cita realizada</option><option value="apartado">Apartado</option><option value="venta">Venta</option><option value="futuro">Futuro</option><option value="perdido">Perdido</option></select>
+      <select id="bEstF" class="sbtn" onchange="basePage=0;renderBase()"><option value="">Estatus: todos</option><option value="sin">Sin estatus</option><option value="nc">No contestó</option><option value="seguimiento">Seguimiento</option><option value="hot">Hot Lead</option><option value="cita">Cita realizada</option><option value="visita">Visita</option><option value="apartado">Apartado</option><option value="venta">Venta</option><option value="futuro">Futuro</option><option value="perdido">Perdido</option></select>
       <button class="btn2 clear" id="bClear" onclick="clearBase()">Quitar filtros</button>
     </div>
     <div class="card"><div id="baseList"></div></div>
@@ -609,6 +612,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
       <div class="kpi"><b id="pDia">0</b><span>promedio por día</span></div>
       <div class="kpi"><b id="pCanal">—</b><span>canal principal</span></div>
       <div class="kpi"><b id="pCita" style="color:var(--st-cita)">0</b><span>citas realizadas</span></div>
+      <div class="kpi"><b id="pVisita" style="color:var(--st-vis)">0</b><span>visitas (sí fueron)</span></div>
       <div class="kpi"><b id="pHot" style="color:var(--st-hot)">0</b><span>hot leads</span></div>
       <div class="kpi"><b id="pApart" style="color:#B8951D">0</b><span>apartados</span></div>
       <div class="kpi"><b id="pVenta" style="color:var(--st-venta)">0</b><span>ventas</span></div>
@@ -616,6 +620,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
     </div>
     <div class="card" style="margin-bottom:16px"><h2>Conversión</h2><div id="pFunnel"></div></div>
     <div class="card" style="margin-bottom:16px"><h2>Citas realizadas</h2><p class="sub">Solo leads que están hoy en estatus Cita.</p><div id="pCitaList"></div></div>
+    <div class="card" style="margin-bottom:16px"><h2>Visitas</h2><p class="sub">Citas a las que el prospecto sí fue, con fecha y ubicación.</p><div id="pVisitaList"></div></div>
     <div class="card" style="margin-bottom:16px"><h2>Hot leads</h2><div id="pHotList"></div></div>
     <div class="card" style="margin-bottom:16px"><h2>Leads en apartado</h2><div id="pApList"></div></div>
     <div class="card" style="margin-bottom:16px"><h2>Prospectos por semana</h2><div class="cols" id="pTrend"></div></div>
@@ -648,7 +653,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
       <select id="aProyF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Proyecto: todos</option></select>
       <select id="aCanalF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Canal: todos</option></select>
       <select id="aTipoF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Tipo: todos</option><option>Directo</option><option>Broker</option></select>
-      <select id="aEstF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Estatus: todos</option><option value="activo">Activos (sin perdidos ni futuros)</option><option value="sin">Sin estatus</option><option value="nc">No contestó</option><option value="seguimiento">Seguimiento</option><option value="hot">Hot Lead</option><option value="cita">Cita realizada</option><option value="apartado">Apartado</option><option value="venta">Venta</option><option value="futuro">Futuro</option><option value="perdido">Perdido</option></select>
+      <select id="aEstF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Estatus: todos</option><option value="activo">Activos (sin perdidos ni futuros)</option><option value="sin">Sin estatus</option><option value="nc">No contestó</option><option value="seguimiento">Seguimiento</option><option value="hot">Hot Lead</option><option value="cita">Cita realizada</option><option value="visita">Visita</option><option value="apartado">Apartado</option><option value="venta">Venta</option><option value="futuro">Futuro</option><option value="perdido">Perdido</option></select>
       <button class="btn2 clear" id="aClear" onclick="clearAseF()">Quitar filtros</button>
     </div>
     <div class="kpis k8a">
@@ -709,6 +714,16 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
   </div>
 </div>
 
+<div class="modal" id="modalV">
+  <div class="modalbox">
+    <p id="modalVTitle" style="margin-bottom:4px"></p>
+    <p class="sub" style="margin-bottom:14px">El prospecto sí fue a la cita. ¿Cuándo y dónde?</p>
+    <div class="field" style="margin-bottom:12px"><label for="vFecha">Fecha de la visita</label><input id="vFecha" type="date" style="width:100%;font:inherit;padding:10px 12px;border:1px solid var(--trust-line,#ddd);border-radius:10px"></div>
+    <div class="field" style="margin-bottom:12px"><label for="vLugar">Ubicación</label><input id="vLugar" type="text" placeholder="Ej. showroom Tanhia, oficina TRUST, obra…" style="width:100%;font:inherit;padding:10px 12px;border:1px solid var(--trust-line,#ddd);border-radius:10px"></div>
+    <div class="modalact"><button class="btn2" id="modalVNo">Cancelar</button><button class="btn" id="modalVYes">Marcar visita</button></div>
+  </div>
+</div>
+
 <div class="modal" id="modalR">
   <div class="modalbox">
     <p id="modalRTitle" style="margin-bottom:14px"></p>
@@ -761,7 +776,7 @@ const LS = "trust_leads_v1";
 
 function initStore(){
   if (SUPABASE_URL && SUPABASE_KEY && window.supabase){
-    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    sb = (window.SBC||window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY));
     setSync("Supabase", false);
   } else {
     setSync("Guardando en este navegador", true);
@@ -808,24 +823,46 @@ async function patch(id, fields){
   if (fields.fecha) leads.sort((a,b)=> (b.fecha+(b.created_at||"")).localeCompare(a.fecha+(a.created_at||"")));
   if (!sb) localStorage.setItem(LS, JSON.stringify(leads));
 }
-const ESTATUS=["nc","hot","cita","apartado","venta","seguimiento","perdido","futuro","razon_perdido"];
+const ESTATUS=["nc","hot","cita","visita","apartado","venta","seguimiento","perdido","futuro","razon_perdido"];
 async function toggleFlag(id, k, force){
   const l=leads.find(x=>String(x.id)===String(id)); if(!l) return; id=l.id;
   const f={}; ESTATUS.forEach(e=> f[e]=false);
-  if(k==="sin"){ if(estatusDe(l)==="sin") return; f.razon_perdido=null; try{ await patch(id,f); render(); }catch(e){ toast("No se guardó: "+e.message,true); } return; }
+  if(k==="sin"){ if(estatusDe(l)==="sin") return; f.razon_perdido=null; f.visita_fecha=null; f.visita_lugar=null; try{ await patch(id,f); render(); }catch(e){ toast("No se guardó: "+e.message,true); } return; }
   if(force && l[k] && estatusDe(l)===k) return;   // ya está ahí
   if(!l[k] || force) f[k]=true;                       // clic en el activo lo quita; clic en otro lo sustituye
   const CIERRES=["hot","apartado","venta","perdido","futuro"];  // pasos posteriores a la cita: conviven con "cita"
-  const EMBUDO=["cita","hot","apartado","venta"];                 // conviven entre sí: un lead puede ser Cita + Hot + Apartado
+  const EMBUDO=["cita","visita","hot","apartado","venta"];                 // conviven entre sí: un lead puede ser Cita + Hot + Apartado
   if(f[k] && CIERRES.includes(k) && l.cita) f.cita=true;          // la cita se conserva al cerrar
   if(k==="cita") CIERRES.forEach(e=>{ if(l[e]) f[e]=true; });      // marcar/quitar cita no toca el cierre
   if(EMBUDO.includes(k)) EMBUDO.forEach(e=>{ if(e!==k && l[e]) f[e]=true; }); // marcar/quitar un paso del embudo no toca los demás
-  if(f[k] && (k==="perdido"||k==="futuro")) EMBUDO.forEach(e=>{ if(e!=="cita") f[e]=false; }); // perdido/futuro cierran el embudo (solo queda la cita)
+  if(f[k] && (k==="perdido"||k==="futuro")) EMBUDO.forEach(e=>{ if(e!=="cita"&&e!=="visita") f[e]=false; }); // perdido/futuro cierran el embudo (quedan cita y visita)
+  if(f[k] && CIERRES.includes(k) && l.visita) f.visita=true;        // la visita también se conserva al cerrar
+  if(k==="cita" && !f.cita) f.visita=false;                          // sin cita no hay visita
+  if(k==="visita" && f.visita){ const r=await askVisita(l); if(!r) return; Object.assign(f, r); f.cita=true; } // visita implica cita
+  if(l.visita && !f.visita){ f.visita_fecha=null; f.visita_lugar=null; }
   if(k==="apartado" && f.apartado){ const r=await askMontos(l); if(!r) return; Object.assign(f, r); }
   if(k==="perdido" && f.perdido){ const r=await askRazon(l); if(r===null) return; f.razon_perdido=r; }
   if(l.perdido && !f.perdido) f.razon_perdido=null;
   try{ await patch(id, f); render(); if(f.perdido) toast("Lead marcado como perdido"); else if(f.futuro) toast("Lead guardado como futuro"); }catch(e){ toast("No se guardó: "+e.message, true); }
 }
+function askVisita(l){
+  return new Promise(res=>{
+    const m=document.getElementById("modalV");
+    document.getElementById("modalVTitle").textContent=`${l.nombre} · ${l.proyecto}`;
+    const fe=document.getElementById("vFecha"), lu=document.getElementById("vLugar");
+    fe.value=l.visita_fecha||todayISO(); lu.value=l.visita_lugar||"";
+    const y=document.getElementById("modalVYes"), no=document.getElementById("modalVNo");
+    const close=v=>{ m.classList.remove("on"); y.onclick=no.onclick=null; document.removeEventListener("keydown",key,true); res(v); };
+    const key=e=>{ if(e.key==="Escape"){ e.stopPropagation(); close(null); } };
+    y.onclick=()=>{ const d=fe.value, u=lu.value.trim(); fe.style.borderColor=lu.style.borderColor="";
+      if(!d){ fe.focus(); fe.style.borderColor="#c0392b"; return; } if(!u){ lu.focus(); lu.style.borderColor="#c0392b"; return; }
+      close({visita_fecha:d, visita_lugar:u}); };
+    no.onclick=()=>close(null);
+    document.addEventListener("keydown",key,true);
+    m.classList.add("on"); fe.style.borderColor=lu.style.borderColor=""; lu.focus();
+  });
+}
+function editVisita(id){ const l=leads.find(x=>String(x.id)===String(id)); if(!l) return; askVisita(l).then(async r=>{ if(!r) return; try{ await patch(l.id, r); render(); toast("Visita actualizada"); }catch(e){ toast("No se guardó: "+e.message, true); } }); }
 function askRazon(l){
   return new Promise(res=>{
     const m=document.getElementById("modalR");
@@ -1076,7 +1113,7 @@ function renderBoard(){
   funnelViz("funnel",rows); convAse(rows); convTipo("convTipo",rows); proj("proj",rows);
 }
 function esCita(l){ return !!(l.cita||l.apartado||l.venta); }   // apartado y venta pasaron por cita
-const PRIORIDAD=["venta","apartado","perdido","futuro","hot","cita","seguimiento","nc"];
+const PRIORIDAD=["venta","apartado","perdido","futuro","hot","visita","cita","seguimiento","nc"];
 function estatusDe(l){ return PRIORIDAD.find(k=>l[k]) || "sin"; }
 function tipoDe(l){ return l.tipo || (l.broker ? "Broker" : "Directo"); }
 function pct(n,d){ return d? Math.round(n/d*100)+"%" : "—"; }
@@ -1101,14 +1138,14 @@ function proj(id, rows){
       return `<tr><td>${lab}</td><td class="std">${Math.round(st*100)}%</td><td>${exp.toFixed(1).replace(/\.0$/,"")}</td><td class="big">${real}</td><td class="${d>=0?"up":"dn"}">${d>=0?"+":""}${d.toFixed(1).replace(/\.0$/,"")}</td><td class="${r>=st?"up":"dn"}">${pct(real,n)}</td></tr>`; }).join("")+
     `</table><p class="hint" style="margin-top:10px">Sobre ${n} leads del periodo. Real acumula el embudo: una venta cuenta también como apartado y cita.</p>`;
 }
-const ST_META={sin:["Sin estatus","var(--trust-gray-light)"],nc:["No contestó","var(--st-nc)"],seguimiento:["Seguimiento","var(--st-seg)"],hot:["Hot lead","var(--st-hot)"],cita:["Cita realizada","var(--st-cita)"],apartado:["Apartado","var(--st-apa)"],venta:["Venta","var(--st-venta)"],perdido:["Perdido","var(--st-perd)"],futuro:["Futuro","var(--st-fut)"]};
+const ST_META={sin:["Sin estatus","var(--trust-gray-light)"],nc:["No contestó","var(--st-nc)"],seguimiento:["Seguimiento","var(--st-seg)"],hot:["Hot lead","var(--st-hot)"],cita:["Cita realizada","var(--st-cita)"],visita:["Visita","var(--st-vis)"],apartado:["Apartado","var(--st-apa)"],venta:["Venta","var(--st-venta)"],perdido:["Perdido","var(--st-perd)"],futuro:["Futuro","var(--st-fut)"]};
 function funnelViz(id, rows){
   const n=rows.length;
   // Embudo por estatus actual: cada tramo cuenta solo los leads que están hoy en ese estatus. Perdidos y sin estatus quedan fuera.
-  const ORDER=[["nc","No contestó","contactados","#97999B"],["seguimiento","Seguimiento","en conversación","#2F6FB5"],["cita","Cita","incluye apartados y ventas","#E07B2A"],["hot","Hot lead","con intención real","#B5406B"],["apartado","Apartado","apartó unidad","#D4AF37"],["venta","Venta","cerradas","#2E7D5B"]];
+  const ORDER=[["nc","No contestó","contactados","#97999B"],["seguimiento","Seguimiento","en conversación","#2F6FB5"],["cita","Cita","incluye apartados y ventas","#E07B2A"],["visita","Visita","sí fueron a la cita","#A8471C"],["hot","Hot lead","con intención real","#B5406B"],["apartado","Apartado","apartó unidad","#D4AF37"],["venta","Venta","cerradas","#2E7D5B"]];
   const rank={}; ORDER.forEach(([k],i)=>rank[k]=i);
   const cur=rows.map(l=>estatusDe(l));
-  const vals=ORDER.map(([k])=> k==="cita" ? rows.filter(esCita).length : cur.filter(x=>x===k).length);
+  const vals=ORDER.map(([k])=> k==="cita" ? rows.filter(esCita).length : k==="visita" ? rows.filter(l=>l.visita).length : cur.filter(x=>x===k).length);
   const perd=cur.filter(k=>k==="perdido").length, fut=cur.filter(k=>k==="futuro").length, sin=cur.filter(k=>k==="sin").length;
   let left;
   if(!n){ left=`<p class="empty">Sin leads en este periodo.</p>`; }
@@ -1134,7 +1171,7 @@ function funnelViz(id, rows){
       <div class="fo g"><i></i><div><b>${sin}</b> sin estatus <small>${pct(sin,n)} de los leads · aún no entran al embudo</small></div></div>
     </div>`;
   }
-  const order=["venta","apartado","hot","cita","seguimiento","nc","futuro","perdido","sin"];
+  const order=["venta","apartado","hot","visita","cita","seguimiento","nc","futuro","perdido","sin"];
   const cnt={}; order.forEach(k=>cnt[k]=0); rows.forEach(l=>cnt[estatusDe(l)]++);
   const right = !n ? "" : `<div class="fstack">${order.map(k=> cnt[k]?`<i style="width:${cnt[k]/n*100}%;background:${ST_META[k][1]}" title="${ST_META[k][0]}: ${cnt[k]}"></i>`:"").join("")}</div>
     <div class="fleg">${order.map(k=>`<div><i style="background:${ST_META[k][1]}"></i>${ST_META[k][0]}<b>${cnt[k]}</b><small>${pct(cnt[k],n)}</small></div>`).join("")}</div>`;
@@ -1145,21 +1182,21 @@ function funnelViz(id, rows){
 function convTipo(id, rows){
   const box=document.getElementById(id);
   if(!rows.length){ box.innerHTML=`<p class="empty">Sin leads en este periodo.</p>`; return; }
-  box.innerHTML=`<table class="cross"><tr><th>Tipo</th><th>Leads</th><th>NC</th><th>Seguim.</th><th>Hot</th><th>Cita</th><th>Apartado</th><th>Venta</th><th>Perdidos</th></tr>`+
-    TIPOS.map(k=>{ const r=rows.filter(l=>tipoDe(l)===k), n=r.length; if(!n) return `<tr><td>${k}</td><td>0</td><td class="z">—</td><td class="z">—</td><td class="z">—</td><td class="z">—</td><td class="z">—</td><td class="z">—</td><td class="z">—</td></tr>`;
-      const c=r.filter(esCita).length,a=r.filter(l=>l.apartado).length,v=r.filter(l=>l.venta).length,sg=r.filter(l=>l.seguimiento).length,pd=r.filter(l=>l.perdido).length,nc=r.filter(l=>l.nc).length,ht=r.filter(l=>l.hot).length;
-      return `<tr><td>${k}</td><td>${n}</td><td class="${nc?"":"z"}">${pct(nc,n)}</td><td class="${sg?"":"z"}">${pct(sg,n)}</td><td class="${ht?"":"z"}">${pct(ht,n)}</td><td class="${c?"":"z"}">${pct(c,n)}</td><td class="${a?"":"z"}">${pct(a,n)}</td><td class="tot">${pct(v,n)}</td><td class="${pd?"":"z"}">${pct(pd,n)}</td></tr>`; }).join("")+`</table>`;
+  box.innerHTML=`<table class="cross"><tr><th>Tipo</th><th>Leads</th><th>NC</th><th>Seguim.</th><th>Hot</th><th>Cita</th><th>Visita</th><th>Apartado</th><th>Venta</th><th>Perdidos</th></tr>`+
+    TIPOS.map(k=>{ const r=rows.filter(l=>tipoDe(l)===k), n=r.length; if(!n) return `<tr><td>${k}</td><td>0</td><td class="z">—</td><td class="z">—</td><td class="z">—</td><td class="z">—</td><td class="z">—</td><td class="z">—</td><td class="z">—</td><td class="z">—</td></tr>`;
+      const c=r.filter(esCita).length,vi=r.filter(l=>l.visita).length,a=r.filter(l=>l.apartado).length,v=r.filter(l=>l.venta).length,sg=r.filter(l=>l.seguimiento).length,pd=r.filter(l=>l.perdido).length,nc=r.filter(l=>l.nc).length,ht=r.filter(l=>l.hot).length;
+      return `<tr><td>${k}</td><td>${n}</td><td class="${nc?"":"z"}">${pct(nc,n)}</td><td class="${sg?"":"z"}">${pct(sg,n)}</td><td class="${ht?"":"z"}">${pct(ht,n)}</td><td class="${c?"":"z"}">${pct(c,n)}</td><td class="${vi?"":"z"}">${pct(vi,n)}</td><td class="${a?"":"z"}">${pct(a,n)}</td><td class="tot">${pct(v,n)}</td><td class="${pd?"":"z"}">${pct(pd,n)}</td></tr>`; }).join("")+`</table>`;
 }
 function convAse(rows){
   const box=document.getElementById("convAse");
   const s=count(rows,"asesor");
   if(!s.length){ box.innerHTML=`<p class="empty">Sin leads en este periodo.</p>`; return; }
-  box.innerHTML=`<table class="cross"><tr><th>Asesor</th><th>Leads</th><th>NC</th><th>Seguim.</th><th>Hot</th><th>Cita</th><th>Apartado</th><th>Venta</th><th>Perdidos</th></tr>`+
-    s.map(([k,n])=>{ const r=rows.filter(l=>l.asesor===k); const c=r.filter(esCita).length,a=r.filter(l=>l.apartado).length,v=r.filter(l=>l.venta).length,sg=r.filter(l=>l.seguimiento).length,pd=r.filter(l=>l.perdido).length,nc=r.filter(l=>l.nc).length,ht=r.filter(l=>l.hot).length;
-      return `<tr><td>${esc(k)}</td><td>${n}</td><td class="${nc?"":"z"}">${pct(nc,n)}</td><td class="${sg?"":"z"}">${pct(sg,n)}</td><td class="${ht?"":"z"}">${pct(ht,n)}</td><td class="${c?"":"z"}">${pct(c,n)}</td><td class="${a?"":"z"}">${pct(a,n)}</td><td class="tot">${pct(v,n)}</td><td class="${pd?"":"z"}">${pct(pd,n)}</td></tr>`; }).join("")+`</table>`;
+  box.innerHTML=`<table class="cross"><tr><th>Asesor</th><th>Leads</th><th>NC</th><th>Seguim.</th><th>Hot</th><th>Cita</th><th>Visita</th><th>Apartado</th><th>Venta</th><th>Perdidos</th></tr>`+
+    s.map(([k,n])=>{ const r=rows.filter(l=>l.asesor===k); const c=r.filter(esCita).length,vi=r.filter(l=>l.visita).length,a=r.filter(l=>l.apartado).length,v=r.filter(l=>l.venta).length,sg=r.filter(l=>l.seguimiento).length,pd=r.filter(l=>l.perdido).length,nc=r.filter(l=>l.nc).length,ht=r.filter(l=>l.hot).length;
+      return `<tr><td>${esc(k)}</td><td>${n}</td><td class="${nc?"":"z"}">${pct(nc,n)}</td><td class="${sg?"":"z"}">${pct(sg,n)}</td><td class="${ht?"":"z"}">${pct(ht,n)}</td><td class="${c?"":"z"}">${pct(c,n)}</td><td class="${vi?"":"z"}">${pct(vi,n)}</td><td class="${a?"":"z"}">${pct(a,n)}</td><td class="tot">${pct(v,n)}</td><td class="${pd?"":"z"}">${pct(pd,n)}</td></tr>`; }).join("")+`</table>`;
 }
 
-const pPage={cita:0,hot:0,ap:0};
+const pPage={cita:0,visita:0,hot:0,ap:0};
 function paged(key, rows, renderFn, emptyMsg){
   const PER=key==="hot"?1e9:5, pages=Math.max(1,Math.ceil(rows.length/PER));
   if(pPage[key]>=pages) pPage[key]=pages-1; if(pPage[key]<0) pPage[key]=0;
@@ -1170,6 +1207,10 @@ function paged(key, rows, renderFn, emptyMsg){
 function listaSimple(rows){
   return `<table><tr><th>Fecha</th><th>Nombre</th><th>Teléfono</th><th>Canal</th><th>Asesor</th><th>Tipo</th></tr>`+
     rows.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span></td><td class="m" style="white-space:nowrap">${esc(l.telefono||"—")}${waIcon(l)}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.asesor)}</td><td>${esc(tipoDe(l))}</td></tr>`).join("")+`</table>`;
+}
+function listaVisitas(rows){
+  return `<table><tr><th>Visita</th><th>Ubicación</th><th>Nombre</th><th>Teléfono</th><th>Canal</th><th>Asesor</th></tr>`+
+    rows.map(l=>`<tr><td class="m">${l.visita_fecha?fmt(l.visita_fecha):"—"}</td><td>${esc(l.visita_lugar||"—")}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span></td><td class="m" style="white-space:nowrap">${esc(l.telefono||"—")}${waIcon(l)}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.asesor)}</td></tr>`).join("")+`</table>`;
 }
 function listaMontos(rows, editable){
   const tm=rows.reduce((a,l)=>a+(Number(l.monto)||0),0), te=rows.reduce((a,l)=>a+(Number(l.enganche)||0),0);
@@ -1229,6 +1270,9 @@ function renderProy(){
   const cl=rows.filter(l=>l.cita).sort((x,y)=>y.fecha.localeCompare(x.fecha));
   document.getElementById("pCita").textContent=cl.length;
   document.getElementById("pCitaList").innerHTML= paged("cita", cl, listaSimple, "Sin leads en cita en este periodo.");
+  const vl=rows.filter(l=>l.visita).sort((x,y)=>(y.visita_fecha||y.fecha).localeCompare(x.visita_fecha||x.fecha));
+  document.getElementById("pVisita").textContent=vl.length;
+  document.getElementById("pVisitaList").innerHTML= paged("visita", vl, listaVisitas, "Sin visitas en este periodo.");
   document.getElementById("pHot").textContent=rows.filter(l=>l.hot).length;
   document.getElementById("pApart").textContent=rows.filter(l=>l.apartado).length;
   document.getElementById("pVenta").textContent=rows.filter(l=>l.venta).length;
@@ -1245,7 +1289,7 @@ function reporteProy(){
   const fa=document.getElementById("pAseF").value, fc=document.getElementById("pCanalF").value, ft=document.getElementById("pTipoF").value;
   const all=leads.filter(l=> l.fecha>=a && l.fecha<=b);
   const rows=all.filter(l=> l.proyecto===proyCur && (!fa||l.asesor===fa) && canalMatch(l,fc) && (!ft||tipoDe(l)===ft));
-  const n=rows.length, nc=rows.filter(l=>l.nc).length, sg=rows.filter(l=>l.seguimiento).length, ht=rows.filter(l=>l.hot).length, c=rows.filter(esCita).length, ap=rows.filter(l=>l.apartado).length, v=rows.filter(l=>l.venta).length, pd=rows.filter(l=>l.perdido).length, fu=rows.filter(l=>l.futuro).length;
+  const n=rows.length, nc=rows.filter(l=>l.nc).length, sg=rows.filter(l=>l.seguimiento).length, ht=rows.filter(l=>l.hot).length, c=rows.filter(esCita).length, vi=rows.filter(l=>l.visita).length, ap=rows.filter(l=>l.apartado).length, v=rows.filter(l=>l.venta).length, pd=rows.filter(l=>l.perdido).length, fu=rows.filter(l=>l.futuro).length;
   const first = n ? rows.reduce((m,l)=> l.fecha<m?l.fecha:m, rows[0].fecha) : todayISO();
   const days = proyPeriod==="todo" ? Math.max(1, Math.round((new Date(todayISO())-new Date(first))/86400000)+1) : Math.max(1, Math.round((new Date(b)-new Date(a))/86400000)+1);
   const periodo = proyPeriod==="todo" ? "Todo el historial" : `${fmtLong(a)} – ${fmtLong(b)}`;
@@ -1271,6 +1315,7 @@ function reporteProy(){
       <div class="repnum s"><b>${sg}</b><span>en seguimiento</span></div>
       <div class="repnum h"><b>${ht}</b><span>hot leads</span></div>
       <div class="repnum c"><b>${c}</b><span>citas realizadas</span></div>
+      <div class="repnum vi"><b>${vi}</b><span>visitas</span></div>
       <div class="repnum a"><b>${ap}</b><span>apartados</span></div>
       <div class="repnum v"><b>${v}</b><span>ventas</span></div>
       <div class="repnum f"><b>${fu}</b><span>futuros</span></div>
@@ -1346,13 +1391,13 @@ function renderBase(){
   const page=rows.slice(basePage*PER, basePage*PER+PER);
   const fl=(l,k,lab,cls)=>`<button class="flag ${l[k]?"on":""} ${cls||""}" onclick="toggleFlag(${JSON.stringify(l.id)},'${k}')">${lab}</button>`;
   box.innerHTML=`<table><tr><th><button class="lnk" style="font-size:11px;color:var(--trust-gray)" onclick="baseAsc=!baseAsc;renderBase()">Fecha ${baseAsc?"↑":"↓"}</button></th><th>Días</th><th>Nombre</th><th>Teléfono</th><th>Canal</th><th>Proyecto</th><th>Asesor</th><th>Estatus</th><th></th></tr>`+
-    page.map(l=>`<tr><td class="m">${fmt(l.fecha)}/${l.fecha.slice(2,4)}</td><td>${diasDe(l)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span>${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}${lastNota(l)}</td><td class="m" style="white-space:nowrap">${esc(l.telefono||"—")}${waIcon(l)}</td><td>${esc(canalTxt(l))}</td><td>${proyectoSel(l)}</td><td>${asesorSel(l)}</td><td><div class="flags">${fl(l,"nc","NC","n")}${fl(l,"seguimiento","Seg.","s")}${fl(l,"cita","Cita","c")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"futuro","Fut.","f")}${fl(l,"perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div></td><td style="white-space:nowrap"><button class="x" title="Editar" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="x" title="Borrar este lead" onclick="del(${JSON.stringify(l.id)})">×</button></td></tr>`).join("")+`</table>`+
+    page.map(l=>`<tr><td class="m">${fmt(l.fecha)}/${l.fecha.slice(2,4)}</td><td>${diasDe(l)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span>${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}${l.visita&&(l.visita_fecha||l.visita_lugar)?`<div class="vis">Visita ${l.visita_fecha?fmt(l.visita_fecha):""}${l.visita_lugar?" · "+esc(l.visita_lugar):""}</div>`:""}${lastNota(l)}</td><td class="m" style="white-space:nowrap">${esc(l.telefono||"—")}${waIcon(l)}</td><td>${esc(canalTxt(l))}</td><td>${proyectoSel(l)}</td><td>${asesorSel(l)}</td><td><div class="flags">${fl(l,"nc","NC","n")}${fl(l,"seguimiento","Seg.","s")}${fl(l,"cita","Cita","c")}${fl(l,"visita","Visita","vi")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"futuro","Fut.","f")}${fl(l,"perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div></td><td style="white-space:nowrap"><button class="x" title="Editar" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="x" title="Borrar este lead" onclick="del(${JSON.stringify(l.id)})">×</button></td></tr>`).join("")+`</table>`+
     (pages>1?`<div class="pager"><span>${basePage*PER+1}–${Math.min(rows.length,(basePage+1)*PER)} de ${rows.length}</span><div><button ${basePage===0?"disabled":""} onclick="basePage--;renderBase()">Anteriores</button><button ${basePage>=pages-1?"disabled":""} onclick="basePage++;renderBase()">Siguientes</button></div></div>`:"");
 }
 function exportBase(){
   const rows=baseRows(); if(!rows.length){ toast("No hay leads que exportar", true); return; }
   const head=["fecha","nombre","telefono","canal","marketplace","proyecto","asesor","tipo","estatus"];
-  const est={sin:"",nc:"No contestó",hot:"Hot Lead",seguimiento:"Seguimiento",cita:"Cita realizada",apartado:"Apartado",venta:"Venta",perdido:"Perdido",futuro:"Futuro"};
+  const est={sin:"",nc:"No contestó",hot:"Hot Lead",seguimiento:"Seguimiento",cita:"Cita realizada",visita:"Visita",apartado:"Apartado",venta:"Venta",perdido:"Perdido",futuro:"Futuro"};
   const csv=[head.join(",")].concat(rows.map(l=> head.map(h=> `"${String(h==="tipo"?tipoDe(l):h==="estatus"?est[estatusDe(l)]:(l[h]??"")).replace(/"/g,'""')}"`).join(","))).join("\n");
   const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"})); a.download=`leads_base_${todayISO()}.csv`; a.click();
 }
@@ -1385,9 +1430,9 @@ function repBars(entries){
 }
 function repAsesor(name, a, b, lbl){
   const rows=leads.filter(l=> l.asesor===name && l.fecha>=a && l.fecha<=b);
-  const n=rows.length, nc=rows.filter(l=>l.nc).length, sg=rows.filter(l=>l.seguimiento).length, ht=rows.filter(l=>l.hot).length, c=rows.filter(esCita).length, ap=rows.filter(l=>l.apartado).length, v=rows.filter(l=>l.venta).length, pd=rows.filter(l=>l.perdido).length, fu=rows.filter(l=>l.futuro).length;
+  const n=rows.length, nc=rows.filter(l=>l.nc).length, sg=rows.filter(l=>l.seguimiento).length, ht=rows.filter(l=>l.hot).length, c=rows.filter(esCita).length, vi=rows.filter(l=>l.visita).length, ap=rows.filter(l=>l.apartado).length, v=rows.filter(l=>l.venta).length, pd=rows.filter(l=>l.perdido).length, fu=rows.filter(l=>l.futuro).length;
   const pend=leads.filter(l=> l.asesor===name && !l.venta && !l.perdido && !l.futuro && !l.apartado && l.fecha>=a && l.fecha<=b).sort((x,y)=>x.fecha.localeCompare(y.fecha));
-  const estado=l=> l.futuro?"Futuro": l.nc?"No contestó": l.seguimiento?"Seguimiento": l.hot?(l.cita?"Cita · Hot Lead":"Hot Lead"): l.cita?"Cita realizada":"Sin estatus";
+  const estado=l=> l.futuro?"Futuro": l.nc?"No contestó": l.seguimiento?"Seguimiento": l.hot?(l.visita?"Visita · Hot Lead":l.cita?"Cita · Hot Lead":"Hot Lead"): l.visita?"Visita":l.cita?"Cita realizada":"Sin estatus";
   return `<div class="rep">
     <div class="rephead">
       <div><h1>${esc(name)}</h1><p class="sub">${lbl||"Cierre de semana"} · ${a<"1900"?"hasta":fmtLong(a)+" –"} ${b>"9000"?fmtLong(todayISO()):fmtLong(b)}</p></div>
@@ -1399,6 +1444,7 @@ function repAsesor(name, a, b, lbl){
       <div class="repnum s"><b>${sg}</b><span>en seguimiento</span></div>
       <div class="repnum h"><b>${ht}</b><span>hot leads</span></div>
       <div class="repnum c"><b>${c}</b><span>citas realizadas</span></div>
+      <div class="repnum vi"><b>${vi}</b><span>visitas</span></div>
       <div class="repnum a"><b>${ap}</b><span>apartados</span></div>
       <div class="repnum v"><b>${v}</b><span>ventas</span></div>
       <div class="repnum f"><b>${fu}</b><span>futuros</span></div>
@@ -1482,7 +1528,8 @@ function drawLead(){
       <div style="display:flex;gap:8px;align-items:center;flex:none"><button class="lc-edit" title="Editar nombre y datos" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="lc-x" onclick="closeLead()" aria-label="Cerrar">✕</button></div></div>
     <div class="lc-b">
       <div class="lc-sec" style="margin-top:0">Estatus</div>
-      <div class="flags">${fl("nc","NC","n")}${fl("seguimiento","Seg.","s")}${fl("cita","Cita","c")}${fl("hot","Hot","h")}${fl("apartado","Apart.","a")}${fl("venta","Venta","v")}${fl("futuro","Fut.","f")}${fl("perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div>
+      <div class="flags">${fl("nc","NC","n")}${fl("seguimiento","Seg.","s")}${fl("cita","Cita","c")}${fl("visita","Visita","vi")}${fl("hot","Hot","h")}${fl("apartado","Apart.","a")}${fl("venta","Venta","v")}${fl("futuro","Fut.","f")}${fl("perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div>
+      ${l.visita?`<div class="vis" style="margin-top:8px">Visita ${l.visita_fecha?fmt(l.visita_fecha):""}${l.visita_lugar?" · "+esc(l.visita_lugar):""} ${typeof READONLY!=="undefined"&&READONLY?"":`<a href="#" onclick="event.preventDefault();editVisita('${esc(l.id)}')" style="color:inherit">editar</a>`}</div>`:""}
       ${l.perdido&&l.razon_perdido?`<div class="razon" style="margin-top:8px">Perdido: ${esc(l.razon_perdido)}</div>`:""}
       ${(l.monto||l.enganche)?`<div class="lc-mo"><div><span class="hint">Venta esperada</span><b>${money(l.monto)}</b></div><div><span class="hint">Enganche</span><b>${money(l.enganche)}</b></div></div>`:""}
       <div class="lc-sec">Bitácora · ${ns.length} comentario${ns.length===1?"":"s"}</div>
@@ -1507,7 +1554,7 @@ document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&LEAD_OPEN&&!docume
 document.getElementById("modalL").addEventListener("click",e=>{ if(e.target.id==="modalL") closeLead(); });
 let aseView=localStorage.getItem("trust_ase_view")||"list";
 function setAseView(v){ aseView=v; localStorage.setItem("trust_ase_view",v); renderAse(); }
-const KAN_COLS=[["nc","No contestó","var(--st-nc)"],["seguimiento","Seguimiento","var(--st-seg)"],["cita","Cita","var(--st-cita)"],["hot","Hot lead","var(--st-hot)"],["apartado","Apartado","#B8951D"],["venta","Venta","var(--st-venta)"],["futuro","Futuro","var(--st-fut)"],["perdido","Perdido","var(--st-perd)"]];
+const KAN_COLS=[["nc","No contestó","var(--st-nc)"],["seguimiento","Seguimiento","var(--st-seg)"],["cita","Cita","var(--st-cita)"],["visita","Visita","var(--st-vis)"],["hot","Hot lead","var(--st-hot)"],["apartado","Apartado","#B8951D"],["venta","Venta","var(--st-venta)"],["futuro","Futuro","var(--st-fut)"],["perdido","Perdido","var(--st-perd)"]];
 function renderKanban(rows){
   const box=document.getElementById("aKanban");
   const by={}; KAN_COLS.forEach(([k])=>by[k]=[]); rows.forEach(l=>{ const k=estatusDe(l); if(by[k]) by[k].push(l); });
@@ -1534,7 +1581,7 @@ function citasList(id, src){
   if(!cl.length){ el.innerHTML=`<p class="empty">Sin citas en este periodo.</p>`; return; }
   const fl=(l,k,lab,cls)=>`<button class="flag ${l[k]?"on":""} ${cls||""}" onclick="toggleFlag(${JSON.stringify(l.id)},'${k}')">${lab}</button>`;
   el.innerHTML=`<table><tr><th>Fecha</th><th>Días</th><th>Nombre</th><th>Teléfono</th><th>Canal</th><th>Proyecto</th><th>Estatus</th></tr>`+
-    cl.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td>${diasDe(l)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span>${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}${lastNota(l)}</td><td class="m" style="white-space:nowrap">${esc(l.telefono||"—")}${waIcon(l)}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td><div class="flags">${fl(l,"cita","Cita","c")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"futuro","Fut.","f")}${fl(l,"perdido","Perd.","p")}</div></td></tr>`).join("")+`</table>`;
+    cl.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td>${diasDe(l)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span>${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}${l.visita&&(l.visita_fecha||l.visita_lugar)?`<div class="vis">Visita ${l.visita_fecha?fmt(l.visita_fecha):""}${l.visita_lugar?" · "+esc(l.visita_lugar):""}</div>`:""}${lastNota(l)}</td><td class="m" style="white-space:nowrap">${esc(l.telefono||"—")}${waIcon(l)}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td><div class="flags">${fl(l,"cita","Cita","c")}${fl(l,"visita","Visita","vi")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"futuro","Fut.","f")}${fl(l,"perdido","Perd.","p")}</div></td></tr>`).join("")+`</table>`;
 }
 function renderAse(){
   if(!aseCur) return;
@@ -1585,13 +1632,13 @@ function renderAse(){
   const page=aseSorted(lrows).slice(asePage*PER, asePage*PER+PER);
   const fl=(l,k,lab,cls)=>`<button class="flag ${l[k]?"on":""} ${cls||""}" onclick="toggleFlag(${JSON.stringify(l.id)},'${k}')">${lab}</button>`;
   list.innerHTML=`<table><tr>${aseTh("fecha","Fecha")}${aseTh("dias","Días")}${aseTh("nombre","Nombre")}${aseTh("telefono","Teléfono")}${aseTh("canal","Canal")}${aseTh("proyecto","Proyecto")}${aseTh("estatus","Estatus")}<th></th></tr>`+
-    page.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td>${diasDe(l)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span>${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}${lastNota(l)}</td><td class="m" style="white-space:nowrap">${esc(l.telefono||"—")}${waIcon(l)}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td><div class="flags">${fl(l,"nc","NC","n")}${fl(l,"seguimiento","Seg.","s")}${fl(l,"cita","Cita","c")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"futuro","Fut.","f")}${fl(l,"perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div></td><td style="white-space:nowrap"><button class="x" title="Editar" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="x" title="Borrar este lead" onclick="del(${JSON.stringify(l.id)})">×</button></td></tr>`).join("")+`</table>`+
+    page.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td>${diasDe(l)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span>${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}${l.visita&&(l.visita_fecha||l.visita_lugar)?`<div class="vis">Visita ${l.visita_fecha?fmt(l.visita_fecha):""}${l.visita_lugar?" · "+esc(l.visita_lugar):""}</div>`:""}${lastNota(l)}</td><td class="m" style="white-space:nowrap">${esc(l.telefono||"—")}${waIcon(l)}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td><div class="flags">${fl(l,"nc","NC","n")}${fl(l,"seguimiento","Seg.","s")}${fl(l,"cita","Cita","c")}${fl(l,"visita","Visita","vi")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"futuro","Fut.","f")}${fl(l,"perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div></td><td style="white-space:nowrap"><button class="x" title="Editar" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="x" title="Borrar este lead" onclick="del(${JSON.stringify(l.id)})">×</button></td></tr>`).join("")+`</table>`+
     (pages>1?`<div class="pager"><span>${asePage*PER+1}–${Math.min(lrows.length,(asePage+1)*PER)} de ${lrows.length}</span><div><button ${asePage===0?"disabled":""} onclick="asePage--;renderAse()">Anteriores</button><button ${asePage>=pages-1?"disabled":""} onclick="asePage++;renderAse()">Siguientes</button></div></div>`:"");
 }
 
 function exportCSV(){
   const rows=inPeriod(); if(!rows.length){ toast("No hay leads en el periodo", true); return; }
-  const head=["fecha","nombre","telefono","canal","proyecto","asesor","tipo","marketplace","monto","enganche","nc","hot","cita","apartado","venta","seguimiento","perdido","futuro","razon_perdido"];
+  const head=["fecha","nombre","telefono","canal","proyecto","asesor","tipo","marketplace","monto","enganche","nc","hot","cita","visita","visita_fecha","visita_lugar","apartado","venta","seguimiento","perdido","futuro","razon_perdido"];
   const csv=[head.join(",")].concat(rows.map(l=> head.map(h=> `"${String(h==="tipo" ? tipoDe(l) : typeof l[h]==="boolean" ? (l[h]?"sí":"") : (l[h]??"")).replace(/"/g,'""')}"`).join(","))).join("\n");
   const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"})); a.download=`leads_${range().join("_")}.csv`; a.click();
 }
