@@ -146,6 +146,9 @@ td.m{color:var(--trust-gray)}
 .kpi.sel b{color:var(--trust-green)}
 .flag.m{color:var(--trust-accent);border-color:var(--trust-accent);font-weight:700}
 .flag.m:hover{background:var(--trust-accent);color:#fff}
+.afl{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 16px;align-items:center}
+.afl .flag{border-radius:999px;cursor:pointer}.afl .flag small{opacity:.7;font-weight:500;margin-left:3px}
+.afl .lnk{font-size:11px;color:var(--trust-gray);background:none;border:0;cursor:pointer;text-decoration:underline}
 .flag.on.n{background:var(--st-nc);border-color:var(--st-nc)}
 .flag.on.h{background:var(--st-hot);border-color:var(--st-hot)}
 .flag.on.s{background:var(--st-seg);border-color:var(--st-seg)}
@@ -685,7 +688,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
       <div class="kpi kpibtn" id="aPerdBox" onclick="kpiFilt('perdido')" title="Ver solo los leads perdidos"><b id="aShare">0</b><span>perdidos</span></div>
     </div>
     <div class="card" style="margin-bottom:16px"><h2>Conversión</h2><div id="aFunnel"></div></div>
-    <div class="card" style="margin-bottom:16px"><div class="lhead"><div><h2>Leads del periodo</h2><p class="sub">Marca el estatus de cada lead.</p></div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div class="vtog"><button id="vList" class="on" onclick="setAseView('list')">Lista</button><button id="vKan" onclick="setAseView('kanban')">Etapas</button></div><input type="text" id="aQ" class="sbtn" style="background-image:none;padding-right:14px;width:260px;flex:0 0 auto" placeholder="Buscar nombre o teléfono" oninput="asePage=0;renderAse()"></div></div><div id="aList"></div><div id="aKanban" style="display:none"></div></div>
+    <div class="card" style="margin-bottom:16px"><div class="lhead"><div><h2>Leads del periodo</h2><p class="sub">Marca el estatus de cada lead.</p><div class="afl" id="aFlagF" title="Filtra por estatus; puedes elegir varios"></div></div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div class="vtog"><button id="vList" class="on" onclick="setAseView('list')">Lista</button><button id="vKan" onclick="setAseView('kanban')">Etapas</button></div><input type="text" id="aQ" class="sbtn" style="background-image:none;padding-right:14px;width:260px;flex:0 0 auto" placeholder="Buscar nombre o teléfono" oninput="asePage=0;renderAse()"></div></div><div id="aList"></div><div id="aKanban" style="display:none"></div></div>
     <div class="card" style="margin-bottom:16px"><h2>Proyección contra estándar</h2><div id="aProj"></div></div>
     <div class="card" style="margin-bottom:16px"><h2>Citas del periodo</h2><p class="sub">Leads que llegaron a cita (incluye los que después se apartaron, vendieron o perdieron).</p><div id="aCitas"></div></div>
     <div class="grid2">
@@ -1587,6 +1590,14 @@ async function delNota(id){
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&LEAD_OPEN&&!document.querySelector(".modal.on:not(#modalL)")) closeLead(); });
 document.getElementById("modalL").addEventListener("click",e=>{ if(e.target.id==="modalL") closeLead(); });
 let aseView=localStorage.getItem("trust_ase_view")||"list";
+/* filtro por estatus (multi) en "Leads del periodo" */
+const aFlags=new Set();
+const AFL=[["nc","NC","n"],["seguimiento","Seg.","s"],["cita","Cita","c"],["visita","Visita","vi"],["hot","Hot","h"],["apartado","Apart.","a"],["venta","Venta","v"],["futuro","Fut.","f"],["perdido","Perd.","p"]];
+function toggleAFlag(k){ if(aFlags.has(k)) aFlags.delete(k); else aFlags.add(k); asePage=0; renderAse(); }
+function renderAFlags(base){
+  const el=document.getElementById("aFlagF"); if(!el) return;
+  el.innerHTML=`<span style="font-size:11px;color:var(--trust-gray);margin-right:2px">Ver solo:</span>`+AFL.map(([k,lab,c])=>{const n=base.filter(l=>!!l[k]).length;return `<button type="button" class="flag ${aFlags.has(k)?"on":""} ${c}" onclick="toggleAFlag('${k}')">${lab}<small>${n}</small></button>`}).join("")+(aFlags.size?`<button type="button" class="lnk" onclick="aFlags.clear();asePage=0;renderAse()">quitar</button>`:"");
+}
 function setAseView(v){ aseView=v; localStorage.setItem("trust_ase_view",v); renderAse(); }
 const KAN_COLS=[["nc","No contestó","var(--st-nc)"],["seguimiento","Seguimiento","var(--st-seg)"],["cita","Cita","var(--st-cita)"],["visita","Visita","var(--st-vis)"],["hot","Hot lead","var(--st-hot)"],["apartado","Apartado","#B8951D"],["venta","Venta","var(--st-venta)"],["futuro","Futuro","var(--st-fut)"],["perdido","Perdido","var(--st-perd)"]];
 function renderKanban(rows){
@@ -1605,7 +1616,7 @@ function renderKanban(rows){
     col.ondrop=e=>{ e.preventDefault(); col.classList.remove("over"); const id=dragId||e.dataTransfer.getData("text/plain"); dragId=null; if(id) toggleFlag(id, col.dataset.k, true); }; });
 }
 function kpiFilt(k){ const e=document.getElementById("aEstF"); e.value= e.value===k ? "" : k; asePage=0; renderAse(); }
-function clearAseF(){ document.getElementById("aQ").value=""; document.getElementById("aProyF").value=""; document.getElementById("aCanalF").value=""; document.getElementById("aTipoF").value=""; document.getElementById("aEstF").value=""; asePage=0; renderAse(); }
+function clearAseF(){ aFlags.clear(); document.getElementById("aQ").value=""; document.getElementById("aProyF").value=""; document.getElementById("aCanalF").value=""; document.getElementById("aTipoF").value=""; document.getElementById("aEstF").value=""; asePage=0; renderAse(); }
 function openAse(name, from){ aseCur=name; aseBack=from; asePage=0; fillAseF(); clearAseF(); document.getElementById("aseName").textContent=name; go("ase"); renderAse(); window.scrollTo(0,0); }
 function setPeriodA(p, btn){ asePeriod=p; asePage=0; document.querySelectorAll("#aseFilters .chip").forEach(b=>b.classList.toggle("on", b===btn)); renderAse(); }
 function rangeA(){ return rangeWith(asePeriod,"ad1","ad2"); }
@@ -1624,8 +1635,9 @@ function renderAse(){
   const q=(document.getElementById("aQ")?.value||"").trim().toLowerCase();
   const fp=document.getElementById("aProyF").value, fc=document.getElementById("aCanalF").value, ft=document.getElementById("aTipoF").value, fe=document.getElementById("aEstF").value;
   const base=all.filter(l=> l.asesor===aseCur && (!q || (l.nombre||"").toLowerCase().includes(q) || (l.telefono||"").toLowerCase().includes(q)) && (!fp||l.proyecto===fp) && canalMatch(l,fc) && (!ft||tipoDe(l)===ft));
-  const rows=base.filter(l=> !fe || (fe==="activo" ? !["perdido","futuro"].includes(estatusDe(l)) : fe==="cad" ? cadAgotada(l) : estatusDe(l)===fe));
-  document.getElementById("aClear").classList.toggle("on", !!(q||fp||fc||ft||fe));
+  const rows=base.filter(l=> (!fe || (fe==="activo" ? !["perdido","futuro"].includes(estatusDe(l)) : fe==="cad" ? cadAgotada(l) : estatusDe(l)===fe)) && (!aFlags.size || [...aFlags].some(k=>!!l[k])));
+  renderAFlags(base);
+  document.getElementById("aClear").classList.toggle("on", !!(q||fp||fc||ft||fe||aFlags.size));
   const sinEst=base.filter(l=>estatusDe(l)==="sin").length;
   document.getElementById("aSin").textContent=sinEst;
   document.getElementById("aSinBox").classList.toggle("warn", sinEst>0);
