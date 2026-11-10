@@ -104,6 +104,7 @@ tr.pen td{background:#FFFBF0!important}
   <div class="seg" role="tablist" aria-label="Sección">
     <button data-tab="brokers" aria-pressed="true">Brokers <span class="cnt" id="seg-pen" hidden></span></button>
     <button data-tab="proyectos" aria-pressed="false">Tarjetas de proyectos</button>
+    <button data-tab="clientes" aria-pressed="false">Clientes registrados <span class="cnt" id="seg-cli" hidden></span></button>
   </div>
 
   <section id="sec-brokers">
@@ -124,6 +125,20 @@ tr.pen td{background:#FFFBF0!important}
     <tbody id="rows"><tr><td colspan="8" class="empty">Cargando…</td></tr></tbody>
   </table></div>
   <div class="foot" id="sync"></div>
+  </section>
+
+  <section id="sec-clientes" hidden>
+    <p class="hint">Clientes que los brokers registran desde su portal para dejar constancia de que son suyos. Acepta el registro (queda a nombre del broker) o recházalo si ya estaba registrado por TRUST u otro broker; el broker ve tu respuesta en “Mis clientes”.</p>
+    <div class="tiles">
+      <div class="tile pen"><span class="l">Por revisar</span><span class="v" id="c-pen">–</span></div>
+      <div class="tile"><span class="l">Aceptados</span><span class="v" id="c-ok">–</span></div>
+      <div class="tile"><span class="l">Este mes</span><span class="v" id="c-mes">–</span></div>
+    </div>
+    <div class="bar"><input id="cq" placeholder="Buscar cliente, broker, inmobiliaria o proyecto…"></div>
+    <div class="twrap"><table>
+      <thead><tr><th>Registro</th><th>Cliente</th><th>Proyecto</th><th>Presupuesto</th><th>Broker</th><th>Notas</th><th>Estado</th><th></th></tr></thead>
+      <tbody id="crows"><tr><td colspan="8" class="empty">Cargando…</td></tr></tbody>
+    </table></div>
   </section>
 
   <section id="sec-proyectos" hidden>
@@ -187,11 +202,52 @@ load();setInterval(load,60000);
 /* ---------- pestañas ---------- */
 document.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{
   document.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",x===b));
-  $("#sec-brokers").hidden=b.dataset.tab!=="brokers";$("#sec-proyectos").hidden=b.dataset.tab!=="proyectos";
+  $("#sec-brokers").hidden=b.dataset.tab!=="brokers";$("#sec-proyectos").hidden=b.dataset.tab!=="proyectos";$("#sec-clientes").hidden=b.dataset.tab!=="clientes";
   if(b.dataset.tab==="proyectos"&&!P.length)loadP();
+  if(b.dataset.tab==="clientes")loadC();
   try{localStorage.setItem("adm_brk_tab",b.dataset.tab)}catch(e){}
 });
 const _render=render;render=function(){_render();const pen=rows.filter(r=>r.estado==="pendiente").length;const c=$("#seg-pen");c.textContent=pen;c.hidden=!pen};
+
+/* ---------- clientes registrados por brokers ---------- */
+let C=[];
+const fmtP=n=>n==null?"—":"$ "+Math.round(+n).toLocaleString("es-MX");
+async function loadC(){
+  const {data,error}=await sb.from("broker_clientes").select("*").order("creado_en",{ascending:false});
+  if(error){$("#crows").innerHTML=`<tr><td colspan="8" class="empty">Error al leer: ${esc(error.message)}${/broker_clientes/.test(error.message)?" · falta correr el SQL de broker_clientes":""}</td></tr>`;return}
+  C=data||[];renderC();
+}
+function renderC(){
+  const q=($("#cq").value||"").toLowerCase().trim();
+  const list=C.filter(c=>!q||[c.cliente,c.broker_nombre,c.inmobiliaria,c.proyecto].join(" ").toLowerCase().includes(q));
+  const ord={nuevo:0,aceptado:1,rechazado:2};list.sort((a,b)=>(ord[a.estado]??3)-(ord[b.estado]??3)||(b.creado_en||"").localeCompare(a.creado_en||""));
+  const pen=C.filter(c=>c.estado==="nuevo").length,mes=new Date();mes.setDate(1);mes.setHours(0,0,0,0);
+  $("#c-pen").textContent=pen;$("#c-ok").textContent=C.filter(c=>c.estado==="aceptado").length;$("#c-mes").textContent=C.filter(c=>new Date(c.creado_en)>=mes).length;
+  const sc=$("#seg-cli");sc.textContent=pen;sc.hidden=!pen;
+  const lbl={nuevo:"Por revisar",aceptado:"Aceptado",rechazado:"Rechazado"},cls={nuevo:"pen",aceptado:"on",rechazado:"off"};
+  $("#crows").innerHTML=list.length?list.map(c=>`<tr class="${c.estado==="nuevo"?"pen":""}">
+    <td class="dim">${fmtDT(c.creado_en)}</td>
+    <td><b>${esc(c.cliente)}</b>${c.celular?`<div class="dim"><a href="https://wa.me/52${esc(String(c.celular).replace(/\D/g,"").slice(-10))}" target="_blank" rel="noopener">${esc(c.celular)}</a></div>`:""}</td>
+    <td>${esc(c.proyecto)}</td><td>${fmtP(c.presupuesto)}</td>
+    <td>${esc(c.broker_nombre||"—")}<div class="dim">${esc(c.inmobiliaria||"")}</div></td>
+    <td class="dim" style="max-width:260px;white-space:normal">${esc(c.notas||"")}${c.respuesta?`<div style="color:var(--green)">↳ ${esc(c.respuesta)}</div>`:""}</td>
+    <td><span class="pill ${cls[c.estado]||"off"}">${lbl[c.estado]||esc(c.estado)}</span></td>
+    <td><div class="acts">${c.estado==="nuevo"?`<button class="btn ok" data-cid="${c.id}" data-cto="aceptado">✓ Aceptar</button><button class="btn danger" data-cid="${c.id}" data-cto="rechazado">Rechazar</button>`:`<button class="btn" data-cid="${c.id}" data-cto="nuevo">Reabrir</button>`}</div></td></tr>`).join("")
+  :`<tr><td colspan="8" class="empty">${C.length?"Nadie coincide con la búsqueda.":"Aún no hay clientes registrados por brokers."}</td></tr>`;
+}
+$("#cq").addEventListener("input",renderC);
+document.addEventListener("click",async e=>{
+  const b=e.target.closest("button[data-cid]");if(!b)return;
+  const c=C.find(x=>x.id===b.dataset.cid);const to=b.dataset.cto;
+  let respuesta=c.respuesta||null;
+  if(to==="rechazado"){const r=prompt(`¿Por qué no procede el registro de ${c.cliente}? (el broker verá este mensaje)`,"Este cliente ya estaba registrado con TRUST");if(r===null)return;respuesta=r.trim()||null}
+  if(to==="aceptado"){const r=prompt(`Mensaje para ${c.broker_nombre||"el broker"} (opcional):`,"Cliente registrado a tu nombre. Coordina la visita con nosotros.");if(r===null)return;respuesta=r.trim()||null}
+  const patch={estado:to,respuesta,revisado_en:to==="nuevo"?null:new Date().toISOString()};
+  const {error}=await sb.from("broker_clientes").update(patch).eq("id",c.id);
+  if(error){alert("No se pudo guardar: "+error.message);return}
+  Object.assign(c,patch);renderC();
+});
+sb.from("broker_clientes").select("id",{count:"exact",head:true}).eq("estado","nuevo").then(({count})=>{const sc=$("#seg-cli");if(count){sc.textContent=count;sc.hidden=false}});
 
 /* ---------- tarjetas de proyectos (lo que ve el broker) ---------- */
 const BUCKET="documentos";
@@ -266,7 +322,7 @@ $("#pfile").addEventListener("change",async()=>{
   if(error){alert("No se pudo subir: "+error.message);return}
   p.portada={name:"portada."+ext,url:sb.storage.from(BUCKET).getPublicUrl(p.id+"/portada."+ext).data.publicUrl+"?v="+Date.now()};renderP();
 });
-try{if(localStorage.getItem("adm_brk_tab")==="proyectos")document.querySelector('.seg button[data-tab="proyectos"]').click()}catch(e){}
+try{const tb=localStorage.getItem("adm_brk_tab");if(tb==="proyectos"||tb==="clientes")document.querySelector(`.seg button[data-tab="${tb}"]`).click()}catch(e){}
 </script>
 </body>
 </html>

@@ -144,9 +144,11 @@ a.tool:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   const URL="https://xshhjvdmkuqesdlvczbb.supabase.co",KEY="sb_publishable_5erZfpELyuncW1nrReTaZw_BQj0bc-P";
   const badge=document.getElementById("b-brk"),sub=document.getElementById("b-brk-sub");
   try{
-    const r=await fetch(URL+"/rest/v1/brokers?select=estado&estado=eq.pendiente",{headers:{apikey:KEY,Authorization:"Bearer "+KEY}});
-    const L=await r.json();if(!Array.isArray(L)||!L.length)return;
-    badge.textContent=L.length;badge.hidden=false;sub.textContent=L.length+(L.length===1?" solicitud por aprobar":" solicitudes por aprobar");sub.hidden=false;
+    const H={headers:{apikey:KEY,Authorization:"Bearer "+KEY}};
+    const [r1,r2]=await Promise.all([fetch(URL+"/rest/v1/brokers?select=estado&estado=eq.pendiente",H),fetch(URL+"/rest/v1/broker_clientes?select=estado&estado=eq.nuevo",H)]);
+    const L=await r1.json(),Cc=await r2.json();const nb=Array.isArray(L)?L.length:0,nc=Array.isArray(Cc)?Cc.length:0;
+    if(!nb&&!nc)return;const parts=[];if(nb)parts.push(nb+(nb===1?" solicitud por aprobar":" solicitudes por aprobar"));if(nc)parts.push(nc+(nc===1?" cliente registrado por revisar":" clientes registrados por revisar"));
+    badge.textContent=nb+nc;badge.hidden=false;sub.textContent=parts.join(" · ");sub.hidden=false;
   }catch(e){}
 })();
 </script>
