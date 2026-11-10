@@ -201,6 +201,16 @@ select.st{padding-right:10px}
 /* portada brokers */
 .hb{margin-top:22px}
 .hb h2{font-size:26px;color:var(--green)}
+.regcta{margin-top:18px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line-2);border-left:4px solid var(--green);border-radius:14px;padding:14px 18px;box-shadow:var(--shadow)}
+.regcta b{display:block;color:var(--green);font-size:15px}.regcta span{color:var(--muted);font-size:13px}
+.regcta .acts{display:flex;gap:8px;flex-wrap:wrap}
+.toastx{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--green);color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;z-index:99;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+.toastx.err{background:#A8342A}
+.mc{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;background:var(--surface)}
+.mc b{color:var(--green)}.mc .m{color:var(--muted);font-size:12.5px;margin-top:3px}
+.mc .st{display:inline-block;margin-top:6px;border-radius:999px;padding:2px 10px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;background:#EFEAE0;color:#585C57}
+.mc .st.ok{background:#E3F0E9;color:#2E7D5B}.mc .st.no{background:#F6E3E1;color:#A8342A}
+.mc .resp{margin-top:6px;font-size:13px;color:var(--text);border-left:3px solid var(--line-2);padding-left:8px}
 .hb .sub{color:var(--muted);font-size:13px;margin-top:4px}
 .cards{margin-top:18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:20px}
 @media (max-width:420px){.cards{grid-template-columns:1fr}}
@@ -287,7 +297,7 @@ select.st{padding-right:10px}
       <h1>Inventario</h1>
       <span class="sub" id="subtitle">Proyectos TRUST · acceso para brokers aliados</span>
     </div>
-    <div class="topright"><span class="who" id="who"></span><button class="home-link" id="btn-salir" type="button">Salir</button></div>
+    <div class="topright"><span class="who" id="who"></span><button class="home-link" id="btn-cliente" type="button" data-reg="1">＋ Registrar cliente</button><button class="home-link" id="btn-salir" type="button">Salir</button></div>
   </div>
 
   <div class="grid">
@@ -474,6 +484,7 @@ function renderHome(){
         <span class="go">${soon?"Lanzamiento próximamente":"Ver inventario"}</span>
       </div></button>`}).join("");
   m.innerHTML=`<div class="hb"><span class="eyebrow">Proyectos TRUST</span><h2>Elige un proyecto</h2><div class="sub">${list.length} proyecto${list.length===1?"":"s"} comercializado${list.length===1?"":"s"} por TRUST. Toca uno para ver unidades, precios, políticas de pago y documentos.</div></div>
+    <div class="regcta"><div><b>¿Ya tienes un cliente para alguno de estos proyectos?</b><span>Regístralo con TRUST para dejar constancia de que es tu cliente y coordinar la visita.</span></div><div class="acts"><button class="btn" data-misc="1" type="button">Mis clientes</button><button class="btn primary" data-reg="1" type="button">＋ Registrar cliente</button></div></div>
     ${list.length?`<div class="cards">${cards}</div>`:`<div class="empty"><b>Sin proyectos disponibles</b>Pronto verás aquí los proyectos In House de TRUST.</div>`}`;
 }
 function pickerHTML(){
@@ -616,6 +627,8 @@ document.addEventListener("click",e=>{
   if(!t)return;
   if(t.dataset.cat){S.cat=t.dataset.cat;filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};save();render();return}
   if(t.id==="btn-ventas"){VENTAS=!VENTAS;try{localStorage.setItem("inv_ventas",VENTAS?"1":"0")}catch(e){}filt.estatus="";renderMain();return}
+  if(t.dataset.reg){regCliente();return}
+  if(t.dataset.misc){misClientes();return}
   if(t.id==="btn-home"){S.sel=null;filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};save();render();window.scrollTo(0,0);return}
   if(t.dataset.open){const pp=S.projects.find(x=>x.id===t.dataset.open);if(pp&&pp.proximamente)return;S.sel=t.dataset.open;vista="precios";filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};sort={k:null,dir:"asc"};save();render();window.scrollTo(0,0);return}
   if(t.id==="pbtn"){const pk=$("#picker");const open=pk.toggleAttribute("open");t.setAttribute("aria-expanded",open);if(open)($("#picker .pitem[aria-current='true']")||$("#picker .pitem"))?.focus();return}
@@ -996,6 +1009,40 @@ function openImport(p){
     el.innerHTML=`<b style="color:var(--green)">${rows.length} unidades</b> · ${Object.entries(c).map(([k,v])=>`${v} ${k.toLowerCase()}`).join(", ")} · columnas: ${map.filter(Boolean).join(", ")}<br>Ej.: ${esc(rows[0].tipo)} · ${esc(rows[0].torre)} · nivel ${rows[0].nivel??"—"} · ${rows[0].m2tot} m² · ${fmt(rows[0].precio)}`;});
 }
 
+// ---------- registro de clientes (broker) ----------
+function toastx(m,err){const d=document.createElement("div");d.className="toastx"+(err?" err":"");d.textContent=m;document.body.appendChild(d);setTimeout(()=>d.remove(),err?4200:2600)}
+const fmtP=n=>n==null||n===""?"—":"$ "+Math.round(+n).toLocaleString("es-MX");
+function regCliente(){
+  const B=window.__broker,sa=window.__sa;if(!B||!sa){toastx("Vuelve a entrar para registrar clientes",true);return}
+  const proys=S.projects.map(p=>p.nombre);
+  drawer("Registrar cliente",`
+    <p class="hint" style="margin:0 0 10px;color:var(--muted);font-size:13px">Con este registro TRUST sabe que el cliente llegó por ti. Te confirmamos por aquí mismo si quedó registrado a tu nombre.</p>
+    <div class="f"><label for="rc-cliente">Nombre completo del cliente</label><input id="rc-cliente" name="cliente" required autocomplete="off" placeholder="Nombre y apellidos"></div>
+    <div class="f"><label for="rc-proyecto">Proyecto de interés</label><select id="rc-proyecto" name="proyecto" required><option value="">Elige…</option>${proys.map(x=>`<option>${esc(x)}</option>`).join("")}<option>Otro / aún no sabe</option></select></div>
+    <div class="f"><label for="rc-pres">Presupuesto aproximado (MXN)</label><input id="rc-pres" name="presupuesto" inputmode="numeric" placeholder="Ej. 4,500,000" required></div>
+    <div class="f"><label for="rc-cel">Celular del cliente (opcional)</label><input id="rc-cel" name="celular" inputmode="tel" placeholder="10 dígitos"></div>
+    <div class="f full"><label for="rc-notas">Notas (opcional)</label><textarea id="rc-notas" name="notas" placeholder="Tipo de unidad que busca, forma de pago, cuándo quiere visitar…"></textarea></div>`,
+    async d=>{
+      const pres=+String(d.presupuesto||"").replace(/[^\d.]/g,"")||null;
+      const row={broker_id:B.id,broker_nombre:B.nombre||null,inmobiliaria:B.inmobiliaria||null,cliente:(d.cliente||"").trim(),proyecto:d.proyecto,presupuesto:pres,celular:(d.celular||"").trim()||null,notas:(d.notas||"").trim()||null};
+      const {error}=await sa.from("broker_clientes").insert(row);
+      if(error){toastx("No se pudo registrar: "+error.message,true);return}
+      toastx("Cliente registrado. TRUST lo revisa y te confirma.");
+    });
+  const s=$("#d-save");if(s)s.textContent="Registrar cliente";
+}
+async function misClientes(){
+  const B=window.__broker,sa=window.__sa;if(!B||!sa)return;
+  const {data,error}=await sa.from("broker_clientes").select("*").eq("broker_id",B.id).order("creado_en",{ascending:false});
+  const L=data||[];const lbl={nuevo:["En revisión",""],aceptado:["Registrado a tu nombre","ok"],rechazado:["No procede","no"]};
+  const fecha=d=>new Date(d).toLocaleDateString("es-MX",{day:"numeric",month:"short",year:"numeric"});
+  $("#drawer-root").innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" aria-label="Mis clientes">
+    <header><h3>Mis clientes registrados</h3><button class="ico" id="d-close" aria-label="Cerrar">✕</button></header>
+    <div style="padding:16px 20px;overflow:auto;flex:1">${error?`<div class="empty">No se pudo cargar: ${esc(error.message)}</div>`:L.length?L.map(c=>`<div class="mc"><b>${esc(c.cliente)}</b> · ${esc(c.proyecto)}<div class="m">${fmtP(c.presupuesto)} · registrado el ${fecha(c.creado_en)}${c.celular?" · "+esc(c.celular):""}</div><span class="st ${lbl[c.estado]?.[1]||""}">${lbl[c.estado]?.[0]||esc(c.estado)}</span>${c.respuesta?`<div class="resp">TRUST: ${esc(c.respuesta)}</div>`:""}</div>`).join(""):`<div class="empty"><b>Aún no registras clientes</b>Usa “Registrar cliente” cuando tengas un prospecto para un proyecto TRUST.</div>`}</div>
+    <footer><span></span><span style="display:flex;gap:8px"><button type="button" class="btn" id="d-cancel">Cerrar</button><button type="button" class="btn primary" data-reg="1">＋ Registrar cliente</button></span></footer></div>`;
+  const close=()=>$("#drawer-root").innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
+}
+
 // ---------- drawers ----------
 function drawer(title,body,onSave,onDelete){
   $("#drawer-root").innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" aria-label="${esc(title)}">
@@ -1208,6 +1255,7 @@ function startApp(){
     try{row=await ensureRow(session.user)}catch(e){msg("No se pudo cargar tu registro: "+e.message,"err");return}
     if(row.estado!=="activo"){pendiente(row,session);return}
     sa.from("brokers").update({ultimo_acceso:new Date().toISOString()}).eq("id",session.user.id).then(()=>{});
+    window.__broker={id:session.user.id,nombre:row.nombre||"",inmobiliaria:row.inmobiliaria||"",correo:session.user.email};window.__sa=sa;
     const w=document.getElementById("who");if(w)w.innerHTML="<b>"+esc(row.nombre||session.user.email)+"</b>"+(row.inmobiliaria?" · "+esc(row.inmobiliaria):"");
     gate.hidden=true;
     if(!window.__started){window.__started=true;startApp()}
