@@ -147,6 +147,7 @@ td.m{color:var(--trust-gray)}
 .kpi.sel b{color:var(--trust-green)}
 .flag.m{color:var(--trust-accent);border-color:var(--trust-accent);font-weight:700}
 .flag.m:hover{background:var(--trust-accent);color:#fff}
+#aSinBox{display:none}
 .afl{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 16px;align-items:center}
 .afl .flag{border-radius:999px;cursor:pointer;background:rgba(23,63,53,.18);border-color:rgba(23,63,53,.45);color:var(--trust-green,#173F35)}.afl .flag:hover{background:rgba(23,63,53,.28)}.afl .flag small{opacity:.7;font-weight:500;margin-left:3px}
 .afl .lnk{font-size:11px;color:var(--trust-gray);background:none;border:0;cursor:pointer;text-decoration:underline}
@@ -866,7 +867,7 @@ async function cadClick(ev,id,k){
 async function toggleFlag(id, k, force){
   const l=leads.find(x=>String(x.id)===String(id)); if(!l) return; id=l.id;
   const f={}; ESTATUS.forEach(e=> f[e]=false);
-  if(k==="sin"){ if(estatusDe(l)==="sin") return; f.razon_perdido=null; f.visita_fecha=null; f.visita_lugar=null; try{ await patch(id,f); render(); }catch(e){ toast("No se guardó: "+e.message,true); } return; }
+  if(k==="sin"){ if(estatusDe(l)==="nc"&&!PRIORIDAD.some(x=>x!=="nc"&&l[x])) return; f.nc=true; f.razon_perdido=null; f.visita_fecha=null; f.visita_lugar=null; try{ await patch(id,f); render(); }catch(e){ toast("No se guardó: "+e.message,true); } return; }
   if(force && l[k] && estatusDe(l)===k) return;   // ya está ahí
   if(!l[k] || force) f[k]=true;                       // clic en el activo lo quita; clic en otro lo sustituye
   const CIERRES=["hot","apartado","venta","perdido","futuro"];  // pasos posteriores a la cita: conviven con "cita"
@@ -882,6 +883,7 @@ async function toggleFlag(id, k, force){
   if(k==="apartado" && f.apartado){ const r=await askMontos(l); if(!r) return; Object.assign(f, r); }
   if(k==="perdido" && f.perdido){ const r=await askRazon(l); if(r===null) return; f.razon_perdido=r; }
   if(l.perdido && !f.perdido) f.razon_perdido=null;
+  if(!ESTATUS.some(e=>e!=="razon_perdido"&&f[e])) f.nc=true;   // sin estatus ya no existe: queda en NC
   try{ await patch(id, f); render(); if(f.perdido) toast("Lead marcado como perdido"); else if(f.futuro) toast("Lead guardado como futuro"); }catch(e){ toast("No se guardó: "+e.message, true); }
 }
 function askVisita(l){
@@ -1083,7 +1085,7 @@ async function save(){
   }
   const btn=document.getElementById("save"); btn.disabled=true;
   try{
-    await insert({fecha, nombre: nombre||"Sin nombre", telefono, canal, marketplace, proyecto, asesor, tipo:sel.tipo});
+    await insert({fecha, nombre: nombre||"Sin nombre", telefono, canal, marketplace, proyecto, asesor, tipo:sel.tipo, nc:true});
     toast(`Registrado · ${nombre||"Sin nombre"} → ${asesor}`);
     resetForm(); render();
   }catch(e){ toast("No se guardó: "+e.message, true); }
@@ -1153,7 +1155,7 @@ function renderBoard(){
 }
 function esCita(l){ return !!(l.cita||l.apartado||l.venta); }   // apartado y venta pasaron por cita
 const PRIORIDAD=["venta","apartado","perdido","futuro","hot","visita","cita","seguimiento","nc"];
-function estatusDe(l){ return PRIORIDAD.find(k=>l[k]) || "sin"; }
+function estatusDe(l){ return PRIORIDAD.find(k=>l[k]) || "nc"; }
 function tipoDe(l){ return l.tipo || (l.broker ? "Broker" : "Directo"); }
 function pct(n,d){ return d? Math.round(n/d*100)+"%" : "—"; }
 function funnel(id, rows){
