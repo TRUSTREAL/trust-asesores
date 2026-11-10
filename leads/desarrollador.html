@@ -136,6 +136,14 @@ td.m{color:var(--trust-gray)}
 .flag{border:1px solid var(--trust-gray-light);background:#fff;padding:5px 9px;font-size:11px;font-weight:600;color:var(--trust-gray)}
 .flag:hover{border-color:var(--trust-green);color:var(--trust-green)}
 .flag.on{color:#fff}
+/* cadencia de contacto */
+.cadg{display:inline-flex;gap:4px;margin-right:6px;align-items:center}
+.cad{border:1px solid var(--trust-gray-light);background:#fff;border-radius:999px;padding:3px 8px;font-size:11px;display:inline-flex;align-items:center;gap:5px;cursor:pointer;color:var(--trust-green,#173F35);font-family:inherit;line-height:1.2;white-space:nowrap}
+.cad .d{letter-spacing:1px;font-size:9px}
+.cad.off{opacity:.38;cursor:default}
+.cad.full{border-color:#c0392b;color:#c0392b;background:#FBECEA}
+.cad:disabled{cursor:default}
+.kpi.sel b{color:var(--trust-green)}
 .flag.m{color:var(--trust-accent);border-color:var(--trust-accent);font-weight:700}
 .flag.m:hover{background:var(--trust-accent);color:#fff}
 .flag.on.n{background:var(--st-nc);border-color:var(--st-nc)}
@@ -661,7 +669,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
       <select id="aProyF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Proyecto: todos</option></select>
       <select id="aCanalF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Canal: todos</option></select>
       <select id="aTipoF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Tipo: todos</option><option>Directo</option><option>Broker</option></select>
-      <select id="aEstF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Estatus: todos</option><option value="activo">Activos (sin perdidos ni futuros)</option><option value="sin">Sin estatus</option><option value="nc">No contestó</option><option value="seguimiento">Seguimiento</option><option value="hot">Hot Lead</option><option value="cita">Cita realizada</option><option value="visita">Visita</option><option value="apartado">Apartado</option><option value="venta">Venta</option><option value="futuro">Futuro</option><option value="perdido">Perdido</option></select>
+      <select id="aEstF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Estatus: todos</option><option value="activo">Activos (sin perdidos ni futuros)</option><option value="cad">Cadencia agotada (3 llamadas + 7 mensajes)</option><option value="sin">Sin estatus</option><option value="nc">No contestó</option><option value="seguimiento">Seguimiento</option><option value="hot">Hot Lead</option><option value="cita">Cita realizada</option><option value="visita">Visita</option><option value="apartado">Apartado</option><option value="venta">Venta</option><option value="futuro">Futuro</option><option value="perdido">Perdido</option></select>
       <button class="btn2 clear" id="aClear" onclick="clearAseF()">Quitar filtros</button>
     </div>
     <div class="kpis k8a">
@@ -672,6 +680,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
       <div class="kpi kpibtn" id="aHotBox" onclick="kpiFilt('hot')" title="Ver solo los hot leads"><b id="aHot">0</b><span>hot leads</span></div>
       <div class="kpi kpibtn" id="aApaBox" onclick="kpiFilt('apartado')" title="Ver solo los apartados"><b id="aApa">0</b><span>apartados</span></div>
       <div class="kpi kpibtn" id="aSinBox" onclick="kpiFilt('sin')" title="Ver solo los leads sin estatus"><b id="aSin">0</b><span>sin estatus</span></div>
+      <div class="kpi kpibtn" id="aCadBox" onclick="kpiFilt('cad')" title="En NC o sin estatus y ya con 3 llamadas y 7 mensajes sin contacto"><b id="aCad">0</b><span>cadencia agotada</span></div>
       <div class="kpi kpibtn" id="aFutBox" onclick="kpiFilt('futuro')" title="Leads que no es el momento; se retoman después"><b id="aFut">0</b><span>futuros</span></div>
       <div class="kpi kpibtn" id="aPerdBox" onclick="kpiFilt('perdido')" title="Ver solo los leads perdidos"><b id="aShare">0</b><span>perdidos</span></div>
     </div>
@@ -832,6 +841,33 @@ async function patch(id, fields){
   if (!sb) localStorage.setItem(LS, JSON.stringify(leads));
 }
 const ESTATUS=["nc","hot","cita","visita","apartado","venta","seguimiento","perdido","futuro","razon_perdido"];
+/* ---------- cadencia de contacto: 3 llamadas · 7 mensajes ---------- */
+const CAD={intentos_llamada:3,intentos_mensaje:7};
+const enCadencia=l=>["nc","sin"].includes(estatusDe(l));
+const cadAgotada=l=>enCadencia(l)&&(l.intentos_llamada||0)>=CAD.intentos_llamada&&(l.intentos_mensaje||0)>=CAD.intentos_mensaje;
+function cadHTML(l){
+  const act=enCadencia(l), ro=typeof READONLY!=="undefined"&&READONLY;
+  const b=(k,ico,title)=>{const max=CAD[k],n=Math.min(l[k]||0,max),full=n>=max;
+    return `<button type="button" class="cad ${act?"":"off"} ${full&&act?"full":""}" title="${title}: ${n} de ${max}${act?" · clic suma · shift+clic resta":" · contacto logrado"}" ${ro?"disabled":""} onclick="cadClick(event,${JSON.stringify(l.id)},'${k}')"><span class="i">${ico}</span><span class="d">${"●".repeat(n)}${"○".repeat(max-n)}</span></button>`};
+  return `<span class="cadg">${b("intentos_llamada","📞","Llamadas")}${b("intentos_mensaje","💬","Mensajes")}</span>`;
+}
+async function cadClick(ev,id,k){
+  ev.stopPropagation();
+  const l=leads.find(x=>String(x.id)===String(id)); if(!l) return;
+  if(!enCadencia(l)){ toast("Este lead ya tiene contacto. Los intentos solo cuentan en NC o sin estatus."); return; }
+  const max=CAD[k], cur=l[k]||0, n=ev.shiftKey?Math.max(0,cur-1):Math.min(max,cur+1);
+  if(n===cur){ if(!ev.shiftKey) toast(`Ya llevas ${max} de ${max}. Shift+clic para restar.`); return; }
+  const f={[k]:n}; if(!ev.shiftKey) f.ultimo_intento=new Date().toISOString();
+  try{ await patch(l.id,f); }catch(e){ toast("No se guardó: "+e.message,true); return; }
+  render();
+  if(!ev.shiftKey && cadAgotada(l)){
+    setTimeout(async()=>{
+      if(!confirm(`${l.nombre}: ya agotaste la cadencia (${CAD.intentos_llamada} llamadas y ${CAD.intentos_mensaje} mensajes) sin lograr contacto.\n\n¿Lo marcamos como Perdido con motivo "No contestó"?`)) return;
+      const g={}; ESTATUS.forEach(e=>g[e]=false); g.perdido=true; g.razon_perdido=`No contestó tras ${CAD.intentos_llamada} llamadas y ${CAD.intentos_mensaje} mensajes`;
+      try{ await patch(l.id,g); render(); toast("Lead marcado como perdido"); }catch(e){ toast("No se guardó: "+e.message,true); }
+    },50);
+  }
+}
 async function toggleFlag(id, k, force){
   const l=leads.find(x=>String(x.id)===String(id)); if(!l) return; id=l.id;
   const f={}; ESTATUS.forEach(e=> f[e]=false);
@@ -1399,7 +1435,7 @@ function renderBase(){
   const page=rows.slice(basePage*PER, basePage*PER+PER);
   const fl=(l,k,lab,cls)=>`<button class="flag ${l[k]?"on":""} ${cls||""}" onclick="toggleFlag(${JSON.stringify(l.id)},'${k}')">${lab}</button>`;
   box.innerHTML=`<table><tr><th><button class="lnk" style="font-size:11px;color:var(--trust-gray)" onclick="baseAsc=!baseAsc;renderBase()">Fecha ${baseAsc?"↑":"↓"}</button></th><th>Días</th><th>Nombre</th><th>Teléfono</th><th>Canal</th><th>Proyecto</th><th>Asesor</th><th>Estatus</th><th></th></tr>`+
-    page.map(l=>`<tr><td class="m">${fmt(l.fecha)}/${l.fecha.slice(2,4)}</td><td>${diasDe(l)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span>${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}${l.visita&&(l.visita_fecha||l.visita_lugar)?`<div class="vis">Visita ${l.visita_fecha?fmt(l.visita_fecha):""}${l.visita_lugar?" · "+esc(l.visita_lugar):""}</div>`:""}${lastNota(l)}</td><td class="m" style="white-space:nowrap">${esc(l.telefono||"—")}${waIcon(l)}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td>${asesorSel(l)}</td><td><div class="flags">${fl(l,"nc","NC","n")}${fl(l,"seguimiento","Seg.","s")}${fl(l,"cita","Cita","c")}${fl(l,"visita","Visita","vi")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"futuro","Fut.","f")}${fl(l,"perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div></td><td style="white-space:nowrap"><button class="x" title="Editar" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="x" title="Borrar este lead" onclick="del(${JSON.stringify(l.id)})">×</button></td></tr>`).join("")+`</table>`+
+    page.map(l=>`<tr><td class="m">${fmt(l.fecha)}/${l.fecha.slice(2,4)}</td><td>${diasDe(l)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span>${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}${l.visita&&(l.visita_fecha||l.visita_lugar)?`<div class="vis">Visita ${l.visita_fecha?fmt(l.visita_fecha):""}${l.visita_lugar?" · "+esc(l.visita_lugar):""}</div>`:""}${lastNota(l)}</td><td class="m" style="white-space:nowrap">${esc(l.telefono||"—")}${waIcon(l)}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td>${asesorSel(l)}</td><td><div class="flags">${cadHTML(l)}${fl(l,"nc","NC","n")}${fl(l,"seguimiento","Seg.","s")}${fl(l,"cita","Cita","c")}${fl(l,"visita","Visita","vi")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"futuro","Fut.","f")}${fl(l,"perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div></td><td style="white-space:nowrap"><button class="x" title="Editar" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="x" title="Borrar este lead" onclick="del(${JSON.stringify(l.id)})">×</button></td></tr>`).join("")+`</table>`+
     (pages>1?`<div class="pager"><span>${basePage*PER+1}–${Math.min(rows.length,(basePage+1)*PER)} de ${rows.length}</span><div><button ${basePage===0?"disabled":""} onclick="basePage--;renderBase()">Anteriores</button><button ${basePage>=pages-1?"disabled":""} onclick="basePage++;renderBase()">Siguientes</button></div></div>`:"");
 }
 function exportBase(){
@@ -1526,7 +1562,7 @@ function drawLead(){
       <div style="display:flex;gap:8px;align-items:center;flex:none"><button class="lc-edit" title="Editar nombre y datos" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="lc-x" onclick="closeLead()" aria-label="Cerrar">✕</button></div></div>
     <div class="lc-b">
       <div class="lc-sec" style="margin-top:0">Estatus</div>
-      <div class="flags">${fl("nc","NC","n")}${fl("seguimiento","Seg.","s")}${fl("cita","Cita","c")}${fl("visita","Visita","vi")}${fl("hot","Hot","h")}${fl("apartado","Apart.","a")}${fl("venta","Venta","v")}${fl("futuro","Fut.","f")}${fl("perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div>
+      <div class="flags">${cadHTML(l)}${fl("nc","NC","n")}${fl("seguimiento","Seg.","s")}${fl("cita","Cita","c")}${fl("visita","Visita","vi")}${fl("hot","Hot","h")}${fl("apartado","Apart.","a")}${fl("venta","Venta","v")}${fl("futuro","Fut.","f")}${fl("perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div>
       ${l.visita?`<div class="vis" style="margin-top:8px">Visita ${l.visita_fecha?fmt(l.visita_fecha):""}${l.visita_lugar?" · "+esc(l.visita_lugar):""} ${typeof READONLY!=="undefined"&&READONLY?"":`<a href="#" onclick="event.preventDefault();editVisita('${esc(l.id)}')" style="color:inherit">editar</a>`}</div>`:""}
       ${l.perdido&&l.razon_perdido?`<div class="razon" style="margin-top:8px">Perdido: ${esc(l.razon_perdido)}</div>`:""}
       ${(l.monto||l.enganche)?`<div class="lc-mo"><div><span class="hint">Venta esperada</span><b>${money(l.monto)}</b></div><div><span class="hint">Enganche</span><b>${money(l.enganche)}</b></div></div>`:""}
@@ -1588,16 +1624,17 @@ function renderAse(){
   const q=(document.getElementById("aQ")?.value||"").trim().toLowerCase();
   const fp=document.getElementById("aProyF").value, fc=document.getElementById("aCanalF").value, ft=document.getElementById("aTipoF").value, fe=document.getElementById("aEstF").value;
   const base=all.filter(l=> l.asesor===aseCur && (!q || (l.nombre||"").toLowerCase().includes(q) || (l.telefono||"").toLowerCase().includes(q)) && (!fp||l.proyecto===fp) && canalMatch(l,fc) && (!ft||tipoDe(l)===ft));
-  const rows=base.filter(l=> !fe || (fe==="activo" ? !["perdido","futuro"].includes(estatusDe(l)) : estatusDe(l)===fe));
+  const rows=base.filter(l=> !fe || (fe==="activo" ? !["perdido","futuro"].includes(estatusDe(l)) : fe==="cad" ? cadAgotada(l) : estatusDe(l)===fe));
   document.getElementById("aClear").classList.toggle("on", !!(q||fp||fc||ft||fe));
   const sinEst=base.filter(l=>estatusDe(l)==="sin").length;
   document.getElementById("aSin").textContent=sinEst;
   document.getElementById("aSinBox").classList.toggle("warn", sinEst>0);
+  const nCad=base.filter(cadAgotada).length; document.getElementById("aCad").textContent=nCad; document.getElementById("aCadBox").classList.toggle("warn", nCad>0);
   const p=count(rows,"proyecto"), c=count(rows,"canal");
   document.getElementById("aTotal").textContent=base.length;
   const nPerd=base.filter(l=>estatusDe(l)==="perdido").length; document.getElementById("aShare").innerHTML=`${nPerd} <small style="font-family:Montserrat;font-size:13px">${pct(nPerd,base.length)}</small>`; document.getElementById("aPerdBox").classList.toggle("lost", nPerd>0);
   const sm=v=>` <small style="font-family:Montserrat;font-size:13px">${v}</small>`;
-  [["activo","aActBox"],["perdido","aPerdBox"],["futuro","aFutBox"],["nc","aNcBox"],["seguimiento","aSegBox"],["hot","aHotBox"],["sin","aSinBox"],["apartado","aApaBox"]].forEach(([k,id])=>document.getElementById(id).classList.toggle("sel", fe===k));
+  [["activo","aActBox"],["perdido","aPerdBox"],["futuro","aFutBox"],["nc","aNcBox"],["seguimiento","aSegBox"],["hot","aHotBox"],["sin","aSinBox"],["cad","aCadBox"],["apartado","aApaBox"]].forEach(([k,id])=>document.getElementById(id).classList.toggle("sel", fe===k));
   const nAct=base.filter(l=>!["perdido","futuro"].includes(estatusDe(l))).length;
   const nFut=base.filter(l=>estatusDe(l)==="futuro").length; document.getElementById("aFut").innerHTML=nFut+sm(pct(nFut,base.length)); document.getElementById("aFutBox").classList.toggle("fut", nFut>0); document.getElementById("aAct").innerHTML=nAct+sm(pct(nAct,base.length));
   const nNc=base.filter(l=>estatusDe(l)==="nc").length; document.getElementById("aNc").innerHTML=nNc+sm(pct(nNc,base.length));
@@ -1630,7 +1667,7 @@ function renderAse(){
   const page=aseSorted(lrows).slice(asePage*PER, asePage*PER+PER);
   const fl=(l,k,lab,cls)=>`<button class="flag ${l[k]?"on":""} ${cls||""}" onclick="toggleFlag(${JSON.stringify(l.id)},'${k}')">${lab}</button>`;
   list.innerHTML=`<table><tr>${aseTh("fecha","Fecha")}${aseTh("dias","Días")}${aseTh("nombre","Nombre")}${aseTh("telefono","Teléfono")}${aseTh("canal","Canal")}${aseTh("proyecto","Proyecto")}${aseTh("estatus","Estatus")}<th></th></tr>`+
-    page.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td>${diasDe(l)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span>${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}${l.visita&&(l.visita_fecha||l.visita_lugar)?`<div class="vis">Visita ${l.visita_fecha?fmt(l.visita_fecha):""}${l.visita_lugar?" · "+esc(l.visita_lugar):""}</div>`:""}${lastNota(l)}</td><td class="m" style="white-space:nowrap">${esc(l.telefono||"—")}${waIcon(l)}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td><div class="flags">${fl(l,"nc","NC","n")}${fl(l,"seguimiento","Seg.","s")}${fl(l,"cita","Cita","c")}${fl(l,"visita","Visita","vi")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"futuro","Fut.","f")}${fl(l,"perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div></td><td style="white-space:nowrap"><button class="x" title="Editar" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="x" title="Borrar este lead" onclick="del(${JSON.stringify(l.id)})">×</button></td></tr>`).join("")+`</table>`+
+    page.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td>${diasDe(l)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span>${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}${l.visita&&(l.visita_fecha||l.visita_lugar)?`<div class="vis">Visita ${l.visita_fecha?fmt(l.visita_fecha):""}${l.visita_lugar?" · "+esc(l.visita_lugar):""}</div>`:""}${lastNota(l)}</td><td class="m" style="white-space:nowrap">${esc(l.telefono||"—")}${waIcon(l)}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td><div class="flags">${cadHTML(l)}${fl(l,"nc","NC","n")}${fl(l,"seguimiento","Seg.","s")}${fl(l,"cita","Cita","c")}${fl(l,"visita","Visita","vi")}${fl(l,"hot","Hot","h")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"futuro","Fut.","f")}${fl(l,"perdido","Perd.","p")}${(l.apartado||l.hot||l.venta)?`<button class="flag m" title="Monto y enganche" onclick="editMontos(${JSON.stringify(l.id)})">$</button>`:""}</div></td><td style="white-space:nowrap"><button class="x" title="Editar" onclick="editLead(${JSON.stringify(l.id)})">✎</button><button class="x" title="Borrar este lead" onclick="del(${JSON.stringify(l.id)})">×</button></td></tr>`).join("")+`</table>`+
     (pages>1?`<div class="pager"><span>${asePage*PER+1}–${Math.min(lrows.length,(asePage+1)*PER)} de ${lrows.length}</span><div><button ${asePage===0?"disabled":""} onclick="asePage--;renderAse()">Anteriores</button><button ${asePage>=pages-1?"disabled":""} onclick="asePage++;renderAse()">Siguientes</button></div></div>`:"");
 }
 
