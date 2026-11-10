@@ -1055,7 +1055,10 @@ function reciboApartadoPDF(a){
   const fin=new Date(Date.UTC(y,m-1,d+VIG));const finISO=fin.toISOString().slice(0,10);
   const largo=iso=>{const [yy,mm,dd]=String(iso).slice(0,10).split("-").map(Number);return `${dd} de ${MESES_L[mm-1].toLowerCase()} de ${yy}`};
   const esCorr=(a.proyecto||"").toLowerCase()==="corretaje";
-  const titulo=esCorr?"¡Ya estás más cerca de tu nuevo hogar!":"¡Ya estás más cerca de tu nuevo depa!";
+  const RENTA=(a.operacion||"Venta")==="Renta";
+  const TI={Departamento:["depa","el","nuevo"],Casa:["casa","la","nueva"],Terreno:["terreno","el","nuevo"],Local:["local","el","nuevo"],Oficina:["oficina","la","nueva"],Otro:["inmueble","el","nuevo"]}[a.tipo_inmueble||"Departamento"]||["inmueble","el","nuevo"];
+  const [NOM,ART,NUE]=TI, ELNOM=`${ART} ${NOM}`;
+  const titulo=RENTA?`¡Ya estás más cerca de tu ${NUE} ${NOM} en renta!`:`¡Ya estás más cerca de tu ${NUE} ${NOM}!`;
   const nombre=(a.prospecto||"").trim(),primer=nombre.split(/\s+/)[0]||"";
   const folio="AP-"+String(a.fecha||"").replace(/-/g,"").slice(2)+"-"+String(a.id||"").replace(/-/g,"").slice(-4).toUpperCase();
   const emitido=new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"});
@@ -1093,7 +1096,7 @@ h1{font-family:Lora,Georgia,serif;font-weight:500;font-size:40px;line-height:1.0
     <div class="top"><img class="logo" src="data:image/png;base64,${LOGO_B64}" alt="TRUST realtor"><div class="folio">Recibo de apartado<b>${folio}</b>${largo(f0)}</div></div>
     <div class="eyebrow">Apartado confirmado</div>
     <h1>${titulo.replace("más cerca","<em>más cerca</em>")}</h1>
-    <p class="lead">${primer?`${esc(primer)}, gracias`:"Gracias"} por tu confianza. Hoy diste el primer paso y ${esCorr?"la propiedad":"la unidad"} ya está reservada a tu nombre. Nosotros nos encargamos de lo que sigue.</p>
+    <p class="lead">${primer?`${esc(primer)}, gracias`:"Gracias"} por tu confianza. Hoy diste el primer paso y ${ELNOM} ya está reservad${ART==="la"?"a":"o"} a tu nombre. Nosotros nos encargamos de lo que sigue.</p>
   </div>
   <div class="body">
     <div class="card">
@@ -1101,14 +1104,15 @@ h1{font-family:Lora,Georgia,serif;font-weight:500;font-size:40px;line-height:1.0
       <div class="k"><span class="l">Fecha del apartado</span><span class="v">${largo(f0)}</span></div>
       <div class="k"><span class="l">Proyecto</span><span class="v">${esc(a.proyecto||"—")}</span></div>
       <div class="k"><span class="l">Unidad</span><span class="v">${esc(a.unidad||"Por asignar")}</span></div>
+      <div class="k" style="grid-column:1/-1"><span class="l">Operación</span><span class="v">${RENTA?"Renta":"Venta"} · ${esc(a.tipo_inmueble||"Departamento")}</span></div>
       <div class="k money"><div><span class="l">Monto del apartado</span><br><span class="v">${fmt(a.monto)}</span></div><small>${a.metodo?"Recibido vía "+esc(a.metodo):""}${a.asesor?`${a.metodo?" · ":""}Tu asesor: ${esc(a.asesor)}`:""}</small></div>
     </div>
     <div class="steps">
-      <div class="step done"><span class="n">✓</span><b>Apartado</b><span>Listo. ${esCorr?"La propiedad":"La unidad"} queda reservada para ti.</span></div>
-      <div class="step"><span class="n">2</span><b>Contrato</b><span>Formalizamos la operación y definimos el plan de pagos.</span></div>
-      <div class="step"><span class="n">3</span><b>Entrega</b><span>Recibes las llaves de tu nuevo ${esCorr?"hogar":"depa"}.</span></div>
+      <div class="step done"><span class="n">✓</span><b>Apartado</b><span>Listo. ${ART==="la"?"La":"El"} ${NOM} queda reservad${ART==="la"?"a":"o"} para ti.</span></div>
+      <div class="step"><span class="n">2</span><b>Contrato</b><span>${RENTA?"Firmamos el contrato de arrendamiento y definimos la fecha de entrega.":"Formalizamos la operación y definimos el plan de pagos."}</span></div>
+      <div class="step"><span class="n">3</span><b>Entrega</b><span>Recibes las llaves de tu ${NUE} ${NOM}.</span></div>
     </div>
-    <div class="vig"><div class="ic">${VIG}</div><div><b>Vigencia del apartado: ${VIG} días naturales</b><p>Este apartado está vigente del ${largo(f0)} al <b style="display:inline;font-family:inherit;font-style:normal;font-size:inherit;color:inherit">${largo(finISO)}</b>. Dentro de ese plazo se formaliza la operación con el contrato correspondiente; de no hacerlo, la reserva de ${esCorr?"la propiedad":"la unidad"} se libera.</p></div></div>
+    <div class="vig"><div class="ic">${VIG}</div><div><b>Vigencia del apartado: ${VIG} días naturales</b><p>Este apartado está vigente del ${largo(f0)} al <b style="display:inline;font-family:inherit;font-style:normal;font-size:inherit;color:inherit">${largo(finISO)}</b>. Dentro de ese plazo se formaliza la operación con el contrato ${RENTA?"de arrendamiento":"correspondiente"}; de no hacerlo, la reserva de ${ELNOM} se libera.</p></div></div>
     ${a.asesor?`<p style="margin:18px 0 0;font-size:12px;color:#4F534E;text-align:center">¿Dudas? <b style="color:#173F35">${esc(a.asesor)}</b>, tu asesor TRUST, te acompaña en todo el proceso.</p>`:""}
     <div class="foot"><div><div class="sig">Te damos la bienvenida a la familia TRUST.</div>TRUST Realtor® · Promotora de Inmuebles TRUST, S.A. de C.V. · Guadalajara, Jalisco<br>Recibo generado el ${emitido}. Documento informativo del apartado; no sustituye al contrato.</div><div><img src="data:image/png;base64,${LOGO_B64}" alt="TRUST"></div></div>
   </div>
@@ -1123,7 +1127,7 @@ function apartadoAVenta(a){
   openVenta(null,pre,async venta=>{const upd={estatus:"venta",venta_id:venta.id};const r=await sb.from("apartados").update(upd).eq("id",a.id);if(r.error){toast("La venta se registró, pero el apartado no se actualizó: "+r.error.message,true);return}Object.assign(a,upd)});
 }
 function openApartado(a){
-  const isNew=!a;a=a?{...a}:{fecha:todayISO(),prospecto:"",metodo:"Transferencia",proyecto:"",unidad:"",asesor:"",monto:null,estatus:"vigente",notas:""};
+  const isNew=!a;a=a?{...a}:{fecha:todayISO(),prospecto:"",metodo:"Transferencia",proyecto:"",unidad:"",asesor:"",monto:null,estatus:"vigente",notas:"",operacion:"Venta",tipo_inmueble:"Departamento"};
   const root=$("#drawer-root");
   root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(600px,100%)">
     <header><h3>${isNew?"Registrar apartado":"Apartado · "+esc(a.prospecto)}</h3><button class="ico" id="d-close">✕</button></header>
@@ -1132,6 +1136,8 @@ function openApartado(a){
       <div class="f c8"><label>Nombre del prospecto</label><input id="a-pros" value="${esc(a.prospecto||"")}" placeholder="Nombre completo"></div>
       <div class="f c6"><label>Proyecto / propiedad</label><input id="a-proy" list="dl-aproy" value="${esc(a.proyecto||"")}">${dlist("dl-aproy",PROYECTOS)}</div>
       <div class="f c6"><label>Unidad / ID</label><input id="a-uni" value="${esc(a.unidad||"")}" placeholder="Depto 402, Casa 12…"></div>
+      <div class="f c6"><label>Operación</label>${dsel("a-ope",["Venta","Renta"],a.operacion||"Venta")}</div>
+      <div class="f c6"><label>Tipo de inmueble</label>${dsel("a-tipo",["Departamento","Casa","Terreno","Local","Oficina","Otro"],a.tipo_inmueble||"Departamento")}</div>
       <div class="f c4"><label>Método de pago</label>${dsel("a-met",METODOS,a.metodo||"Transferencia")}</div>
       <div class="f c4"><label>Monto del apartado</label><input id="a-monto" inputmode="decimal" value="${a.monto!=null?fmt(a.monto):""}" placeholder="$ 0"></div>
       <div class="f c4"><label>Asesor</label>${dsel("a-ase",ASESORES.filter(x=>x!==EX),a.asesor||"","Elegir…")}</div>
@@ -1144,7 +1150,7 @@ function openApartado(a){
   if(!isNew){const es=q("a-est");if(es){[...es.options].forEach(o=>o.textContent=AP_EST[o.value])}
     q("d-del").onclick=async()=>{if(!confirm("¿Eliminar este apartado?"))return;const r=await sb.from("apartados").delete().eq("id",a.id);if(r.error){toast(r.error.message,true);return}APARTADOS=APARTADOS.filter(x=>x.id!==a.id);close();render();toast("Apartado eliminado")}}
   q("d-save").onclick=async()=>{
-    const row={fecha:q("a-fecha").value||todayISO(),prospecto:q("a-pros").value.trim(),metodo:q("a-met").value||null,proyecto:q("a-proy").value.trim()||null,unidad:q("a-uni").value.trim()||null,asesor:q("a-ase").value||null,monto:num(q("a-monto").value),notas:q("a-notas").value.trim()||null};
+    const row={fecha:q("a-fecha").value||todayISO(),prospecto:q("a-pros").value.trim(),metodo:q("a-met").value||null,proyecto:q("a-proy").value.trim()||null,unidad:q("a-uni").value.trim()||null,asesor:q("a-ase").value||null,monto:num(q("a-monto").value),notas:q("a-notas").value.trim()||null,operacion:q("a-ope").value||"Venta",tipo_inmueble:q("a-tipo").value||"Departamento"};
     if(!isNew){row.estatus=q("a-est").value;if(row.estatus!=="venta")row.venta_id=null}
     if(!row.prospecto){toast("Falta el nombre del prospecto",true);return}
     const r=isNew?await sb.from("apartados").insert(row).select().single():await sb.from("apartados").update(row).eq("id",a.id).select().single();
