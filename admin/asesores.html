@@ -39,6 +39,7 @@ body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--bg);co
 .foto input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .foto .cam{position:absolute;left:0;right:0;bottom:0;background:rgba(23,63,53,.78);color:#fff;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;text-align:center;padding:3px 0 4px;opacity:0;transition:opacity .15s}
 .foto:hover .cam,.foto.vacia .cam{opacity:1}
+input.enc{display:block;width:60px;margin-top:6px;accent-color:var(--green);height:14px}
 .nom b{display:block;font-size:15px;font-weight:600;color:var(--green)}
 .nom .tags{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap}
 .tag{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;border-radius:999px;padding:2px 8px;background:var(--surface-2);color:var(--gold-2)}
@@ -95,7 +96,7 @@ input.pin::placeholder{letter-spacing:0;font-weight:400;font-size:12px}
   <div class="resumen" id="resumen"></div>
   <div class="lista" id="lista"></div>
   <div class="nota">
-    <b>Cómo funciona.</b> El <b>código</b> es de 4 dígitos; si lo dejas vacío, ese asesor entra sin contraseña. La <b>foto</b> y el <b>celular</b> aparecen en la firma de las cotizaciones. <b>Acceso al portal</b> apagado = ya no puede entrar, pero su nombre y su historial (leads, ventas, documentos) se conservan. La <b>última sesión</b> se registra cuando el asesor abre cualquier módulo de su portal (no cuenta el panel de administración). Los cambios aplican en el dispositivo de cada asesor la siguiente vez que abra o recargue el portal.
+    <b>Cómo funciona.</b> El <b>código</b> es de 4 dígitos; si lo dejas vacío, ese asesor entra sin contraseña. La <b>foto</b> y el <b>celular</b> aparecen en la firma de las cotizaciones; la foto se muestra en círculo, y con el control que aparece debajo la mueves para centrar la cara. <b>Acceso al portal</b> apagado = ya no puede entrar, pero su nombre y su historial (leads, ventas, documentos) se conservan. La <b>última sesión</b> se registra cuando el asesor abre cualquier módulo de su portal (no cuenta el panel de administración). Los cambios aplican en el dispositivo de cada asesor la siguiente vez que abra o recargue el portal.
   </div>
 </div>
 <script>
@@ -135,9 +136,9 @@ function render(){
     <div><b>${sinFoto}</b><span>sin foto</span></div>`:"";
   if(!A.length){$("#lista").innerHTML=`<div class="vacio"><b>Aún no hay asesores cargados</b>Corre el SQL <b>asesores.sql</b> en Supabase para crear la tabla con el equipo actual.</div>`;return}
   $("#lista").innerHTML=`<div class="row head"><span>Foto</span><span>Asesor</span><span>Nombre completo</span><span>Celular</span><span>Código</span><span>Última sesión</span><span>Acceso</span></div>`+
-  A.map(a=>{const s=sesion(a.ultima_sesion);const n=esc(a.nombre);return `
+  A.map(a=>{const s=sesion(a.ultima_sesion);const n=esc(a.nombre);const fi=fotoInfo(a.foto_url);return `
     <div class="row ${a.activo===false?"off":""}" data-n="${n}">
-      <div><div class="foto ${a.foto_url?"":"vacia"}" style="${a.foto_url?`background-image:url('${esc(a.foto_url)}')`:""}" title="Subir o cambiar foto">${a.foto_url?"":esc(a.nombre.charAt(0))}<span class="cam">${a.foto_url?"Cambiar":"Subir"}</span><input type="file" accept="image/*" data-foto></div></div>
+      <div><div class="foto ${a.foto_url?"":"vacia"}" style="${a.foto_url?`background-image:url('${esc(fi.src)}');background-position:${fi.pos}`:""}" title="Subir o cambiar foto">${a.foto_url?"":esc(a.nombre.charAt(0))}<span class="cam">${a.foto_url?"Cambiar":"Subir"}</span><input type="file" accept="image/*" data-foto></div>${a.foto_url&&fi.o!=="s"?`<input class="enc" type="range" min="0" max="100" value="${fi.p}" data-enc title="Encuadre: mueve para centrar la cara">`:""}</div>
       <div class="nom"><b>${n}</b><div class="tags">${a.admin?'<span class="tag adm">Admin</span>':""}${a.activo===false?'<span class="tag">Sin acceso</span>':""}</div>${a.foto_url?'<button class="quitar" type="button" data-quitar>Quitar foto</button>':""}</div>
       <label class="f c-nc"><span>Nombre completo</span><input class="t" type="text" data-k="nombre_completo" value="${esc(a.nombre_completo||"")}" placeholder="Como sale en la cotización" maxlength="60"></label>
       <label class="f c-cel"><span>Celular</span><input class="t" type="tel" data-k="celular" value="${esc(a.celular||"")}" placeholder="33 1234 5678" maxlength="20"></label>
@@ -163,19 +164,23 @@ function guardar(nombre,cambios,despues){
   });
 }
 
-// ---- foto: recorte cuadrado centrado, 480 px, ligera ----
+// ---- foto: se guarda ligera y completa (sin recortar); el encuadre se elige con el control de abajo ----
+// El encuadre viaja en la misma liga de la foto (#o=v|h|s & p=0..100): o = orientación, p = posición del recorte.
+function fotoInfo(url){
+  const m=/#o=([vhs])&p=(\d+)/.exec(url||""); const o=m?m[1]:"s", p=m?+m[2]:50;
+  return {src:(url||"").split("#")[0], o:o, p:p, pos:o==="v"?"50% "+p+"%":o==="h"?p+"% 50%":"50% 50%"};
+}
 function prepararFoto(file){
   return new Promise((res,rej)=>{
     const rd=new FileReader();
     rd.onerror=rej;
     rd.onload=()=>{const im=new Image();im.onerror=rej;im.onload=()=>{
-      const S=480,cv=document.createElement("canvas");cv.width=cv.height=S;
-      const lado=Math.min(im.width,im.height);
-      // recorte un poco hacia arriba: en retratos la cara suele estar en el tercio superior
-      const sx=(im.width-lado)/2, sy=im.height>im.width?(im.height-lado)*0.25:(im.height-lado)/2;
-      const cx=cv.getContext("2d");cx.fillStyle="#fff";cx.fillRect(0,0,S,S);cx.imageSmoothingQuality="high";
-      cx.drawImage(im,sx,sy,lado,lado,0,0,S,S);
-      cv.toBlob(b=>b?res(b):rej(new Error("No se pudo procesar la imagen")),"image/jpeg",0.88);
+      const M=720,sc=Math.min(1,M/Math.max(im.width,im.height));
+      const cv=document.createElement("canvas");cv.width=Math.round(im.width*sc);cv.height=Math.round(im.height*sc);
+      const cx=cv.getContext("2d");cx.fillStyle="#fff";cx.fillRect(0,0,cv.width,cv.height);cx.imageSmoothingQuality="high";
+      cx.drawImage(im,0,0,cv.width,cv.height);
+      const o=im.height>im.width*1.04?"v":im.width>im.height*1.04?"h":"s";
+      cv.toBlob(b=>b?res({blob:b,o:o}):rej(new Error("No se pudo procesar la imagen")),"image/jpeg",0.88);
     };im.src=rd.result};
     rd.readAsDataURL(file);
   });
@@ -185,11 +190,12 @@ async function subirFoto(nombre,file){
   const a=A.find(x=>x.nombre===nombre); if(!a)return;
   sync("Subiendo foto de "+nombre+"…");
   try{
-    const blob=await prepararFoto(file);
+    const pf=await prepararFoto(file), blob=pf.blob;
     const path="asesores/"+slug(nombre)+"_"+Date.now()+".jpg";
     const {error}=await sb.storage.from(BUCKET).upload(path,blob,{upsert:true,contentType:"image/jpeg"});
     if(error)throw error;
-    const url=sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+    // en fotos verticales la cara suele estar arriba: el encuadre arranca en 18 %
+    const url=sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl+"#o="+pf.o+"&p="+(pf.o==="v"?18:50);
     const vieja=a.foto_path;
     guardar(nombre,{foto_url:url,foto_path:path},()=>{if(vieja&&vieja!==path)sb.storage.from(BUCKET).remove([vieja]).then(()=>{},()=>{});render()});
   }catch(e){sync("No se pudo subir la foto: "+(e.message||e),true)}
@@ -198,6 +204,7 @@ async function subirFoto(nombre,file){
 document.addEventListener("change",e=>{
   const t=e.target,row=t.closest(".row[data-n]"); if(!row)return; const n=row.dataset.n;
   if(t.matches("[data-foto]")){const f=t.files[0];t.value="";if(f)subirFoto(n,f);return}
+  if(t.matches("[data-enc]")){const a=A.find(x=>x.nombre===n),fi=fotoInfo(a.foto_url);guardar(n,{foto_url:fi.src+"#o="+fi.o+"&p="+(+t.value)});return}
   if(t.dataset.k){
     let v=t.value.trim();
     if(t.dataset.k==="pin"){
@@ -208,7 +215,11 @@ document.addEventListener("change",e=>{
     guardar(n,{[t.dataset.k]:v||null},t.dataset.k==="pin"?render:null);
   }
 });
-document.addEventListener("input",e=>{const t=e.target;if(t.dataset&&t.dataset.k==="pin")t.value=t.value.replace(/\D/g,"").slice(0,4)});
+document.addEventListener("input",e=>{const t=e.target;
+  if(t.dataset&&t.dataset.k==="pin")t.value=t.value.replace(/\D/g,"").slice(0,4);
+  if(t.matches&&t.matches("[data-enc]")){const row=t.closest(".row[data-n]"),a=A.find(x=>x.nombre===row.dataset.n);const fi=fotoInfo(a.foto_url);
+    row.querySelector(".foto").style.backgroundPosition=fi.o==="v"?"50% "+t.value+"%":t.value+"% 50%";}
+});
 document.addEventListener("click",e=>{
   const row=e.target.closest(".row[data-n]");
   if(row&&e.target.matches("[data-acceso]")){
