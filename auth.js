@@ -69,17 +69,70 @@
         fetch(SB_URL+"/rest/v1/asesores?nombre=eq."+encodeURIComponent(user),{method:"PATCH",headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY,"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify({ultima_sesion:new Date().toISOString()})}).catch(function(){});}
     }catch(e){}}
     /* Trae el equipo vigente; si a esta persona le quitaron el acceso, se cierra su sesión. */
-    refrescar(function(){if(nombres().indexOf(user)<0)salir()});
+    /* ---- Tu usuario arriba: foto, nombre y menú con "Cerrar sesión" ---- */
+    var fotoInfo=function(url){var m=/#o=([vhs])&p=(\d+)/.exec(url||"");var o=m?m[1]:"s",p=m?+m[2]:50;
+      return {src:(url||"").split("#")[0],pos:o==="v"?"50% "+p+"%":o==="h"?p+"% 50%":"50% 50%"}};
+    var chip=null;
+    function pintarChip(){
+      if(!chip)return;
+      var a=EQ.filter(function(x){return x.nombre===user})[0]||{};
+      window.AUTH.nombreCompleto=a.nombre_completo||"";window.AUTH.celular=a.celular||"";window.AUTH.foto=a.foto_url||"";
+      var fi=fotoInfo(a.foto_url),ini=esc(user.charAt(0).toUpperCase());
+      var av=function(c){return a.foto_url?'<span class="'+c+'" style="background-image:url(\''+esc(fi.src)+'\');background-position:'+fi.pos+'"></span>':'<span class="'+c+'">'+ini+'</span>'};
+      var abierto=chip.className.indexOf("open")>=0;
+      chip.innerHTML='<button type="button" class="auth-btn" aria-haspopup="true">'+av("av")+'<span class="nm">'+esc(user)+'</span><span class="cv"></span></button>'+
+        '<div class="auth-menu" role="menu">'+av("av big")+
+          '<div class="mn">'+esc(a.nombre_completo||user)+'</div>'+
+          '<div class="mr">'+(ES_ADMIN?"Administración · TRUST":(a.admin?"Asesor · Administrador":"Asesor TRUST"))+'</div>'+
+          (a.celular?'<div class="mc">'+esc(a.celular)+'</div>':'')+
+          '<button type="button" class="auth-salir">Cerrar sesión</button></div>';
+      if(abierto)chip.className+=" open";
+    }
+    /* Trae el equipo vigente; si a esta persona le quitaron el acceso, se cierra su sesión. */
+    refrescar(function(){if(nombres().indexOf(user)<0){salir();return}pintarChip()});
     document.addEventListener("DOMContentLoaded",function(){
       var st=document.createElement("style");
       st.textContent="#btn-switch,#btn-cambiar,#tabSwitch,.auth-hide{display:none!important}"+
-        ".auth-out{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:#585C57;text-decoration:none;border:1px solid #D9D2C3;border-radius:999px;padding:6px 12px;background:#fff;cursor:pointer;font-family:Poppins,Montserrat,system-ui,sans-serif}"+
-        ".auth-out:hover{color:#173F35;border-color:#173F35}.auth-out b{font-weight:600;color:#173F35}"+
-        ".auth-out.fixed{position:fixed;right:14px;bottom:14px;z-index:9999;box-shadow:0 8px 24px rgba(23,63,53,.12)}";
+        ".auth-out{position:relative;display:inline-flex;font-family:Poppins,Montserrat,system-ui,sans-serif;line-height:1.3;flex:none}"+
+        ".auth-out .auth-btn{display:inline-flex;align-items:center;gap:8px;border:1px solid #D9D2C3;background:#fff;border-radius:999px;padding:4px 12px 4px 4px;cursor:pointer;font:inherit;font-size:13px;color:#1E241F;box-shadow:0 1px 2px rgba(23,63,53,.06)}"+
+        ".auth-out .auth-btn:hover,.auth-out.open .auth-btn{border-color:#173F35}"+
+        ".auth-out .av{width:32px;height:32px;border-radius:50%;background:#173F35 center/cover no-repeat;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-family:Lora,Georgia,serif;font-size:15px;font-weight:500;flex:none}"+
+        ".auth-out .nm{font-weight:600;color:#173F35;white-space:nowrap}"+
+        ".auth-out .cv{width:7px;height:7px;border-right:1.6px solid #6F726B;border-bottom:1.6px solid #6F726B;transform:rotate(45deg);margin:-3px 2px 0 0;transition:transform .15s}"+
+        ".auth-out.open .cv{transform:rotate(-135deg);margin-top:3px}"+
+        ".auth-out .auth-menu{display:none;position:absolute;right:0;top:calc(100% + 8px);width:230px;max-width:calc(100vw - 24px);background:#fff;border:1px solid #D9D2C3;border-radius:16px;box-shadow:0 18px 44px rgba(23,63,53,.18);padding:18px 16px 14px;z-index:99990;text-align:center;color:#1E241F}"+
+        ".auth-out.open .auth-menu{display:block}"+
+        ".auth-out.izq .auth-menu{right:auto;left:0}"+
+        ".auth-out .av.big{width:68px;height:68px;font-size:28px;margin:0 auto 10px;display:flex;border:2px solid #F1EDE3}"+
+        ".auth-out .mn{font-family:Lora,Georgia,serif;font-size:17px;font-weight:500;color:#173F35}"+
+        ".auth-out .mr{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:#9C7A4E;font-weight:600;margin-top:3px}"+
+        ".auth-out .mc{font-size:12.5px;color:#585C57;margin-top:6px}"+
+        ".auth-out .auth-salir{margin-top:14px;width:100%;border:1px solid #D9D2C3;background:#FAF8F2;border-radius:999px;padding:9px 12px;font:inherit;font-size:13px;font-weight:500;color:#1E241F;cursor:pointer}"+
+        ".auth-out .auth-salir:hover{background:#173F35;border-color:#173F35;color:#fff}"+
+        ".auth-out.fixed{position:fixed;right:14px;top:12px;z-index:9999}"+
+        ".user-chip.auth-host>.asesor-label,.user-chip.auth-host>.asesor-select,.user-chip.auth-host>.user-avatar{display:none!important}"+
+        "@media (max-width:520px){.auth-out .nm{max-width:90px;overflow:hidden;text-overflow:ellipsis}}"+
+        "@media print{.auth-out{display:none!important}}";
       document.head.appendChild(st);
-      var b=document.createElement("button");b.type="button";b.className="auth-out";b.innerHTML="<b>"+esc(user)+"</b> · Salir";b.onclick=function(){if(confirm("¿Salir del portal?"))salir()};
-      var host=document.querySelector(".topright");
-      if(host)host.appendChild(b);else{b.classList.add("fixed");document.body.appendChild(b)}
+      chip=document.createElement("div");chip.className="auth-out";
+      /* dónde va: barra superior del módulo; si la página no tiene, queda fijo arriba a la derecha */
+      var host=document.querySelector(".topright")||document.querySelector(".topbar .user-chip")||document.querySelector(".wrap>.top")||document.querySelector(".top")||document.querySelector(".topbar");
+      if(host){if(host.className.indexOf("user-chip")>=0)host.className+=" auth-host";host.appendChild(chip)}
+      else{chip.className+=" fixed";document.body.appendChild(chip)}
+      pintarChip();
+      chip.addEventListener("click",function(e){
+        var t=e.target;
+        if(t.className&&String(t.className).indexOf("auth-salir")>=0){salir();return}
+        if(t.closest&&t.closest(".auth-btn")){
+          var abrir=chip.className.indexOf("open")<0;
+          chip.className=chip.className.replace(/\s*\b(open|izq)\b/g,"");
+          if(abrir){chip.className+=" open";
+            /* si el menú se saldría por la izquierda de la pantalla, se abre hacia la derecha */
+            var r=chip.getBoundingClientRect();if(r.right<242)chip.className+=" izq";}
+        }
+      });
+      document.addEventListener("click",function(e){if(chip&&!chip.contains(e.target))chip.className=chip.className.replace(/\s*\b(open|izq)\b/g,"")});
+      document.addEventListener("keydown",function(e){if(e.key==="Escape"&&chip)chip.className=chip.className.replace(/\s*\b(open|izq)\b/g,"")});
     });
     return;
   }
