@@ -132,6 +132,8 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
 .pho .tools button{border:0;background:rgba(255,255,255,.92);border-radius:8px;width:26px;height:26px;font-size:13px}
 .pho .tag{position:absolute;left:8px;bottom:8px;background:var(--gold);color:#fff;font-size:10px;font-weight:600;padding:2px 8px;border-radius:999px}
 .pho.v{aspect-ratio:9/16}
+.pho[draggable="true"]{cursor:grab}.pho.dragging{opacity:.35}.pho.over{outline:3px dashed var(--gold);outline-offset:-3px}
+.corr{display:inline-flex;align-items:center;gap:6px;background:#FFF4E0;color:#8A5A12;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:600}
 .pho .tools button.w{width:auto;padding:0 8px;font-size:11px;font-weight:600;color:var(--green)}
 .pho.sel-portada{outline:3px solid var(--gold);outline-offset:-3px}.pho.sel-interior{outline:3px solid var(--green);outline-offset:-3px}
 .pho .tag{top:34px;bottom:auto}
@@ -343,7 +345,7 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
       <h3 class="ptitle">Fotos</h3><p class="hint">Mínimo 5 horizontales. Se enumeran en el orden en que las acomodes. Marca <b>Portada</b> e <b>Interior</b>: son las que usa la ficha.</p>
       <div class="sect" style="margin-top:14px"><h3>Fotos horizontales (5 a 20)</h3>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label class="dz" data-kind="foto_h" style="flex:1">⇪ Subir fotos horizontales<input type="file" multiple accept="image/*"></label><button type="button" class="btn dl-all" data-kind="foto_h" title="Descarga todas las fotos horizontales en un .zip">⤓ Descargar todas</button></div>
-        <div class="photos" id="docs-foto_h"></div></div>
+        <p class="hint" style="margin:6px 0 0">Arrastra las fotos para cambiar el orden; también puedes usar ‹ ›.</p><div class="photos" id="docs-foto_h"></div></div>
       <div class="sect"><h3>Fotos verticales para redes (opcional)</h3>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label class="dz" data-kind="foto_v" style="flex:1">⇪ Subir fotos verticales<input type="file" multiple accept="image/*"></label><button type="button" class="btn dl-all" data-kind="foto_v" title="Descarga todas las fotos verticales en un .zip">⤓ Descargar todas</button></div>
         <div class="photos" id="docs-foto_v"></div></div>
@@ -424,7 +426,7 @@ function renderList(){
   const rows=LISTINGS.filter(l=>(!filt.tipo||l.tipo===filt.tipo)&&(!filt.est||l.estatus===filt.est)&&(!filt.q||[l.titulo,l.direccion,l.asesor].join(" ").toLowerCase().includes(filt.q.toLowerCase())));
   $("#count").textContent=`${rows.length} de ${LISTINGS.length}`;
   $("#list").innerHTML=rows.length?rows.map(l=>{const c=cover(l);return `<div class="lcard" data-id="${l.id}">
-    <div class="ph" style="${c?`background-image:url('${c}')`:""}"><span class="st ${l.estatus}">${ESTATUS_LABEL[l.estatus]||l.estatus}</span><span class="tp">${esc(l.tipo)}</span></div>
+    <div class="ph" style="${c?`background-image:url('${c}')`:""}"><span class="st ${l.estatus}">${ESTATUS_LABEL[l.estatus]||l.estatus}</span>${l.correccion_en&&l.estatus==="nuevo"?`<span class="corr" style="position:absolute;left:12px;bottom:12px">✎ Corregida</span>`:""}<span class="tp">${esc(l.tipo)}</span></div>
     <div class="bd"><h3>${esc(l.titulo||"Sin título")}</h3><div class="adr">${esc(l.direccion||"Sin dirección")}</div><div class="pr">${fmt(l.precio)}${l.tipo==="Renta"?" <small style='font-size:12px;color:var(--muted)'>/ mes</small>":""}</div>
     ${stagesHTML(l)}<div class="meta"><span>${ROLE==="admin"?esc(l.asesor):""}</span><span>${docsOf(l.id,"foto_h").length} fotos · ${fecha(l.created_at)}</span></div></div></div>`}).join("")
   :`<div class="empty" style="grid-column:1/-1"><b>Sin listings</b>${ROLE==="admin"?"Todavía no hay propiedades capturadas.":"Captura tu primera propiedad con “+ Nuevo listing”."}</div>`;
@@ -448,10 +450,11 @@ function chipsRender(id,list,sel){$("#"+id).innerHTML=list.map(v=>`<button type=
 $$("#chips-car,#chips-ame").forEach(el=>el.addEventListener("click",e=>{const b=e.target.closest(".chip");if(b)b.setAttribute("aria-pressed",b.getAttribute("aria-pressed")!=="true")}));
 function chipsVal(id,list,otrosId){const on=$$("#"+id+" .chip[aria-pressed='true']").map(b=>b.dataset.v);const ot=($("#"+otrosId).value||"").split(",").map(s=>s.trim()).filter(Boolean);return on.concat(ot)}
 function chipsSet(id,list,otrosId,vals){vals=vals||[];chipsRender(id,list,vals);$("#"+otrosId).value=vals.filter(v=>!list.includes(v)).join(", ")}
-const editable=()=>ROLE==="admin"||cur.estatus==="borrador";
+let EDIT_SENT=false; // asesor corrigiendo un listing ya enviado
+const editable=()=>ROLE==="admin"||cur.estatus==="borrador"||EDIT_SENT;
 
 function openEd(l){
-  cur=l?{...l}:{id:null,asesor:ME,estatus:"borrador",tipo:"Venta",caracteristicas:[],amenidades:[],paso:1};
+  cur=l?{...l}:{id:null,asesor:ME,estatus:"borrador",tipo:"Venta",caracteristicas:[],amenidades:[],paso:1};EDIT_SENT=false;
   $("#ed-title").textContent=cur.id?(cur.titulo||"Sin título"):"Nuevo listing";
   FIELDS.forEach(k=>{const el=$("#"+k);if(!el)return;let v=cur[k];el.value=v==null?"":(k==="precio"||k==="renta_esperada"||k==="mantenimiento"?fmt(v).replace("—",""):String(v))});
   $("#exclusiva").value=cur.exclusiva==null?"":String(cur.exclusiva);$("#gravamen").value=cur.gravamen==null?"":String(cur.gravamen);
@@ -464,7 +467,7 @@ function subHTML(){return cur.id?`<span class="st ${cur.estatus}">${ESTATUS_LABE
 function refresh(){
   $("#ed-sub").innerHTML=subHTML();
   const track=$("#track"),steps=$("#steps"),nav=$("#nav");
-  if(ROLE!=="admin"&&cur.estatus!=="borrador"){ // asesor: ya enviado → seguimiento
+  if(ROLE!=="admin"&&cur.estatus!=="borrador"&&!EDIT_SENT){ // asesor: ya enviado → seguimiento
     steps.innerHTML="";nav.innerHTML="";$$(".pane").forEach(p=>p.classList.remove("on"));$("#ed-actions").innerHTML="";
     track.innerHTML=trackHTML();bindTrack();return;
   }
@@ -506,7 +509,8 @@ function renderNav(){
   const prev=step>1?`<button class="btn" id="nv-prev">← Anterior</button>`:"<span></span>";
   let next="";
   if(step<6)next=`<button class="btn" id="nv-draft">Guardar borrador</button><button class="btn primary" id="nv-next">${step===1&&!cur.id?"Crear listing y continuar →":"Guardar y continuar →"}</button>`;
-  else{const f=faltas();next=`<button class="btn primary" id="nv-send" ${f.length?"disabled":""} title="${f.length?"Falta: "+f.join(", "):""}">Enviar a TRUST ✓</button>`}
+  else{const f=faltas();next=`<button class="btn primary" id="nv-send" ${f.length?"disabled":""} title="${f.length?"Falta: "+f.join(", "):""}">${EDIT_SENT?"Reenviar a TRUST ✓":"Enviar a TRUST ✓"}</button>`}
+  if(EDIT_SENT)next=`<button class="btn" id="nv-cancel">Cancelar corrección</button>`+next;
   nav.innerHTML=prev+`<div class="r">${next}</div>`;
   const on=(id,fn)=>{const b=$("#"+id);if(b)b.onclick=fn};
   on("nv-prev",()=>goStep(step-1));
@@ -518,6 +522,7 @@ function renderNav(){
     goStep(step+1);
   });
   on("nv-send",enviar);
+  on("nv-cancel",()=>{if(!confirm("¿Salir sin reenviar? Lo que ya guardaste se conserva, pero TRUST no recibe aviso de la corrección."))return;EDIT_SENT=false;step=6;refresh()});
   $("#ed-actions").innerHTML="";
 }
 function goStep(n){
@@ -549,7 +554,13 @@ async function patch(f){const r=await sb.from("listings").update(f).eq("id",cur.
 async function enviar(){
   const f=faltas();if(f.length){toast("Falta: "+f.join(", "),true);return}
   if(!(await save(true,6)))return;
-  if(!confirm("¿Enviar la propiedad a TRUST para darla de alta? Después de enviarla ya no podrás editarla; cualquier cambio lo hace TRUST."))return;
+  if(EDIT_SENT){
+    if(!confirm("¿Reenviar la propiedad corregida a TRUST? Les avisamos que hubo cambios."))return;
+    const ok=await patch({estatus:"nuevo",correccion_en:new Date().toISOString(),correcciones:(cur.correcciones||0)+1,ficha_generada:false});
+    if(ok){EDIT_SENT=false;step=6;refresh();toast("Corrección enviada a TRUST")}
+    return;
+  }
+  if(!confirm("¿Enviar la propiedad a TRUST para darla de alta? Mientras la dan de alta podrás corregirla y reenviarla."))return;
   if(await patch({estatus:"nuevo",enviado_en:new Date().toISOString()})){step=6;refresh();}
 }
 
@@ -558,7 +569,7 @@ function reviewHTML(conChecklist){
   const l=editable()?{...cur,...collect()}:cur,fh=docsOf(cur.id,"foto_h"),fv=docsOf(cur.id,"foto_v"),au=docsOf(cur.id,"autorizacion"),cl=docsOf(cur.id,"cliente");
   const v=(x,s)=>x==null||x===""?`<span class="miss">—</span>`:esc(s||x);
   const f=faltas();
-  return `<h3 class="ptitle">${conChecklist?"Revisión":"Resumen de la propiedad"}</h3>${conChecklist?`<p class="hint">Revisa que todo esté correcto. Al enviar, TRUST da de alta la propiedad en Easy Broker, genera la ficha y la activa.</p>`:`<p class="hint">Así se envió. Si necesitas corregir algo, avisa a TRUST.</p>`}
+  return `<h3 class="ptitle">${conChecklist?"Revisión":"Resumen de la propiedad"}</h3>${conChecklist?`<p class="hint">Revisa que todo esté correcto. Al enviar, TRUST da de alta la propiedad en Easy Broker, genera la ficha y la activa.</p>`:`<p class="hint">${cur.estatus==="nuevo"?"Así se envió. Si ves un error, usa <b>Corregir y reenviar</b> arriba.":"Así se envió. Si necesitas corregir algo, avisa a TRUST."}</p>`}
     ${conChecklist?(f.length?`<div class="lock" style="margin:12px 0">Para enviar falta: <b>${f.join(", ")}</b></div>`:`<div class="okbox" style="margin:12px 0">Todo listo para enviar.</div>`):""}
     <div class="rev" style="margin-top:14px">
       <div><b>Título</b>${v(l.titulo)}</div><div><b>Tipo</b>${v(l.tipo)}</div><div><b>Precio</b>${v(l.precio,fmt(l.precio))}</div>
@@ -582,7 +593,7 @@ function trackHTML(){
   const box=(k,done,title,sub)=>`<div class="s ${done?"done":k===curI?"cur":""}"><b>${done?"✓ ":""}${title}</b><small>${sub}</small></div>`;
   let h=`<div class="card"><div class="sent" style="padding:18px 10px 6px">${l.estatus==="activo"?`<div class="big">✓</div><h2>Tu propiedad está activa</h2><p class="hint">Genera la ficha cuando la necesites; si TRUST cambia precio o fotos, vuelve a generarla.</p>`:l.estatus==="borrador"?"":["pausado","cerrado"].includes(l.estatus)?`<h2>Listing ${l.estatus}</h2>`:`<div class="big">✓</div><h2>Listo, TRUST está dando de alta tu propiedad</h2><p class="hint">Te avisamos cuando esté activa. Enviada ${l.enviado_en?"el "+fecha(l.enviado_en):""}.</p>`}</div>
     <div class="tl2">${box(1,s1,"Enviada","Captura completa")}${box(2,s2,"Alta en Easy Broker",s2?`<a href="${esc(l.easybroker_url)}" target="_blank" rel="noopener">Ver anuncio ↗</a>`:"TRUST la está cargando")}${box(3,s3,"Ficha técnica",s3?"Generada":"Pendiente")}${box(4,s4,"Activa","Publicada en portales")}</div>
-    <div class="actions" style="margin-top:4px">${s3||s4?`<button class="btn gold" id="act-ficha">⤓ Generar ficha</button>`:""}${l.estatus==="activo"&&!l.lona_solicitada?`<button class="btn" id="act-lona">Solicitar lona</button>`:""}</div>
+    <div class="actions" style="margin-top:4px">${l.estatus==="nuevo"?`<button class="btn" id="act-edit">✎ Corregir y reenviar</button>`:""}${s3||s4?`<button class="btn gold" id="act-ficha">⤓ Generar ficha</button>`:""}${l.estatus==="activo"&&!l.lona_solicitada?`<button class="btn" id="act-lona">Solicitar lona</button>`:""}</div>
     ${l.lona_solicitada?`<div class="sect"><h3>Lona</h3><p class="hint">Lona solicitada${l.lona_entregada?" y entregada":""}. Al colocarla, sube el video de la zona.</p><label class="dz" data-kind="video_lona">⇪ Video de colocación de lona<input type="file" accept="video/*,image/*"></label><div class="doclist" id="docs-video_lona"></div></div>`:""}
   </div>
   <div class="card" style="margin-top:14px">${reviewHTML(false)}</div>`;
@@ -591,6 +602,7 @@ function trackHTML(){
 function bindTrack(){
   const on=(id,fn)=>{const b=$("#"+id);if(b)b.onclick=fn};
   on("act-ficha",generarFicha);
+  on("act-edit",()=>{EDIT_SENT=true;step=1;refresh();window.scrollTo({top:0,behavior:"smooth"});toast("Corrige lo que necesites y reenvía al final")});
   on("act-lona",async()=>{if(await patch({lona_solicitada:true}))toast("Lona solicitada")});
   renderDocList("video_lona");
 }
@@ -602,7 +614,7 @@ function renderAlta(){
   const s1=!!l.easybroker_url,s2=!!l.ficha_generada,s3=["activo","pausado","cerrado"].includes(l.estatus);
   const curI=!s1?1:!s2?2:!s3?3:0;
   const ck=(n,done,title,sub,act)=>`<div class="ck ${done?"ok":n===curI?"cur":""}"><i>${done?"✓":n}</i><div class="b"><b>${title}</b><div class="hint">${sub}</div>${act?`<div class="act">${act}</div>`:""}</div></div>`;
-  let h=`<h3 class="ptitle">Alta de la propiedad</h3><p class="hint">${l.estatus==="borrador"?"El asesor todavía está capturando; el alta se activa cuando la envíe.":l.estatus==="nuevo"?`Enviada por ${esc(l.asesor)} ${l.enviado_en?"el "+fecha(l.enviado_en):""}. Sigue los 3 pasos en orden.`:"Alta completada."}</p>
+  let h=`<h3 class="ptitle">Alta de la propiedad</h3><p class="hint">${l.estatus==="borrador"?"El asesor todavía está capturando; el alta se activa cuando la envíe.":l.estatus==="nuevo"?`Enviada por ${esc(l.asesor)} ${l.enviado_en?"el "+fecha(l.enviado_en):""}. Sigue los 3 pasos en orden.${l.correccion_en?` <span class="corr">✎ Corregida y reenviada el ${fecha(l.correccion_en)}${l.correcciones>1?" · "+l.correcciones+" veces":""} — revisa los datos y vuelve a generar la ficha</span>`:""}`:"Alta completada."}</p>
     <div class="check">
     ${ck(1,s1,"Cargar en Easy Broker","Pega la liga del anuncio ya publicado.",`<input id="eb_url" value="${esc(l.easybroker_url||"")}" placeholder="https://www.easybroker.com/…"><button class="btn primary" id="eb_save">Guardar liga</button>${s1?`<a class="btn" href="${esc(l.easybroker_url)}" target="_blank" rel="noopener">Abrir ↗</a>`:""}`)}
     ${ck(2,s2,"Ficha técnica","Se genera desde aquí con la portada e interior elegidas abajo. Puedes regenerarla las veces que quieras.",`<button class="btn gold" id="act-ficha">⤓ Generar ficha</button>${s2?`<span class="hint">Generada ✓</span>`:""}`)}
@@ -652,7 +664,7 @@ function renderDocList(kind){
   const el=$("#docs-"+kind);if(!el)return;
   const list=docsOf(cur.id,kind);
   if(kind==="foto_h"||kind==="foto_v"){
-    el.innerHTML=list.map((d,i)=>`<div class="pho ${kind==="foto_v"?"v":""} ${d.etiqueta?"sel-"+d.etiqueta:""}" data-id="${d.id}"><img src="${pubUrl(d.path)}" loading="lazy"><span class="n">${i+1}</span>${d.etiqueta?`<span class="tag">${d.etiqueta}</span>`:""}
+    el.innerHTML=list.map((d,i)=>`<div class="pho ${kind==="foto_v"?"v":""} ${d.etiqueta?"sel-"+d.etiqueta:""}" data-id="${d.id}" ${editable()?'draggable="true"':""}><img src="${pubUrl(d.path)}" loading="lazy"><span class="n">${i+1}</span>${d.etiqueta?`<span class="tag">${d.etiqueta}</span>`:""}
       ${kind==="foto_h"?`<div class="lab"><button data-act="portada" title="Usar como portada de la ficha">Portada</button><button data-act="interior" title="Usar como foto interior de la ficha">Interior</button></div>`:""}<div class="tools"><button data-act="dl" title="Descargar esta foto">⤓</button><button data-act="up" title="Mover antes">‹</button><button data-act="down" title="Mover después">›</button><button data-act="del" title="Eliminar">×</button></div></div>`).join("")||`<div class="hint">Sin fotos todavía.</div>`;
   } else {
     el.innerHTML=list.map(d=>`<div class="doc" data-id="${d.id}">📄 <a href="${pubUrl(d.path)}" target="_blank" rel="noopener">${esc(d.nombre)}</a><span class="hint">${fecha(d.created_at)}</span><button class="x" data-act="del" title="Eliminar">×</button></div>`).join("")||`<div class="hint">Nada subido todavía.</div>`;
@@ -668,6 +680,21 @@ document.addEventListener("click",async e=>{
   renderDocs();refresh();
 });
 
+/* ---------- reordenar fotos arrastrando ---------- */
+let DRAG=null;
+document.addEventListener("dragstart",e=>{const ph=e.target.closest(".pho[draggable]");if(!ph)return;DRAG=ph.dataset.id;ph.classList.add("dragging");e.dataTransfer.effectAllowed="move";try{e.dataTransfer.setData("text/plain",DRAG)}catch(_){}});
+document.addEventListener("dragend",e=>{const ph=e.target.closest(".pho");if(ph)ph.classList.remove("dragging");$$(".pho.over").forEach(x=>x.classList.remove("over"));DRAG=null});
+document.addEventListener("dragover",e=>{const ph=e.target.closest(".pho[draggable]");if(!ph||!DRAG||ph.dataset.id===DRAG)return;e.preventDefault();e.dataTransfer.dropEffect="move";$$(".pho.over").forEach(x=>x!==ph&&x.classList.remove("over"));ph.classList.add("over")});
+document.addEventListener("drop",async e=>{
+  const ph=e.target.closest(".pho[draggable]");if(!ph||!DRAG||ph.dataset.id===DRAG)return;e.preventDefault();
+  const list=DOCS[cur.id]||[];const a=list.find(x=>x.id===DRAG),b=list.find(x=>x.id===ph.dataset.id);if(!a||!b||a.tipo!==b.tipo)return;
+  const same=list.filter(x=>x.tipo===a.tipo).sort((x,y)=>x.orden-y.orden);
+  const from=same.indexOf(a),to=same.indexOf(b);same.splice(from,1);same.splice(to,0,a);
+  const base=Math.min(...same.map(x=>x.orden??0));const ups=[];
+  same.forEach((x,i)=>{const o=base+i;if(x.orden!==o){x.orden=o;ups.push(sb.from("listing_docs").update({orden:o}).eq("id",x.id))}});
+  DOCS[cur.id]=list.slice().sort((x,y)=>x.orden-y.orden);renderDocs();refresh();
+  const rs=await Promise.all(ups);if(rs.some(r=>r.error))toast("No se guardó el orden",true);
+});
 /* ---------- descarga de fotos ---------- */
 const fotoNombre=(d,i)=>{const base=(cur.titulo||"TRUST").replace(/[^\wáéíóúñÁÉÍÓÚÑ]+/gi,"_").slice(0,40);const ext=(d.path.match(/\.([a-z0-9]{3,4})$/i)||[,"jpg"])[1].toLowerCase();return `${base}_${d.tipo==="foto_v"?"V":"H"}${String(i).padStart(2,"0")}${d.etiqueta?"_"+d.etiqueta:""}.${ext}`};
 async function blobDe(d){const r=await fetch(pubUrl(d.path));if(!r.ok)throw new Error("No se pudo leer la foto");return r.blob()}
