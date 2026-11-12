@@ -781,7 +781,7 @@ function canalTxt(l){ return l.canal==="MarketPlace" && l.marketplace ? `MarketP
 function canalMatch(l, f){ return !f || (f==="Otro" ? !CANALES_FIJOS.includes(l.canal) : l.canal===f); }
 const PROYECTOS = ["Luciana Providencia","Balcana","Epicentria","Neza","Corretaje","Tanhia","Lázaro","Union Square","VIM Tower","TRUST","Otro"];
 const ESTANDAR  = {cita:0.10, apartado:0.03, venta:0.01};   // lead → cita, apartado, cierre
-const ASESORES  = ["Ana Lu","Carlos","Fanny","María","Paola","Ramsés","Rodrigo","Álvaro","Majo","Berna","Otro"];
+const ASESORES  = (window.TRUST_ASESORES||["Ana Lu","Carlos","Fanny","María","Paola","Paola M","Ramsés","Rodrigo","Álvaro","Majo","Berna"]).concat(["Otro"]);
 
 /* ===== STORE ===== */
 let sb = null, leads = [];

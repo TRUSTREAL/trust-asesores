@@ -3047,6 +3047,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
       <option>Carlos</option>
       <option>Ana Lu</option>
       <option>Paola</option>
+      <option>Paola M</option>
       <option>Ramsés</option>
     </select>
     <div class="user-avatar">A</div>
@@ -3298,7 +3299,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
               <button type="button" class="planta-btn" id="nf-firma-btn" onclick="document.getElementById('nf-firma-file').click()">+ Agregar tu foto</button>
               <button type="button" class="planta-quitar" id="nf-firma-quitar" style="display:none">Quitar foto</button>
             </div>
-            <div class="nf-firma-hint">Aparece arriba a la derecha en cada hoja de la cotización. Se guarda en este dispositivo: solo lo llenas una vez.</div>
+            <div class="nf-firma-hint">Aparece arriba a la derecha en cada hoja de la cotización. Tu nombre, celular y foto los administra TRUST; si falta alguno puedes capturarlo aquí y se guarda en este dispositivo.</div>
           </div>
         </div>
       </div>
@@ -4369,7 +4370,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
   // Cada cotización descargada se guarda en el portal (Mis documentos).
 
   // --- Identidad del asesor (persistida en el dispositivo) ---
-  const EQUIPO_ASESORES = ['Álvaro', 'Rodrigo', 'Majo', 'Fanny', 'María', 'Carlos', 'Ana Lu', 'Paola', 'Ramsés'];
+  const EQUIPO_ASESORES = (window.TRUST_ASESORES || ['Álvaro', 'Rodrigo', 'Majo', 'Fanny', 'María', 'Carlos', 'Ana Lu', 'Paola', 'Paola M', 'Ramsés']).slice();
 
   function inicializarAsesor() {
     const sel = document.getElementById('asesor-activo');
@@ -5308,30 +5309,47 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
 
   // ---------- firma del asesor (se guarda en el dispositivo) ----------
   const firmaKey = a => 'trust_cot_firma_' + a;
-  function firmaLeer(a) {
+  // Directorio central (Admin → Asesores): nombre completo, celular y foto. Manda sobre lo capturado en el dispositivo.
+  function firmaCentral(a) {
+    const eq = window.TRUST_EQUIPO || [];
+    const x = eq.filter(e => e.nombre === a)[0] || {};
+    return { nombre: x.nombre_completo || '', tel: x.celular || '', foto: x.foto_url || '' };
+  }
+  function firmaLocal(a) {
     let f = {};
     try { f = JSON.parse(localStorage.getItem(firmaKey(a)) || '{}') || {}; } catch (e) { f = {}; }
-    return Object.assign({}, FIRMAS_BASE[a] || {}, f);
+    return f;
+  }
+  function firmaLeer(a) {
+    const f = Object.assign({}, FIRMAS_BASE[a] || {}, firmaLocal(a));
+    const c = firmaCentral(a);
+    ['nombre', 'tel', 'foto'].forEach(k => { if (c[k]) f[k] = c[k]; });
+    return f;
   }
   function firmaGuardar() {
     const a = asesorActivo(); if (!a) return;
-    const f = { nombre: val('nf-firma-nombre'), tel: val('nf-firma-tel'), foto: NF.foto || '' };
+    const c = firmaCentral(a);
+    const f = { nombre: c.nombre ? '' : val('nf-firma-nombre'), tel: c.tel ? '' : val('nf-firma-tel'), foto: c.foto ? '' : (NF.foto || '') };
     try { localStorage.setItem(firmaKey(a), JSON.stringify(f)); } catch (e) { }
   }
   function firmaPintarFoto() {
-    const has = !!NF.foto;
+    const has = !!NF.foto, central = !!firmaCentral(asesorActivo()).foto;
     $('nf-firma-thumb').style.display = has ? '' : 'none';
     if (has) $('nf-firma-thumb').src = NF.foto;
-    $('nf-firma-quitar').style.display = has ? '' : 'none';
+    $('nf-firma-quitar').style.display = (has && !central) ? '' : 'none';
+    $('nf-firma-btn').style.display = central ? 'none' : '';
     $('nf-firma-btn').textContent = has ? 'Cambiar foto' : '+ Agregar tu foto';
   }
   function firmaSync() {
     const a = asesorActivo();
     if (!$('nf-firma-nombre') || NF.firmaDe === a) return;
     NF.firmaDe = a;
-    const f = a ? firmaLeer(a) : {};
+    const f = a ? firmaLeer(a) : {}, c = firmaCentral(a);
     $('nf-firma-nombre').value = f.nombre || '';
     $('nf-firma-tel').value = f.tel || '';
+    // lo que ya está en el directorio de TRUST no se edita aquí
+    $('nf-firma-nombre').readOnly = !!c.nombre; $('nf-firma-tel').readOnly = !!c.tel;
+    [$('nf-firma-nombre'), $('nf-firma-tel')].forEach(i => { i.style.background = i.readOnly ? '#F1EDE3' : ''; i.title = i.readOnly ? 'Lo administra TRUST (Admin → Asesores)' : ''; });
     NF.foto = f.foto || '';
     firmaPintarFoto();
   }

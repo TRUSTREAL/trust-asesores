@@ -4,31 +4,55 @@
    - Con sesión → fija la identidad en todos los módulos (ya no preguntan el nombre) y pone "Salir".
    - Páginas de administración (/admin/, /ventas/, etc.) no pasan por aquí. */
 (function(){
-  var ASESORES=["Ana Lu","Carlos","Fanny","María","Paola","Ramsés","Rodrigo","Álvaro","Majo","Berna"];
-  /* PIN por asesor. Quien aún no tenga PIN entra sin contraseña (mientras se asignan todos). */
-  var PINS={
-    "María":"1990",
-    "Majo":"9876",
-    "Paola":"1973",
-    "Berna":"1597",
-    "Rodrigo":"9212",
-    "Álvaro":"1706",
-    "Ramsés":"2424"
-  };
-  /* quién puede entrar al panel de administración */
-  var ADMINS=["Álvaro","Berna","Rodrigo"];
+  /* Equipo: se administra en Admin → Asesores (tabla "asesores" de Supabase: código, foto, celular, acceso).
+     Esta lista es solo el respaldo por si no hay conexión o el dispositivo aún no la ha descargado. */
+  var SB_URL="https://xshhjvdmkuqesdlvczbb.supabase.co",SB_KEY="sb_publishable_5erZfpELyuncW1nrReTaZw_BQj0bc-P";
+  var CK="trust_equipo_v1";
+  var EQ=[
+    {nombre:"Ana Lu"},{nombre:"Carlos"},{nombre:"Fanny"},{nombre:"María",pin:"1990"},{nombre:"Paola",pin:"1973"},{nombre:"Paola M"},
+    {nombre:"Ramsés",pin:"2424"},{nombre:"Rodrigo",pin:"9212",admin:true},{nombre:"Álvaro",pin:"1706",admin:true},
+    {nombre:"Majo",pin:"9876"},{nombre:"Berna",pin:"1597",admin:true}
+  ];
+  try{var _c=JSON.parse(localStorage.getItem(CK)||"null");if(_c&&_c.length&&_c[0].nombre)EQ=_c}catch(e){}
+  var ASESORES,PINS,ADMINS;
+  function derivar(){
+    ASESORES=[];PINS={};ADMINS=[];
+    EQ.forEach(function(a){
+      if(a.activo===false)return;                 /* sin acceso: no aparece para entrar */
+      ASESORES.push(a.nombre);
+      if(a.pin)PINS[a.nombre]=String(a.pin);      /* quien no tenga código entra sin contraseña */
+      if(a.admin)ADMINS.push(a.nombre);           /* quién puede entrar al panel de administración */
+    });
+    window.TRUST_EQUIPO=EQ;
+    window.TRUST_ASESORES=EQ.map(function(a){return a.nombre});   /* todos (para listas y filtros de los módulos) */
+  }
+  derivar();
+  function refrescar(cb){
+    var listo=false,fin=function(c){if(listo)return;listo=true;if(cb)cb(c)};
+    try{
+      fetch(SB_URL+"/rest/v1/asesores?select=nombre,nombre_completo,celular,pin,foto_url,activo,admin,orden&order=orden.asc,nombre.asc",{headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY}})
+        .then(function(r){return r.ok?r.json():null})
+        .then(function(d){
+          if(!d||!d.length||!d[0].nombre){fin(false);return}
+          var t=JSON.stringify(d),cambio=t!==JSON.stringify(EQ);
+          try{localStorage.setItem(CK,t)}catch(e){}
+          EQ=d;derivar();fin(cambio);
+        }).catch(function(){fin(false)});
+    }catch(e){fin(false)}
+    setTimeout(function(){fin(false)},3000);
+  }
   var IDENT=["trust_asesor_herr","trust_asesor_oo","trust_asesor_com","lst_me","trust_asesor"];
   var ADMIN_PREFIX=["/admin/","/ventas/"];
   var ADMIN_EXACT=["/leads/","/leads/index.html","/hotleads/","/hotleads/index.html","/inventario/","/inventario/index.html","/listings/","/listings/index.html"];
   var p=location.pathname;
   var ES_ADMIN=ADMIN_PREFIX.some(function(a){return p.indexOf(a)===0})||ADMIN_EXACT.indexOf(p)>=0;
   var KEY=ES_ADMIN?"trust_pin_admin":"trust_pin_user";   // sesiones separadas: la de asesores no abre admin
-  var NOMBRES=ES_ADMIN?ADMINS:ASESORES;
+  var nombres=function(){return ES_ADMIN?ADMINS:ASESORES};
 
   var LS={get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}},del:function(k){try{localStorage.removeItem(k)}catch(e){}}};
   var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
   var user=LS.get(KEY);
-  if(user&&NOMBRES.indexOf(user)<0){user=null;LS.del(KEY)}
+  if(user&&nombres().indexOf(user)<0){user=null;LS.del(KEY)}
 
   function fijar(n){IDENT.forEach(function(k){LS.set(k,n)});}
   function salir(){LS.del(KEY);if(!ES_ADMIN)IDENT.forEach(function(k){LS.del(k)});location.href=ES_ADMIN?"/admin/":"/";}
@@ -36,7 +60,16 @@
 
   if(user){
     if(!ES_ADMIN)fijar(user);
-    window.AUTH={nombre:user,rol:ADMINS.indexOf(user)>=0?"admin":"asesor"};
+    var yo=EQ.filter(function(a){return a.nombre===user})[0]||{};
+    window.AUTH={nombre:user,rol:ADMINS.indexOf(user)>=0?"admin":"asesor",nombreCompleto:yo.nombre_completo||"",celular:yo.celular||"",foto:yo.foto_url||""};
+    /* Última sesión en el portal de asesores (se ve en Admin → Asesores). Máximo un registro cada 10 minutos. */
+    if(!ES_ADMIN){try{
+      var pk="trust_ping_"+user,ult=+(LS.get(pk)||0),ahora=Date.now();
+      if(ahora-ult>600000){LS.set(pk,String(ahora));
+        fetch(SB_URL+"/rest/v1/asesores?nombre=eq."+encodeURIComponent(user),{method:"PATCH",headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY,"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify({ultima_sesion:new Date().toISOString()})}).catch(function(){});}
+    }catch(e){}}
+    /* Trae el equipo vigente; si a esta persona le quitaron el acceso, se cierra su sesión. */
+    refrescar(function(){if(nombres().indexOf(user)<0)salir()});
     document.addEventListener("DOMContentLoaded",function(){
       var st=document.createElement("style");
       st.textContent="#btn-switch,#btn-cambiar,#tabSwitch,.auth-hide{display:none!important}"+
@@ -81,7 +114,7 @@
   function render(){
     var g=document.getElementById("pin-gate");if(!g){g=document.createElement("div");g.id="pin-gate";document.body.appendChild(g)}
     g.innerHTML='<div class="box"><div class="eyebrow">TRUST realtor · '+(ES_ADMIN?"Administración":"Asesores")+'</div><h1>¿Quién eres?</h1><p class="sub">Elige tu nombre para entrar'+(ES_ADMIN?" al panel de administración":" al portal")+'.</p>'+
-      '<div class="names">'+NOMBRES.map(function(n){return '<button type="button" data-n="'+esc(n)+'">'+esc(n)+'</button>'}).join("")+'</div><div class="foot">Uso interno</div></div>';
+      '<div class="names">'+nombres().map(function(n){return '<button type="button" data-n="'+esc(n)+'">'+esc(n)+'</button>'}).join("")+'</div><div class="foot">Uso interno</div></div>';
     Array.prototype.forEach.call(g.querySelectorAll(".names button"),function(b){b.onclick=function(){var n=b.getAttribute("data-n");if(!PINS[n]){entrar(n);return}pedirPIN(n)}});
   }
   function pedirPIN(n){
@@ -108,5 +141,7 @@
     var onKey=function(e){if(e.key==="Escape")tecla("c");else if(e.key==="Backspace")tecla("x");else tecla(e.key)};
     document.addEventListener("keydown",onKey);
   }
-  if(document.body)render();else document.addEventListener("DOMContentLoaded",render);
+  var enNombres=function(){var g=document.getElementById("pin-gate");return !!(g&&g.querySelector(".names"))};
+  var pintar=function(){render();refrescar(function(c){if(c&&enNombres())render()})};
+  if(document.body)pintar();else document.addEventListener("DOMContentLoaded",pintar);
 })();

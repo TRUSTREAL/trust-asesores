@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Asesores | TRUST</title>
+<link rel="icon" href="../icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#173F35; --green-2:#1F5446; --gold:#B8956A; --gold-2:#9C7A4E;
+  --bg:#FAF8F2; --surface:#FFFFFF; --surface-2:#F1EDE3; --line:#E3DDD0; --line-2:#CFC6B4;
+  --text:#1E241F; --muted:#6F726B; --faint:#97999B; --red:#A8342A; --amber:#B7791F; --ok:#2F7A4F;
+  --shadow:0 1px 2px rgba(23,63,53,.06),0 8px 24px rgba(23,63,53,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.45;min-height:100vh;padding-top:env(safe-area-inset-top)}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 16px 60px}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-bottom:18px;border-bottom:3px solid var(--green);margin-bottom:22px}
+.top h1{font-family:Lora,Georgia,serif;font-weight:500;font-size:28px;color:var(--green);line-height:1.15}
+.top .sub{color:var(--muted);font-size:13px;margin-top:4px;max-width:620px}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-2);font-weight:600;margin-bottom:6px}
+.topright{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{font:inherit;font-size:13px;font-weight:500;border-radius:999px;padding:9px 16px;border:1px solid var(--line-2);background:#fff;color:var(--text);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--green);color:var(--green)}
+.btn.pri{background:var(--green);border-color:var(--green);color:#fff}
+.btn.pri:hover{background:var(--green-2);color:#fff}
+.sync{font-size:12px;color:var(--muted);min-height:18px;margin-bottom:12px}
+.sync.err{color:var(--red);font-weight:500}
+.resumen{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.resumen div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 16px;min-width:150px}
+.resumen b{display:block;font-family:Lora,Georgia,serif;font-weight:500;font-size:24px;color:var(--green);line-height:1.2}
+.resumen span{font-size:12px;color:var(--muted)}
+.lista{display:flex;flex-direction:column;gap:10px}
+.row{display:grid;grid-template-columns:64px 1.1fr 1.3fr 1fr 110px 1.15fr 92px;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.row.off{opacity:.62}
+.row.head{background:none;border:0;padding:0 16px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.foto{width:60px;height:60px;border-radius:50%;background:var(--surface-2) center/cover no-repeat;border:1px solid var(--line-2);position:relative;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:Lora,Georgia,serif;font-size:22px;color:var(--green);overflow:hidden}
+.foto input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.foto .cam{position:absolute;left:0;right:0;bottom:0;background:rgba(23,63,53,.78);color:#fff;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;text-align:center;padding:3px 0 4px;opacity:0;transition:opacity .15s}
+.foto:hover .cam,.foto.vacia .cam{opacity:1}
+.nom b{display:block;font-size:15px;font-weight:600;color:var(--green)}
+.nom .tags{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap}
+.tag{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;border-radius:999px;padding:2px 8px;background:var(--surface-2);color:var(--gold-2)}
+.tag.adm{background:var(--green);color:#fff}
+.quitar{font:inherit;font-size:11px;color:var(--muted);background:none;border:0;cursor:pointer;margin-top:4px;text-decoration:underline;padding:0}
+.quitar:hover{color:var(--red)}
+label.f{display:block}
+label.f span{display:none;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:3px}
+input.t{font:inherit;font-size:13.5px;width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;background:#fff;color:var(--text)}
+input.t:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(23,63,53,.08)}
+input.t::placeholder{color:var(--faint)}
+input.pin{letter-spacing:.3em;font-weight:600;text-align:center}
+input.pin::placeholder{letter-spacing:0;font-weight:400;font-size:12px}
+.ses{font-size:12.5px;display:flex;align-items:flex-start;gap:8px}
+.ses i{width:9px;height:9px;border-radius:50%;background:var(--faint);flex:none;margin-top:5px}
+.ses.v i{background:var(--ok)} .ses.a i{background:var(--amber)} .ses.r i{background:var(--red)}
+.ses b{display:block;font-weight:500}
+.ses small{display:block;color:var(--muted);font-size:11px}
+.sw{display:flex;flex-direction:column;align-items:flex-start;gap:4px;font-size:11px;color:var(--muted)}
+.sw button{width:44px;height:24px;border-radius:999px;border:0;background:var(--line-2);position:relative;cursor:pointer;transition:background .15s}
+.sw button:after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s}
+.sw button.on{background:var(--green)} .sw button.on:after{left:23px}
+.nota{margin-top:22px;font-size:12.5px;color:var(--muted);background:var(--surface);border:1px dashed var(--line-2);border-radius:12px;padding:14px 16px;line-height:1.6}
+.nota b{color:var(--text);font-weight:600}
+.vacio{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:28px;text-align:center;color:var(--muted)}
+.vacio b{display:block;font-family:Lora,Georgia,serif;font-weight:500;font-size:20px;color:var(--green);margin-bottom:6px}
+@media (max-width:900px){
+  .row.head{display:none}
+  .row{grid-template-columns:64px 1fr 1fr;gap:12px}
+  .row .nom{grid-column:2/4}
+  label.f span{display:block}
+  .row .c-nc,.row .c-cel{grid-column:span 3}
+  .row .c-pin{grid-column:1/3}
+  .row .c-ses{grid-column:1/3}
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/auth.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <div class="eyebrow">TRUST realtor · Administración</div>
+      <h1>Asesores</h1>
+      <div class="sub">Código de acceso, foto, celular y última sesión de cada asesor. Lo que captures aquí es lo que sale en las cotizaciones y documentos que se envían a clientes.</div>
+    </div>
+    <div class="topright">
+      <a class="btn" href="./">← Panel</a>
+      <button class="btn pri" id="btn-add" type="button">+ Agregar asesor</button>
+    </div>
+  </div>
+  <div class="sync" id="sync">Cargando…</div>
+  <div class="resumen" id="resumen"></div>
+  <div class="lista" id="lista"></div>
+  <div class="nota">
+    <b>Cómo funciona.</b> El <b>código</b> es de 4 dígitos; si lo dejas vacío, ese asesor entra sin contraseña. La <b>foto</b> y el <b>celular</b> aparecen en la firma de las cotizaciones. <b>Acceso al portal</b> apagado = ya no puede entrar, pero su nombre y su historial (leads, ventas, documentos) se conservan. La <b>última sesión</b> se registra cuando el asesor abre cualquier módulo de su portal (no cuenta el panel de administración). Los cambios aplican en el dispositivo de cada asesor la siguiente vez que abra o recargue el portal.
+  </div>
+</div>
+<script>
+const SUPABASE_URL="https://xshhjvdmkuqesdlvczbb.supabase.co";
+const SUPABASE_KEY="sb_publishable_5erZfpELyuncW1nrReTaZw_BQj0bc-P";
+const BUCKET="documentos";
+let sb=null; try{ sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); }catch(e){ sb=null; }
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let A=[];           // asesores
+let saveT=null;
+const sync=(t,err)=>{const el=$("#sync");el.textContent=t;el.className="sync"+(err?" err":"")};
+const slug=t=>String(t).normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+const MES=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+
+function sesion(iso){
+  if(!iso)return {c:"",t:"Nunca ha entrado",s:"sin registro"};
+  const d=new Date(iso),h=new Date();
+  const dia=x=>new Date(x.getFullYear(),x.getMonth(),x.getDate()).getTime();
+  const dif=Math.round((dia(h)-dia(d))/86400000);
+  const hora=d.toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"});
+  const fecha=d.getDate()+" "+MES[d.getMonth()]+(d.getFullYear()!==h.getFullYear()?" "+d.getFullYear():"")+" · "+hora;
+  const t=dif<=0?"Hoy":dif===1?"Ayer":"Hace "+dif+" días";
+  return {c:dif<=2?"v":dif<=7?"a":"r",t:t,s:fecha};
+}
+
+function render(){
+  const act=A.filter(a=>a.activo!==false);
+  const hoy=act.filter(a=>sesion(a.ultima_sesion).t==="Hoy").length;
+  const sem=act.filter(a=>["v","a"].includes(sesion(a.ultima_sesion).c)).length;
+  const sinPin=act.filter(a=>!a.pin).length, sinFoto=act.filter(a=>!a.foto_url).length;
+  $("#resumen").innerHTML=A.length?`
+    <div><b>${act.length}</b><span>con acceso al portal</span></div>
+    <div><b>${hoy}</b><span>entraron hoy</span></div>
+    <div><b>${sem}</b><span>entraron en los últimos 7 días</span></div>
+    <div><b>${sinPin}</b><span>sin código de acceso</span></div>
+    <div><b>${sinFoto}</b><span>sin foto</span></div>`:"";
+  if(!A.length){$("#lista").innerHTML=`<div class="vacio"><b>Aún no hay asesores cargados</b>Corre el SQL <b>asesores.sql</b> en Supabase para crear la tabla con el equipo actual.</div>`;return}
+  $("#lista").innerHTML=`<div class="row head"><span>Foto</span><span>Asesor</span><span>Nombre completo</span><span>Celular</span><span>Código</span><span>Última sesión</span><span>Acceso</span></div>`+
+  A.map(a=>{const s=sesion(a.ultima_sesion);const n=esc(a.nombre);return `
+    <div class="row ${a.activo===false?"off":""}" data-n="${n}">
+      <div><div class="foto ${a.foto_url?"":"vacia"}" style="${a.foto_url?`background-image:url('${esc(a.foto_url)}')`:""}" title="Subir o cambiar foto">${a.foto_url?"":esc(a.nombre.charAt(0))}<span class="cam">${a.foto_url?"Cambiar":"Subir"}</span><input type="file" accept="image/*" data-foto></div></div>
+      <div class="nom"><b>${n}</b><div class="tags">${a.admin?'<span class="tag adm">Admin</span>':""}${a.activo===false?'<span class="tag">Sin acceso</span>':""}</div>${a.foto_url?'<button class="quitar" type="button" data-quitar>Quitar foto</button>':""}</div>
+      <label class="f c-nc"><span>Nombre completo</span><input class="t" type="text" data-k="nombre_completo" value="${esc(a.nombre_completo||"")}" placeholder="Como sale en la cotización" maxlength="60"></label>
+      <label class="f c-cel"><span>Celular</span><input class="t" type="tel" data-k="celular" value="${esc(a.celular||"")}" placeholder="33 1234 5678" maxlength="20"></label>
+      <label class="f c-pin"><span>Código</span><input class="t pin" type="text" inputmode="numeric" data-k="pin" value="${esc(a.pin||"")}" placeholder="Sin código" maxlength="4"></label>
+      <div class="ses c-ses ${s.c}"><i></i><div><b>${s.t}</b><small>${s.s}</small></div></div>
+      <div class="sw"><button type="button" class="${a.activo===false?"":"on"}" data-acceso title="Acceso al portal"></button>${a.activo===false?"Apagado":"Activo"}</div>
+    </div>`}).join("");
+}
+
+async function cargar(){
+  if(!sb){sync("No se pudo conectar con Supabase.",true);return}
+  const {data,error}=await sb.from("asesores").select("*").order("orden",{ascending:true}).order("nombre");
+  if(error){sync("No se pudo leer la tabla de asesores: "+error.message+" · ¿Ya corriste asesores.sql en Supabase?",true);A=[];render();return}
+  A=data||[];render();sync(A.length?"Los cambios se guardan solos.":"");
+}
+function guardar(nombre,cambios,despues){
+  const a=A.find(x=>x.nombre===nombre); if(!a)return;
+  Object.assign(a,cambios); sync("Guardando…");
+  sb.from("asesores").update(cambios).eq("nombre",nombre).then(({error})=>{
+    if(error){sync("No se pudo guardar: "+error.message,true);return}
+    sync("Guardado · "+new Date().toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"}));
+    if(despues)despues();
+  });
+}
+
+// ---- foto: recorte cuadrado centrado, 480 px, ligera ----
+function prepararFoto(file){
+  return new Promise((res,rej)=>{
+    const rd=new FileReader();
+    rd.onerror=rej;
+    rd.onload=()=>{const im=new Image();im.onerror=rej;im.onload=()=>{
+      const S=480,cv=document.createElement("canvas");cv.width=cv.height=S;
+      const lado=Math.min(im.width,im.height);
+      // recorte un poco hacia arriba: en retratos la cara suele estar en el tercio superior
+      const sx=(im.width-lado)/2, sy=im.height>im.width?(im.height-lado)*0.25:(im.height-lado)/2;
+      const cx=cv.getContext("2d");cx.fillStyle="#fff";cx.fillRect(0,0,S,S);cx.imageSmoothingQuality="high";
+      cx.drawImage(im,sx,sy,lado,lado,0,0,S,S);
+      cv.toBlob(b=>b?res(b):rej(new Error("No se pudo procesar la imagen")),"image/jpeg",0.88);
+    };im.src=rd.result};
+    rd.readAsDataURL(file);
+  });
+}
+async function subirFoto(nombre,file){
+  if(!/^image\//.test(file.type)){alert("Sube una imagen (JPG o PNG).");return}
+  const a=A.find(x=>x.nombre===nombre); if(!a)return;
+  sync("Subiendo foto de "+nombre+"…");
+  try{
+    const blob=await prepararFoto(file);
+    const path="asesores/"+slug(nombre)+"_"+Date.now()+".jpg";
+    const {error}=await sb.storage.from(BUCKET).upload(path,blob,{upsert:true,contentType:"image/jpeg"});
+    if(error)throw error;
+    const url=sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+    const vieja=a.foto_path;
+    guardar(nombre,{foto_url:url,foto_path:path},()=>{if(vieja&&vieja!==path)sb.storage.from(BUCKET).remove([vieja]).then(()=>{},()=>{});render()});
+  }catch(e){sync("No se pudo subir la foto: "+(e.message||e),true)}
+}
+
+document.addEventListener("change",e=>{
+  const t=e.target,row=t.closest(".row[data-n]"); if(!row)return; const n=row.dataset.n;
+  if(t.matches("[data-foto]")){const f=t.files[0];t.value="";if(f)subirFoto(n,f);return}
+  if(t.dataset.k){
+    let v=t.value.trim();
+    if(t.dataset.k==="pin"){
+      v=v.replace(/\D/g,"");
+      if(v&&v.length!==4){alert("El código debe tener 4 dígitos (o déjalo vacío para que entre sin contraseña).");t.value=(A.find(x=>x.nombre===n)||{}).pin||"";return}
+      t.value=v;
+    }
+    guardar(n,{[t.dataset.k]:v||null},t.dataset.k==="pin"?render:null);
+  }
+});
+document.addEventListener("input",e=>{const t=e.target;if(t.dataset&&t.dataset.k==="pin")t.value=t.value.replace(/\D/g,"").slice(0,4)});
+document.addEventListener("click",e=>{
+  const row=e.target.closest(".row[data-n]");
+  if(row&&e.target.matches("[data-acceso]")){
+    const a=A.find(x=>x.nombre===row.dataset.n); const nuevo=a.activo===false;
+    if(!nuevo&&!confirm("¿Quitar el acceso al portal a "+a.nombre+"?\nYa no podrá entrar. Su historial se conserva."))return;
+    guardar(a.nombre,{activo:nuevo},render);return;
+  }
+  if(row&&e.target.matches("[data-quitar]")){
+    const a=A.find(x=>x.nombre===row.dataset.n); if(!confirm("¿Quitar la foto de "+a.nombre+"?"))return;
+    const vieja=a.foto_path; guardar(a.nombre,{foto_url:null,foto_path:null},()=>{if(vieja)sb.storage.from(BUCKET).remove([vieja]).then(()=>{},()=>{});render()});return;
+  }
+});
+$("#btn-add").addEventListener("click",async()=>{
+  if(!sb)return;
+  let n=prompt("Nombre corto del asesor, como aparecerá en todo el portal (ej. \"Paola M\").\nOjo: este nombre ya no se puede cambiar después.");
+  if(n==null)return; n=n.trim().replace(/\s+/g," ");
+  if(!n)return;
+  if(n.length>20){alert("Usa un nombre corto (máximo 20 caracteres).");return}
+  if(A.some(a=>slug(a.nombre)===slug(n))){alert("Ya existe un asesor con ese nombre.");return}
+  const orden=A.reduce((m,a)=>Math.max(m,a.orden||0),0)+1;
+  sync("Agregando…");
+  const {error}=await sb.from("asesores").insert({nombre:n,orden:orden,activo:true});
+  if(error){sync("No se pudo agregar: "+error.message,true);return}
+  await cargar(); sync("Agregado: "+n+". Captura su código, celular y foto.");
+});
+cargar();
+</script>
+</body>
+</html>

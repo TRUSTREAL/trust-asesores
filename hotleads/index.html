@@ -327,7 +327,7 @@ const SUPABASE_KEY="sb_publishable_5erZfpELyuncW1nrReTaZw_BQj0bc-P";
 let sb=null; try{ if(window.supabase) sb=(window.SBC||window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY)); }catch(e){}
 const ESTATUS=["Pendiente","Ganado","Perdido"];
 const UN=["Proyectos","Brokerage"], TIPO=["Venta","Renta"], OBJ=["Inversión","Vivienda","Renta"], ORIGEN=["AG","Lead"];
-const ASESORES=["Ana Lu","Carlos","Fanny","María","Paola","Ramsés","Rodrigo","Álvaro","Majo","Berna"];
+const ASESORES=(window.TRUST_ASESORES||["Ana Lu","Carlos","Fanny","María","Paola","Paola M","Ramsés","Rodrigo","Álvaro","Majo","Berna"]).slice();
 const MESES=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
