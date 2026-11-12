@@ -2812,7 +2812,8 @@
 .nf-p1 h1 { font-family: Lora, Georgia, serif; font-weight: 400; font-size: 39px; line-height: 1.12; margin: 12px 0 8px; letter-spacing: -.005em; text-shadow: 0 1px 14px rgba(0,0,0,.18); }
 .nf-p1 .nf-sub { font-size: 12px; opacity: .95; }
 .nf-price { display: flex; justify-content: space-between; align-items: flex-start; gap: 30px; margin-top: 50px; height: 112px; }
-.nf-price .nf-desc { align-self: flex-end; }
+.nf-price .nf-desc { margin-top: 14px; }
+.nf-price .nf-desc.c { align-self: flex-end; margin-top: 0; }
 .nf-desc.c .nf-r { padding: 2.5px 0; font-size: 9px; }
 .nf-desc.c .nf-r b { font-size: 12.5px; }
 .nf-desc.c .nf-r.t b { font-size: 14px; }
@@ -2911,7 +2912,7 @@
 .nf-bye i { color: var(--nf-a); }
 
 @media print {
-  .nf-status { display: none !important; }
+  .nf-status, .auth-out { display: none !important; }
   /* Las sombras difuminadas salen como cuadros negros en varios visores de PDF (Vista Previa, iPhone, WhatsApp):
      en el PDF se quitan y se sustituyen por un borde fino. */
   .nf-page, .nf-page * { box-shadow: none !important; text-shadow: none !important; filter: none !important; }
@@ -5339,7 +5340,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
   function firmaPintarFoto() {
     const has = !!NF.foto, central = !!firmaCentral(asesorActivo()).foto;
     $('nf-firma-thumb').style.display = has ? '' : 'none';
-    if (has) $('nf-firma-thumb').src = NF.foto;
+    if (has) { const fi = fotoInfo(NF.foto); $('nf-firma-thumb').src = fi.src; $('nf-firma-thumb').style.objectPosition = fi.pos; }
     $('nf-firma-quitar').style.display = (has && !central) ? '' : 'none';
     $('nf-firma-btn').style.display = central ? 'none' : '';
     $('nf-firma-btn').textContent = has ? 'Cambiar foto' : '+ Agregar tu foto';
@@ -5369,7 +5370,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
         im.onload = () => {
           const S = 240, cv = document.createElement('canvas'); cv.width = cv.height = S;
           const lado = Math.min(im.width, im.height);
-          cv.getContext('2d').drawImage(im, (im.width - lado) / 2, (im.height - lado) / 2, lado, lado, 0, 0, S, S);
+          cv.getContext('2d').drawImage(im, (im.width - lado) / 2, im.height > im.width ? (im.height - lado) * 0.18 : (im.height - lado) / 2, lado, lado, 0, 0, S, S);
           NF.foto = cv.toDataURL('image/jpeg', 0.86);
           firmaPintarFoto(); firmaGuardar();
         };
@@ -5422,6 +5423,12 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     };
   }
 
+  // encuadre de la foto del asesor: viaja en la liga (#o=v|h|s & p=0..100), se define en Admin → Asesores
+  function fotoInfo(url) {
+    const m = /#o=([vhs])&p=(\d+)/.exec(url || ''); const o = m ? m[1] : 's', p = m ? +m[2] : 50;
+    return { src: (url || '').split('#')[0], pos: o === 'v' ? '50% ' + p + '%' : o === 'h' ? p + '% 50%' : '50% 50%' };
+  }
+
   // ---------- piezas ----------
   let _logo = null;
   function logo() {
@@ -5433,7 +5440,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
   }
   const cabecera = d => `<div class="nf-head"><div class="nf-logo">${logo()}</div>
     <div class="nf-as"><div><div class="nf-as-n">${esc(d.asesor)}</div><div class="nf-as-s">Tu asesor TRUST${d.tel ? ' · ' + esc(d.tel) : ''}</div></div>
-    ${d.foto ? `<div class="nf-as-f" style="background-image:url('${d.foto}')"></div>` : ''}</div></div>`;
+    ${d.foto ? `<div class="nf-as-f" style="background-image:url('${fotoInfo(d.foto).src}');background-position:${fotoInfo(d.foto).pos}"></div>` : ''}</div></div>`;
   const imgAttr = (k, w) => `data-nfk="${k}" data-nfw="${w}"`;
   const plural = (v, s, p) => { const n = parseNum(v); const t = String(v || '').trim(); if (!t) return ''; if (n === 1 && /^1$/.test(t)) return '1 ' + s; return t + ' ' + p; };
   function titulo(t, def) {
@@ -5494,7 +5501,12 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     steps.push(`<div class="nf-k">${lblEntrega(d)}</div><div class="nf-v">${money(d.esc)}</div><div class="nf-it">${pct(d.escPct)} del valor</div><div class="nf-d">${d.preventa ? 'Al recibir tus llaves' : 'Al escriturar'}${f.entrega ? ' · ' + fm(f.entrega) : ''}</div>`);
     const nEst = parseNum(d.estac);
     const unit = [
-      ['Unidad', [d.id, d.nivel && 'Nivel ' + d.nivel].filter(Boolean).join(' · ') || '—', d.esLocal ? esc(d.modelo) : [plural(d.rec, 'recámara', 'recámaras'), plural(d.banos, 'baño', 'baños')].filter(Boolean).join(' · ')],
+      (() => {
+        const caract = d.esLocal ? d.modelo : [plural(d.rec, 'recámara', 'recámaras'), plural(d.banos, 'baño', 'baños')].filter(Boolean).join(' · ');
+        const junto = [d.id, d.nivel && 'Nivel ' + d.nivel].filter(Boolean).join(' · ');
+        // identificadores largos ("J101 | Luna"): el nivel baja al renglón de detalle para que no se corte
+        return junto.length <= 15 ? ['Unidad', junto || '—', caract] : ['Unidad', d.id, [d.nivel && 'Nivel ' + d.nivel, d.esLocal ? d.modelo : plural(d.rec, 'recámara', 'recámaras')].filter(Boolean).join(' · ')];
+      })(),
       ['Superficie', m2(d.mTot) + ' m²', d.mTerr > 0 ? m2(d.mInt) + ' int + ' + m2(d.mTerr) + ' terraza' : 'interior'],
       ['Vista', d.vista || '—', ''],
       ['Estacionamiento', nEst > 0 ? nEst + (nEst === 1 ? ' cajón' : ' cajones') : 'Sin cajón', nEst > 0 ? (nEst === 1 ? 'incluido' : 'incluidos') : (d.estacPagado > 0 ? 'ver adicional' : '')],
