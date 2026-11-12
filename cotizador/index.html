@@ -2754,6 +2754,170 @@
   }
 
 </style>
+<style id="nf-styles">
+/* =====================================================================
+   NF · FORMATO NUEVO DE COTIZACIÓN (4 hojas, identidad por proyecto)
+   Se activa cuando el proyecto tiene renders cargados en
+   Inventario → pestaña "Cotización" (tabla proyecto_cotizacion).
+   Si no, el cotizador usa el formato clásico de una hoja.
+   ===================================================================== */
+.preview-wrapper.nf-on #doc-carta,
+.preview-wrapper.nf-on #doc-carta-planta { display: none !important; }
+.nf-doc { display: none; zoom: var(--nfz, 1); width: 816px; margin: 0 auto; }
+.preview-wrapper.nf-on .nf-doc { display: block; }
+@media screen { .preview-wrapper.nf-on .doc-carta-scaler { min-width: 0; overflow: hidden; } }
+
+.nf-status { font-family: Poppins, Montserrat, sans-serif; font-size: 11.5px; line-height: 1.45; color: #585C57;
+  background: #F1EDE3; border-radius: 8px; padding: 9px 11px; margin: 0 0 12px; display: none; }
+.nf-status.on { display: block; }
+.nf-status b { color: #173F35; font-weight: 600; }
+.nf-status.warn { background: #FBF1E3; color: #7A5A1E; }
+.nf-firma-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.nf-firma-row img { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 1px solid #D9D2C3; }
+.nf-firma-hint { font-family: Poppins, Montserrat, sans-serif; font-size: 11.5px; color: #6F726B; margin-top: 8px; }
+
+.nf-page { width: 816px; height: 1056px; position: relative; overflow: hidden; box-sizing: border-box;
+  background: var(--nf-f); color: var(--nf-ink); font-family: Poppins, 'Segoe UI', sans-serif; font-size: 10px; line-height: 1.4;
+  margin: 0 auto 22px; box-shadow: 0 4px 18px rgba(0,0,0,.08); -webkit-font-smoothing: antialiased; }
+.nf-page * { box-sizing: border-box; }
+.nf-page i, .nf-page em { font-family: Lora, Georgia, serif; font-style: italic; font-weight: 400; }
+.nf-serif { font-family: Lora, Georgia, serif; }
+.nf-img { background-color: rgba(var(--nf-p-rgb), .18); background-size: cover; background-position: center; background-repeat: no-repeat; }
+
+/* cabecera: logo + asesor */
+.nf-head { position: relative; z-index: 3; display: flex; justify-content: space-between; align-items: center; padding: 38px 56px 0; color: #fff; }
+.nf-logo { width: 92px; line-height: 0; }
+.nf-logo svg { width: 100%; height: auto; display: block; }
+.nf-as { display: flex; align-items: center; gap: 10px; text-align: right; }
+.nf-as-n { font-family: Lora, Georgia, serif; font-size: 14px; line-height: 1.25; }
+.nf-as-s { font-size: 8.5px; opacity: .9; margin-top: 2px; }
+.nf-as-f { width: 42px; height: 42px; border-radius: 50%; background-size: cover; background-position: center; border: 1.5px solid rgba(255,255,255,.85); flex: none; }
+.nf-dark .nf-head { color: var(--nf-ink); }
+.nf-dark .nf-as-f { border-color: var(--nf-p); }
+.nf-dark .nf-as-s { color: var(--nf-mut); opacity: 1; }
+
+.nf-pill { display: inline-block; background: #fff; color: var(--nf-p); border-radius: 999px; padding: 5px 13px; font-size: 8px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; }
+.nf-pill.fill { background: var(--nf-p); color: #fff; }
+.nf-foot { position: absolute; left: 56px; right: 56px; bottom: 26px; text-align: center; font-size: 7px; color: var(--nf-mut); letter-spacing: .01em; }
+.nf-cta { display: block; width: 460px; margin: 0 auto; background: var(--nf-p); color: #fff; border-radius: 999px; text-align: center; padding: 13px 20px; font-size: 12.5px; box-shadow: 0 10px 22px -12px rgba(var(--nf-p-rgb), .9); }
+.nf-cta b { font-family: Lora, Georgia, serif; font-weight: 500; font-size: 17px; }
+
+/* ---------- HOJA 1 · PORTADA ---------- */
+.nf-p1 .nf-top { position: absolute; left: 0; right: 0; top: 0; height: 700px; background: var(--nf-p); }
+.nf-p1 .nf-top .nf-img { position: absolute; left: 0; right: 0; top: 0; height: 560px; }
+.nf-p1 .nf-top .nf-grad { position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(var(--nf-p-rgb), .30) 0%, rgba(var(--nf-p-rgb), .10) 22%, rgba(var(--nf-p-rgb), .55) 46%, rgba(var(--nf-p-rgb), .94) 66%, var(--nf-p) 80%); }
+.nf-p1 .nf-body { position: relative; z-index: 2; padding: 0 56px; color: #fff; }
+.nf-p1 .nf-hero { margin-top: 198px; height: 150px; }
+.nf-p1 h1 { font-family: Lora, Georgia, serif; font-weight: 400; font-size: 39px; line-height: 1.12; margin: 12px 0 8px; letter-spacing: -.005em; text-shadow: 0 1px 14px rgba(0,0,0,.18); }
+.nf-p1 .nf-sub { font-size: 12px; opacity: .95; }
+.nf-price { display: flex; justify-content: space-between; align-items: flex-start; gap: 30px; margin-top: 50px; height: 112px; }
+.nf-price .nf-desc { align-self: flex-end; }
+.nf-desc.c .nf-r { padding: 2.5px 0; font-size: 9px; }
+.nf-desc.c .nf-r b { font-size: 12.5px; }
+.nf-desc.c .nf-r.t b { font-size: 14px; }
+.nf-price-l { flex: none; }
+.nf-price .nf-lista { font-size: 9.5px; opacity: .9; height: 14px; }
+.nf-price .nf-lista s { opacity: .85; }
+.nf-price .nf-big { font-family: Lora, Georgia, serif; font-size: 50px; line-height: 1.08; letter-spacing: -.01em; }
+.nf-price .nf-big-s { font-size: 9px; opacity: .85; margin-top: 2px; }
+.nf-desc { width: 298px; flex: none; }
+.nf-desc .nf-k { font-size: 7.5px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; margin-bottom: 7px; opacity: .95; }
+.nf-desc .nf-r { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 4.5px 0; border-bottom: 1px solid rgba(255,255,255,.22); font-size: 9.5px; }
+.nf-desc .nf-r:last-child { border-bottom: 0; }
+.nf-desc .nf-r b { font-family: Lora, Georgia, serif; font-weight: 400; font-size: 13.5px; white-space: nowrap; }
+.nf-desc .nf-r.t { font-weight: 500; }
+.nf-desc .nf-r.t b { font-size: 15.5px; }
+.nf-card { position: relative; z-index: 2; margin: 32px 56px 0; background: #fff; border-radius: 18px; box-shadow: 0 22px 44px -26px rgba(40,20,10,.5); padding: 8px 8px 0; color: var(--nf-ink); }
+.nf-steps { display: flex; }
+.nf-step { flex: 1; padding: 20px 18px 20px; border-left: 1px solid rgba(var(--nf-p-rgb), .16); min-width: 0; }
+.nf-step:first-child { border-left: 0; background: var(--nf-p); color: #fff; border-radius: 12px 0 0 0; }
+.nf-step:nth-child(2) { border-left: 0; }
+.nf-step .nf-num { display: flex; align-items: center; gap: 8px; font-family: Lora, Georgia, serif; font-size: 9px; letter-spacing: .14em; color: var(--nf-a); margin-bottom: 14px; }
+.nf-step .nf-num:after { content: ''; flex: 1; height: 1px; background: currentColor; opacity: .45; }
+.nf-step:first-child .nf-num { color: rgba(255,255,255,.75); }
+.nf-step .nf-k { font-size: 8px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; }
+.nf-step .nf-v { font-family: Lora, Georgia, serif; font-size: 29px; line-height: 1.2; margin-top: 3px; white-space: nowrap; }
+.nf-steps.n4 .nf-step { padding: 16px 13px 14px; }
+.nf-steps.n4 .nf-v { font-size: 23px; }
+.nf-step .nf-it { font-family: Lora, Georgia, serif; font-style: italic; font-size: 13px; color: var(--nf-a); margin-top: 1px; }
+.nf-step:first-child .nf-it { color: rgba(255,255,255,.85); }
+.nf-step .nf-d { font-size: 8.5px; color: var(--nf-mut); margin-top: 10px; }
+.nf-step:first-child .nf-d { color: rgba(255,255,255,.9); }
+.nf-unit { display: flex; padding: 16px 12px 18px; border-top: 1px solid rgba(var(--nf-p-rgb), .12); }
+.nf-unit > div { flex: 1; padding: 0 12px; border-left: 1px solid rgba(var(--nf-p-rgb), .16); min-width: 0; }
+.nf-unit > div:first-child { border-left: 1px solid rgba(var(--nf-p-rgb), .16); }
+.nf-unit .nf-k { font-size: 6.8px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--nf-mut); }
+.nf-unit .nf-v { font-family: Lora, Georgia, serif; font-size: 15px; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nf-unit .nf-d { font-size: 8px; color: var(--nf-mut); margin-top: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nf-p1 .nf-cta { position: absolute; left: 0; right: 0; bottom: 74px; z-index: 2; }
+
+/* ---------- HOJAS 2 y 3 · franja superior con cover ---------- */
+.nf-band { position: relative; height: 196px; background: var(--nf-p); color: #fff; overflow: hidden; }
+.nf-band .nf-img { position: absolute; inset: 0; }
+.nf-band .nf-tint { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(var(--nf-p-rgb), .72), rgba(var(--nf-p-rgb), .90)); }
+.nf-band .nf-tt { position: relative; z-index: 2; padding: 16px 56px 0; }
+.nf-band h2, .nf-p4 h2 { font-family: Lora, Georgia, serif; font-weight: 400; font-size: 31px; line-height: 1.15; margin: 0 0 6px; }
+.nf-band .nf-sub { font-size: 10px; opacity: .92; }
+
+/* ---------- HOJA 2 · ASÍ SE VE TU DEPA ---------- */
+.nf-p2 .nf-main { position: absolute; left: 56px; right: 56px; top: 196px; bottom: 96px; display: flex; flex-direction: column; }
+.nf-plan { display: flex; align-items: stretch; height: 304px; margin: 40px 0 34px; flex: none; }
+.nf-plan .nf-vert { width: 52px; flex: none; position: relative; border-right: 1px solid var(--nf-p); margin-right: 44px; }
+.nf-plan .nf-vert span { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-90deg); white-space: nowrap; font-size: 7.2px; font-weight: 600; letter-spacing: .24em; text-transform: uppercase; color: var(--nf-p); margin-left: -12px; }
+.nf-plan .nf-pimg { flex: 1; background-size: contain; background-position: center; background-repeat: no-repeat; min-width: 0; }
+.nf-specs { width: 126px; flex: none; margin-left: 46px; display: flex; flex-direction: column; justify-content: center; }
+.nf-specs > div { border-top: 1px solid rgba(var(--nf-p-rgb), .2); padding: 9px 0 10px; }
+.nf-specs b { display: block; font-family: Lora, Georgia, serif; font-weight: 400; font-size: 15px; color: var(--nf-p); }
+.nf-specs span { display: block; font-size: 8px; color: var(--nf-mut); margin-top: 1px; }
+.nf-specs.h { width: auto; margin: 30px 0 26px; flex-direction: row; justify-content: stretch; }
+.nf-specs.h > div { flex: 1; border-top: 0; border-left: 1px solid rgba(var(--nf-p-rgb), .2); padding: 2px 14px; }
+.nf-grid { flex: 1; display: grid; gap: 4px; border-radius: 16px; overflow: hidden; min-height: 0; }
+.nf-tile { position: relative; min-height: 0; min-width: 0; }
+.nf-tile .nf-lab { position: absolute; left: 12px; bottom: 11px; background: #fff; color: var(--nf-p); border-radius: 999px; padding: 3px 9px 3px; font-size: 6.6px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; max-width: calc(100% - 24px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- HOJA 3 · PLAN DE PAGOS ---------- */
+.nf-p3 .nf-band { height: 200px; }
+.nf-sum { position: relative; z-index: 2; margin: -38px 56px 0; background: #fff; border-radius: 16px; display: flex; overflow: hidden; box-shadow: 0 18px 36px -24px rgba(40,20,10,.5); }
+.nf-sum > div { flex: 1; padding: 15px 16px 15px; border-left: 1px solid rgba(var(--nf-p-rgb), .14); min-width: 0; color: var(--nf-ink); }
+.nf-sum > div:first-child { border-left: 0; }
+.nf-sum > div.t { background: var(--nf-p); color: #fff; border-left: 0; }
+.nf-sum .nf-k { font-size: 7px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; }
+.nf-sum .nf-v { font-family: Lora, Georgia, serif; font-weight: 600; font-size: 24px; line-height: 1.25; margin-top: 3px; white-space: nowrap; }
+.nf-sum.n5 .nf-v { font-size: 19px; }
+.nf-sum.n5 > div { padding: 14px 12px; }
+.nf-sum .nf-d { font-size: 7.8px; color: var(--nf-mut); margin-top: 6px; white-space: nowrap; }
+.nf-sum > div.t .nf-d { color: rgba(255,255,255,.9); }
+.nf-tabs { position: absolute; left: 56px; right: 56px; top: 282px; bottom: 150px; display: flex; gap: 26px; }
+.nf-tab { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.nf-tr { display: grid; grid-template-columns: 2.1fr 1.1fr 1fr 1fr; align-items: center; height: var(--rh, 21px); max-height: 23px; padding: 0 8px; font-size: var(--fs, 9.5px); border-bottom: 1px solid rgba(var(--nf-p-rgb), .10); color: var(--nf-ink2); flex: none; }
+.nf-tr:nth-child(odd) { background: rgba(255,255,255,.45); }
+.nf-tr > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nf-tr > span:nth-child(n+3) { text-align: right; font-weight: 600; color: var(--nf-p); }
+.nf-tr.h { height: 22px; background: none; border-bottom: 1.5px solid var(--nf-p); font-size: 6.8px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--nf-mut); }
+.nf-tr.h > span:nth-child(n+3) { color: var(--nf-mut); }
+.nf-tr.k > span:first-child { font-weight: 500; color: var(--nf-p); }
+.nf-p3 .nf-cta { position: absolute; left: 0; right: 0; bottom: 66px; }
+
+/* ---------- HOJA 4 · AMENIDADES ---------- */
+.nf-p4 .nf-main { position: absolute; left: 56px; right: 56px; top: 104px; bottom: 60px; display: flex; flex-direction: column; }
+.nf-p4 h2 { font-size: 33px; margin: 9px 0 5px; color: var(--nf-p); }
+.nf-p4 h2 i { color: var(--nf-a); }
+.nf-p4 .nf-sub { font-size: 10px; color: var(--nf-mut); min-height: 14px; }
+.nf-am { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 5px; margin-top: 24px; border-radius: 16px; overflow: hidden; }
+.nf-am .nf-hero4 { flex: 1.9; position: relative; min-height: 0; }
+.nf-am .nf-row { flex: 1; display: grid; gap: 5px; min-height: 0; }
+.nf-bye { text-align: center; font-family: Lora, Georgia, serif; font-size: 21px; color: var(--nf-p); margin: 30px 0 34px; flex: none; }
+.nf-bye i { color: var(--nf-a); }
+
+@media print {
+  .nf-status { display: none !important; }
+  .nf-doc { zoom: 1 !important; width: 8.5in !important; margin: 0 !important; }
+  .nf-page { margin: 0 !important; box-shadow: none !important; width: 8.5in !important; height: 10.99in !important;
+    page-break-after: always; break-after: page; page-break-inside: avoid; break-inside: avoid; }
+  .nf-page:last-child { page-break-after: auto; break-after: auto; }
+}
+</style>
 <style id="theme-suave">
 /* ===== Rediseño suave TRUST · solo interfaz en pantalla. No toca .doc-carta / .v15-* (la cotización y el PDF quedan igual) ===== */
 @media screen{
@@ -3051,7 +3215,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
               <img id="planta-thumb" alt="Planta de la unidad" />
               <div class="planta-preview-info">
                 <span class="planta-nombre" id="planta-nombre"></span>
-                <span class="planta-hint">Se incluirá como segunda hoja de la cotización</span>
+                <span class="planta-hint">Se incluirá en la hoja 2 de la cotización</span>
                 <button type="button" class="planta-quitar" onclick="quitarPlanta()">Quitar planta</button>
               </div>
             </div>
@@ -3110,6 +3274,31 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
           <div class="field col-6">
             <label>Nombre del broker</label>
             <input type="text" id="broker-nombre" placeholder="Opcional" />
+          </div>
+        </div>
+      </div>
+
+
+      <div class="field-group" id="nf-firma-group">
+        <div class="field-group-title">Tu firma en la cotización</div>
+        <div class="field-grid">
+          <div class="field col-6">
+            <label>Tu nombre como aparece</label>
+            <input type="text" id="nf-firma-nombre" placeholder="Ej. Álvaro Arizti" maxlength="40" />
+          </div>
+          <div class="field col-6">
+            <label>Tu WhatsApp</label>
+            <input type="tel" id="nf-firma-tel" placeholder="33 1234 5678" maxlength="20" />
+          </div>
+          <div class="field col-12">
+            <label>Tu foto (opcional)</label>
+            <div class="nf-firma-row">
+              <img id="nf-firma-thumb" alt="Tu foto" style="display:none" />
+              <input type="file" id="nf-firma-file" accept="image/*" style="display:none" />
+              <button type="button" class="planta-btn" id="nf-firma-btn" onclick="document.getElementById('nf-firma-file').click()">+ Agregar tu foto</button>
+              <button type="button" class="planta-quitar" id="nf-firma-quitar" style="display:none">Quitar foto</button>
+            </div>
+            <div class="nf-firma-hint">Aparece arriba a la derecha en cada hoja de la cotización. Se guarda en este dispositivo: solo lo llenas una vez.</div>
           </div>
         </div>
       </div>
@@ -3379,6 +3568,8 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
       <div class="preview-wrapper">
         <!-- DOCUMENTO CARTA -->
         <div class="doc-carta-scaler">
+          <!-- FORMATO NUEVO (4 hojas): se llena por JS cuando el proyecto tiene renders en Inventario -->
+          <div class="nf-doc" id="nf-doc"></div>
           <div class="doc-carta v15" id="doc-carta">
 
             <!-- HEADER VERDE con logo blanco -->
@@ -3612,6 +3803,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
         <!-- PANEL LATERAL DE ACCIONES -->
         <div class="preview-actions">
           <div class="action-card">
+            <div class="nf-status" id="nf-status"></div>
             <h4>Lista para descargar</h4>
             <p>Al hacer clic en "Descargar PDF" se abrirá el diálogo de impresión. Selecciona <strong>"Guardar como PDF"</strong> como destino y listo.</p>
             <button class="action-btn" onclick="descargarPDF()">Descargar PDF <span class="arrow">↓</span></button>
@@ -4299,8 +4491,8 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     return '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' + esc(titulo) + '</title>\n' + head +
       '\n<style>.snap-bar{position:sticky;top:0;z-index:50;display:flex;gap:10px;align-items:center;justify-content:space-between;background:#173F35;color:#fff;padding:10px 18px;font-family:Poppins,Montserrat,sans-serif;font-size:13px}.snap-bar button{border:1px solid #B8956A;background:#B8956A;color:#fff;border-radius:999px;padding:8px 16px;font:inherit;font-weight:600;cursor:pointer}@media print{.snap-bar{display:none!important}}</style></head>' +
       '<body class="printing-quote"><div class="snap-bar"><span>' + esc(titulo) + '</span><button onclick="window.print()">⤓ Descargar PDF</button></div>' +
-      '<div class="wizard-shell"><div class="step-panel" data-panel="4"><div class="card"><div class="preview-wrapper">' + wrap.innerHTML + '</div></div></div></div>' +
-      '<script>if(location.search.indexOf("pdf=1")>-1){window.addEventListener("load",function(){setTimeout(function(){window.print()},700)})}<\/script></body></html>';
+      '<div class="wizard-shell"><div class="step-panel" data-panel="4"><div class="card"><div class="' + wrap.className + '">' + wrap.innerHTML + '</div></div></div></div>' +
+      '<script>(function(){var d=document.getElementById("nf-doc");if(!d)return;function z(){d.style.setProperty("--nfz",Math.min(1,((d.parentNode||{}).clientWidth||816)/816))}z();addEventListener("resize",z)})();if(location.search.indexOf("pdf=1")>-1){window.addEventListener("load",function(){setTimeout(function(){window.print()},700)})}<\/script></body></html>';
   }
 
   function registrarCotizacion() {
@@ -5016,6 +5208,471 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     if(typeof calcularM2==="function")calcularM2();
     if(typeof calcularPrecioM2==="function")calcularPrecioM2();
   }catch(e){console.warn("Precarga inventario:",e);}
+})();
+</script>
+<script id="nf-script">
+/* =====================================================================
+   NF · FORMATO NUEVO DE COTIZACIÓN (4 hojas)
+   Lee colores, renders y textos del proyecto desde Supabase
+   (tabla proyecto_cotizacion · Inventario → pestaña "Cotización").
+   Si el proyecto no tiene portada cargada, se queda el formato clásico.
+   ===================================================================== */
+(function () {
+  const NF = { cfg: {}, imgs: {}, seq: 0, pend: 0, on: false, firmaDe: null };
+  window.NF = NF;
+  const APARTADO = 5000;
+  const VIGENCIA_DIAS = 15;
+  const BUCKET = 'documentos';
+  const FIRMAS_BASE = { 'Álvaro': { nombre: 'Álvaro Arizti', tel: '33 3376 5616' } };
+  const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  const MES3 = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+  const $ = id => document.getElementById(id);
+  const val = id => (($(id) || {}).value || '').trim();
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const norm = t => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const money = n => '$' + formatNum(Math.round(n || 0), 0);
+  const pct = n => { const r = Math.round((n || 0) * 10) / 10; return (Number.isInteger(r) ? r : r.toFixed(1)) + ' %'; };
+  const m2 = n => { const r = Math.round((n || 0) * 100) / 100; return Number.isInteger(r * 10) ? r.toFixed(1) : r.toFixed(2); };
+  const rgb = h => { const m = /^#?([0-9a-f]{6})$/i.exec(h || ''); const n = parseInt(m ? m[1] : '173F35', 16); return (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255); };
+  const mesMas = k => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth() + k, 1); };
+  const mesLargo = d => MESES[d.getMonth()] + ' ' + d.getFullYear();
+  const mesCorto = d => MES3[d.getMonth()] + ' ' + d.getFullYear();
+
+  // ---------- configuración del proyecto ----------
+  let _proys = null;
+  async function cargarCfg(nombre) {
+    const key = norm(nombre);
+    if (!key || !_sb) return null;
+    if (NF.cfg[key] !== undefined) return NF.cfg[key];
+    if (!_proys) {
+      const r = await _sb.from('proyectos').select('id,nombre');
+      if (r.error) throw r.error;
+      _proys = r.data || [];
+    }
+    let p = _proys.find(x => norm(x.nombre) === key);
+    if (!p) {
+      const c = _proys.filter(x => { const n = norm(x.nombre); return n && (key.includes(n) || n.includes(key)); })
+        .sort((a, b) => norm(b.nombre).length - norm(a.nombre).length);
+      p = c[0];
+    }
+    if (!p) return (NF.cfg[key] = null);
+    const r = await _sb.from('proyecto_cotizacion').select('*').eq('proyecto_id', p.id).maybeSingle();
+    if (r.error) throw r.error;
+    const d = r.data;
+    return (NF.cfg[key] = d ? {
+      id: p.id, nombre: p.nombre,
+      colores: Object.assign({ principal: '#173F35', fondo: '#EEF2EC', acento: '#5E7A70' }, d.colores || {}),
+      slots: d.slots || {},
+      textos: d.textos || {}
+    } : null);
+  }
+
+  // ---------- imágenes: versión ligera compartida ----------
+  // Los renders originales pueden pesar hasta 12 MB. La primera vez que alguien cotiza
+  // un proyecto se genera una versión ligera de cada imagen y se guarda junto al original
+  // (carpeta /opt); de ahí en adelante todos los asesores cargan la ligera.
+  const probar = url => new Promise(r => { const i = new Image(); i.onload = () => r(true); i.onerror = () => r(false); i.src = url; });
+  async function imgSlot(s, w) {
+    if (!s || !s.url) return '';
+    const k = (s.path || s.url) + '@' + w;
+    if (NF.imgs[k]) return NF.imgs[k];
+    let out = s.url;
+    try {
+      if (s.path && _sb) {
+        const optPath = s.path.replace(/\/([^\/]+?)(\.[a-z0-9]+)?$/i, '/opt/$1__w' + w + '.jpg');
+        const optUrl = _sb.storage.from(BUCKET).getPublicUrl(optPath).data.publicUrl;
+        if (await probar(optUrl)) out = optUrl;
+        else {
+          const blob = await (await fetch(s.url, { mode: 'cors' })).blob();
+          const bmp = await createImageBitmap(blob);
+          const sc = Math.min(1, w / Math.max(bmp.width, bmp.height));
+          if (sc < 1 || blob.size > 700000) {
+            const cv = document.createElement('canvas');
+            cv.width = Math.round(bmp.width * sc); cv.height = Math.round(bmp.height * sc);
+            const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height);
+            cx.imageSmoothingQuality = 'high'; cx.drawImage(bmp, 0, 0, cv.width, cv.height);
+            const jb = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.84));
+            if (jb) {
+              out = await new Promise((r, j) => { const f = new FileReader(); f.onload = () => r(f.result); f.onerror = j; f.readAsDataURL(jb); });
+              _sb.storage.from(BUCKET).upload(optPath, jb, { upsert: true, contentType: 'image/jpeg' }).then(() => { }, () => { });
+            }
+          }
+          if (bmp.close) bmp.close();
+        }
+      }
+      if (out === s.url) await probar(out);
+    } catch (e) { out = s.url; }
+    return (NF.imgs[k] = out);
+  }
+
+  // ---------- firma del asesor (se guarda en el dispositivo) ----------
+  const firmaKey = a => 'trust_cot_firma_' + a;
+  function firmaLeer(a) {
+    let f = {};
+    try { f = JSON.parse(localStorage.getItem(firmaKey(a)) || '{}') || {}; } catch (e) { f = {}; }
+    return Object.assign({}, FIRMAS_BASE[a] || {}, f);
+  }
+  function firmaGuardar() {
+    const a = asesorActivo(); if (!a) return;
+    const f = { nombre: val('nf-firma-nombre'), tel: val('nf-firma-tel'), foto: NF.foto || '' };
+    try { localStorage.setItem(firmaKey(a), JSON.stringify(f)); } catch (e) { }
+  }
+  function firmaPintarFoto() {
+    const has = !!NF.foto;
+    $('nf-firma-thumb').style.display = has ? '' : 'none';
+    if (has) $('nf-firma-thumb').src = NF.foto;
+    $('nf-firma-quitar').style.display = has ? '' : 'none';
+    $('nf-firma-btn').textContent = has ? 'Cambiar foto' : '+ Agregar tu foto';
+  }
+  function firmaSync() {
+    const a = asesorActivo();
+    if (!$('nf-firma-nombre') || NF.firmaDe === a) return;
+    NF.firmaDe = a;
+    const f = a ? firmaLeer(a) : {};
+    $('nf-firma-nombre').value = f.nombre || '';
+    $('nf-firma-tel').value = f.tel || '';
+    NF.foto = f.foto || '';
+    firmaPintarFoto();
+  }
+  function firmaInit() {
+    if (!$('nf-firma-nombre')) return;
+    ['nf-firma-nombre', 'nf-firma-tel'].forEach(id => $(id).addEventListener('change', firmaGuardar));
+    $('nf-firma-file').addEventListener('change', ev => {
+      const f = ev.target.files[0]; ev.target.value = '';
+      if (!f || !/^image\//.test(f.type)) return;
+      const rd = new FileReader();
+      rd.onload = () => {
+        const im = new Image();
+        im.onload = () => {
+          const S = 240, cv = document.createElement('canvas'); cv.width = cv.height = S;
+          const lado = Math.min(im.width, im.height);
+          cv.getContext('2d').drawImage(im, (im.width - lado) / 2, (im.height - lado) / 2, lado, lado, 0, 0, S, S);
+          NF.foto = cv.toDataURL('image/jpeg', 0.86);
+          firmaPintarFoto(); firmaGuardar();
+        };
+        im.src = rd.result;
+      };
+      rd.readAsDataURL(f);
+    });
+    $('nf-firma-quitar').addEventListener('click', () => { NF.foto = ''; firmaPintarFoto(); firmaGuardar(); });
+    const sel = $('asesor-activo'); if (sel) sel.addEventListener('change', firmaSync);
+    firmaSync();
+  }
+
+  // ---------- datos de la cotización ----------
+  function datos() {
+    let proyecto = val('selector-proyecto');
+    if (proyecto === 'Otro') proyecto = val('proyecto-otro-nombre') || 'Proyecto sin definir';
+    const cd = window._cotizacionData || {};
+    const cliente = (cd.cliente || '').trim();
+    const e = estadoPago;
+    const mInt = parseNum(val('m2-interior')), mTerr = parseNum(val('m2-terraza'));
+    const adic = (e.incluyeEstacionamiento ? e.estacMonto : 0) + (e.incluyeBodega ? e.bodegaMonto : 0);
+    const mens = !!e.incluyeMensualidades && e.menNumero > 0;
+    const esps = especialesActivos();
+    const residual = mens ? (e.menMonto - e.menIndividual * e.menNumero) : 0;
+    const esc_ = e.escMonto + residual;
+    const firma = firmaLeer(asesorActivo());
+    const modelo = val('unidad-modelo');
+    const esLocal = /local|oficina/i.test(modelo);
+    const esLoft = /loft/i.test(modelo);
+    const tipo = val('tipo-producto') || 'Preventa';
+    return {
+      proyecto, tipo, preventa: /preventa/i.test(tipo), cliente,
+      pila: (cliente && cliente !== 'Cliente sin definir') ? cliente.split(/\s+/)[0] : '',
+      modelo, esLocal, esLoft,
+      sust: esLocal ? 'local' : (esLoft ? 'loft' : 'depa'),
+      unidadTxt: esLocal ? 'Local' : (esLoft ? 'Loft' : 'Departamento'),
+      id: val('unidad-id'), nivel: val('unidad-nivel'), vista: val('unidad-vista'),
+      mInt, mTerr, mTot: mInt + mTerr,
+      rec: val('unidad-recamaras'), banos: val('unidad-banos'), estac: val('unidad-estac'), bodega: val('unidad-bodega'),
+      lista: e.precioLista, neto: e.precioNeto, adic,
+      precioM2: (mInt + mTerr) > 0 ? Math.round((e.precioNeto - adic) / (mInt + mTerr)) : 0,
+      descTotal: descuentoTotal(), descForma: e.descuentoMonto, descAdic: descuentosAdicionalesActivos(),
+      estacPagado: e.incluyeEstacionamiento ? e.estacMonto : 0, bodegaPagada: e.incluyeBodega ? e.bodegaMonto : 0,
+      eng: e.engMonto, engPct: e.engPct,
+      mens, menN: mens ? e.menNumero : 0, menInd: mens ? e.menIndividual : 0,
+      esps, espTotal: e.espTotal || 0,
+      esc: esc_, escPct: e.precioNeto > 0 ? esc_ / e.precioNeto * 100 : 0,
+      asesor: firma.nombre || val('broker-nombre') || asesorActivo() || 'TRUST Inmobiliaria',
+      tel: firma.tel || '', foto: firma.foto || ''
+    };
+  }
+
+  // ---------- piezas ----------
+  let _logo = null;
+  function logo() {
+    if (_logo === null) {
+      const s = document.querySelector('.v15-header-logo svg');
+      _logo = s ? s.outerHTML.replace(/fill="#FFFFFF"/gi, 'fill="currentColor"') : '<b style="font-size:20px;letter-spacing:.1em">TRUST.</b>';
+    }
+    return _logo;
+  }
+  const cabecera = d => `<div class="nf-head"><div class="nf-logo">${logo()}</div>
+    <div class="nf-as"><div><div class="nf-as-n">${esc(d.asesor)}</div><div class="nf-as-s">Tu asesor TRUST${d.tel ? ' · ' + esc(d.tel) : ''}</div></div>
+    ${d.foto ? `<div class="nf-as-f" style="background-image:url('${d.foto}')"></div>` : ''}</div></div>`;
+  const imgAttr = (k, w) => `data-nfk="${k}" data-nfw="${w}"`;
+  const plural = (v, s, p) => { const n = parseNum(v); const t = String(v || '').trim(); if (!t) return ''; if (n === 1 && /^1$/.test(t)) return '1 ' + s; return t + ' ' + p; };
+  function titulo(t, def) {
+    t = String(t || def || '').trim();
+    if (t.indexOf('*') >= 0) return esc(t).replace(/\*([^*]+)\*/g, '<i>$1</i>');
+    const w = t.split(/\s+/);
+    if (w.length < 2) return esc(t);
+    const fijo = { asisevetudepa: 3, masalladetupuerta: 2, tuplandepagos: 2 }[norm(t)];
+    const c = fijo || Math.ceil(w.length / 2);
+    return esc(w.slice(0, c).join(' ')) + ' <i>' + esc(w.slice(c).join(' ')) + '</i>';
+  }
+  function folio(d) {
+    const p = norm(d.proyecto.split(/\s+/)[0]).toUpperCase();
+    const cons = p.replace(/[AEIOU0-9]/g, '');
+    const pre = (cons.length >= 2 ? cons.slice(0, 2) : p.slice(0, 2)) || 'TR';
+    const h = new Date();
+    return pre + '-' + String(h.getFullYear()).slice(2) + String(h.getMonth() + 1).padStart(2, '0') + String(h.getDate()).padStart(2, '0');
+  }
+  const hoyCorto = () => { const h = new Date(); return h.getDate() + ' ' + MES3[h.getMonth()] + ' ' + h.getFullYear(); };
+  const pie = d => `<div class="nf-foot">Cotización ${folio(d)} · ${hoyCorto()} · vigente ${VIGENCIA_DIAS} días · Precios en MXN sujetos a cambio sin previo aviso · TRUST Inmobiliaria · Guadalajara, Jalisco</div>`;
+  const cta = () => `<div class="nf-cta">Aparta con <b>${money(APARTADO)} MXN</b> · reembolsable en todo momento</div>`;
+  const corto = d => d.proyecto.split(/\s+/)[0].length > 3 ? d.proyecto.split(/\s+/)[0] : d.proyecto;
+  const unidadLinea = d => d.unidadTxt + (d.id ? ' ' + d.id : '');
+  const lblEntrega = d => d.preventa ? 'A la entrega' : 'A la escrituración';
+  function fechas(d) {
+    const maxEsp = d.esps.length ? Math.max.apply(null, d.esps.map(p => p.mes)) : 0;
+    const ult = Math.max(d.menN, maxEsp);
+    return { eng: mesMas(0), men1: mesMas(1), menN: mesMas(Math.max(1, d.menN)), entrega: ult > 0 ? mesMas(ult + 1) : null };
+  }
+
+  // ---------- hoja 1 ----------
+  function hoja1(d, c) {
+    const f = fechas(d);
+    const recTxt = d.esLocal ? '' : (plural(d.rec, 'recámara', 'recámaras') || (d.esLoft ? 'loft' : ''));
+    const sub = [unidadLinea(d), d.nivel && 'Nivel ' + d.nivel, recTxt, d.mTot > 0 && (m2(d.mTot).replace(/\.0$/, '') + ' m²' + (d.mTerr > 0 ? ' con terraza' : ''))].filter(Boolean).join(' · ') + '.';
+    let desc = '';
+    const filas = [];
+    if (d.descForma > 0) filas.push(['Forma de pago', '– ' + money(d.descForma)]);
+    d.descAdic.forEach((x, i) => filas.push([x.concepto || ('Descuento adicional ' + (i + 1)), '– ' + money(x.monto)]));
+    const pctTot = pct(d.lista > 0 ? d.descTotal / d.lista * 100 : 0);
+    if (filas.length === 1) desc = `<div class="nf-desc"><div class="nf-k">Descuento aplicado</div><div class="nf-r t"><span>${esc(filas[0][0])} (${pctTot})</span><b>${filas[0][1]}</b></div></div>`;
+    else if (filas.length > 1) desc = `<div class="nf-desc"><div class="nf-k">Descuentos aplicados</div>${filas.map(r => `<div class="nf-r"><span>${esc(r[0])}</span><b>${r[1]}</b></div>`).join('')}<div class="nf-r t"><span>Total de descuento (${pctTot})</span><b>– ${money(d.descTotal)}</b></div></div>`;
+    const incl = [];
+    if (d.estacPagado > 0) incl.push(['Estacionamiento adicional', '+ ' + money(d.estacPagado)]);
+    if (d.bodegaPagada > 0) incl.push(['Bodega', '+ ' + money(d.bodegaPagada)]);
+    if (incl.length) {
+      const h = incl.map(r => `<div class="nf-r"><span>Incluye ${r[0].toLowerCase()}</span><b>${r[1]}</b></div>`).join('');
+      desc = desc ? desc.replace(/<\/div>$/, h + '</div>') : `<div class="nf-desc"><div class="nf-k">Tu precio incluye</div>${h}</div>`;
+    }
+    const nDesc = (desc.match(/class="nf-r/g) || []).length;
+    if (nDesc >= 5) desc = desc.replace('class="nf-desc"', 'class="nf-desc c"');
+    const steps = [];
+    const n4 = (2 + (d.mens ? 1 : 0) + (d.esps.length ? 1 : 0)) >= 4;
+    const fm = n4 ? mesCorto : mesLargo;
+    steps.push(`<div class="nf-k">Enganche</div><div class="nf-v">${money(d.eng)}</div><div class="nf-it">${pct(d.engPct)} del valor</div><div class="nf-d">${n4 ? 'Al firmar' : 'Al firmar tu contrato'} · ${fm(f.eng)}</div>`);
+    if (d.mens) steps.push(`<div class="nf-k">${d.menN} mensualidades</div><div class="nf-v">${money(d.menInd)}</div><div class="nf-it">${pct(d.neto > 0 ? d.menInd * d.menN / d.neto * 100 : 0)} · sin intereses</div><div class="nf-d">${d.menN > 1 ? (n4 ? fm(f.men1) + ' – ' + fm(f.menN) : 'De ' + fm(f.men1) + ' a ' + fm(f.menN)) : fm(f.men1)}</div>`);
+    if (d.esps.length) steps.push(`<div class="nf-k">${d.esps.length === 1 ? 'Pago especial' : d.esps.length + ' pagos especiales'}</div><div class="nf-v">${money(d.espTotal)}</div><div class="nf-it">${pct(d.neto > 0 ? d.espTotal / d.neto * 100 : 0)} del valor</div><div class="nf-d">${d.esps.length === 1 ? fm(mesMas(d.esps[0].mes)) : 'Meses ' + d.esps.map(p => p.mes).join(', ')}</div>`);
+    steps.push(`<div class="nf-k">${lblEntrega(d)}</div><div class="nf-v">${money(d.esc)}</div><div class="nf-it">${pct(d.escPct)} del valor</div><div class="nf-d">${d.preventa ? 'Al recibir tus llaves' : 'Al escriturar'}${f.entrega ? ' · ' + fm(f.entrega) : ''}</div>`);
+    const nEst = parseNum(d.estac);
+    const unit = [
+      ['Unidad', [d.id, d.nivel && 'Nivel ' + d.nivel].filter(Boolean).join(' · ') || '—', d.esLocal ? esc(d.modelo) : [plural(d.rec, 'recámara', 'recámaras'), plural(d.banos, 'baño', 'baños')].filter(Boolean).join(' · ')],
+      ['Superficie', m2(d.mTot) + ' m²', d.mTerr > 0 ? m2(d.mInt) + ' int + ' + m2(d.mTerr) + ' terraza' : 'interior'],
+      ['Vista', d.vista || '—', ''],
+      ['Estacionamiento', nEst > 0 ? nEst + (nEst === 1 ? ' cajón' : ' cajones') : 'Sin cajón', nEst > 0 ? (nEst === 1 ? 'incluido' : 'incluidos') : (d.estacPagado > 0 ? 'ver adicional' : '')],
+      ['Precio / m²', money(d.precioM2), d.descTotal > 0 ? 'con descuento' : 'sobre m² totales']
+    ];
+    return `<div class="nf-page nf-p1">
+      <div class="nf-top"><div class="nf-img" ${imgAttr('portada', 2000)} style="background-position:center ${c.slots.portada.pos == null ? 50 : c.slots.portada.pos}%"></div><div class="nf-grad"></div></div>
+      ${cabecera(d)}
+      <div class="nf-body">
+        <div class="nf-hero"><span class="nf-pill">${esc(d.proyecto)} · ${esc(d.tipo)}</span>
+          <h1>Tu ${d.sust} en ${esc(corto(d))}${d.pila ? ', <i>' + esc(d.pila) + '.</i>' : '.'}</h1>
+          <div class="nf-sub">${esc(sub)}</div></div>
+        <div class="nf-price"><div class="nf-price-l"><div class="nf-lista">${d.descTotal > 0 ? 'Precio de lista <s>' + money(d.lista) + '</s>' : ''}</div>
+          <div class="nf-big">${money(d.neto)}</div><div class="nf-big-s">Tu precio final · MXN</div></div>${desc}</div>
+      </div>
+      <div class="nf-card"><div class="nf-steps ${steps.length >= 4 ? 'n4' : ''}">${steps.map((s, i) => `<div class="nf-step"><div class="nf-num">0${i + 1}</div>${s}</div>`).join('')}</div>
+        <div class="nf-unit">${unit.map(u => `<div><div class="nf-k">${u[0]}</div><div class="nf-v">${esc(u[1])}</div><div class="nf-d">${esc(u[2]) || '&nbsp;'}</div></div>`).join('')}</div></div>
+      ${cta()}${pie(d)}</div>`;
+  }
+
+  // ---------- hoja 2 ----------
+  function tiles(c, pre, w) {
+    const out = [];
+    for (let i = 1; i <= 8; i++) { const s = c.slots[pre + i]; if (s && s.url) out.push({ k: pre + i, s, w }); }
+    return out;
+  }
+  const tileHTML = (t, extra) => `<div class="nf-tile nf-img" ${imgAttr(t.k, t.w)} style="background-position:center ${t.s.pos == null ? 50 : t.s.pos}%;${extra || ''}">${t.s.nombre ? `<span class="nf-lab">${esc(t.s.nombre)}</span>` : ''}</div>`;
+  function hoja2(d, c) {
+    const ts = tiles(c, 'p2_', 760);
+    const planta = (typeof plantaDataURL !== 'undefined' && plantaDataURL) ? plantaDataURL : '';
+    if (!ts.length && !planta) return '';
+    const nEst = parseNum(d.estac);
+    const specs = [
+      [m2(d.mTot) + ' m²', d.mTerr > 0 ? m2(d.mInt) + ' int + ' + m2(d.mTerr) + ' terraza' : 'interior'],
+      d.esLocal ? null : [String(d.rec || '—'), parseNum(d.rec) === 1 ? 'recámara' : 'recámaras'],
+      [String(d.banos || '—'), parseNum(d.banos) === 1 ? 'baño' : 'baños'],
+      d.vista ? [d.vista, 'vista'] : null,
+      [nEst > 0 ? nEst + (nEst === 1 ? ' cajón' : ' cajones') : 'Sin cajón', 'estacionamiento']
+    ].filter(Boolean).map(s => `<div><b>${esc(s[0])}</b><span>${esc(s[1])}</span></div>`).join('');
+    const n = ts.length, cols = n <= 4 ? Math.max(1, n) : Math.ceil(n / 2);
+    const grid = n ? `<div class="nf-grid" style="grid-template-columns:repeat(${cols},1fr);grid-template-rows:repeat(${n <= 4 ? 1 : 2},1fr)">${ts.map((t, i) => tileHTML(t, (n > 4 && n % 2 === 1 && i === 0) ? 'grid-column:span 2;' : '')).join('')}</div>` : '';
+    const cover = c.slots.p2_cover && c.slots.p2_cover.url ? 'p2_cover' : 'portada';
+    return `<div class="nf-page nf-p2">
+      <div class="nf-band"><div class="nf-img" ${imgAttr(cover, 1700)} style="background-position:center ${c.slots[cover].pos == null ? 50 : c.slots[cover].pos}%"></div><div class="nf-tint"></div>
+        ${cabecera(d)}<div class="nf-tt"><h2>${titulo(c.textos.p2_titulo, d.esLocal ? 'Así se ve tu local.' : 'Así se ve tu depa.')}</h2>
+        <div class="nf-sub">${esc([unidadLinea(d), d.nivel && 'Nivel ' + d.nivel, d.proyecto].filter(Boolean).join(' · '))}</div></div></div>
+      <div class="nf-main">
+        ${planta ? `<div class="nf-plan"><div class="nf-vert"><span>Planta arquitectónica${d.id ? ' · ' + (d.esLocal ? 'Local ' : 'Depto ') + esc(d.id) : ''}</span></div>
+          <div class="nf-pimg" style="background-image:url('${planta}')"></div><div class="nf-specs">${specs}</div></div>`
+        : `<div class="nf-specs h">${specs}</div>`}
+        ${grid}
+      </div>${pie(d)}</div>`;
+  }
+
+  // ---------- hoja 3 ----------
+  function hoja3(d, c) {
+    const f = fechas(d);
+    const filas = [];
+    let saldo = d.neto;
+    const add = (con, fecha, monto, k) => { saldo -= monto; filas.push({ con, fecha, monto, saldo: Math.max(0, Math.round(saldo)), k }); };
+    const conApartado = d.eng > APARTADO;
+    if (conApartado) add('Apartado', hoyCorto(), APARTADO, 1);
+    add(conApartado ? 'Enganche · resto a la firma' : 'Enganche · firma de contrato', mesCorto(f.eng), conApartado ? d.eng - APARTADO : d.eng, 1);
+    const maxEsp = d.esps.length ? Math.max.apply(null, d.esps.map(p => p.mes)) : 0;
+    for (let i = 1; i <= Math.max(d.menN, maxEsp); i++) {
+      if (i <= d.menN) add('Mensualidad ' + i + ' de ' + d.menN, mesCorto(mesMas(i)), d.menInd);
+      d.esps.filter(p => p.mes === i).forEach(p => add('Pago especial' + (p.concepto ? ' · ' + p.concepto : ''), mesCorto(mesMas(i)), p.monto, 1));
+    }
+    saldo = d.esc; // el último pago liquida exactamente el saldo
+    add(d.preventa ? 'Pago a la entrega' : 'Pago a la escrituración', f.entrega ? mesCorto(f.entrega) : '—', d.esc, 1);
+    const dosCol = filas.length > 34;
+    const porCol = dosCol ? Math.ceil(filas.length / 2) : filas.length;
+    const alto = 624 - 22;
+    const rh = Math.max(11.5, Math.min(21, alto / porCol));
+    const fs = Math.max(6.6, Math.min(9.5, rh * 0.47)) * (dosCol ? 0.92 : 1);
+    const cab = '<div class="nf-tr h"><span>Concepto</span><span>Fecha</span><span>Monto</span><span>Saldo</span></div>';
+    const fila = r => `<div class="nf-tr${r.k ? ' k' : ''}"><span>${esc(r.con)}</span><span>${esc(r.fecha)}</span><span>${money(r.monto)}</span><span>${money(r.saldo)}</span></div>`;
+    const tabla = rs => `<div class="nf-tab">${cab}${rs.map(fila).join('')}</div>`;
+    const sum = [];
+    sum.push(`<div><div class="nf-k">Enganche</div><div class="nf-v">${money(d.eng)}</div><div class="nf-d">${pct(d.engPct)} · ${mesCorto(f.eng)}</div></div>`);
+    if (d.mens) sum.push(`<div><div class="nf-k">${d.menN} mensualidades</div><div class="nf-v">${money(d.menInd)}</div><div class="nf-d">${pct(d.neto > 0 ? d.menInd * d.menN / d.neto * 100 : 0)} · ${mesCorto(f.men1)}${d.menN > 1 ? ' – ' + mesCorto(f.menN) : ''}</div></div>`);
+    if (d.esps.length) sum.push(`<div><div class="nf-k">Pagos especiales</div><div class="nf-v">${money(d.espTotal)}</div><div class="nf-d">${pct(d.neto > 0 ? d.espTotal / d.neto * 100 : 0)} · ${d.esps.length} pago${d.esps.length === 1 ? '' : 's'}</div></div>`);
+    sum.push(`<div><div class="nf-k">${lblEntrega(d)}</div><div class="nf-v">${money(d.esc)}</div><div class="nf-d">${pct(d.escPct)}${f.entrega ? ' · ' + mesCorto(f.entrega) : ''}</div></div>`);
+    sum.push(`<div class="t"><div class="nf-k">Total</div><div class="nf-v">${money(d.neto)}</div><div class="nf-d">100 %${conApartado ? ' · incluye apartado' : ''}</div></div>`);
+    const cover = (c.slots.p3_cover && c.slots.p3_cover.url) ? 'p3_cover' : ((c.slots.p2_cover && c.slots.p2_cover.url) ? 'p2_cover' : 'portada');
+    return `<div class="nf-page nf-p3">
+      <div class="nf-band"><div class="nf-img" ${imgAttr(cover, 1700)} style="background-position:center ${c.slots[cover].pos == null ? 50 : c.slots[cover].pos}%"></div><div class="nf-tint"></div>
+        ${cabecera(d)}<div class="nf-tt"><h2>${titulo('', 'Tu plan de pagos.')}</h2>
+        <div class="nf-sub">${esc(unidadLinea(d))} · Precio final ${money(d.neto)} MXN · sin intereses</div></div></div>
+      <div class="nf-sum ${sum.length >= 5 ? 'n5' : ''}">${sum.join('')}</div>
+      <div class="nf-tabs" style="--rh:${rh.toFixed(2)}px;--fs:${fs.toFixed(2)}px">${dosCol ? tabla(filas.slice(0, porCol)) + tabla(filas.slice(porCol)) : tabla(filas)}</div>
+      ${cta()}${pie(d)}</div>`;
+  }
+
+  // ---------- hoja 4 ----------
+  function hoja4(d, c) {
+    const hero = c.slots.p4_hero && c.slots.p4_hero.url ? { k: 'p4_hero', s: c.slots.p4_hero, w: 1900 } : null;
+    const ts = tiles(c, 'p4_', 1000);
+    if (!hero && !ts.length) return '';
+    const filas = []; const rest = ts.slice();
+    if (rest.length % 3 === 2) filas.push({ cols: '2fr 1fr', it: rest.splice(0, 2) });
+    else if (rest.length % 3 === 1) filas.push(rest.length === 1 ? { cols: '1fr', it: rest.splice(0, 1) } : { cols: '1fr 1fr', it: rest.splice(0, 2) });
+    if (rest.length % 3 === 2) filas.push({ cols: '1fr 1fr', it: rest.splice(0, 2) });
+    while (rest.length) filas.push({ cols: '1fr 1fr 1fr', it: rest.splice(0, 3) });
+    let sub = (c.textos.p4_sub || '').trim();
+    if (!sub) {
+      const vistos = {}; const labs = [];
+      (hero ? [hero] : []).concat(ts).forEach(t => { const l = (t.s.nombre || '').trim(); const k = norm(l); if (l && !vistos[k]) { vistos[k] = 1; labs.push(l.replace(/\s*·\s*/g, ' con ').toLowerCase()); } });
+      if (labs.length) { const ult = labs.pop(); sub = (labs.length ? labs.join(', ') + ' y ' : '') + ult + '.'; sub = sub.charAt(0).toUpperCase() + sub.slice(1); }
+    }
+    return `<div class="nf-page nf-p4 nf-dark">
+      <div style="position:absolute;left:0;right:0;top:0">${cabecera(d)}</div>
+      <div class="nf-main"><div><span class="nf-pill fill">Amenidades</span></div>
+        <h2>${titulo(c.textos.p4_titulo, 'Más allá de tu puerta.')}</h2><div class="nf-sub">${esc(sub)}</div>
+        <div class="nf-am">${hero ? `<div class="nf-hero4 nf-tile nf-img" ${imgAttr('p4_hero', 1900)} style="background-position:center ${hero.s.pos == null ? 50 : hero.s.pos}%">${hero.s.nombre ? `<span class="nf-lab">${esc(hero.s.nombre)}</span>` : ''}</div>` : ''}
+          ${filas.map(f => `<div class="nf-row" style="grid-template-columns:${f.cols}">${f.it.map(t => tileHTML(t)).join('')}</div>`).join('')}</div>
+        <div class="nf-bye">Nos vemos en ${esc(corto(d))}${d.pila ? ', <i>' + esc(d.pila) + '.</i>' : '.'}</div>
+      </div>
+      <div class="nf-foot">Cotización ${folio(d)} · Renders ilustrativos · TRUST Inmobiliaria · Guadalajara, Jalisco · We are trustworthy</div></div>`;
+  }
+
+  // ---------- estado / render ----------
+  function estado(html, warn) {
+    const el = $('nf-status'); if (!el) return;
+    el.className = 'nf-status' + (html ? ' on' : '') + (warn ? ' warn' : '');
+    el.innerHTML = html || '';
+  }
+  function escala() {
+    const sc = document.querySelector('.doc-carta-scaler'), doc = $('nf-doc');
+    if (!sc || !doc) return;
+    const w = sc.clientWidth || 816;
+    doc.style.setProperty('--nfz', Math.min(1, w / 816).toFixed(4));
+  }
+  function apagar(msg) {
+    NF.on = false; NF.pend = 0;
+    const wrap = document.querySelector('.step-panel[data-panel="4"] .preview-wrapper');
+    if (wrap) wrap.classList.remove('nf-on');
+    const doc = $('nf-doc'); if (doc) doc.innerHTML = '';
+    estado(msg || '', true);
+  }
+  async function render() {
+    const seq = ++NF.seq;
+    const doc = $('nf-doc'); if (!doc) return;
+    const d = datos();
+    let c = null;
+    try { c = await cargarCfg(d.proyecto); } catch (e) { console.warn('Formato nuevo: no se pudo leer la configuración', e); if (seq === NF.seq) apagar('No se pudo consultar el formato nuevo de este proyecto (revisa tu conexión). Se muestra el formato clásico.'); return; }
+    if (seq !== NF.seq) return;
+    if (!c || !c.slots || !c.slots.portada || !c.slots.portada.url) {
+      apagar(c ? 'A <b>' + esc(d.proyecto) + '</b> le falta la imagen de portada en Inventario → Cotización. Se muestra el formato clásico.' : '');
+      return;
+    }
+    const P = c.colores.principal || '#173F35';
+    doc.setAttribute('style', `--nf-p:${P};--nf-p-rgb:${rgb(P)};--nf-f:${c.colores.fondo || '#F5EEE4'};--nf-a:${c.colores.acento || '#5E7A70'};--nf-ink:${P};--nf-ink2:rgba(45,34,28,.86);--nf-mut:rgba(60,46,38,.62)`);
+    const h2 = hoja2(d, c), h4 = hoja4(d, c);
+    doc.innerHTML = hoja1(d, c) + h2 + hoja3(d, c) + h4;
+    document.querySelector('.step-panel[data-panel="4"] .preview-wrapper').classList.add('nf-on');
+    NF.on = true; escala();
+    const els = [].slice.call(doc.querySelectorAll('[data-nfk]'));
+    const total = els.length; let listos = 0; NF.pend = total;
+    const avisos = [];
+    if (typeof plantaDataURL === 'undefined' || !plantaDataURL) avisos.push('Sin planta: súbela en el paso 1 para que salga en la hoja 2.');
+    if (!h4) avisos.push('Sin amenidades cargadas: se omite la hoja 4.');
+    if (!d.tel) avisos.push('Agrega tu WhatsApp en el paso 2 (Tu firma).');
+    const nH = 2 + (h2 ? 1 : 0) + (h4 ? 1 : 0);
+    const pinta = () => estado(`<b>Formato ${esc(c.nombre || d.proyecto)} · ${nH} hojas</b><br>` + (listos < total ? `Cargando imágenes ${listos}/${total}…` : 'Imágenes listas.') + (avisos.length ? '<br>' + avisos.join('<br>') : ''), false);
+    pinta();
+    let idx = 0;
+    const worker = async () => {
+      while (idx < els.length) {
+        const el = els[idx++];
+        const url = await imgSlot(c.slots[el.dataset.nfk], +el.dataset.nfw);
+        if (seq !== NF.seq) return;
+        if (url) el.style.backgroundImage = "url('" + url + "')";
+        listos++; NF.pend = total - listos; pinta();
+      }
+    };
+    await Promise.all([worker(), worker(), worker()]);
+  }
+  NF.render = render;
+
+  // ---------- enganches con el cotizador ----------
+  const _go = goToStep;
+  goToStep = function (n) {
+    _go(n);
+    firmaSync();
+    if (n === 4) { firmaGuardar(); render(); }
+  };
+  const _pdf = descargarPDF;
+  descargarPDF = function () {
+    if (NF.on && NF.pend > 0) { alert('Todavía se están cargando las imágenes de la cotización (' + NF.pend + ' pendientes). Espera unos segundos y vuelve a intentar.'); return; }
+    _pdf();
+  };
+  window.addEventListener('resize', escala);
+  const precarga = () => { let p = val('selector-proyecto'); if (p === 'Otro') p = val('proyecto-otro-nombre'); if (p) cargarCfg(p).catch(() => { }); };
+  const arranque = () => {
+    firmaInit();
+    const sel = $('selector-proyecto'); if (sel) sel.addEventListener('change', precarga);
+    setTimeout(() => { firmaSync(); precarga(); }, 600);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', arranque); else arranque();
 })();
 </script>
 </body>
