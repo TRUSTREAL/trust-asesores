@@ -67,9 +67,11 @@ a.tool:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   </div>
 
   <div class="tools">
-    <a class="tool" href="../ventas/">
+    <a class="tool" href="../ventas/" id="card-ventas">
+      <span class="badge" id="b-ven" hidden></span>
       <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 13h4"/><path d="M8 16h8"/><circle cx="17" cy="13.5" r="1"/></svg></div>
       <h2>Administración</h2>
+      <span class="sub" id="b-ven-sub" hidden></span>
       <p>Ventas, apartados, cobranza, comisiones, gastos e indicadores de ingreso y desempeño de la empresa.</p>
       <span class="go">Entrar</span>
     </a>
@@ -145,6 +147,16 @@ a.tool:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 })();
 </script>
 <script>
+// Aviso de comisiones en revisión (conformidad de asesores)
+(async()=>{
+  const URL="https://xshhjvdmkuqesdlvczbb.supabase.co",KEY="sb_publishable_5erZfpELyuncW1nrReTaZw_BQj0bc-P";
+  const badge=document.getElementById("b-ven"),sub=document.getElementById("b-ven-sub");
+  try{
+    const r=await fetch(URL+"/rest/v1/comisiones_conformidad?select=asesor&estado=eq.revision",{headers:{apikey:KEY,Authorization:"Bearer "+KEY}});
+    const L=await r.json();const n=Array.isArray(L)?L.length:0;if(!n)return;
+    badge.textContent=n;badge.hidden=false;sub.textContent=n+(n===1?" comisión en revisión":" comisiones en revisión")+" · "+[...new Set(L.map(x=>x.asesor))].join(", ");sub.hidden=false;
+  }catch(e){}
+})();
 // Aviso de brokers por aprobar
 (async()=>{
   const URL="https://xshhjvdmkuqesdlvczbb.supabase.co",KEY="sb_publishable_5erZfpELyuncW1nrReTaZw_BQj0bc-P";
