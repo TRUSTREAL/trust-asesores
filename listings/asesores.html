@@ -135,7 +135,11 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
 .pho[draggable="true"]{cursor:grab}.pho.dragging{opacity:.35}.pho.over{outline:3px dashed var(--gold);outline-offset:-3px}
 .corr{display:inline-flex;align-items:center;gap:6px;background:#FFF4E0;color:#8A5A12;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:600}
 .pho .tools button.w{width:auto;padding:0 8px;font-size:11px;font-weight:600;color:var(--green)}
-.pho.sel-portada{outline:3px solid var(--gold);outline-offset:-3px}.pho.sel-interior{outline:3px solid var(--green);outline-offset:-3px}
+.pho.sel-portada,.pho.sel-interior{outline:3px solid var(--green);outline-offset:-3px}
+.pho.sel-portada:after,.pho.sel-interior:after{content:"";position:absolute;inset:0;background:rgba(23,63,53,.42);pointer-events:none}
+.pho.sel-portada .tag,.pho.sel-interior .tag{z-index:2;left:50%;top:50%;bottom:auto;transform:translate(-50%,-50%);background:#fff;color:var(--green);font-size:12px;padding:5px 12px;text-transform:uppercase;letter-spacing:.08em}
+.pho .n,.pho .lab,.pho .tools{z-index:2}
+.pho.sel-portada .lab button[data-act="portada"],.pho.sel-interior .lab button[data-act="interior"]{background:var(--green);color:#fff}
 .pho .tag{top:34px;bottom:auto}
 .pho .lab{position:absolute;right:6px;top:6px;display:flex;gap:4px}
 .pho .lab button{border:0;background:rgba(255,255,255,.92);border-radius:8px;height:24px;padding:0 8px;font-size:11px;font-weight:600;color:var(--green);cursor:pointer}
