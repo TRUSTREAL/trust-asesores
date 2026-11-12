@@ -2774,6 +2774,18 @@
 .nf-status.warn { background: #FBF1E3; color: #7A5A1E; }
 .nf-firma-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .nf-firma-row img { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 1px solid #D9D2C3; }
+.nf-ext-box { border: 1px dashed #CFC6B4; border-radius: 12px; padding: 4px 14px; background: #FDFCF8; }
+.nf-ext-row { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-top: 1px solid #EEE9DD; flex-wrap: wrap; }
+.nf-ext-row:first-child { border-top: 0; }
+.nf-ext-t { width: 190px; flex: none; font-family: Poppins, Montserrat, sans-serif; }
+.nf-ext-t b { display: block; font-size: 13px; font-weight: 600; color: #173F35; }
+.nf-ext-t span { display: block; font-size: 11.5px; color: #6F726B; line-height: 1.4; margin-top: 2px; }
+.nf-ext-ths { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; min-width: 0; }
+.nf-ext-ths:empty { display: none; }
+.nf-ext-th { position: relative; width: 62px; height: 62px; border-radius: 8px; background: #E9E4D8 center/cover no-repeat; display: inline-block; overflow: hidden; }
+.nf-ext-th i { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(23,63,53,.82); color: #fff; font: 600 7.5px Poppins, sans-serif; font-style: normal; letter-spacing: .08em; text-transform: uppercase; text-align: center; padding: 2px 0 3px; }
+.nf-ext-th button { position: absolute; top: 3px; right: 3px; width: 18px; height: 18px; border-radius: 50%; border: 0; background: rgba(0,0,0,.6); color: #fff; font-size: 13px; line-height: 18px; padding: 0; cursor: pointer; }
+.nf-cta.nf-nota { background: none !important; box-shadow: none !important; color: var(--nf-mut); font-size: 10.5px; padding: 0; width: auto; }
 .nf-firma-hint { font-family: Poppins, Montserrat, sans-serif; font-size: 11.5px; color: #6F726B; margin-top: 8px; }
 
 .nf-page { width: 816px; height: 1056px; position: relative; overflow: hidden; box-sizing: border-box;
@@ -3125,7 +3137,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
               <option>Epicentria</option>
               <option>Neza</option>
               <option>VIM Tower Universidad</option>
-              <option value="Otro">Otro</option>
+              <option value="Otro">Otro proyecto (externo)</option>
             </select>
           </div>
           <div class="field col-4">
@@ -3138,6 +3150,28 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
           <div class="field col-12" id="proyecto-otro-wrapper" style="display:none;">
             <label>Nombre del proyecto</label>
             <input type="text" id="proyecto-otro-nombre" placeholder="Escribe el nombre del proyecto" />
+          </div>
+          <div class="field col-12" id="nf-ext" style="display:none;">
+            <label>Fotos del proyecto <span style="text-transform:none;letter-spacing:0;font-weight:400;color:#6F726B">· para la cotización de 4 hojas</span></label>
+            <div class="nf-ext-box">
+              <div class="nf-ext-row">
+                <div class="nf-ext-t"><b>Portada</b><span>1 foto, obligatoria. Fachada o un render protagonista.</span></div>
+                <div class="nf-ext-ths" id="nf-ext-th-portada"></div>
+                <button type="button" class="planta-btn" data-ext-add="portada">+ Subir portada</button>
+              </div>
+              <div class="nf-ext-row">
+                <div class="nf-ext-t"><b>Así se ve tu depa</b><span>Hasta 8 fotos de interiores. Salen en la hoja 2, junto a la planta.</span></div>
+                <div class="nf-ext-ths" id="nf-ext-th-p2"></div>
+                <button type="button" class="planta-btn" data-ext-add="p2">+ Subir fotos</button>
+              </div>
+              <div class="nf-ext-row">
+                <div class="nf-ext-t"><b>Amenidades</b><span>Hasta 9 fotos. La primera sale grande. Sin fotos, se omite la hoja.</span></div>
+                <div class="nf-ext-ths" id="nf-ext-th-p4"></div>
+                <button type="button" class="planta-btn" data-ext-add="p4">+ Subir fotos</button>
+              </div>
+            </div>
+            <input type="file" id="nf-ext-file" accept="image/*" style="display:none;" />
+            <div class="nf-firma-hint">Este proyecto no tiene fotos cargadas en Inventario. Las que subas aquí se usan solo en esta cotización (no se guardan) y sale con identidad TRUST. Sin portada, la cotización sale en el formato clásico de una hoja.</div>
           </div>
         </div>
       </div>
@@ -5341,6 +5375,75 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     return (NF.imgs[k] = cv.toDataURL('image/jpeg', 0.86));
   }
 
+  // ---------- fotos subidas a mano (proyectos externos / sin fotos en Inventario) ----------
+  // No se guardan en ningún lado: viven solo en esta cotización. Identidad TRUST, sin botón de apartado.
+  NF.ext = { portada: [], p2: [], p4: [] };
+  const EXT = { portada: { max: 1, w: 2000 }, p2: { max: 8, w: 1000 }, p4: { max: 9, w: 1600 } };
+  let extGrupo = null;
+  const conPortada = c => !!(c && c.slots && c.slots.portada && c.slots.portada.url);
+  function cfgManual() {
+    const e = NF.ext; if (!e.portada[0]) return null;
+    const slots = { portada: { url: e.portada[0], pos: 50 } };
+    e.p2.forEach((u, i) => { slots['p2_' + (i + 1)] = { url: u, pos: 50 }; });
+    if (e.p4[0]) slots.p4_hero = { url: e.p4[0], pos: 50 };
+    e.p4.slice(1).forEach((u, i) => { slots['p4_' + (i + 1)] = { url: u, pos: 50 }; });
+    return { manual: true, nombre: '', colores: { principal: '#173F35', fondo: '#FAF8F2', acento: '#B8956A' }, slots: slots, textos: {} };
+  }
+  function achicar(file, w) {
+    return new Promise((res, rej) => {
+      const rd = new FileReader(); rd.onerror = rej;
+      rd.onload = () => { const im = new Image(); im.onerror = rej; im.onload = () => {
+        const sc = Math.min(1, w / Math.max(im.width, im.height));
+        const cv = document.createElement('canvas'); cv.width = Math.round(im.width * sc); cv.height = Math.round(im.height * sc);
+        const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height); cx.imageSmoothingQuality = 'high';
+        cx.drawImage(im, 0, 0, cv.width, cv.height); res(cv.toDataURL('image/jpeg', 0.84));
+      }; im.src = rd.result; };
+      rd.readAsDataURL(file);
+    });
+  }
+  function extPintar() {
+    Object.keys(EXT).forEach(g => {
+      const box = $('nf-ext-th-' + g); if (!box) return;
+      box.innerHTML = NF.ext[g].map((u, i) => `<span class="nf-ext-th" style="background-image:url('${u}')">${g === 'p4' && i === 0 ? '<i>Principal</i>' : ''}<button type="button" data-ext-x="${g}:${i}" title="Quitar">×</button></span>`).join('');
+      const btn = document.querySelector('[data-ext-add="' + g + '"]');
+      const n = NF.ext[g].length, max = EXT[g].max;
+      btn.style.display = n >= max ? 'none' : '';
+      btn.textContent = g === 'portada' ? '+ Subir portada' : (n ? '+ Agregar más' : '+ Subir fotos') + ' (' + n + '/' + max + ')';
+    });
+  }
+  async function extSync() {
+    const w = $('nf-ext'); if (!w) return;
+    const v = val('selector-proyecto');
+    if (NF.extDe !== undefined && NF.extDe !== v) { NF.ext = { portada: [], p2: [], p4: [] }; extPintar(); }
+    NF.extDe = v;
+    if (v === 'Otro') { w.style.display = ''; return; }
+    w.style.display = 'none';
+    let c = null; try { c = await cargarCfg(v); } catch (e) { c = null; }
+    if (val('selector-proyecto') !== v) return;
+    if (!conPortada(c)) w.style.display = '';
+  }
+  function extInit() {
+    const w = $('nf-ext'); if (!w) return;
+    const inp = $('nf-ext-file');
+    w.addEventListener('click', ev => {
+      const t = ev.target;
+      if (t.dataset && t.dataset.extAdd) { extGrupo = t.dataset.extAdd; inp.multiple = EXT[extGrupo].max > 1; inp.click(); }
+      if (t.dataset && t.dataset.extX) { const p = t.dataset.extX.split(':'); NF.ext[p[0]].splice(+p[1], 1); extPintar(); }
+    });
+    inp.addEventListener('change', async ev => {
+      const g = extGrupo, files = [].slice.call(ev.target.files || []).filter(f => /^image\//.test(f.type)); ev.target.value = '';
+      if (!g || !files.length) return;
+      const libres = EXT[g].max - (g === 'portada' ? 0 : NF.ext[g].length);
+      const btn = document.querySelector('[data-ext-add="' + g + '"]'); btn.textContent = 'Procesando…';
+      for (const f of files.slice(0, libres)) {
+        try { const u = await achicar(f, EXT[g].w); if (g === 'portada') NF.ext.portada = [u]; else NF.ext[g].push(u); } catch (e) { }
+      }
+      extPintar();
+      if (files.length > libres) alert('Solo caben ' + EXT[g].max + ' fotos en esta sección; se tomaron las primeras.');
+    });
+    extPintar();
+  }
+
   // ---------- firma del asesor (se guarda en el dispositivo) ----------
   const firmaKey = a => 'trust_cot_firma_' + a;
   // Directorio central (Admin → Asesores): nombre completo, celular y foto. Manda sobre lo capturado en el dispositivo.
@@ -5489,9 +5592,11 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     return pre + '-' + String(h.getFullYear()).slice(2) + String(h.getMonth() + 1).padStart(2, '0') + String(h.getDate()).padStart(2, '0');
   }
   const hoyCorto = () => { const h = new Date(); return h.getDate() + ' ' + MES3[h.getMonth()] + ' ' + h.getFullYear(); };
-  const pie = d => `<div class="nf-foot">Cotización ${folio(d)} · ${hoyCorto()} · vigente ${VIGENCIA_DIAS} días · Precios en MXN sujetos a cambio sin previo aviso · TRUST Inmobiliaria · Guadalajara, Jalisco</div>`;
-  const cta = () => `<div class="nf-cta">Aparta con <b>${money(APARTADO)} MXN</b> · reembolsable en todo momento</div>`;
-  const corto = d => d.proyecto.split(/\s+/)[0].length > 3 ? d.proyecto.split(/\s+/)[0] : d.proyecto;
+  const pie = d => `<div class="nf-foot">Cotización ${folio(d)} · ${hoyCorto()} · vigente ${VIGENCIA_DIAS} días · ${d.externo ? 'Precios en MXN y disponibilidad sujetos a confirmación del desarrollador' : 'Precios en MXN sujetos a cambio sin previo aviso'} · TRUST Inmobiliaria · Guadalajara, Jalisco</div>`;
+  // Proyectos externos: sin botón de apartado (esa política es de los proyectos de TRUST); en su lugar va la nota de confirmación.
+  const cta = d => d.externo ? `<div class="nf-cta nf-nota">Precios y disponibilidad sujetos a confirmación del desarrollador.</div>`
+    : `<div class="nf-cta">Aparta con <b>${money(APARTADO)} MXN</b> · reembolsable en todo momento</div>`;
+  const corto = d => (d.externo || d.proyecto.split(/\s+/)[0].length <= 3) ? d.proyecto : d.proyecto.split(/\s+/)[0];
   const unidadLinea = d => d.unidadTxt + (d.id ? ' ' + d.id : '');
   const lblEntrega = d => d.preventa ? 'A la entrega' : 'A la escrituración';
   function fechas(d) {
@@ -5552,7 +5657,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
       </div>
       <div class="nf-card"><div class="nf-steps ${steps.length >= 4 ? 'n4' : ''}">${steps.map((s, i) => `<div class="nf-step"><div class="nf-num">0${i + 1}</div>${s}</div>`).join('')}</div>
         <div class="nf-unit">${unit.map(u => `<div><div class="nf-k">${u[0]}</div><div class="nf-v">${esc(u[1])}</div><div class="nf-d">${esc(u[2]) || '&nbsp;'}</div></div>`).join('')}</div></div>
-      ${cta()}${pie(d)}</div>`;
+      ${cta(d)}${pie(d)}</div>`;
   }
 
   // ---------- hoja 2 ----------
@@ -5626,7 +5731,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
         <div class="nf-sub">${esc(unidadLinea(d))} · Precio final ${money(d.neto)} MXN · sin intereses</div></div></div>
       <div class="nf-sum ${sum.length >= 5 ? 'n5' : ''}">${sum.join('')}</div>
       <div class="nf-tabs" style="--rh:${rh.toFixed(2)}px;--fs:${fs.toFixed(2)}px">${dosCol ? tabla(filas.slice(0, porCol)) + tabla(filas.slice(porCol)) : tabla(filas)}</div>
-      ${cta()}${pie(d)}</div>`;
+      ${cta(d)}${pie(d)}</div>`;
   }
 
   // ---------- hoja 4 ----------
@@ -5680,12 +5785,13 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     const doc = $('nf-doc'); if (!doc) return;
     const d = datos();
     let c = null;
-    try { c = await cargarCfg(d.proyecto); } catch (e) { console.warn('Formato nuevo: no se pudo leer la configuración', e); if (seq === NF.seq) apagar('No se pudo consultar el formato nuevo de este proyecto (revisa tu conexión). Se muestra el formato clásico.'); return; }
+    try { c = await cargarCfg(d.proyecto); } catch (e) { console.warn('Formato nuevo: no se pudo leer la configuración', e); c = null; }
     if (seq !== NF.seq) return;
-    if (!c || !c.slots || !c.slots.portada || !c.slots.portada.url) {
-      apagar(c ? 'A <b>' + esc(d.proyecto) + '</b> le falta la imagen de portada en Inventario → Cotización. Se muestra el formato clásico.' : '');
-      return;
+    if (!conPortada(c)) {
+      c = cfgManual();   // proyecto externo o sin fotos en Inventario: se usan las que el asesor subió en el paso 1
+      if (!c) { apagar('Este proyecto no tiene fotos cargadas. Para la cotización de 4 hojas, sube al menos la <b>portada</b> en el paso 1 (Fotos del proyecto). Se muestra el formato clásico.'); return; }
     }
+    d.externo = !!c.manual;
     const P = c.colores.principal || '#173F35';
     doc.setAttribute('style', `--nf-p:${P};--nf-p-rgb:${rgb(P)};--nf-f:${c.colores.fondo || '#F5EEE4'};--nf-a:${c.colores.acento || '#5E7A70'};--nf-a-rgb:${rgb(c.colores.acento || '#5E7A70')};--nf-linea:rgb(${rgb(P).split(',').map(v => Math.round(255 - (255 - v) * 0.18)).join(',')});--nf-ink:${P};--nf-ink2:rgba(45,34,28,.86);--nf-mut:rgba(60,46,38,.62)`);
     const h2 = hoja2(d, c), h4 = hoja4(d, c);
@@ -5699,7 +5805,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     if (!h4) avisos.push('Sin amenidades cargadas: se omite la hoja 4.');
     if (!d.tel) avisos.push('Agrega tu WhatsApp en el paso 2 (Tu firma).');
     const nH = 2 + (h2 ? 1 : 0) + (h4 ? 1 : 0);
-    const pinta = () => estado(`<b>Formato ${esc(c.nombre || d.proyecto)} · ${nH} hojas</b><br>` + (listos < total ? `Cargando imágenes ${listos}/${total}…` : 'Imágenes listas.') + (avisos.length ? '<br>' + avisos.join('<br>') : ''), false);
+    const pinta = () => estado(`<b>Formato ${esc(c.nombre || d.proyecto)} · ${nH} hojas</b>${c.manual ? ' · fotos subidas a mano, identidad TRUST' : ''}<br>` + (listos < total ? `Cargando imágenes ${listos}/${total}…` : 'Imágenes listas.') + (avisos.length ? '<br>' + avisos.join('<br>') : ''), false);
     pinta();
     let idx = 0;
     const worker = async () => {
@@ -5728,7 +5834,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
   const _go = goToStep;
   goToStep = function (n) {
     _go(n);
-    firmaSync();
+    firmaSync(); if (n === 1) extSync();
     if (n === 4) { firmaGuardar(); render(); }
   };
   const _pdf = descargarPDF;
@@ -5739,9 +5845,9 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
   window.addEventListener('resize', escala);
   const precarga = () => { let p = val('selector-proyecto'); if (p === 'Otro') p = val('proyecto-otro-nombre'); if (p) cargarCfg(p).catch(() => { }); };
   const arranque = () => {
-    firmaInit();
-    const sel = $('selector-proyecto'); if (sel) sel.addEventListener('change', precarga);
-    setTimeout(() => { firmaSync(); precarga(); }, 600);
+    firmaInit(); extInit();
+    const sel = $('selector-proyecto'); if (sel) sel.addEventListener('change', () => { precarga(); extSync(); });
+    setTimeout(() => { firmaSync(); precarga(); extSync(); }, 600);
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', arranque); else arranque();
 })();
