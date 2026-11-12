@@ -2912,6 +2912,10 @@
 
 @media print {
   .nf-status { display: none !important; }
+  /* Las sombras difuminadas salen como cuadros negros en varios visores de PDF (Vista Previa, iPhone, WhatsApp):
+     en el PDF se quitan y se sustituyen por un borde fino. */
+  .nf-page, .nf-page * { box-shadow: none !important; text-shadow: none !important; filter: none !important; }
+  .nf-card, .nf-sum { border: 1px solid rgba(var(--nf-p-rgb), .16); }
   .nf-doc { zoom: 1 !important; width: 8.5in !important; margin: 0 !important; }
   .nf-page { margin: 0 !important; box-shadow: none !important; width: 8.5in !important; height: 10.99in !important;
     page-break-after: always; break-after: page; page-break-inside: avoid; break-inside: avoid; }
