@@ -61,6 +61,15 @@ td.dim{color:var(--muted)}td.money{font-weight:600}td.com{color:var(--gold-2);fo
 .st.pendiente{background:var(--warn-bg);color:var(--warn)}
 .st.parcial{background:var(--info-bg);color:var(--info)}
 .st.pagada{background:var(--ok-bg);color:var(--ok)}
+/* conformidad del asesor */
+.cf{display:flex;gap:6px;align-items:center;white-space:nowrap}
+.cf button{border:1px solid var(--line,#E3DDD0);background:#fff;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--green,#173F35)}
+.cf button.ok{border-color:var(--green,#173F35);background:var(--green,#173F35);color:#fff}
+.cf button.rev{color:#A8342A;border-color:#E8C9C4}
+.cf .tag{font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.cf .tag.ok{color:var(--ok,#2E7D4F)}.cf .tag.rev{color:#A8342A}.cf .tag.old{color:#9C7A4E}
+.cf .tag small{font-weight:400;color:var(--muted,#6F726B)}
+.cf a{font-size:11px;color:var(--muted,#6F726B);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .dd{display:inline-block;min-width:30px;text-align:center;border-radius:999px;padding:2px 8px;font-weight:600;font-size:12px;background:var(--surface-2);color:var(--muted)}
 .prog{height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden;width:110px;display:inline-block;vertical-align:middle}
 .prog i{display:block;height:100%;background:var(--ok)}
@@ -102,13 +111,15 @@ const fecha=d=>d?(()=>{const [y,m,dd]=String(d).slice(0,10).split("-");return `$
 const dias=d=>d?Math.max(0,Math.round((Date.now()-new Date(d+"T12:00:00"))/86400000)):null;
 const pct=(n,d)=>d?Math.round(n/d*100)+"%":"—";
 const KEY="trust_asesor_com";
-let ASESOR=localStorage.getItem(KEY)||"", VENTAS=[], COBROS=[], PAGOS=[], INGRESOS={}, anio=new Date().getFullYear(), vista="pend"; // pend = por pagar (pendientes + parciales, de cualquier año) · hist = todas las del año
+let ASESOR=localStorage.getItem(KEY)||"", VENTAS=[], COBROS=[], PAGOS=[], INGRESOS={}, CONF={}, anio=new Date().getFullYear(), vista="pend"; // pend = por pagar (pendientes + parciales, de cualquier año) · hist = todas las del año
 
 async function load(){
   if(!sb||!ASESOR)return;
   const [v,c,p,r]=await Promise.all([sb.from("ventas").select("*").order("fecha",{ascending:false}),sb.from("ventas_cobros").select("*"),sb.from("ventas_pagos").select("*").eq("beneficiario",ASESOR),sb.from("ventas_reglas").select("reglas").eq("id",1).maybeSingle()]);
   if(v.error){toast("Error: "+v.error.message,true);return}
-  VENTAS=(v.data||[]).filter(x=>(x.dispersion||[]).some(p=>p.nombre===ASESOR));COBROS=c.data||[];PAGOS=p.data||[];INGRESOS=(r.data&&r.data.reglas&&r.data.reglas.ingresos)||{};render();
+  VENTAS=(v.data||[]).filter(x=>(x.dispersion||[]).some(p=>p.nombre===ASESOR));COBROS=c.data||[];PAGOS=p.data||[];INGRESOS=(r.data&&r.data.reglas&&r.data.reglas.ingresos)||{};
+  try{const cf=await sb.from("comisiones_conformidad").select("*").eq("asesor",ASESOR);CONF={};(cf.data||[]).forEach(x=>CONF[x.venta_id]=x)}catch(e){}
+  render();
 }
 const comTotal=v=>v.comision_monto!=null?+v.comision_monto:(+v.monto||0)*(+v.comision_pct||0)/100;
 const cobradoDe=id=>COBROS.filter(c=>c.venta_id===id).reduce((a,c)=>a+(+c.monto||0),0);
@@ -161,12 +172,34 @@ function render(){
     <div class="tile ok"><span class="l">Pagado</span><span class="v">${fmt(pag)}</span><span class="s">${pct(pag,gen)} de lo generado</span></div>
     <div class="tile warn"><span class="l">Pendiente</span><span class="v">${fmt(porPagar)}</span><span class="s">por pagarte · ${pendAll.length} operaci${pendAll.length===1?"ón":"ones"}</span></div>
   </div>
-  <div class="twrap"><table><thead><tr><th>Mes</th><th class="num">Días</th><th>Cliente</th><th>Proyecto</th><th>Rol</th><th class="num">Mi comisión</th><th class="num">Pagado</th><th class="num">Pendiente</th><th>Estatus</th></tr></thead>
-  <tbody>${rows.map(x=>`<tr><td class="dim">${(()=>{const [y,m]=String(x.v.fecha).slice(0,7).split("-");return MESES_L[+m-1].replace(/^./,c=>c.toUpperCase())+" "+y})()}</td><td class="num"><span class="dd">${dias(x.v.fecha)}</span></td><td><b>${esc(x.v.cliente)}</b>${x.v.tipo==="Crédito hipotecario"?' <span class="st" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(x.v.proyecto||"")}${x.v.unidad?` <span class="dim">· ${esc(x.v.unidad)}</span>`:""}</td><td class="dim">${esc(x.rol)}</td><td class="num com">${fmt(x.mia)}</td><td class="num ${x.pag?"money":""}" style="${x.pag?"color:var(--ok)":""}">${fmt(x.pag)}</td><td class="num">${fmt(Math.max(0,x.mia-x.pag))}</td><td><span class="st ${x.e}">${EST[x.e]}</span></td></tr>`).join("")}</tbody></table>
+  <div class="twrap"><table><thead><tr><th>Mes</th><th class="num">Días</th><th>Cliente</th><th>Proyecto</th><th>Rol</th><th class="num">Mi comisión</th><th class="num">Pagado</th><th class="num">Pendiente</th><th>Estatus</th><th>Tu conformidad</th></tr></thead>
+  <tbody>${rows.map(x=>`<tr><td class="dim">${(()=>{const [y,m]=String(x.v.fecha).slice(0,7).split("-");return MESES_L[+m-1].replace(/^./,c=>c.toUpperCase())+" "+y})()}</td><td class="num"><span class="dd">${dias(x.v.fecha)}</span></td><td><b>${esc(x.v.cliente)}</b>${x.v.tipo==="Crédito hipotecario"?' <span class="st" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(x.v.proyecto||"")}${x.v.unidad?` <span class="dim">· ${esc(x.v.unidad)}</span>`:""}</td><td class="dim">${esc(x.rol)}</td><td class="num com">${fmt(x.mia)}</td><td class="num ${x.pag?"money":""}" style="${x.pag?"color:var(--ok)":""}">${fmt(x.pag)}</td><td class="num">${fmt(Math.max(0,x.mia-x.pag))}</td><td><span class="st ${x.e}">${EST[x.e]}</span></td><td>${confHTML(x)}</td></tr>`).join("")}</tbody></table>
   ${rows.length?"":`<div class="empty">${vista==="pend"?"Todo pagado. No tienes comisiones pendientes.":`Sin comisiones registradas en ${anio}.`}</div>`}</div>
-  <p class="hint" style="margin-top:12px">Las comisiones se pagan conforme el cliente liquida la operación. Si ves un dato que no cuadra, coméntalo en tu one-on-one.</p>`;
+  <p class="hint" style="margin-top:12px">Las comisiones se pagan conforme el cliente liquida la operación. Revisa cada línea: <b>Confirmar</b> si el monto es correcto, o <b>Revisar</b> si no estás de acuerdo (dinos por qué); administración lo ve de inmediato.</p>`;
   $("#f-anio").onchange=e=>{anio=+e.target.value;render()};m.querySelectorAll("#f-vista button").forEach(b=>b.onclick=()=>{vista=b.dataset.v;render()});
 }
+/* ===== conformidad: confirmar / poner en revisión ===== */
+const fechaC=d=>d?new Date(d).toLocaleDateString("es-MX",{day:"numeric",month:"short"}):"";
+function confHTML(x){
+  const c=CONF[x.v.id];
+  const cambio=c&&Math.abs((+c.monto||0)-x.mia)>1;
+  if(c&&!cambio){
+    if(c.estado==="confirmada")return `<div class="cf"><span class="tag ok">✓ Confirmada <small>${fechaC(c.updated_at)}</small></span><a data-cf="rev" data-vid="${esc(x.v.id)}">revisar</a></div>`;
+    return `<div class="cf"><span class="tag rev" title="${esc(c.comentario||"")}">⚑ En revisión <small>${fechaC(c.updated_at)}</small></span><a data-cf="ok" data-vid="${esc(x.v.id)}">confirmar</a></div>`;
+  }
+  return `<div class="cf">${cambio?`<span class="tag old" title="Antes ${fmt(c.monto)}">Monto actualizado</span>`:""}<button class="ok" data-cf="ok" data-vid="${esc(x.v.id)}">✓ Confirmar</button><button class="rev" data-cf="rev" data-vid="${esc(x.v.id)}">⚑ Revisar</button></div>`;
+}
+async function setConf(vid,estado){
+  const x=lineas().find(l=>l.v.id===vid); if(!x)return;
+  let comentario=null;
+  if(estado==="revision"){comentario=prompt(`¿Qué no cuadra en tu comisión de ${x.v.cliente} (${fmt(x.mia)})?\nEscribe el motivo para que administración lo revise.`,CONF[vid]?.comentario||"");if(comentario===null)return;comentario=comentario.trim();if(!comentario){toast("Escribe el motivo para ponerla en revisión",true);return}}
+  else if(!confirm(`¿Confirmas que tu comisión de ${x.v.cliente} es ${fmt(x.mia)}?`))return;
+  const row={venta_id:vid,asesor:ASESOR,estado,monto:Math.round(x.mia*100)/100,comentario,updated_at:new Date().toISOString()};
+  const r=await sb.from("comisiones_conformidad").upsert(row,{onConflict:"venta_id,asesor"}).select().single();
+  if(r.error){toast("No se guardó: "+r.error.message,true);return}
+  CONF[vid]=r.data;render();toast(estado==="confirmada"?"Comisión confirmada":"Enviada a revisión");
+}
+document.addEventListener("click",e=>{const t=e.target.closest("[data-cf]");if(!t)return;e.preventDefault();setConf(t.dataset.vid,t.dataset.cf==="ok"?"confirmada":"revision")});
 document.addEventListener("click",e=>{const t=e.target.closest("button");if(!t)return;
   if(t.dataset.ase){ASESOR=t.dataset.ase;localStorage.setItem(KEY,ASESOR);render();load();return}
   if(t.id==="btn-switch"){ASESOR="";localStorage.removeItem(KEY);VENTAS=[];render();return}});
