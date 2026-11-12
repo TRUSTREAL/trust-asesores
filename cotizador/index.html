@@ -5523,11 +5523,10 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     if (nDesc >= 5) desc = desc.replace('class="nf-desc"', 'class="nf-desc c"');
     const steps = [];
     const n4 = (2 + (d.mens ? 1 : 0) + (d.esps.length ? 1 : 0)) >= 4;
-    const fm = n4 ? mesCorto : mesLargo;
-    steps.push(`<div class="nf-k">Enganche</div><div class="nf-v">${money(d.eng)}</div><div class="nf-it">${pct(d.engPct)} del valor</div><div class="nf-d">${n4 ? 'Al firmar' : 'Al firmar tu contrato'} · ${fm(f.eng)}</div>`);
-    if (d.mens) steps.push(`<div class="nf-k">${d.menN} mensualidades</div><div class="nf-v">${money(d.menInd)}</div><div class="nf-it">${pct(d.neto > 0 ? d.menInd * d.menN / d.neto * 100 : 0)} · sin intereses</div><div class="nf-d">${d.menN > 1 ? (n4 ? fm(f.men1) + ' – ' + fm(f.menN) : 'De ' + fm(f.men1) + ' a ' + fm(f.menN)) : fm(f.men1)}</div>`);
-    if (d.esps.length) steps.push(`<div class="nf-k">${d.esps.length === 1 ? 'Pago especial' : d.esps.length + ' pagos especiales'}</div><div class="nf-v">${money(d.espTotal)}</div><div class="nf-it">${pct(d.neto > 0 ? d.espTotal / d.neto * 100 : 0)} del valor</div><div class="nf-d">${d.esps.length === 1 ? fm(mesMas(d.esps[0].mes)) : 'Meses ' + d.esps.map(p => p.mes).join(', ')}</div>`);
-    steps.push(`<div class="nf-k">${lblEntrega(d)}</div><div class="nf-v">${money(d.esc)}</div><div class="nf-it">${pct(d.escPct)} del valor</div><div class="nf-d">${d.preventa ? 'Al recibir tus llaves' : 'Al escriturar'}${f.entrega ? ' · ' + fm(f.entrega) : ''}</div>`);
+    steps.push(`<div class="nf-k">Enganche</div><div class="nf-v">${money(d.eng)}</div><div class="nf-it">${pct(d.engPct)} del valor</div><div class="nf-d">${n4 ? 'Al firmar' : 'Al firmar tu contrato'} · Mes 1</div>`);
+    if (d.mens) steps.push(`<div class="nf-k">${d.menN} mensualidades</div><div class="nf-v">${money(d.menInd)}</div><div class="nf-it">${pct(d.neto > 0 ? d.menInd * d.menN / d.neto * 100 : 0)} · sin intereses</div><div class="nf-d">${d.menN > 1 ? 'Del mes 2 al mes ' + (d.menN + 1) : 'Mes 2'}</div>`);
+    if (d.esps.length) steps.push(`<div class="nf-k">${d.esps.length === 1 ? 'Pago especial' : d.esps.length + ' pagos especiales'}</div><div class="nf-v">${money(d.espTotal)}</div><div class="nf-it">${pct(d.neto > 0 ? d.espTotal / d.neto * 100 : 0)} del valor</div><div class="nf-d">${d.esps.length === 1 ? 'Mes ' + (d.esps[0].mes + 1) : 'Meses ' + d.esps.map(p => p.mes + 1).join(', ')}</div>`);
+    steps.push(`<div class="nf-k">${lblEntrega(d)}</div><div class="nf-v">${money(d.esc)}</div><div class="nf-it">${pct(d.escPct)} del valor</div><div class="nf-d">${d.preventa ? 'Al recibir tus llaves' : 'Al escriturar'}</div>`);
     const nEst = parseNum(d.estac);
     const unit = [
       (() => {
@@ -5596,30 +5595,30 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     const filas = [];
     let saldo = d.neto;
     const add = (con, fecha, monto, k) => { saldo -= monto; filas.push({ con, fecha, monto, saldo: Math.max(0, Math.round(saldo)), k }); };
-    const conApartado = d.eng > APARTADO;
-    if (conApartado) add('Apartado', hoyCorto(), APARTADO, 1);
-    add(conApartado ? 'Enganche · resto a la firma' : 'Enganche · firma de contrato', mesCorto(f.eng), conApartado ? d.eng - APARTADO : d.eng, 1);
+    // El apartado va aparte: no forma parte del plan ni de la tabla.
+    // Mes 1 = enganche; las mensualidades corren del mes 2 en adelante; la entrega no lleva mes (no se compromete fecha).
+    add('Enganche · firma de contrato', 'Mes 1', d.eng, 1);
     const maxEsp = d.esps.length ? Math.max.apply(null, d.esps.map(p => p.mes)) : 0;
     for (let i = 1; i <= Math.max(d.menN, maxEsp); i++) {
-      if (i <= d.menN) add('Mensualidad ' + i + ' de ' + d.menN, mesCorto(mesMas(i)), d.menInd);
-      d.esps.filter(p => p.mes === i).forEach(p => add('Pago especial' + (p.concepto ? ' · ' + p.concepto : ''), mesCorto(mesMas(i)), p.monto, 1));
+      if (i <= d.menN) add('Mensualidad ' + i + ' de ' + d.menN, 'Mes ' + (i + 1), d.menInd);
+      d.esps.filter(p => p.mes === i).forEach(p => add('Pago especial' + (p.concepto ? ' · ' + p.concepto : ''), 'Mes ' + (i + 1), p.monto, 1));
     }
     saldo = d.esc; // el último pago liquida exactamente el saldo
-    add(d.preventa ? 'Pago a la entrega' : 'Pago a la escrituración', f.entrega ? mesCorto(f.entrega) : '—', d.esc, 1);
+    add(d.preventa ? 'Pago a la entrega' : 'Pago a la escrituración', d.preventa ? 'Entrega' : 'Escrituración', d.esc, 1);
     const dosCol = filas.length > 34;
     const porCol = dosCol ? Math.ceil(filas.length / 2) : filas.length;
     const alto = 624 - 22;
     const rh = Math.max(11.5, Math.min(21, alto / porCol));
     const fs = Math.max(6.6, Math.min(9.5, rh * 0.47)) * (dosCol ? 0.92 : 1);
-    const cab = '<div class="nf-tr h"><span>Concepto</span><span>Fecha</span><span>Monto</span><span>Saldo</span></div>';
+    const cab = '<div class="nf-tr h"><span>Concepto</span><span>Mes</span><span>Monto</span><span>Saldo</span></div>';
     const fila = r => `<div class="nf-tr${r.k ? ' k' : ''}"><span>${esc(r.con)}</span><span>${esc(r.fecha)}</span><span>${money(r.monto)}</span><span>${money(r.saldo)}</span></div>`;
     const tabla = rs => `<div class="nf-tab">${cab}${rs.map(fila).join('')}</div>`;
     const sum = [];
-    sum.push(`<div><div class="nf-k">Enganche</div><div class="nf-v">${money(d.eng)}</div><div class="nf-d">${pct(d.engPct)} · ${mesCorto(f.eng)}</div></div>`);
-    if (d.mens) sum.push(`<div><div class="nf-k">${d.menN} mensualidades</div><div class="nf-v">${money(d.menInd)}</div><div class="nf-d">${pct(d.neto > 0 ? d.menInd * d.menN / d.neto * 100 : 0)} · ${mesCorto(f.men1)}${d.menN > 1 ? ' – ' + mesCorto(f.menN) : ''}</div></div>`);
+    sum.push(`<div><div class="nf-k">Enganche</div><div class="nf-v">${money(d.eng)}</div><div class="nf-d">${pct(d.engPct)} · mes 1</div></div>`);
+    if (d.mens) sum.push(`<div><div class="nf-k">${d.menN} mensualidades</div><div class="nf-v">${money(d.menInd)}</div><div class="nf-d">${pct(d.neto > 0 ? d.menInd * d.menN / d.neto * 100 : 0)} · ${d.menN > 1 ? 'meses 2 a ' + (d.menN + 1) : 'mes 2'}</div></div>`);
     if (d.esps.length) sum.push(`<div><div class="nf-k">Pagos especiales</div><div class="nf-v">${money(d.espTotal)}</div><div class="nf-d">${pct(d.neto > 0 ? d.espTotal / d.neto * 100 : 0)} · ${d.esps.length} pago${d.esps.length === 1 ? '' : 's'}</div></div>`);
-    sum.push(`<div><div class="nf-k">${lblEntrega(d)}</div><div class="nf-v">${money(d.esc)}</div><div class="nf-d">${pct(d.escPct)}${f.entrega ? ' · ' + mesCorto(f.entrega) : ''}</div></div>`);
-    sum.push(`<div class="t"><div class="nf-k">Total</div><div class="nf-v">${money(d.neto)}</div><div class="nf-d">100 %${conApartado ? ' · incluye apartado' : ''}</div></div>`);
+    sum.push(`<div><div class="nf-k">${lblEntrega(d)}</div><div class="nf-v">${money(d.esc)}</div><div class="nf-d">${pct(d.escPct)} · ${d.preventa ? 'a la entrega' : 'al escriturar'}</div></div>`);
+    sum.push(`<div class="t"><div class="nf-k">Total</div><div class="nf-v">${money(d.neto)}</div><div class="nf-d">100 % del valor</div></div>`);
     const cover = (c.slots.p3_cover && c.slots.p3_cover.url) ? 'p3_cover' : ((c.slots.p2_cover && c.slots.p2_cover.url) ? 'p2_cover' : 'portada');
     return `<div class="nf-page nf-p3">
       <div class="nf-band"><div class="nf-img" data-nfbake="band" ${imgAttr(cover, 1700)} style="background-position:center ${c.slots[cover].pos == null ? 50 : c.slots[cover].pos}%"></div><div class="nf-tint"></div>
