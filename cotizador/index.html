@@ -2782,6 +2782,8 @@
 .nf-page * { box-sizing: border-box; }
 .nf-page i, .nf-page em { font-family: Lora, Georgia, serif; font-style: italic; font-weight: 400; }
 .nf-serif { font-family: Lora, Georgia, serif; }
+.nf-baked { background-size: 100% 100%; background-repeat: no-repeat; }
+.nf-baked > .nf-img, .nf-baked > .nf-grad, .nf-baked > .nf-tint { display: none; }
 .nf-img { background-color: rgba(var(--nf-p-rgb), .18); background-size: cover; background-position: center; background-repeat: no-repeat; }
 
 /* cabecera: logo + asesor */
@@ -2790,11 +2792,11 @@
 .nf-logo svg { width: 100%; height: auto; display: block; }
 .nf-as { display: flex; align-items: center; gap: 10px; text-align: right; }
 .nf-as-n { font-family: Lora, Georgia, serif; font-size: 14px; line-height: 1.25; }
-.nf-as-s { font-size: 8.5px; opacity: .9; margin-top: 2px; }
-.nf-as-f { width: 42px; height: 42px; border-radius: 50%; background-size: cover; background-position: center; border: 1.5px solid rgba(255,255,255,.85); flex: none; }
+.nf-as-s { font-size: 8.5px; color: rgba(255,255,255,.92); margin-top: 2px; }
+.nf-as-f { width: 42px; height: 42px; border-radius: 50%; background-size: cover; background-position: center; border: 1.5px solid #fff; flex: none; }
 .nf-dark .nf-head { color: var(--nf-ink); }
 .nf-dark .nf-as-f { border-color: var(--nf-p); }
-.nf-dark .nf-as-s { color: var(--nf-mut); opacity: 1; }
+.nf-dark .nf-as-s { color: var(--nf-mut); }
 
 .nf-pill { display: inline-block; background: #fff; color: var(--nf-p); border-radius: 999px; padding: 5px 13px; font-size: 8px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; }
 .nf-pill.fill { background: var(--nf-p); color: #fff; }
@@ -2810,7 +2812,7 @@
 .nf-p1 .nf-body { position: relative; z-index: 2; padding: 0 56px; color: #fff; }
 .nf-p1 .nf-hero { margin-top: 198px; height: 150px; }
 .nf-p1 h1 { font-family: Lora, Georgia, serif; font-weight: 400; font-size: 39px; line-height: 1.12; margin: 12px 0 8px; letter-spacing: -.005em; text-shadow: 0 1px 14px rgba(0,0,0,.18); }
-.nf-p1 .nf-sub { font-size: 12px; opacity: .95; }
+.nf-p1 .nf-sub { font-size: 12px; }
 .nf-price { display: flex; justify-content: space-between; align-items: flex-start; gap: 30px; margin-top: 50px; height: 112px; }
 .nf-price .nf-desc { margin-top: 14px; }
 .nf-price .nf-desc.c { align-self: flex-end; margin-top: 0; }
@@ -2818,12 +2820,12 @@
 .nf-desc.c .nf-r b { font-size: 12.5px; }
 .nf-desc.c .nf-r.t b { font-size: 14px; }
 .nf-price-l { flex: none; }
-.nf-price .nf-lista { font-size: 9.5px; opacity: .9; height: 14px; }
-.nf-price .nf-lista s { opacity: .85; }
+.nf-price .nf-lista { font-size: 9.5px; color: rgba(255,255,255,.92); height: 14px; }
+.nf-price .nf-lista s { color: rgba(255,255,255,.82); }
 .nf-price .nf-big { font-family: Lora, Georgia, serif; font-size: 50px; line-height: 1.08; letter-spacing: -.01em; }
-.nf-price .nf-big-s { font-size: 9px; opacity: .85; margin-top: 2px; }
+.nf-price .nf-big-s { font-size: 9px; color: rgba(255,255,255,.88); margin-top: 2px; }
 .nf-desc { width: 298px; flex: none; }
-.nf-desc .nf-k { font-size: 7.5px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; margin-bottom: 7px; opacity: .95; }
+.nf-desc .nf-k { font-size: 7.5px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; margin-bottom: 7px; }
 .nf-desc .nf-r { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 4.5px 0; border-bottom: 1px solid rgba(255,255,255,.22); font-size: 9.5px; }
 .nf-desc .nf-r:last-child { border-bottom: 0; }
 .nf-desc .nf-r b { font-family: Lora, Georgia, serif; font-weight: 400; font-size: 13.5px; white-space: nowrap; }
@@ -2835,7 +2837,8 @@
 .nf-step:first-child { border-left: 0; background: var(--nf-p); color: #fff; border-radius: 12px 0 0 0; }
 .nf-step:nth-child(2) { border-left: 0; }
 .nf-step .nf-num { display: flex; align-items: center; gap: 8px; font-family: Lora, Georgia, serif; font-size: 9px; letter-spacing: .14em; color: var(--nf-a); margin-bottom: 14px; }
-.nf-step .nf-num:after { content: ''; flex: 1; height: 1px; background: currentColor; opacity: .45; }
+.nf-step .nf-num:after { content: ''; flex: 1; height: 1px; background: rgba(var(--nf-a-rgb), .45); }
+.nf-step:first-child .nf-num:after { background: rgba(255,255,255,.4); }
 .nf-step:first-child .nf-num { color: rgba(255,255,255,.75); }
 .nf-step .nf-k { font-size: 8px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; }
 .nf-step .nf-v { font-family: Lora, Georgia, serif; font-size: 29px; line-height: 1.2; margin-top: 3px; white-space: nowrap; }
@@ -2859,7 +2862,7 @@
 .nf-band .nf-tint { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(var(--nf-p-rgb), .72), rgba(var(--nf-p-rgb), .90)); }
 .nf-band .nf-tt { position: relative; z-index: 2; padding: 16px 56px 0; }
 .nf-band h2, .nf-p4 h2 { font-family: Lora, Georgia, serif; font-weight: 400; font-size: 31px; line-height: 1.15; margin: 0 0 6px; }
-.nf-band .nf-sub { font-size: 10px; opacity: .92; }
+.nf-band .nf-sub { font-size: 10px; }
 
 /* ---------- HOJA 2 · ASÍ SE VE TU DEPA ---------- */
 .nf-p2 .nf-main { position: absolute; left: 56px; right: 56px; top: 196px; bottom: 96px; display: flex; flex-direction: column; }
@@ -2916,7 +2919,7 @@
   /* Las sombras difuminadas salen como cuadros negros en varios visores de PDF (Vista Previa, iPhone, WhatsApp):
      en el PDF se quitan y se sustituyen por un borde fino. */
   .nf-page, .nf-page * { box-shadow: none !important; text-shadow: none !important; filter: none !important; }
-  .nf-card, .nf-sum { border: 1px solid rgba(var(--nf-p-rgb), .16); }
+  .nf-card, .nf-sum { border: 1px solid var(--nf-linea); }
   .nf-doc { zoom: 1 !important; width: 8.5in !important; margin: 0 !important; }
   .nf-page { margin: 0 !important; box-shadow: none !important; width: 8.5in !important; height: 10.99in !important;
     page-break-after: always; break-after: page; page-break-inside: avoid; break-inside: avoid; }
@@ -5312,6 +5315,32 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     return (NF.imgs[k] = out);
   }
 
+  // ---------- fondos "horneados" ----------
+  // La portada y las franjas llevan una imagen con un velo de color encima. Si ese velo va como capa transparente,
+  // varios visores de PDF lo dibujan mal (cuadros oscuros, fotos que desaparecen). Aquí se funde imagen + velo en
+  // una sola imagen opaca, así el PDF no lleva transparencias.
+  async function hornear(url, W, H, pos, tipo, prgb) {
+    const k = 'bake|' + tipo + '|' + W + 'x' + H + '|' + pos + '|' + prgb + '|' + url.slice(0, 300) + url.length;
+    if (NF.imgs[k]) return NF.imgs[k];
+    const blob = await (await fetch(url, /^data:/.test(url) ? undefined : { mode: 'cors' })).blob();
+    const bmp = await createImageBitmap(blob);
+    const S = 2, cw = W * S, ch = H * S;
+    const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+    const cx = cv.getContext('2d'); cx.imageSmoothingQuality = 'high';
+    const c = a => 'rgba(' + prgb + ',' + a + ')';
+    cx.fillStyle = c(1); cx.fillRect(0, 0, cw, ch);
+    const ih = tipo === 'top' ? Math.round(ch * 560 / 700) : ch;      // la imagen de portada ocupa los primeros 560 de 700 px
+    const sc = Math.max(cw / bmp.width, ih / bmp.height), dw = bmp.width * sc, dh = bmp.height * sc;
+    cx.save(); cx.beginPath(); cx.rect(0, 0, cw, ih); cx.clip();
+    cx.drawImage(bmp, (cw - dw) / 2, (ih - dh) * (pos / 100), dw, dh); cx.restore();
+    if (bmp.close) bmp.close();
+    const g = cx.createLinearGradient(0, 0, 0, ch);
+    if (tipo === 'top') [[0, .30], [.22, .10], [.46, .55], [.66, .94], [.80, 1], [1, 1]].forEach(s => g.addColorStop(s[0], c(s[1])));
+    else { g.addColorStop(0, c(.72)); g.addColorStop(1, c(.90)); }
+    cx.fillStyle = g; cx.fillRect(0, 0, cw, ch);
+    return (NF.imgs[k] = cv.toDataURL('image/jpeg', 0.86));
+  }
+
   // ---------- firma del asesor (se guarda en el dispositivo) ----------
   const firmaKey = a => 'trust_cot_firma_' + a;
   // Directorio central (Admin → Asesores): nombre completo, celular y foto. Manda sobre lo capturado en el dispositivo.
@@ -5513,7 +5542,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
       ['Precio / m²', money(d.precioM2), d.descTotal > 0 ? 'con descuento' : 'sobre m² totales']
     ];
     return `<div class="nf-page nf-p1">
-      <div class="nf-top"><div class="nf-img" ${imgAttr('portada', 2000)} style="background-position:center ${c.slots.portada.pos == null ? 50 : c.slots.portada.pos}%"></div><div class="nf-grad"></div></div>
+      <div class="nf-top"><div class="nf-img" data-nfbake="top" ${imgAttr('portada', 2000)} style="background-position:center ${c.slots.portada.pos == null ? 50 : c.slots.portada.pos}%"></div><div class="nf-grad"></div></div>
       ${cabecera(d)}
       <div class="nf-body">
         <div class="nf-hero"><span class="nf-pill">${esc(d.proyecto)} · ${esc(d.tipo)}</span>
@@ -5550,7 +5579,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     const grid = n ? `<div class="nf-grid" style="grid-template-columns:repeat(${cols},1fr);grid-template-rows:repeat(${n <= 4 ? 1 : 2},1fr)">${ts.map((t, i) => tileHTML(t, (n > 4 && n % 2 === 1 && i === 0) ? 'grid-column:span 2;' : '')).join('')}</div>` : '';
     const cover = c.slots.p2_cover && c.slots.p2_cover.url ? 'p2_cover' : 'portada';
     return `<div class="nf-page nf-p2">
-      <div class="nf-band"><div class="nf-img" ${imgAttr(cover, 1700)} style="background-position:center ${c.slots[cover].pos == null ? 50 : c.slots[cover].pos}%"></div><div class="nf-tint"></div>
+      <div class="nf-band"><div class="nf-img" data-nfbake="band" ${imgAttr(cover, 1700)} style="background-position:center ${c.slots[cover].pos == null ? 50 : c.slots[cover].pos}%"></div><div class="nf-tint"></div>
         ${cabecera(d)}<div class="nf-tt"><h2>${titulo(c.textos.p2_titulo, d.esLocal ? 'Así se ve tu local.' : 'Así se ve tu depa.')}</h2>
         <div class="nf-sub">${esc([unidadLinea(d), d.nivel && 'Nivel ' + d.nivel, d.proyecto].filter(Boolean).join(' · '))}</div></div></div>
       <div class="nf-main">
@@ -5593,7 +5622,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
     sum.push(`<div class="t"><div class="nf-k">Total</div><div class="nf-v">${money(d.neto)}</div><div class="nf-d">100 %${conApartado ? ' · incluye apartado' : ''}</div></div>`);
     const cover = (c.slots.p3_cover && c.slots.p3_cover.url) ? 'p3_cover' : ((c.slots.p2_cover && c.slots.p2_cover.url) ? 'p2_cover' : 'portada');
     return `<div class="nf-page nf-p3">
-      <div class="nf-band"><div class="nf-img" ${imgAttr(cover, 1700)} style="background-position:center ${c.slots[cover].pos == null ? 50 : c.slots[cover].pos}%"></div><div class="nf-tint"></div>
+      <div class="nf-band"><div class="nf-img" data-nfbake="band" ${imgAttr(cover, 1700)} style="background-position:center ${c.slots[cover].pos == null ? 50 : c.slots[cover].pos}%"></div><div class="nf-tint"></div>
         ${cabecera(d)}<div class="nf-tt"><h2>${titulo('', 'Tu plan de pagos.')}</h2>
         <div class="nf-sub">${esc(unidadLinea(d))} · Precio final ${money(d.neto)} MXN · sin intereses</div></div></div>
       <div class="nf-sum ${sum.length >= 5 ? 'n5' : ''}">${sum.join('')}</div>
@@ -5659,7 +5688,7 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
       return;
     }
     const P = c.colores.principal || '#173F35';
-    doc.setAttribute('style', `--nf-p:${P};--nf-p-rgb:${rgb(P)};--nf-f:${c.colores.fondo || '#F5EEE4'};--nf-a:${c.colores.acento || '#5E7A70'};--nf-ink:${P};--nf-ink2:rgba(45,34,28,.86);--nf-mut:rgba(60,46,38,.62)`);
+    doc.setAttribute('style', `--nf-p:${P};--nf-p-rgb:${rgb(P)};--nf-f:${c.colores.fondo || '#F5EEE4'};--nf-a:${c.colores.acento || '#5E7A70'};--nf-a-rgb:${rgb(c.colores.acento || '#5E7A70')};--nf-linea:rgb(${rgb(P).split(',').map(v => Math.round(255 - (255 - v) * 0.18)).join(',')});--nf-ink:${P};--nf-ink2:rgba(45,34,28,.86);--nf-mut:rgba(60,46,38,.62)`);
     const h2 = hoja2(d, c), h4 = hoja4(d, c);
     doc.innerHTML = hoja1(d, c) + h2 + hoja3(d, c) + h4;
     document.querySelector('.step-panel[data-panel="4"] .preview-wrapper').classList.add('nf-on');
@@ -5679,7 +5708,16 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
         const el = els[idx++];
         const url = await imgSlot(c.slots[el.dataset.nfk], +el.dataset.nfw);
         if (seq !== NF.seq) return;
-        if (url) el.style.backgroundImage = "url('" + url + "')";
+        let puesto = false;
+        if (url && el.dataset.nfbake) {
+          try {
+            const caja = el.parentNode, s = c.slots[el.dataset.nfk];
+            const data = await hornear(url, 816, el.dataset.nfbake === 'top' ? 700 : caja.offsetHeight, s.pos == null ? 50 : s.pos, el.dataset.nfbake, rgb(P));
+            if (seq !== NF.seq) return;
+            caja.style.backgroundImage = "url('" + data + "')"; caja.classList.add('nf-baked'); puesto = true;
+          } catch (e) { console.warn('Formato nuevo: fondo sin fundir', e); }
+        }
+        if (url && !puesto) el.style.backgroundImage = "url('" + url + "')";
         listos++; NF.pend = total - listos; pinta();
       }
     };
