@@ -852,11 +852,14 @@ html,body{margin:0;background:#E7E4DC}
 .nf-unit .nf-k{font-size:7.4px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--nf-mut)}
 .nf-unit .nf-v{font-family:Lora,Georgia,serif;font-size:32px;line-height:1.1;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--nf-p)}
 .nf-desc{border-top:1px solid rgba(var(--nf-p-rgb),.12);padding:18px 24px 18px;font-size:10px;line-height:1.65;color:var(--nf-ink2);display:-webkit-box;-webkit-line-clamp:9;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line}
-.nf-chips{padding:0 22px 18px;display:flex;flex-wrap:wrap;gap:5px}
-.nf-chips span{border:1px solid var(--nf-linea);border-radius:999px;padding:3px 9px;font-size:7.5px;color:var(--nf-p)}
+.nf-feat{border-top:1px solid rgba(var(--nf-p-rgb),.12);padding:14px 22px 16px;display:grid;grid-template-columns:1fr;gap:12px}
+.nf-feat>div:only-child{grid-column:1/-1}
+.nf-feat .nf-k{font-size:7px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--nf-mut);margin-bottom:8px}
+.nf-chips{display:flex;flex-wrap:wrap;gap:6px}
+.nf-chips span{border:1px solid var(--nf-linea);background:rgba(var(--nf-p-rgb),.04);border-radius:999px;padding:5px 11px;font-size:9px;color:var(--nf-p);white-space:nowrap}
 .nf-p1{display:flex;flex-direction:column}
 .nf-p1 .nf-head,.nf-p1 .nf-body,.nf-p1 .nf-card{flex:none}
-.nf-strip{flex:1;min-height:0;margin:16px 56px 0;display:grid;gap:5px;border-radius:14px;overflow:hidden;position:relative;z-index:2;max-height:230px}
+.nf-strip{flex:1;min-height:120px;margin:16px 56px 0;display:grid;gap:5px;border-radius:14px;overflow:hidden;position:relative;z-index:2;max-height:230px}
 .nf-strip .nf-img{min-height:0}
 .nf-p1 .nf-sp{flex:1}
 .nf-p1 .nf-cta{position:relative;z-index:2;margin:22px auto 0;flex:none}
@@ -895,8 +898,7 @@ html,body{margin:0;background:#E7E4DC}
   </div>
   <div class="nf-card">
     ${specs.length?`<div class="nf-unit">${specs.map(s=>`<div><div class="nf-k">${s[1]}</div><div class="nf-v">${esc(s[0])}</div></div>`).join("")}</div>`:""}
-    ${desc?`<div class="nf-desc">${esc(desc)}</div>`:""}
-    ${chips.length?`<div class="nf-chips">${chips.map(c=>`<span>${esc(c)}</span>`).join("")}</div>`:""}
+    ${(L.caracteristicas||[]).length||(L.amenidades||[]).length?`<div class="nf-feat">${(L.caracteristicas||[]).length?`<div><div class="nf-k">Características</div><div class="nf-chips">${(L.caracteristicas||[]).slice(0,16).map(c=>`<span>${esc(c)}</span>`).join("")}</div></div>`:""}${(L.amenidades||[]).length?`<div><div class="nf-k">Amenidades</div><div class="nf-chips">${(L.amenidades||[]).slice(0,12).map(c=>`<span>${esc(c)}</span>`).join("")}</div></div>`:""}</div>`:""}
   </div>
   ${tira.length?`<div class="nf-strip" style="grid-template-columns:repeat(${tira.length},1fr)">${tira.map(d=>`<div class="nf-img" style="background-image:url('${img(d)}')"></div>`).join("")}</div>`:`<div class="nf-sp"></div>`}
   <div class="nf-cta">${telFmt?`Agenda tu visita con <b>${esc(nomb)}</b> · ${esc(telFmt)}`:`Agenda tu visita con <b>${esc(nomb)}</b>`}</div>
