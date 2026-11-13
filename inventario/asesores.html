@@ -655,7 +655,6 @@ document.addEventListener("click",e=>{
   if(t.dataset.vista){vista=t.dataset.vista;renderMain();return}
   if(t.dataset.rcat!==undefined){rcat=t.dataset.rcat;renderMain();return}
   if(t.dataset.rdel!==undefined&&!READONLY){e.preventDefault();deleteRend(S.sel,+t.dataset.rdel);return}
-  if(t.closest&&t.closest(".rend")&&!t.closest(".rdl")){const p=S.projects.find(p=>p.id===S.sel);rendOpen(p,+t.closest(".rend").dataset.ri);return}
   if(t.dataset.vdel!==undefined&&!READONLY){const p=S.projects.find(p=>p.id===S.sel);if(!confirm("¿Quitar este video del proyecto?"))return;p.videos=(p.videos||[]).filter((_,i)=>i!==+t.dataset.vdel);saveVideos(p);return}
   if(t.id==="v-add"&&!READONLY){const p=S.projects.find(p=>p.id===S.sel);const u=$("#v-url").value.trim(),ti=$("#v-tit").value.trim();if(!ytId(u)){alert("Pega una liga de YouTube válida (youtu.be/… o youtube.com/watch?v=…).");return}p.videos=(Array.isArray(p.videos)?p.videos:[]).concat([{url:u,titulo:ti}]);saveVideos(p);return}
   if(t.classList.contains("del-doc")){e.preventDefault();deleteDoc(S.sel,t.dataset.name);return}
@@ -994,6 +993,7 @@ function rendHTML(p){
   return pills+(show.length&&show.some(c=>n(c[0]))?secs:empty)+upl;
 }
 let RLB={list:[],i:0};
+document.addEventListener("click",e=>{const r=e.target.closest(".rend");if(!r||e.target.closest(".rdl,.rdel"))return;const p=S.projects.find(p=>p.id===S.sel);if(p)rendOpen(p,+r.dataset.ri)});
 function rendOpen(p,i){RLB={list:rend[p.id]||[],i};rendShow(0)}
 function rendShow(d){const L=RLB.list;if(!L.length)return;RLB.i=(RLB.i+d+L.length)%L.length;let lb=document.getElementById("rlb");if(!lb){lb=document.createElement("div");lb.id="rlb";lb.className="rlb";lb.innerHTML='<button class="pv">‹</button><img alt=""><button class="nx">›</button><div class="cap"></div>';document.body.appendChild(lb);
   lb.addEventListener("click",e=>{if(e.target.closest(".pv")){rendShow(-1);return}if(e.target.closest(".nx")){rendShow(1);return}lb.classList.remove("on")});
