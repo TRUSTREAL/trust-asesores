@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FAF8F2">
-<title>Mis listings | TRUST</title>
+<title>Listings | TRUST</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap">
 <style>
@@ -31,6 +31,7 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
 .topright{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .btn{border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:9px 16px;font-weight:500;font-size:13px;color:var(--text);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .btn:hover{border-color:var(--green);color:var(--green)}
+a.btn{text-decoration:none}
 .btn.primary{background:var(--green);border-color:var(--green);color:#fff}
 .btn.primary:hover{background:var(--green-2);color:#fff}
 .btn.gold{background:var(--gold);border-color:var(--gold);color:#fff}
@@ -72,6 +73,61 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
 .lcard .adr{color:var(--muted);font-size:12px;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lcard .pr{font-family:Lora,serif;font-size:19px;color:var(--green);margin-bottom:10px}
 .lcard .meta{font-size:12px;color:var(--muted);margin-top:8px;display:flex;justify-content:space-between}
+/* pestañas catálogo / mis listings */
+.tabs{display:flex;gap:6px;background:var(--surface-2);border-radius:999px;padding:4px;width:max-content;margin-bottom:18px}
+.tabs button{border:0;background:transparent;border-radius:999px;padding:8px 18px;font-weight:500;font-size:13px;color:var(--muted);display:inline-flex;align-items:center;gap:8px}
+.tabs button.on{background:var(--surface);color:var(--green);box-shadow:var(--shadow)}
+.tabs button b{font-weight:600;font-size:11px;background:var(--green);color:#fff;border-radius:999px;padding:1px 7px}
+.tabs button.on b{background:var(--green)}.tabs button:not(.on) b{background:var(--line-2)}
+/* tarjetas de catálogo */
+.ccard{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden;cursor:pointer;box-shadow:var(--shadow);display:flex;flex-direction:column;transition:transform .15s,border-color .15s}
+.ccard:hover{border-color:var(--green);transform:translateY(-2px)}
+.ccard .ph{aspect-ratio:4/3;background:var(--surface-2) center/cover no-repeat;position:relative}
+.ccard .ph .tp{position:absolute;left:12px;top:12px;background:rgba(255,255,255,.94);border-radius:999px;padding:4px 11px;font-size:11px;font-weight:600;color:var(--green);letter-spacing:.04em;text-transform:uppercase}
+.ccard .ph .n{position:absolute;right:12px;bottom:12px;background:rgba(15,42,35,.72);color:#fff;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:500}
+.ccard .ph .mine{position:absolute;right:12px;top:12px;background:var(--gold);color:#fff;border-radius:999px;padding:3px 9px;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.ccard .bd{padding:14px 16px 14px;display:flex;flex-direction:column;gap:4px;flex:1}
+.ccard .pr{font-family:Lora,serif;font-size:21px;color:var(--green);line-height:1.1}
+.ccard .pr small{font-family:Poppins,sans-serif;font-size:12px;color:var(--muted)}
+.ccard h3{font-size:16px;line-height:1.25}
+.ccard .adr{color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ccard .sp{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--text);margin-top:8px;padding-top:10px;border-top:1px solid var(--line)}
+.ccard .sp span{display:inline-flex;align-items:center;gap:4px}.ccard .sp i{font-style:normal;color:var(--faint)}
+.ccard .who{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-top:8px}
+.av{width:26px;height:26px;border-radius:50%;background:var(--gold) center/cover no-repeat;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600;flex:none}
+/* detalle */
+#view-det .dhead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.dgrid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr);gap:20px;align-items:start}
+.gal .main{aspect-ratio:4/3;border-radius:18px;background:var(--surface-2) center/cover no-repeat;position:relative;overflow:hidden;cursor:zoom-in}
+.gal .main .tp{position:absolute;left:14px;top:14px;background:rgba(255,255,255,.94);border-radius:999px;padding:4px 12px;font-size:11px;font-weight:600;color:var(--green);letter-spacing:.04em;text-transform:uppercase}
+.gal .main .cnt{position:absolute;right:14px;bottom:14px;background:rgba(15,42,35,.72);color:#fff;border-radius:999px;padding:4px 10px;font-size:12px}
+.gal .thumbs{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:8px}
+.gal .thumbs div{aspect-ratio:4/3;border-radius:10px;background:var(--surface-2) center/cover no-repeat;cursor:pointer;border:2px solid transparent;opacity:.85}
+.gal .thumbs div.on{border-color:var(--green);opacity:1}
+.dside .pr{font-family:Lora,serif;font-size:30px;color:var(--green);line-height:1.1}
+.dside .pr small{font-family:Poppins,sans-serif;font-size:13px;color:var(--muted)}
+.dside h2{font-size:22px;line-height:1.2;margin:6px 0 4px}
+.dside .adr{color:var(--muted);font-size:13px}
+.specs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0}
+.specs div{background:var(--surface-2);border-radius:12px;padding:10px 12px}
+.specs .v{font-family:Lora,serif;font-size:18px;color:var(--green)}.specs .l{font-size:11px;color:var(--muted)}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.asr{display:flex;align-items:center;gap:12px;background:var(--surface-2);border-radius:14px;padding:12px 14px;margin-top:16px}
+.asr .av{width:42px;height:42px;font-size:16px}
+.asr .nm{font-weight:500}.asr .rl{font-size:12px;color:var(--muted)}
+.btn.wa{background:#25D366;border-color:#25D366;color:#fff;margin-left:auto}
+.dsec{margin-top:22px}.dsec h3{font-size:17px;margin-bottom:8px}
+.dsec p{white-space:pre-wrap;line-height:1.6;color:var(--text)}
+.dsec .chips{display:flex;flex-wrap:wrap;gap:6px}.dsec .chips span{border:1px solid var(--line-2);border-radius:999px;padding:5px 12px;font-size:12px;background:var(--surface)}
+.interno{background:#FBF6EA;border:1px dashed var(--gold);border-radius:14px;padding:14px 16px}
+.interno .eyebrow{margin-bottom:8px;display:block}
+.interno dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0}
+.interno dt{font-size:11px;color:var(--muted)}.interno dd{margin:0;font-weight:500}
+.lbx{position:fixed;inset:0;background:rgba(10,20,16,.92);display:none;align-items:center;justify-content:center;z-index:50;cursor:zoom-out}
+.lbx.on{display:flex}.lbx img{max-width:94vw;max-height:92vh;border-radius:8px}
+.lbx button{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.14);border:0;color:#fff;font-size:28px;width:48px;height:48px;border-radius:50%}
+.lbx .pv{left:16px}.lbx .nx{right:16px}
+@media (max-width:820px){.dgrid{grid-template-columns:1fr}.gal .thumbs{grid-template-columns:repeat(5,1fr)}}
 .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
 .filters input,.filters select{border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:8px 14px;font-size:13px}
 .filters input{min-width:240px}
@@ -264,16 +320,24 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
   </section>
 
   <section id="view-list" style="display:none">
+    <div class="tabs" id="tabs"><button data-t="cat" class="on">Catálogo TRUST <b id="n-cat">0</b></button><button data-t="mine">Mis listings <b id="n-mine">0</b></button></div>
     <div id="tiles" class="tiles"></div>
     <div class="filters">
       <input id="f-q" placeholder="Buscar título, colonia, asesor…">
       <select id="f-tipo"><option value="">Tipo</option><option>Venta</option><option>Renta</option></select>
       <select id="f-est"><option value="">Estatus</option></select>
+      <select id="f-ord"><option value="">Más recientes</option><option value="pa">Precio: menor a mayor</option><option value="pd">Precio: mayor a menor</option></select>
       <span class="count" id="count"></span>
-      <button class="btn primary" id="btn-new">+ Nuevo listing</button>
+      <button class="btn primary" id="btn-new">+ Subir propiedad</button>
     </div>
     <div id="list" class="lgrid"></div>
   </section>
+
+  <section id="view-det" style="display:none">
+    <div class="dhead"><button class="btn" id="det-back">← Catálogo</button><div class="acts" id="det-acts" style="margin:0"></div></div>
+    <div id="det-body"></div>
+  </section>
+  <div class="lbx" id="lbx"><button class="pv">‹</button><img alt=""><button class="nx">›</button></div>
 
   <section id="view-ed" class="ed">
     <div class="edhead">
@@ -391,16 +455,17 @@ const fecha=d=>d?new Date(d).toLocaleDateString("es-MX",{day:"numeric",month:"sh
 const limpia=s=>String(s??"").replace(/\*\*|__|^#+\s*/gm,"").replace(/^\s*[-•]\s+/gm,"• ");
 
 let ME=ROLE==="admin"?"admin":(localStorage.getItem("lst_me")||"");
-let LISTINGS=[], DOCS={}, cur=null, filt={q:"",tipo:"",est:""};
+let LISTINGS=[], ALL=[], DOCS={}, cur=null, filt={q:"",tipo:"",est:"",ord:""}, TAB=ROLE==="admin"?"mine":"cat", ASE={}, det=null, gi=0;
 
 /* ---------- load ---------- */
 async function load(){
   if(!sb){toast("Sin conexión a Supabase",true);return}
-  let q=sb.from("listings").select("*").order("created_at",{ascending:false});
-  if(ROLE!=="admin") q=q.eq("asesor",ME);
+  const q=sb.from("listings").select("*").order("created_at",{ascending:false});
   const {data,error}=await q; if(error){toast("No se pudo cargar: "+error.message,true);return}
-  LISTINGS=(data||[]).map(l=>({...l,estatus:NORM[l.estatus]||l.estatus}));
-  const ids=LISTINGS.map(l=>l.id);
+  ALL=(data||[]).map(l=>({...l,estatus:NORM[l.estatus]||l.estatus}));
+  LISTINGS=ROLE==="admin"?ALL:ALL.filter(l=>l.asesor===ME);
+  if(!Object.keys(ASE).length){try{const a=await sb.from("asesores").select("nombre,celular,foto_url");(a.data||[]).forEach(x=>ASE[x.nombre]=x)}catch(e){}}
+  const ids=ALL.filter(l=>l.estatus==="activo"||l.asesor===ME||ROLE==="admin").map(l=>l.id);
   if(ids.length){const r=await sb.from("listing_docs").select("*").in("listing_id",ids).order("orden");DOCS={};(r.data||[]).forEach(d=>{(DOCS[d.listing_id]=DOCS[d.listing_id]||[]).push(d)});}
   renderList();
 }
@@ -409,10 +474,11 @@ function pubUrl(path){return sb.storage.from(BUCKET).getPublicUrl(path).data.pub
 function cover(l){const p=docsOf(l.id,"foto_h");const c=p.find(d=>d.etiqueta==="portada")||p[0];return c?pubUrl(c.path):""}
 
 /* ---------- views ---------- */
-function show(v){["pick","list","ed"].forEach(k=>{const el=$("#view-"+k);el.style.display=k===v?"":"none";if(k==="ed")el.classList.toggle("on",v==="ed")});window.scrollTo(0,0)}
+function show(v){["pick","list","ed","det"].forEach(k=>{const el=$("#view-"+k);el.style.display=k===v?"":"none";if(k==="ed")el.classList.toggle("on",v==="ed")});window.scrollTo(0,0)}
 function init(){
+  $("#tabs").style.display=ROLE==="admin"?"none":"";
   if(ROLE==="admin"){$("#btn-back").textContent="← Listings";$("#page-title").textContent="Listings";$("#page-sub").textContent="Tablero de alta de propiedades · administración";$("#who").textContent="";load();show("list");return}
-  $("#page-title").textContent="Mis listings";$("#page-sub").textContent="Captura tu propiedad paso a paso y envíala a TRUST";
+  $("#page-title").textContent="Listings";$("#page-sub").textContent="Catálogo de corretaje TRUST: nuestras propiedades en venta y renta. Sube las tuyas y comparte las de todos.";
   if(!ME){renderPick();show("pick");return}
   $("#who").textContent=ME;$("#btn-cambiar").style.display="";load();show("list");
 }
@@ -421,7 +487,15 @@ $("#names").addEventListener("click",e=>{const b=e.target.closest("button");if(!
 $("#btn-cambiar").onclick=()=>{ME="";localStorage.removeItem("lst_me");init()};
 
 /* ---------- list ---------- */
+const catalogo=()=>ALL.filter(l=>l.estatus==="activo");
+function avHTML(n,cls){const a=ASE[n]||{};const u=a.foto_url||"";if(!u)return `<span class="av ${cls||""}">${esc((n||"?").charAt(0))}</span>`;const m=/#o=([vhs])&p=(\d+)/.exec(u),o=m?m[1]:"s",pp=m?+m[2]:50;const pos=o==="v"?"50% "+pp+"%":o==="h"?pp+"% 50%":"50% 50%";return `<span class="av ${cls||""}" style="background-image:url('${esc(u.split("#")[0])}');background-position:${pos}"></span>`}
+function specsLine(l){const s=[];if(l.recamaras)s.push(`<span>${l.recamaras} <i>rec</i></span>`);if(l.banos)s.push(`<span>${l.banos}${l.medios_banos?"½":""} <i>baños</i></span>`);if(l.estacionamientos)s.push(`<span>${l.estacionamientos} <i>est</i></span>`);if(l.m2_construccion)s.push(`<span>${Math.round(l.m2_construccion)} <i>m²</i></span>`);return s.join("")}
+function ordena(rows){if(filt.ord==="pa")return rows.slice().sort((a,b)=>(+a.precio||0)-(+b.precio||0));if(filt.ord==="pd")return rows.slice().sort((a,b)=>(+b.precio||0)-(+a.precio||0));return rows}
 function renderList(){
+  $("#n-cat").textContent=catalogo().length;$("#n-mine").textContent=LISTINGS.length;
+  $$("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===TAB));
+  if(TAB==="cat"&&ROLE!=="admin"){renderCat();return}
+  $("#f-est").style.display="";$("#f-ord").style.display="none";
   const sel=$("#f-est");if(sel.options.length<=1){Object.entries(ESTATUS_LABEL).forEach(([k,v])=>{const o=document.createElement("option");o.value=k;o.textContent=v;sel.appendChild(o)})}
   if(ROLE==="admin"){
     const c=k=>LISTINGS.filter(l=>l.estatus===k).length;
@@ -433,17 +507,69 @@ function renderList(){
     <div class="ph" style="${c?`background-image:url('${c}')`:""}"><span class="st ${l.estatus}">${ESTATUS_LABEL[l.estatus]||l.estatus}</span>${l.correccion_en&&l.estatus==="nuevo"?`<span class="corr" style="position:absolute;left:12px;bottom:12px">✎ Corregida</span>`:""}<span class="tp">${esc(l.tipo)}</span></div>
     <div class="bd"><h3>${esc(l.titulo||"Sin título")}</h3><div class="adr">${esc(l.direccion||"Sin dirección")}</div><div class="pr">${fmt(l.precio)}${l.tipo==="Renta"?" <small style='font-size:12px;color:var(--muted)'>/ mes</small>":""}</div>
     ${stagesHTML(l)}<div class="meta"><span>${ROLE==="admin"?esc(l.asesor):""}</span><span>${docsOf(l.id,"foto_h").length} fotos · ${fecha(l.created_at)}</span></div></div></div>`}).join("")
-  :`<div class="empty" style="grid-column:1/-1"><b>Sin listings</b>${ROLE==="admin"?"Todavía no hay propiedades capturadas.":"Captura tu primera propiedad con “+ Nuevo listing”."}</div>`;
+  :`<div class="empty" style="grid-column:1/-1"><b>Sin listings</b>${ROLE==="admin"?"Todavía no hay propiedades capturadas.":"Todavía no has subido propiedades. Usa “+ Subir propiedad” para dar de alta la primera."}</div>`;
 }
+function renderCat(){
+  $("#tiles").innerHTML="";$("#f-est").style.display="none";$("#f-ord").style.display="";
+  const base=catalogo();
+  const rows=ordena(base.filter(l=>(!filt.tipo||l.tipo===filt.tipo)&&(!filt.q||[l.titulo,l.direccion,l.asesor,l.descripcion].join(" ").toLowerCase().includes(filt.q.toLowerCase()))));
+  $("#count").textContent=`${rows.length} de ${base.length}`;
+  $("#list").innerHTML=rows.length?rows.map(l=>{const c=cover(l),n=docsOf(l.id,"foto_h").length;return `<div class="ccard" data-id="${l.id}">
+    <div class="ph" style="${c?`background-image:url('${c}')`:""}"><span class="tp">${esc(l.tipo)}</span>${l.asesor===ME?`<span class="mine">Mía</span>`:""}${n?`<span class="n">${n} fotos</span>`:""}</div>
+    <div class="bd"><div class="pr">${fmt(l.precio)}${l.tipo==="Renta"?" <small>/ mes</small>":""}</div><h3>${esc(l.titulo||"Sin título")}</h3><div class="adr">${esc(l.direccion||"")}</div>
+    <div class="sp">${specsLine(l)||"<span><i>Sin datos de m²/recámaras</i></span>"}</div>
+    <div class="who">${avHTML(l.asesor)}<span>${esc(l.asesor)}</span></div></div></div>`}).join("")
+  :`<div class="empty" style="grid-column:1/-1"><b>Todavía no hay propiedades activas en el catálogo</b>Conforme TRUST dé de alta los listings, aparecerán aquí para todo el equipo.</div>`;
+}
+/* ---------- detalle (catálogo) ---------- */
+function fotosDe(l){return docsOf(l.id,"foto_h").slice().sort((a,b)=>{if(a.etiqueta==="portada")return -1;if(b.etiqueta==="portada")return 1;return (a.orden||0)-(b.orden||0)})}
+function openDet(l){
+  det=l;gi=0;const F=fotosDe(l);const a=ASE[l.asesor]||{};const tel=String(a.celular||"").replace(/\D/g,"");
+  const wa=tel?`https://wa.me/${tel.length===10?"52"+tel:tel}?text=${encodeURIComponent("Hola "+l.asesor+", te escribo por tu listing \""+(l.titulo||"")+"\" (TRUST).")}`:"";
+  const sp=[[l.recamaras,"Recámaras"],[l.banos?l.banos+(l.medios_banos?" + "+l.medios_banos+"½":""):null,"Baños"],[l.estacionamientos,"Estacionamientos"],[l.m2_construccion?Math.round(l.m2_construccion)+" m²":null,"Construcción"],[l.m2_terreno?Math.round(l.m2_terreno)+" m²":null,"Terreno"],[l.anio,"Año"],[l.nivel,"Nivel"]].filter(x=>x[0]!=null&&x[0]!=="");
+  $("#det-acts").innerHTML=`${l.maps_url?`<a class="btn" href="${esc(l.maps_url)}" target="_blank" rel="noopener">Mapa ↗</a>`:""}${l.easybroker_url?`<a class="btn" href="${esc(l.easybroker_url)}" target="_blank" rel="noopener">Easy Broker ↗</a>`:""}<button class="btn" id="det-fotos">⤓ Fotos</button><button class="btn gold" id="det-ficha">⤓ Ficha</button>${l.asesor===ME?`<button class="btn" id="det-edit">✎ Ver mi listing</button>`:""}`;
+  $("#det-body").innerHTML=`<div class="dgrid">
+    <div class="gal"><div class="main" id="g-main" style="${F[0]?`background-image:url('${pubUrl(F[0].path)}')`:""}"><span class="tp">${esc(l.tipo)}</span>${F.length?`<span class="cnt" id="g-cnt">1 / ${F.length}</span>`:""}</div>
+      <div class="thumbs" id="g-th">${F.slice(0,12).map((d,i)=>`<div class="${i?"":"on"}" data-i="${i}" style="background-image:url('${pubUrl(d.path)}')"></div>`).join("")}</div></div>
+    <div class="dside">
+      <div class="pr">${fmt(l.precio)}${l.tipo==="Renta"?" <small>/ mes</small>":""}</div>
+      <h2>${esc(l.titulo||"Sin título")}</h2><div class="adr">${esc(l.direccion||"")}</div>
+      ${sp.length?`<div class="specs">${sp.map(x=>`<div><div class="v">${esc(x[0])}</div><div class="l">${x[1]}</div></div>`).join("")}</div>`:""}
+      ${l.mantenimiento?`<div class="hint">Mantenimiento ${fmt(l.mantenimiento)} / mes</div>`:""}${l.tipo==="Venta"&&l.renta_esperada?`<div class="hint">Expectativa de renta ${fmt(l.renta_esperada)} / mes</div>`:""}
+      <div class="asr">${avHTML(l.asesor)}<div><div class="nm">${esc(l.asesor)}</div><div class="rl">Asesor TRUST responsable${l.horario?" · "+esc(l.horario):""}</div></div>${wa?`<a class="btn wa" href="${wa}" target="_blank" rel="noopener">WhatsApp</a>`:""}</div>
+      <div class="interno" style="margin-top:14px"><span class="eyebrow">Solo equipo TRUST</span><dl>
+        <div><dt>Comisión TRUST</dt><dd>${l.comision_pct!=null?l.comision_pct+" %":"—"}</dd></div>
+        <div><dt>Se comparte</dt><dd>${l.comparte_pct!=null?l.comparte_pct+" %":"—"}</dd></div>
+        <div><dt>Exclusiva</dt><dd>${l.exclusiva===true?"Sí":l.exclusiva===false?"No":"—"}</dd></div>
+        <div><dt>Gravamen</dt><dd>${l.gravamen===true?"Sí"+(l.gravamen_detalle?" · "+esc(l.gravamen_detalle):""):l.gravamen===false?"No":"—"}</dd></div></dl></div>
+    </div></div>
+    ${l.descripcion?`<div class="dsec"><h3>Descripción</h3><p>${esc(limpia(l.descripcion))}</p></div>`:""}
+    ${(l.caracteristicas||[]).length?`<div class="dsec"><h3>Características</h3><div class="chips">${l.caracteristicas.map(c=>`<span>${esc(c)}</span>`).join("")}</div></div>`:""}
+    ${(l.amenidades||[]).length?`<div class="dsec"><h3>Amenidades</h3><div class="chips">${l.amenidades.map(c=>`<span>${esc(c)}</span>`).join("")}</div></div>`:""}`;
+  show("det");
+}
+function gShow(i){const F=fotosDe(det);if(!F.length)return;gi=(i+F.length)%F.length;$("#g-main").style.backgroundImage=`url('${pubUrl(F[gi].path)}')`;const c=$("#g-cnt");if(c)c.textContent=(gi+1)+" / "+F.length;$$("#g-th div").forEach(d=>d.classList.toggle("on",+d.dataset.i===gi))}
+$("#det-body").addEventListener("click",e=>{const th=e.target.closest("#g-th div");if(th){gShow(+th.dataset.i);return}if(e.target.closest("#g-main")&&fotosDe(det).length){lbShow(gi)}});
+function lbShow(i){const F=fotosDe(det);gi=(i+F.length)%F.length;$("#lbx img").src=pubUrl(F[gi].path);$("#lbx").classList.add("on")}
+$("#lbx").addEventListener("click",e=>{if(e.target.closest(".pv")){lbShow(gi-1);return}if(e.target.closest(".nx")){lbShow(gi+1);return}$("#lbx").classList.remove("on");gShow(gi)});
+document.addEventListener("keydown",e=>{if(!$("#lbx").classList.contains("on"))return;if(e.key==="Escape"){$("#lbx").classList.remove("on");gShow(gi)}if(e.key==="ArrowLeft")lbShow(gi-1);if(e.key==="ArrowRight")lbShow(gi+1)});
+$("#det-acts").addEventListener("click",e=>{
+  if(e.target.closest("#det-ficha")){fichaPng(det);return}
+  if(e.target.closest("#det-fotos")){const k=cur;cur=det;descargarTodas("foto_h").finally(()=>{cur=k});return}
+  if(e.target.closest("#det-edit")){openEd(det);return}
+});
+$("#det-back").onclick=()=>{TAB="cat";renderList();show("list")};
+$("#tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;TAB=b.dataset.t;filt.est="";$("#f-est").value="";renderList()});
+$("#f-ord").addEventListener("change",e=>{filt.ord=e.target.value;renderList()});
 function stageIdx(l){return Math.max(0,STAGES.findIndex(s=>s[0]===l.estatus))}
 function stagesHTML(l){const i=["activo","pausado","cerrado"].includes(l.estatus)?3:stageIdx(l);return `<div class="stages">${STAGES.map((s,k)=>`<i class="${k<i?"on":k===i?"cur":""}"></i>`).join("")}</div>`}
 $("#tiles").addEventListener("click",e=>{const t=e.target.closest(".tile");if(!t)return;filt.est=filt.est===t.dataset.k?"":t.dataset.k;$("#f-est").value=filt.est;renderList()});
 $("#f-q").addEventListener("input",e=>{filt.q=e.target.value;renderList()});
 $("#f-tipo").addEventListener("change",e=>{filt.tipo=e.target.value;renderList()});
 $("#f-est").addEventListener("change",e=>{filt.est=e.target.value;renderList()});
-$("#list").addEventListener("click",e=>{const c=e.target.closest(".lcard");if(c)openEd(LISTINGS.find(l=>l.id===c.dataset.id))});
-$("#btn-new").onclick=()=>openEd(null);
-$("#btn-back").onclick=()=>{load();show("list")};
+$("#list").addEventListener("click",e=>{const cc=e.target.closest(".ccard");if(cc){openDet(ALL.find(l=>l.id===cc.dataset.id));return}const c=e.target.closest(".lcard");if(c)openEd(LISTINGS.find(l=>l.id===c.dataset.id))});
+$("#btn-new").onclick=()=>{TAB="mine";openEd(null)};
+$("#btn-back").onclick=()=>{if(ROLE!=="admin")TAB="mine";load();show("list")};
 
 /* ---------- editor (túnel) ---------- */
 const FIELDS=["titulo","tipo","precio","descripcion","renta_esperada","mantenimiento","anio","nivel","recamaras","banos","medios_banos","estacionamientos","m2_construccion","m2_terreno","direccion","maps_url","comision_pct","comparte_pct","exclusiva","gravamen","gravamen_detalle","horario","notas"];
@@ -772,9 +898,12 @@ async function fontCSS(){
 }
 async function generarFicha(){
   if(!(await save(true)))return;
-  const fh=docsOf(cur.id,"foto_h");if(!fh.length){toast("Sube al menos una foto horizontal",true);return}
+  return fichaPng(cur);
+}
+async function fichaPng(L){
+  const fh=docsOf(L.id,"foto_h");if(!fh.length){toast("Este listing no tiene fotos horizontales",true);return}
   toast("Generando ficha…");
-  const st=$("#ficha-stage");st.innerHTML=fichaHTML(cur);
+  const st=$("#ficha-stage");st.innerHTML=fichaHTML(L);
   const el=$("#ficha-el");
   const fcss=await fontCSS();
   try{await document.fonts.load("500 66px Lora");await document.fonts.load("500 20px Poppins");await document.fonts.ready}catch(e){}
@@ -782,9 +911,9 @@ async function generarFicha(){
   await new Promise(r=>setTimeout(r,300));
   try{
     const url=await htmlToImage.toPng(el,{width:1080,height:1920,pixelRatio:1,cacheBust:true,fontEmbedCSS:fcss});
-    const a=document.createElement("a");a.href=url;a.download=`Ficha_${(cur.titulo||"TRUST").replace(/[^\wáéíóúñ]+/gi,"_")}.png`;a.click();
+    const a=document.createElement("a");a.href=url;a.download=`Ficha_${(L.titulo||"TRUST").replace(/[^\wáéíóúñ]+/gi,"_")}.png`;a.click();
     toast("Ficha descargada");
-    if(ROLE==="admin"&&!cur.ficha_generada)await patch({ficha_generada:true});
+    if(ROLE==="admin"&&L===cur&&!cur.ficha_generada)await patch({ficha_generada:true});
   }catch(e){console.error(e);toast("No se pudo generar la ficha: "+(e.message||e),true)}
   st.innerHTML="";
 }
