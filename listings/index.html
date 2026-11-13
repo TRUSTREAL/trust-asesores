@@ -342,20 +342,20 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
       <h3 class="ptitle">Documentos</h3><p class="hint">Si ya tienes la autorización firmada, súbela aquí; si no, puedes seguir y agregarla después.</p>
       <div class="sect" style="margin-top:14px"><h3>Autorización de venta / exclusiva firmada</h3>
         <p class="hint">PDF o foto. Opcional para enviar, pero necesaria para publicar.</p>
-        <label class="dz" data-kind="autorizacion">⇪ Subir autorización<input type="file" accept=".pdf,image/*"></label>
+        <label class="dz" data-kind="autorizacion">⇪ Subir autorización<input type="file" accept=".pdf,image/*,.heic,.heif"></label>
         <div class="doclist" id="docs-autorizacion"></div></div>
       <div class="sect"><h3>Información del cliente</h3><p class="hint">INE, comprobante de domicilio, escritura, predial… lo que aplique.</p>
-        <label class="dz" data-kind="cliente">⇪ Subir documentos del cliente<input type="file" multiple accept=".pdf,image/*"></label>
+        <label class="dz" data-kind="cliente">⇪ Subir documentos del cliente<input type="file" multiple accept=".pdf,image/*,.heic,.heif"></label>
         <div class="doclist" id="docs-cliente"></div></div>
     </div>
 
     <div class="pane card" id="pane-5">
       <h3 class="ptitle">Fotos</h3><p class="hint">Mínimo 5 horizontales. Se enumeran en el orden en que las acomodes. Marca <b>Portada</b> e <b>Interior</b>: son las que usa la ficha.</p>
       <div class="sect" style="margin-top:14px"><h3>Fotos horizontales (5 a 20)</h3>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label class="dz" data-kind="foto_h" style="flex:1">⇪ Subir fotos horizontales<input type="file" multiple accept="image/*"></label><button type="button" class="btn dl-all" data-kind="foto_h" title="Descarga todas las fotos horizontales en un .zip">⤓ Descargar todas</button></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label class="dz" data-kind="foto_h" style="flex:1">⇪ Subir fotos horizontales<input type="file" multiple accept="image/*,.heic,.heif"></label><button type="button" class="btn dl-all" data-kind="foto_h" title="Descarga todas las fotos horizontales en un .zip">⤓ Descargar todas</button></div>
         <p class="hint" style="margin:6px 0 0">Arrastra las fotos para cambiar el orden; también puedes usar ‹ ›.</p><div class="photos" id="docs-foto_h"></div></div>
       <div class="sect"><h3>Fotos verticales para redes (opcional)</h3>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label class="dz" data-kind="foto_v" style="flex:1">⇪ Subir fotos verticales<input type="file" multiple accept="image/*"></label><button type="button" class="btn dl-all" data-kind="foto_v" title="Descarga todas las fotos verticales en un .zip">⤓ Descargar todas</button></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><label class="dz" data-kind="foto_v" style="flex:1">⇪ Subir fotos verticales<input type="file" multiple accept="image/*,.heic,.heif"></label><button type="button" class="btn dl-all" data-kind="foto_v" title="Descarga todas las fotos verticales en un .zip">⤓ Descargar todas</button></div>
         <div class="photos" id="docs-foto_v"></div></div>
     </div>
 
@@ -657,13 +657,35 @@ function fichaFotosHTML(l){
     ${fh.length?`<div class="photos" id="ficha-fotos">${fh.map((d,i)=>`<div class="pho ${d.etiqueta?"sel-"+d.etiqueta:""}" data-id="${d.id}"><img src="${pubUrl(d.path)}" loading="lazy"><span class="n">${i+1}</span>${d.etiqueta?`<span class="tag">${d.etiqueta}</span>`:""}<div class="lab"><button data-act="portada">Portada</button><button data-act="interior">Interior</button></div></div>`).join("")}</div>`:`<div class="hint">El asesor aún no sube fotos horizontales.</div>`}`;
 }
 
+/* ---------- fotos: HEIC (iPhone) → JPG y reducción de tamaño antes de subir ---------- */
+const esHeic=f=>/heic|heif/i.test(f.type||"")||/\.(heic|heif)$/i.test(f.name||"");
+let _h2a=null;
+function cargarHeic2any(){if(window.heic2any)return Promise.resolve();if(_h2a)return _h2a;_h2a=new Promise((ok,no)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/heic2any/0.0.4/heic2any.min.js";s.onload=ok;s.onerror=()=>no(new Error("No se pudo cargar el convertidor HEIC"));document.head.appendChild(s)});return _h2a}
+function redimensionar(blob,max,q){return new Promise((ok,no)=>{const u=URL.createObjectURL(blob);const im=new Image();im.onload=()=>{URL.revokeObjectURL(u);const sc=Math.min(1,max/Math.max(im.width,im.height));if(sc===1&&blob.type==="image/jpeg"){ok(blob);return}const cv=document.createElement("canvas");cv.width=Math.round(im.width*sc);cv.height=Math.round(im.height*sc);const cx=cv.getContext("2d");cx.fillStyle="#fff";cx.fillRect(0,0,cv.width,cv.height);cx.imageSmoothingQuality="high";cx.drawImage(im,0,0,cv.width,cv.height);cv.toBlob(b=>b?ok(b):no(new Error("No se pudo procesar la imagen")),"image/jpeg",q)};im.onerror=()=>{URL.revokeObjectURL(u);no(new Error("Formato de imagen no soportado"))};im.src=u})}
+async function normalizarImagen(f,kind){
+  const esFoto=kind==="foto_h"||kind==="foto_v";
+  let blob=f,nombre=f.name;
+  if(esHeic(f)){
+    toast("Convirtiendo "+f.name+" (HEIC) a JPG…");
+    await cargarHeic2any();
+    let out=await window.heic2any({blob:f,toType:"image/jpeg",quality:0.9});
+    blob=Array.isArray(out)?out[0]:out;nombre=f.name.replace(/\.(heic|heif)$/i,"")+".jpg";
+  }
+  if(esFoto&&/^image\//.test(blob.type||"")&&blob.type!=="image/gif"){
+    if(blob.size>600*1024||esHeic(f))blob=await redimensionar(blob,2400,0.88);
+    if(!/\.jpe?g$/i.test(nombre))nombre=nombre.replace(/\.[^.]+$/,"")+".jpg";
+  }
+  if(blob===f)return f;
+  return new File([blob],nombre,{type:blob.type||"image/jpeg",lastModified:Date.now()});
+}
 /* ---------- docs & photos ---------- */
 document.addEventListener("change",async e=>{
   const inp=e.target;if(inp.type!=="file")return;const kind=inp.closest(".dz").dataset.kind;
   if(!cur.id){toast("Guarda primero la propiedad",true);inp.value="";return}
   const files=[...inp.files];if(!files.length)return;
   let orden=docsOf(cur.id,kind).length;
-  for(const f of files){
+  for(let f of files){
+    try{f=await normalizarImagen(f,kind)}catch(err){toast("No se pudo procesar "+f.name+": "+(err.message||err),true);continue}
     const ext=(f.name.split(".").pop()||"bin").toLowerCase();const name=`${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`;const path=`${cur.id}/${kind}/${name}`;
     const up=await sb.storage.from(BUCKET).upload(path,f,{contentType:f.type||undefined});
     if(up.error){toast("No se subió "+f.name+": "+up.error.message,true);continue}
