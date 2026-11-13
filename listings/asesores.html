@@ -917,7 +917,9 @@ function fichaDocHTML(L){
   const portada=fh.find(d=>d.etiqueta==="portada")||fh[0];
   const interior=fh.find(d=>d.etiqueta==="interior")||fh.find(d=>d!==portada)||portada;
   const resto=fh.filter(d=>d!==portada);const ordenadas=[interior].concat(resto.filter(d=>d!==interior));
-  const fotos2=ordenadas.slice(0,ordenadas.length>=7?8:6);
+  const tira=ordenadas.slice(0,3);
+  const resto2=ordenadas.length>=5?ordenadas.slice(3):ordenadas;
+  const fotos2=resto2.slice(0,resto2.length>=7?8:6);
   const A=fichaAsesor();const tel=String(A.celular||"").replace(/\D/g,"");const telFmt=tel.length===10?tel.replace(/(\d{2})(\d{4})(\d{4})/,"$1 $2 $3"):A.celular;
   const money=v=>v==null||v===""?"—":"$"+Math.round(+v).toLocaleString("es-MX");
   const col=(L.direccion||"").split(",").map(s=>s.trim()).filter(Boolean);const colonia=col.length>1?col[1]:(col[0]||"");
@@ -981,7 +983,13 @@ html,body{margin:0;background:#E7E4DC}
 .nf-desc{border-top:1px solid rgba(var(--nf-p-rgb),.12);padding:18px 24px 18px;font-size:10px;line-height:1.65;color:var(--nf-ink2);display:-webkit-box;-webkit-line-clamp:9;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line}
 .nf-chips{padding:0 22px 18px;display:flex;flex-wrap:wrap;gap:5px}
 .nf-chips span{border:1px solid var(--nf-linea);border-radius:999px;padding:3px 9px;font-size:7.5px;color:var(--nf-p)}
-.nf-p1 .nf-cta{position:relative;z-index:2;margin-top:34px}
+.nf-p1{display:flex;flex-direction:column}
+.nf-p1 .nf-head,.nf-p1 .nf-body,.nf-p1 .nf-card{flex:none}
+.nf-strip{flex:1;min-height:0;margin:16px 56px 0;display:grid;gap:5px;border-radius:14px;overflow:hidden;position:relative;z-index:2;max-height:230px}
+.nf-strip .nf-img{min-height:0}
+.nf-p1 .nf-sp{flex:1}
+.nf-p1 .nf-cta{position:relative;z-index:2;margin:22px auto 0;flex:none}
+.nf-p1 .nf-foot{position:static;margin:18px 56px 26px;flex:none}
 /* hoja 2 */
 .nf-band{position:relative;height:196px;background:var(--nf-p);color:#fff;overflow:hidden}
 .nf-band .nf-img{position:absolute;inset:0}
@@ -1019,6 +1027,7 @@ html,body{margin:0;background:#E7E4DC}
     ${desc?`<div class="nf-desc">${esc(desc)}</div>`:""}
     ${chips.length?`<div class="nf-chips">${chips.map(c=>`<span>${esc(c)}</span>`).join("")}</div>`:""}
   </div>
+  ${tira.length?`<div class="nf-strip" style="grid-template-columns:repeat(${tira.length},1fr)">${tira.map(d=>`<div class="nf-img" style="background-image:url('${img(d)}')"></div>`).join("")}</div>`:`<div class="nf-sp"></div>`}
   <div class="nf-cta">${telFmt?`Agenda tu visita con <b>${esc(nomb)}</b> · ${esc(telFmt)}`:`Agenda tu visita con <b>${esc(nomb)}</b>`}</div>
   <div class="nf-foot">TRUST realtor · ${CONTACTO.web} · ${CONTACTO.tel} · Precio sujeto a cambio sin previo aviso · Fotos ilustrativas de la propiedad</div>
 </div>
