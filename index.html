@@ -131,7 +131,7 @@ h1{font-family:Lora,Georgia,serif;font-weight:500;font-size:40px;line-height:1.0
       let ey,nm,dt;
       if(hoy.length){ey="🎉 ¡Hoy es su cumpleaños!";nm=hoy.map(c=>`${av(c.n)}${esc(c.n)}`).join(" · ");dt="Mándale un abrazo de parte de todo TRUST."}
       else{const L=prox.length?prox:pas;ey="Cumpleaños de "+MES[mm-1];nm=L.map(c=>`${av(c.n)}${esc(c.n)} <em>· ${c.dia} de ${MES[mm-1].slice(0,3)}</em>`).join(" · ");dt=prox.length?"Ve apartando la felicitación.":"Ya pasó, pero nunca es tarde para felicitar."}
-      document.getElementById("bday").innerHTML=`<div><div class="eyebrow"><span class="ic">🎂</span><span>${ey.replace("🎉 ","")}</span></div><div class="n">${nm}</div><div class="d">${dt}</div></div>`;
+      document.getElementById("bday").innerHTML=`<div><div class="eyebrow"><span class="ic">🎂</span><span>${ey.replace("🎉 ","")}</span></div><div class="n">${nm}</div></div>`;
       bar.classList.add("bd");document.getElementById("bday").style.display="";if(!k)bar.classList.add("nobd");bar.classList.add("on");
     }
     if(!k)return;
