@@ -1088,7 +1088,7 @@ async function loadDocs(pid){
   if(!sb){docs[pid]=docs[pid]||[];return}
   const {data,error}=await sb.storage.from(BUCKET).list(pid,{limit:200,sortBy:{column:"name",order:"asc"}});
   if(error){docs[pid]=[];setSync("Documentos: "+error.message);return}
-  docs[pid]=(data||[]).filter(f=>f.name&&!f.name.startsWith(".")).map(f=>({name:f.name,size:f.metadata?.size||0,updated:f.updated_at||f.created_at,url:sb.storage.from(BUCKET).getPublicUrl(pid+"/"+f.name).data.publicUrl}));
+  docs[pid]=(data||[]).filter(f=>f.name&&!f.name.startsWith(".")&&f.id).map(f=>({name:f.name,size:f.metadata?.size||0,updated:f.updated_at||f.created_at,url:sb.storage.from(BUCKET).getPublicUrl(pid+"/"+f.name).data.publicUrl}));
 }
 function docsHTML(p){
   const list=docs[p.id];
