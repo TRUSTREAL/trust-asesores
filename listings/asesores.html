@@ -192,6 +192,12 @@ a.btn{text-decoration:none}
 .pho img{width:100%;height:100%;object-fit:cover;display:block}
 .pho .n{position:absolute;left:8px;top:8px;background:var(--green);color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px}
 .pho .tools{position:absolute;right:6px;bottom:6px;display:flex;gap:4px}
+.pho .ck{position:absolute;left:6px;top:6px;z-index:3;width:26px;height:26px;border-radius:8px;background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.pho .ck input{width:16px;height:16px;accent-color:var(--bad);cursor:pointer;margin:0}
+.pho.pho.marked{outline:3px solid var(--bad);outline-offset:-3px}.pho.pho.marked:after{content:"";position:absolute;inset:0;background:rgba(168,52,42,.22);pointer-events:none}
+.selbar{grid-column:1/-1;display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 12px;font-size:12.5px}
+.selbar label{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-weight:500}.selbar input{accent-color:var(--green);width:15px;height:15px;margin:0}
+.selbar .btn{margin-left:auto;border-color:var(--bad);color:var(--bad)}
 .pho .tools button{border:0;background:rgba(255,255,255,.92);border-radius:8px;width:26px;height:26px;font-size:13px}
 .pho .tag{position:absolute;left:8px;bottom:8px;background:var(--gold);color:#fff;font-size:10px;font-weight:600;padding:2px 8px;border-radius:999px}
 .pho.v{aspect-ratio:9/16}
@@ -828,12 +834,31 @@ function renderDocList(kind){
   const el=$("#docs-"+kind);if(!el)return;
   const list=docsOf(cur.id,kind);
   if(kind==="foto_h"||kind==="foto_v"){
-    el.innerHTML=list.map((d,i)=>`<div class="pho ${kind==="foto_v"?"v":""} ${d.etiqueta?"sel-"+d.etiqueta:""}" data-id="${d.id}" ${editable()?'draggable="true"':""}><img src="${pubUrl(d.path)}" loading="lazy"><span class="n">${i+1}</span>${d.etiqueta?`<span class="tag">${d.etiqueta}</span>`:""}
+    const nsel=list.filter(d=>SEL.has(d.id)).length;
+    const bar=list.length&&editable()?`<div class="selbar" data-kind="${kind}"><label><input type="checkbox" data-selall ${nsel===list.length?"checked":""}> Seleccionar todas</label><span class="hint">${nsel?nsel+" seleccionada"+(nsel===1?"":"s"):"Marca varias fotos para borrarlas de una vez"}</span>${nsel?`<button type="button" class="btn sm" data-delsel>🗑 Eliminar ${nsel===1?"la seleccionada":"las "+nsel+" seleccionadas"}</button>`:""}</div>`:"";
+    el.innerHTML=bar+list.map((d,i)=>`<div class="pho ${kind==="foto_v"?"v":""} ${d.etiqueta?"sel-"+d.etiqueta:""} ${SEL.has(d.id)?"marked":""}" data-id="${d.id}" ${editable()?'draggable="true"':""}>${editable()?`<label class="ck"><input type="checkbox" data-sel ${SEL.has(d.id)?"checked":""}></label>`:""}<img src="${pubUrl(d.path)}" loading="lazy"><span class="n">${i+1}</span>${d.etiqueta?`<span class="tag">${d.etiqueta}</span>`:""}
       ${kind==="foto_h"?`<div class="lab"><button data-act="portada" title="Usar como portada de la ficha">Portada</button><button data-act="interior" title="Usar como foto interior de la ficha">Interior</button></div>`:""}<div class="tools"><button data-act="dl" title="Descargar esta foto">⤓</button><button data-act="up" title="Mover antes">‹</button><button data-act="down" title="Mover después">›</button><button data-act="del" title="Eliminar">×</button></div></div>`).join("")||`<div class="hint">Sin fotos todavía.</div>`;
   } else {
     el.innerHTML=list.map(d=>`<div class="doc" data-id="${d.id}">📄 <a href="${pubUrl(d.path)}" target="_blank" rel="noopener">${esc(d.nombre)}</a><span class="hint">${fecha(d.created_at)}</span><button class="x" data-act="del" title="Eliminar">×</button></div>`).join("")||`<div class="hint">Nada subido todavía.</div>`;
   }
 }
+/* selección múltiple de fotos para borrar */
+const SEL=new Set();
+document.addEventListener("change",e=>{
+  const t=e.target;
+  if(t.matches("[data-sel]")){const id=t.closest(".pho").dataset.id;if(t.checked)SEL.add(id);else SEL.delete(id);renderDocList(t.closest(".photos").id.replace("docs-",""));return}
+  if(t.matches("[data-selall]")){const kind=t.closest(".selbar").dataset.kind;docsOf(cur.id,kind).forEach(d=>t.checked?SEL.add(d.id):SEL.delete(d.id));renderDocList(kind)}
+});
+document.addEventListener("click",async e=>{
+  const b=e.target.closest("[data-delsel]");if(!b)return;
+  const kind=b.closest(".selbar").dataset.kind;const list=DOCS[cur.id]||[];const sel=list.filter(d=>d.tipo===kind&&SEL.has(d.id));if(!sel.length)return;
+  if(!confirm("¿Eliminar "+sel.length+" foto"+(sel.length===1?"":"s")+"? No se puede deshacer."))return;
+  b.disabled=true;b.textContent="Eliminando…";
+  try{await sb.storage.from(BUCKET).remove(sel.map(d=>d.path));const r=await sb.from("listing_docs").delete().in("id",sel.map(d=>d.id));if(r.error)throw r.error;
+    DOCS[cur.id]=list.filter(d=>!SEL.has(d.id));sel.forEach(d=>SEL.delete(d.id));toast(sel.length+" foto"+(sel.length===1?"":"s")+" eliminada"+(sel.length===1?"":"s"));
+  }catch(err){toast("No se pudieron eliminar: "+(err.message||err),true)}
+  renderDocs();refresh();
+});
 document.addEventListener("click",async e=>{
   const b=e.target.closest("[data-act]");if(!b||!b.closest(".pho,.doc"))return;
   const id=b.closest("[data-id]").dataset.id,act=b.dataset.act;const list=DOCS[cur.id]||[];const d=list.find(x=>x.id===id);if(!d)return;
