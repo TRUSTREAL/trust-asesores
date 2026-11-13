@@ -243,6 +243,30 @@ select.st{padding-right:10px}
 .doc .n small{color:var(--muted);font-size:11px}
 .doc .del{flex:none}
 .upl{margin-top:14px;border:1px dashed var(--line-2);border-radius:10px;padding:18px;text-align:center;color:var(--muted);font-size:13px;background:var(--surface)}
+/* ---- Renders ---- */
+.rgrid{margin-top:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.rend{position:relative;aspect-ratio:4/3;border-radius:12px;overflow:hidden;background:var(--surface-2) center/cover no-repeat;border:1px solid var(--line);cursor:zoom-in}
+.rend .rn{position:absolute;left:0;right:0;bottom:0;padding:18px 10px 8px;background:linear-gradient(transparent,rgba(0,0,0,.55));color:#fff;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rend .rdel{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:14px;cursor:pointer;display:none}
+.rend:hover .rdel{display:block}
+.rend .rdl{position:absolute;top:6px;left:6px;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.92);color:var(--green,#173F35);font-size:13px;display:none;align-items:center;justify-content:center;text-decoration:none}
+.rend:hover .rdl{display:flex}
+.rlb{position:fixed;inset:0;background:rgba(10,20,16,.93);display:none;align-items:center;justify-content:center;z-index:80;cursor:zoom-out}
+.rlb.on{display:flex}.rlb img{max-width:94vw;max-height:90vh;border-radius:8px}
+.rlb button{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.14);border:0;color:#fff;font-size:30px;width:50px;height:50px;border-radius:50%;cursor:pointer}
+.rlb .pv{left:16px}.rlb .nx{right:16px}
+.rlb .cap{position:absolute;left:0;right:0;bottom:18px;text-align:center;color:rgba(255,255,255,.8);font-size:12px}
+/* ---- Video ---- */
+.vgrid{margin-top:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+.vid{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.vid .fr{aspect-ratio:16/9;background:#000}.vid iframe{width:100%;height:100%;border:0;display:block}
+.vid .vt{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;font-size:13px}
+.vid .vt b{font-weight:500}.vid .vt a{font-size:12px;color:var(--muted);text-decoration:none}
+.vid .vt button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:12px;text-decoration:underline}
+.vadd{margin-top:14px;display:grid;grid-template-columns:2fr 1.2fr auto;gap:8px;align-items:center;background:var(--surface);border:1px dashed var(--line-2);border-radius:10px;padding:12px 14px}
+.vadd input{font:inherit;font-size:13px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface);color:var(--text)}
+@media (max-width:640px){.vadd{grid-template-columns:1fr}}
+
 .upl.drag{border-color:var(--green);color:var(--green);background:var(--surface-2)}
 .upl input{display:none}
 .upl label{color:var(--green);font-weight:500;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
@@ -524,7 +548,7 @@ function renderMain(){
   :`<div class="empty" style="margin-top:18px;border:1px dashed var(--line-2);border-radius:0"><b>Sin unidades cargadas</b>${READONLY?"Aún no hay inventario capturado para este proyecto.":"Agrega las unidades desde la lista de precios o el Excel del desarrollador."}</div>`;
   if(renta&&vista==="politica")vista="precios";
   if(READONLY&&(vista==="ventas"||vista==="cotizacion"))vista="precios";
-  const seg=`<div class="vseg" role="tablist" aria-label="Vista"><button data-vista="precios" aria-pressed="${vista==="precios"}">Precios</button>${renta?"":`<button data-vista="politica" aria-pressed="${vista==="politica"}">Política de venta</button>`}<button data-vista="docs" aria-pressed="${vista==="docs"}">Documentos${(docs[p.id]||[]).length?` · ${(docs[p.id]||[]).length}`:""}</button>${READONLY?"":`<button data-vista="ventas" aria-pressed="${vista==="ventas"}">${renta?"Rentas":"Ventas"}${c.Vendido?` · ${c.Vendido}`:""}</button><button data-vista="cotizacion" aria-pressed="${vista==="cotizacion"}">Cotización${czReady(p)?"":" · ⚠"}</button>`}</div>`;
+  const seg=`<div class="vseg" role="tablist" aria-label="Vista"><button data-vista="precios" aria-pressed="${vista==="precios"}">Precios</button>${renta?"":`<button data-vista="politica" aria-pressed="${vista==="politica"}">Política de venta</button>`}<button data-vista="docs" aria-pressed="${vista==="docs"}">Documentos${(docs[p.id]||[]).length?` · ${(docs[p.id]||[]).length}`:""}</button><button data-vista="renders" aria-pressed="${vista==="renders"}">Renders${(rend[p.id]||[]).length?` · ${(rend[p.id]||[]).length}`:""}</button><button data-vista="video" aria-pressed="${vista==="video"}">Video${(Array.isArray(p.videos)&&p.videos.length)?` · ${p.videos.length}`:""}</button>${READONLY?"":`<button data-vista="ventas" aria-pressed="${vista==="ventas"}">${renta?"Rentas":"Ventas"}${c.Vendido?` · ${c.Vendido}`:""}</button><button data-vista="cotizacion" aria-pressed="${vista==="cotizacion"}">Cotización${czReady(p)?"":" · ⚠"}</button>`}</div>`;
   const pols=Array.isArray(p.politicas)?p.politicas:[];
   const minP=Math.min(...p.units.filter(u=>u.estatus==="Disponible").map(u=>u.precio).concat([Infinity]));
   const pol=(pols.length?`<div class="pols">${pols.map(x=>polCard(x,isFinite(minP)?minP:null)).join("")}</div>`:`<div class="pol empty"><b>Sin políticas de venta</b>${READONLY?"Pronto estarán disponibles para este proyecto.":"Usa \"Editar políticas\" para capturarlas."}</div>`)+(p.politica?`<div class="polnote">${polHTML(p.politica)}</div>`:"");
@@ -535,7 +559,8 @@ function renderMain(){
       <div class="actions">${READONLY?`<button class="btn ${VENTAS?"primary":""}" id="btn-ventas" aria-pressed="${VENTAS}" title="${VENTAS?"Salir del modo ventas":"Oculta estatus y unidades no disponibles para mostrar a clientes"}">${VENTAS?"✓ Modo ventas":"Modo ventas"}</button>`:""}<button class="btn" id="btn-pdf" ${rows.length?"":"disabled"} title="Lista de precios de las unidades que se muestran en la tabla">⤓ Lista de precios (PDF)</button>${renta?"":`<button class="btn" id="btn-pol-pdf" ${(pols.length||p.politica)?"":"disabled"} title="Políticas de pago del proyecto, listas para compartir con el cliente">⤓ Políticas de pago (PDF)</button>`}${READONLY?"":`<button class="btn" id="btn-edit-project">Editar proyecto</button>${renta?"":`<button class="btn" id="btn-edit-pol">Editar políticas</button>`}<button class="btn" id="btn-import">⇪ Importar</button><button class="btn primary" id="btn-add-unit">+ Unidad</button>`}</div>
     </div>
     ${seg}
-    ${vista==="precios"?(VENTAS?"":tiles)+table+(p.notas?`<div class="notes"><span class="eyebrow">Notas</span><p>${esc(p.notas)}</p></div>`:""):vista==="politica"?pol:vista==="ventas"?ventasHTML(p):vista==="cotizacion"?czHTML(p):docsHTML(p)}`;
+    ${vista==="precios"?(VENTAS?"":tiles)+table+(p.notas?`<div class="notes"><span class="eyebrow">Notas</span><p>${esc(p.notas)}</p></div>`:""):vista==="politica"?pol:vista==="ventas"?ventasHTML(p):vista==="cotizacion"?czHTML(p):vista==="renders"?rendHTML(p):vista==="video"?videoHTML(p):docsHTML(p)}`;
+  if(vista==="renders"&&sb&&!rend[p.id])loadRend(p.id).then(()=>{if(vista==="renders")renderMain()});
   if(vista==="cotizacion"&&sb&&!CZ[p.id])loadCz(p.id).then(()=>{if(vista==="cotizacion")renderMain()});
   if(vista==="docs"&&sb&&!docs[p.id])loadDocs(p.id).then(()=>{if(vista==="docs")renderMain()});
 }
@@ -596,8 +621,12 @@ document.addEventListener("click",e=>{
   if(t.dataset.cat){S.cat=t.dataset.cat;filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};save();render();return}
   if(t.id==="btn-ventas"){VENTAS=!VENTAS;try{localStorage.setItem("inv_ventas",VENTAS?"1":"0")}catch(e){}filt.estatus="";renderMain();return}
   if(t.id==="pbtn"){const pk=$("#picker");const open=pk.toggleAttribute("open");t.setAttribute("aria-expanded",open);if(open)($("#picker .pitem[aria-current='true']")||$("#picker .pitem"))?.focus();return}
-  if(t.classList.contains("pitem")){S.sel=t.dataset.id;vista="precios";delete docs[t.dataset.id];filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};sort={k:null,dir:"asc"};save();render();return}
+  if(t.classList.contains("pitem")){S.sel=t.dataset.id;vista="precios";delete docs[t.dataset.id];delete rend[t.dataset.id];filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};sort={k:null,dir:"asc"};save();render();return}
   if(t.dataset.vista){vista=t.dataset.vista;renderMain();return}
+  if(t.dataset.rdel!==undefined&&!READONLY){e.preventDefault();deleteRend(S.sel,t.dataset.rdel);return}
+  if(t.closest&&t.closest(".rend")&&!t.closest(".rdl")){const p=S.projects.find(p=>p.id===S.sel);rendOpen(p,+t.closest(".rend").dataset.ri);return}
+  if(t.dataset.vdel!==undefined&&!READONLY){const p=S.projects.find(p=>p.id===S.sel);if(!confirm("¿Quitar este video del proyecto?"))return;p.videos=(p.videos||[]).filter((_,i)=>i!==+t.dataset.vdel);saveVideos(p);return}
+  if(t.id==="v-add"&&!READONLY){const p=S.projects.find(p=>p.id===S.sel);const u=$("#v-url").value.trim(),ti=$("#v-tit").value.trim();if(!ytId(u)){alert("Pega una liga de YouTube válida (youtu.be/… o youtube.com/watch?v=…).");return}p.videos=(Array.isArray(p.videos)?p.videos:[]).concat([{url:u,titulo:ti}]);saveVideos(p);return}
   if(t.classList.contains("del-doc")){e.preventDefault();deleteDoc(S.sel,t.dataset.name);return}
   if(t.id==="btn-pdf")return listaPDF(S.projects.find(p=>p.id===S.sel));
   if(t.id==="btn-pol-pdf")return politicasPDF(S.projects.find(p=>p.id===S.sel));
@@ -620,6 +649,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){const pk=$("#picker
 document.addEventListener("change",e=>{
   const t=e.target;
   if(t.id==="doc-file"&&t.files.length){uploadDocs(S.sel,[...t.files]);return}
+  if(t.id==="rend-file"&&t.files.length){uploadRend(S.sel,[...t.files]);t.value="";return}
   if(t.classList.contains("st")){const p=S.projects.find(p=>p.id===S.sel);const u=p.units.find(u=>u.id===t.dataset.id);u.estatus=t.value;save();render();db(()=>sb.from("unidades").update({estatus:u.estatus}).eq("id",u.id));if(u.estatus==="Vendido"&&!READONLY)openCierre(u);return}
   if(t.id&&t.id.startsWith("f-")&&t.dataset.k){filt[t.dataset.k]=t.value;renderMain()}
 });
@@ -899,6 +929,66 @@ function openPolitica(p){
 // ---------- documentos (Supabase Storage, bucket "documentos") ----------
 const BUCKET="documentos";
 const fmtSize=b=>b>1048576?(b/1048576).toFixed(1)+" MB":b>1024?Math.round(b/1024)+" KB":b+" B";
+
+// ---------- renders (bucket documentos/<proyecto>/renders) ----------
+let rend={}; // proyecto_id -> [{name,url,size}]
+async function loadRend(pid){
+  if(!sb){rend[pid]=rend[pid]||[];return}
+  const {data,error}=await sb.storage.from(BUCKET).list(pid+"/renders",{limit:300,sortBy:{column:"name",order:"asc"}});
+  if(error){rend[pid]=[];return}
+  rend[pid]=(data||[]).filter(f=>f.name&&!f.name.startsWith(".")&&f.id).map(f=>({name:f.name,size:f.metadata?.size||0,url:sb.storage.from(BUCKET).getPublicUrl(pid+"/renders/"+f.name).data.publicUrl}));
+}
+function rendHTML(p){
+  const list=rend[p.id];
+  if(!sb)return `<div class="pol empty"><b>Renders</b>Disponible cuando el panel está conectado a Supabase.</div>`;
+  if(!list)return `<div class="pol empty">Cargando renders…</div>`;
+  const items=list.map((d,i)=>`<div class="rend" data-ri="${i}" style="background-image:url('${d.url}')" title="${esc(d.name)}"><a class="rdl" href="${d.url}" download target="_blank" rel="noopener" title="Descargar">⤓</a>${READONLY?"":`<button class="rdel" data-rdel="${esc(d.name)}" title="Eliminar render">✕</button>`}<div class="rn">${esc(d.name.replace(/^\d+_/,"").replace(/\.[^.]+$/,""))}</div></div>`).join("");
+  const empty=`<div class="pol empty"><b>Sin renders</b>${READONLY?"Aún no hay renders para este proyecto.":"Sube los renders del proyecto: fachada, amenidades, interiores."}</div>`;
+  const upl=READONLY?"":`<div class="upl" id="rupl"><input type="file" id="rend-file" multiple accept="image/*,.heic,.heif"><label for="rend-file">Elegir imágenes</label> · se reducen a 2400 px antes de subir<div class="prog" id="rend-prog"></div></div>`;
+  return (list.length?`<div class="rgrid">${items}</div>`:empty)+upl;
+}
+let RLB={list:[],i:0};
+function rendOpen(p,i){RLB={list:rend[p.id]||[],i};rendShow(0)}
+function rendShow(d){const L=RLB.list;if(!L.length)return;RLB.i=(RLB.i+d+L.length)%L.length;let lb=document.getElementById("rlb");if(!lb){lb=document.createElement("div");lb.id="rlb";lb.className="rlb";lb.innerHTML='<button class="pv">‹</button><img alt=""><button class="nx">›</button><div class="cap"></div>';document.body.appendChild(lb);
+  lb.addEventListener("click",e=>{if(e.target.closest(".pv")){rendShow(-1);return}if(e.target.closest(".nx")){rendShow(1);return}lb.classList.remove("on")});
+  document.addEventListener("keydown",e=>{if(!lb.classList.contains("on"))return;if(e.key==="Escape")lb.classList.remove("on");if(e.key==="ArrowLeft")rendShow(-1);if(e.key==="ArrowRight")rendShow(1)})}
+  lb.querySelector("img").src=L[RLB.i].url;lb.querySelector(".cap").textContent=(RLB.i+1)+" / "+L.length+" · "+L[RLB.i].name.replace(/^\d+_/,"");lb.classList.add("on")}
+// ---------- video (proyectos.videos = [{url,titulo}]) ----------
+function ytId(u){u=String(u||"").trim();const m=u.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/))([A-Za-z0-9_-]{11})/);return m?m[1]:(/^[A-Za-z0-9_-]{11}$/.test(u)?u:null)}
+function videoHTML(p){
+  const vs=Array.isArray(p.videos)?p.videos:[];
+  const items=vs.map((v,i)=>{const id=ytId(v.url);return `<div class="vid"><div class="fr">${id?`<iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0" title="${esc(v.titulo||"Video")}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>`:`<div style="color:#fff;padding:20px;font-size:12px">Liga no reconocida</div>`}</div><div class="vt"><b>${esc(v.titulo||"Video del proyecto")}</b><span>${id?`<a href="https://youtu.be/${id}" target="_blank" rel="noopener">YouTube ↗</a>`:""}${READONLY?"":` <button data-vdel="${i}">Quitar</button>`}</span></div></div>`}).join("");
+  const empty=`<div class="pol empty"><b>Sin video</b>${READONLY?"Aún no hay video para este proyecto.":"Pega la liga de YouTube del recorrido, el brochure animado o el video de obra."}</div>`;
+  const add=READONLY?"":`<div class="vadd"><input id="v-url" placeholder="Liga de YouTube (https://youtu.be/… o youtube.com/watch?v=…)"><input id="v-tit" placeholder="Título (opcional): Recorrido virtual, Avance de obra…" maxlength="60"><button class="btn primary" id="v-add">+ Agregar video</button></div>`;
+  return (vs.length?`<div class="vgrid">${items}</div>`:empty)+add;
+}
+
+async function uploadRend(pid,files){
+  const prog=document.getElementById("rend-prog");let n=0;const fallas=[];
+  for(const f0 of files){
+    if(prog)prog.textContent=`Subiendo ${++n} de ${files.length}…`;
+    try{
+      let f=f0;
+      if(/heic|heif/i.test(f.type||"")||/\.(heic|heif)$/i.test(f.name)){throw new Error("HEIC no soportado aquí: exporta a JPG")}
+      const blob=await rendReducir(f,2400,0.88);
+      const base=f.name.replace(/\.[^.]+$/,"").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^A-Za-z0-9 _-]+/g,"").trim().replace(/\s+/g,"_").slice(0,50)||"render";
+      const name=`${Date.now()}_${base}.jpg`;
+      const {error}=await sb.storage.from(BUCKET).upload(pid+"/renders/"+name,blob,{upsert:false,contentType:"image/jpeg"});
+      if(error)throw error;
+    }catch(e){fallas.push(f0.name+": "+(e.message||e))}
+  }
+  await loadRend(pid);renderMain();
+  if(fallas.length)alert("No se subieron:\n• "+fallas.join("\n• "));
+}
+function rendReducir(file,max,q){return new Promise((ok,no)=>{const u=URL.createObjectURL(file);const im=new Image();im.onload=()=>{URL.revokeObjectURL(u);const sc=Math.min(1,max/Math.max(im.width,im.height));const cv=document.createElement("canvas");cv.width=Math.round(im.width*sc);cv.height=Math.round(im.height*sc);const cx=cv.getContext("2d");cx.fillStyle="#fff";cx.fillRect(0,0,cv.width,cv.height);cx.imageSmoothingQuality="high";cx.drawImage(im,0,0,cv.width,cv.height);cv.toBlob(b=>b?ok(b):no(new Error("No se pudo procesar")),"image/jpeg",q)};im.onerror=()=>{URL.revokeObjectURL(u);no(new Error("Formato no soportado"))};im.src=u})}
+async function deleteRend(pid,name){
+  if(!confirm("¿Eliminar el render \""+name.replace(/^\d+_/,"")+"\"?"))return;
+  const {error}=await sb.storage.from(BUCKET).remove([pid+"/renders/"+name]);
+  if(error){alert("No se pudo eliminar: "+error.message);return}
+  await loadRend(pid);renderMain();
+}
+async function saveVideos(p){const r=await sb.from("proyectos").update({videos:p.videos}).eq("id",p.id);if(r.error)alert("No se guardó el video: "+r.error.message+(/videos/.test(r.error.message)?"\n\n¿Ya corriste el SQL proyectos_videos.sql en Supabase?":""));renderMain()}
+
 async function loadDocs(pid){
   if(!sb){docs[pid]=docs[pid]||[];return}
   const {data,error}=await sb.storage.from(BUCKET).list(pid,{limit:200,sortBy:{column:"name",order:"asc"}});
