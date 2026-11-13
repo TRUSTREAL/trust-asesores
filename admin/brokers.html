@@ -86,6 +86,8 @@ tr.pen td{background:#FFFBF0!important}
 .sw span{width:36px;height:20px;border-radius:999px;background:var(--line-2);position:relative;flex:none;transition:background .15s}
 .sw span::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s}
 .sw input:checked+span{background:var(--green)}.sw input:checked+span::after{transform:translateX(16px)}
+select.reg{font:inherit;font-size:12.5px;border:1px solid var(--line,#E3DDD0);border-radius:8px;padding:6px 8px;background:#fff;color:inherit;max-width:150px}
+select.reg:has(option[value=""]:checked){color:#9A9C97;border-style:dashed}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/auth.js"></script>
@@ -116,13 +118,13 @@ tr.pen td{background:#FFFBF0!important}
   </div>
 
   <div class="bar">
-    <input id="q" placeholder="Buscar por nombre, inmobiliaria o correo…">
+    <input id="q" placeholder="Buscar por nombre, inmobiliaria, correo o asesor…">
     <span class="link" id="link" title="Link que se comparte a los brokers"></span>
     <button class="btn" id="copy">Copiar link</button>
   </div>
   <div class="twrap"><table>
-    <thead><tr><th>Broker</th><th>Inmobiliaria</th><th>Correo</th><th>Celular</th><th>Solicitud</th><th>Último acceso</th><th>Estado</th><th></th></tr></thead>
-    <tbody id="rows"><tr><td colspan="8" class="empty">Cargando…</td></tr></tbody>
+    <thead><tr><th>Broker</th><th>Inmobiliaria</th><th>Correo</th><th>Celular</th><th>Registró</th><th>Solicitud</th><th>Último acceso</th><th>Estado</th><th></th></tr></thead>
+    <tbody id="rows"><tr><td colspan="9" class="empty">Cargando…</td></tr></tbody>
   </table></div>
   <div class="foot" id="sync"></div>
   </section>
@@ -137,7 +139,7 @@ tr.pen td{background:#FFFBF0!important}
     <div class="bar"><input id="cq" placeholder="Buscar cliente, broker, inmobiliaria o proyecto…"></div>
     <div class="twrap"><table>
       <thead><tr><th>Registro</th><th>Cliente</th><th>Proyecto</th><th>Presupuesto</th><th>Broker</th><th>Notas</th><th>Estado</th><th></th></tr></thead>
-      <tbody id="crows"><tr><td colspan="8" class="empty">Cargando…</td></tr></tbody>
+      <tbody id="crows"><tr><td colspan="9" class="empty">Cargando…</td></tr></tbody>
     </table></div>
   </section>
 
@@ -158,16 +160,18 @@ const fmtDT=d=>d?new Date(d).toLocaleString("es-MX",{day:"numeric",month:"short"
 const LINK="https://trust-asesores.vercel.app/inventario/brokers.html";
 $("#link").textContent=LINK;
 $("#copy").onclick=()=>{navigator.clipboard.writeText(LINK).then(()=>{$("#copy").textContent="✓ Copiado";setTimeout(()=>$("#copy").textContent="Copiar link",1500)})};
-let rows=[];
+let rows=[],ASES=[];
+const selReg=r=>`<select class="reg" data-reg="${r.id}" title="Asesor TRUST que trajo o registró a este broker"><option value="">— Sin asignar —</option>${ASES.map(a=>`<option value="${esc(a)}" ${r.registrado_por===a?"selected":""}>${esc(a)}</option>`).join("")}${r.registrado_por&&!ASES.includes(r.registrado_por)?`<option value="${esc(r.registrado_por)}" selected>${esc(r.registrado_por)}</option>`:""}</select>`;
 async function load(){
+  if(!ASES.length){try{const a=await sb.from("asesores").select("nombre,activo,orden").order("orden").order("nombre");ASES=(a.data||[]).filter(x=>x.activo!==false).map(x=>x.nombre)}catch(e){}}
   const {data,error}=await sb.from("brokers").select("*").order("creado_en",{ascending:false});
-  if(error){$("#rows").innerHTML=`<tr><td colspan="8" class="empty">Error al leer: ${esc(error.message)}</td></tr>`;return}
+  if(error){$("#rows").innerHTML=`<tr><td colspan="9" class="empty">Error al leer: ${esc(error.message)}</td></tr>`;return}
   rows=data||[];render();
   $("#sync").textContent="Supabase · "+new Date().toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"});
 }
 function render(){
   const q=($("#q").value||"").toLowerCase().trim();
-  const list=rows.filter(r=>!q||[r.nombre,r.inmobiliaria,r.correo].join(" ").toLowerCase().includes(q));
+  const list=rows.filter(r=>!q||[r.nombre,r.inmobiliaria,r.correo,r.registrado_por].join(" ").toLowerCase().includes(q));
   const semana=Date.now()-7*864e5;
   const ord={pendiente:0,activo:1,desactivado:2};list.sort((a,b)=>(ord[a.estado]??3)-(ord[b.estado]??3)||(b.creado_en||"").localeCompare(a.creado_en||""));
   const pen=rows.filter(r=>r.estado==="pendiente").length;
@@ -179,14 +183,22 @@ function render(){
   $("#rows").innerHTML=list.length?list.map(r=>`<tr class="${r.estado==="pendiente"?"pen":""}">
     <td><b>${esc(r.nombre||"(sin nombre)")}</b></td><td>${esc(r.inmobiliaria)}</td><td class="dim">${esc(r.correo)}</td>
     <td class="dim">${r.celular?`<a href="https://wa.me/52${esc(String(r.celular).replace(/\D/g,""))}" target="_blank" rel="noopener">${esc(r.celular)}</a>`:"—"}</td>
+    <td>${selReg(r)}</td>
     <td class="dim">${fmtF(r.creado_en)}</td><td class="dim">${fmtDT(r.ultimo_acceso)}</td>
     <td><span class="pill ${cls[r.estado]||"off"}">${lbl[r.estado]||esc(r.estado)}</span></td>
     <td><div class="acts">${r.estado==="pendiente"?`<button class="btn ok" data-id="${r.id}" data-to="activo">✓ Aprobar</button><button class="btn danger" data-id="${r.id}" data-to="desactivado">Rechazar</button>`
       :r.estado==="activo"?`<button class="btn danger" data-id="${r.id}" data-to="desactivado">Desactivar</button>`
       :`<button class="btn" data-id="${r.id}" data-to="activo">Activar</button>`}</div></td></tr>`).join("")
-  :`<tr><td colspan="8" class="empty">${rows.length?"Nadie coincide con la búsqueda.":"Aún no hay solicitudes. Comparte el link de arriba."}</td></tr>`;
+  :`<tr><td colspan="9" class="empty">${rows.length?"Nadie coincide con la búsqueda.":"Aún no hay solicitudes. Comparte el link de arriba."}</td></tr>`;
 }
 $("#q").addEventListener("input",render);
+document.addEventListener("change",async e=>{
+  const s=e.target.closest("select[data-reg]");if(!s)return;
+  const r=rows.find(x=>x.id===s.dataset.reg);const v=s.value||null;
+  const {error}=await sb.from("brokers").update({registrado_por:v}).eq("id",r.id);
+  if(error){alert("No se pudo guardar quién lo registró: "+error.message+(/registrado_por/.test(error.message)?"\n\n¿Ya corriste el SQL brokers_registrado_por.sql en Supabase?":""));s.value=r.registrado_por||"";return}
+  r.registrado_por=v;$("#sync").textContent="Guardado · "+new Date().toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"});
+});
 document.addEventListener("click",async e=>{
   const b=e.target.closest("button[data-id]");if(!b)return;
   const r=rows.find(x=>x.id===b.dataset.id);const to=b.dataset.to;
@@ -214,7 +226,7 @@ let C=[];
 const fmtP=n=>n==null?"—":"$ "+Math.round(+n).toLocaleString("es-MX");
 async function loadC(){
   const {data,error}=await sb.from("broker_clientes").select("*").order("creado_en",{ascending:false});
-  if(error){$("#crows").innerHTML=`<tr><td colspan="8" class="empty">Error al leer: ${esc(error.message)}${/broker_clientes/.test(error.message)?" · falta correr el SQL de broker_clientes":""}</td></tr>`;return}
+  if(error){$("#crows").innerHTML=`<tr><td colspan="9" class="empty">Error al leer: ${esc(error.message)}${/broker_clientes/.test(error.message)?" · falta correr el SQL de broker_clientes":""}</td></tr>`;return}
   C=data||[];renderC();
 }
 function renderC(){
@@ -233,7 +245,7 @@ function renderC(){
     <td class="dim" style="max-width:260px;white-space:normal">${esc(c.notas||"")}${c.respuesta?`<div style="color:var(--green)">↳ ${esc(c.respuesta)}</div>`:""}</td>
     <td><span class="pill ${cls[c.estado]||"off"}">${lbl[c.estado]||esc(c.estado)}</span></td>
     <td><div class="acts">${c.estado==="nuevo"?`<button class="btn ok" data-cid="${c.id}" data-cto="aceptado">✓ Aceptar</button><button class="btn danger" data-cid="${c.id}" data-cto="rechazado">Rechazar</button>`:`<button class="btn" data-cid="${c.id}" data-cto="nuevo">Reabrir</button>`}</div></td></tr>`).join("")
-  :`<tr><td colspan="8" class="empty">${C.length?"Nadie coincide con la búsqueda.":"Aún no hay clientes registrados por brokers."}</td></tr>`;
+  :`<tr><td colspan="9" class="empty">${C.length?"Nadie coincide con la búsqueda.":"Aún no hay clientes registrados por brokers."}</td></tr>`;
 }
 $("#cq").addEventListener("input",renderC);
 document.addEventListener("click",async e=>{
