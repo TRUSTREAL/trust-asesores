@@ -723,7 +723,7 @@ function trackHTML(){
   const box=(k,done,title,sub)=>`<div class="s ${done?"done":k===curI?"cur":""}"><b>${done?"✓ ":""}${title}</b><small>${sub}</small></div>`;
   let h=`<div class="card"><div class="sent" style="padding:18px 10px 6px">${l.estatus==="activo"?`<div class="big">✓</div><h2>Tu propiedad está activa</h2><p class="hint">Genera la ficha cuando la necesites; si TRUST cambia precio o fotos, vuelve a generarla.</p>`:l.estatus==="borrador"?"":["pausado","cerrado"].includes(l.estatus)?`<h2>Listing ${l.estatus}</h2>`:`<div class="big">✓</div><h2>Listo, TRUST está dando de alta tu propiedad</h2><p class="hint">Te avisamos cuando esté activa. Enviada ${l.enviado_en?"el "+fecha(l.enviado_en):""}.</p>`}</div>
     <div class="tl2">${box(1,s1,"Enviada","Captura completa")}${box(2,s2,"Alta en Easy Broker",s2?`<a href="${esc(l.easybroker_url)}" target="_blank" rel="noopener">Ver anuncio ↗</a>`:"TRUST la está cargando")}${box(3,s3,"Ficha técnica",s3?"Generada":"Pendiente")}${box(4,s4,"Activa","Publicada en portales")}</div>
-    <div class="actions" style="margin-top:4px">${l.estatus==="nuevo"?`<button class="btn" id="act-edit">✎ Corregir y reenviar</button>`:""}${s3||s4?`<button class="btn gold" id="act-ficha">⤓ Generar ficha</button>`:""}${l.estatus==="activo"&&!l.lona_solicitada?`<button class="btn" id="act-lona">Solicitar lona</button>`:""}</div>
+    <div class="actions" style="margin-top:4px">${l.estatus==="nuevo"?`<button class="btn" id="act-edit">✎ Corregir y reenviar</button>`:""}${s3||s4?`<button class="btn gold" id="act-ficha">⤓ Ficha PDF</button>`:""}${l.estatus==="activo"&&!l.lona_solicitada?`<button class="btn" id="act-lona">Solicitar lona</button>`:""}</div>
     ${l.lona_solicitada?`<div class="sect"><h3>Lona</h3><p class="hint">Lona solicitada${l.lona_entregada?" y entregada":""}. Al colocarla, sube el video de la zona.</p><label class="dz" data-kind="video_lona">⇪ Video de colocación de lona<input type="file" accept="video/*,image/*"></label><div class="doclist" id="docs-video_lona"></div></div>`:""}
   </div>
   <div class="card" style="margin-top:14px">${reviewHTML(false)}</div>`;
@@ -747,7 +747,7 @@ function renderAlta(){
   let h=`<h3 class="ptitle">Alta de la propiedad</h3><p class="hint">${l.estatus==="borrador"?"El asesor todavía está capturando; el alta se activa cuando la envíe.":l.estatus==="nuevo"?`Enviada por ${esc(l.asesor)} ${l.enviado_en?"el "+fecha(l.enviado_en):""}. Sigue los 3 pasos en orden.${l.correccion_en?` <span class="corr">✎ Corregida y reenviada el ${fecha(l.correccion_en)}${l.correcciones>1?" · "+l.correcciones+" veces":""} — revisa los datos y vuelve a generar la ficha</span>`:""}`:"Alta completada."}</p>
     <div class="check">
     ${ck(1,s1,"Cargar en Easy Broker","Pega la liga del anuncio ya publicado.",`<input id="eb_url" value="${esc(l.easybroker_url||"")}" placeholder="https://www.easybroker.com/…"><button class="btn primary" id="eb_save">Guardar liga</button>${s1?`<a class="btn" href="${esc(l.easybroker_url)}" target="_blank" rel="noopener">Abrir ↗</a>`:""}`)}
-    ${ck(2,s2,"Ficha técnica","Se genera desde aquí con la portada e interior elegidas abajo. Puedes regenerarla las veces que quieras.",`<button class="btn gold" id="act-ficha">⤓ Generar ficha</button>${s2?`<span class="hint">Generada ✓</span>`:""}`)}
+    ${ck(2,s2,"Ficha técnica","Se genera desde aquí con la portada e interior elegidas abajo. Puedes regenerarla las veces que quieras.",`<button class="btn gold" id="act-ficha">⤓ Ficha PDF</button>${s2?`<span class="hint">Generada ✓</span>`:""}`)}
     ${ck(3,s3,"Activar listing","Queda visible como activo para el asesor y en el tablero.",s3?(l.estatus==="activo"?`<span class="st activo">Activo</span><button class="btn" id="act-pausar">Pausar</button><button class="btn" id="act-cerrar">Cerrar (vendido/rentado)</button>`:`<span class="st ${l.estatus}">${ESTATUS_LABEL[l.estatus]}</span><button class="btn" id="act-reactivar">Reactivar</button>`):`<button class="btn primary" id="act-activar" ${s1&&s2?"":"disabled"} title="${s1&&s2?"":"Primero la liga y la ficha"}">Activar listing ✓</button>`)}
     </div>
     <div class="sect">${fichaFotosHTML(l)}</div>
@@ -900,22 +900,142 @@ async function generarFicha(){
   if(!(await save(true)))return;
   return fichaPng(cur);
 }
+
+/* ---------- ficha técnica · formato nuevo (2 hojas, mismo lenguaje que la cotización) ---------- */
+function fichaAsesor(){
+  const A=window.AUTH||{};const n=(ROLE==="admin"?(A.nombre||""):(A.nombre||ME))||"";
+  const a=(typeof ASE!=="undefined"&&ASE[n])||{};
+  return {nombre:n||"TRUST realtor",celular:a.celular||A.celular||"",foto:a.foto_url||A.foto||""};
+}
+function fichaFotoPos(u){const m=/#o=([vhs])&p=(\d+)/.exec(u||"");if(!m)return "50% 50%";return m[1]==="v"?"50% "+m[2]+"%":m[1]==="h"?m[2]+"% 50%":"50% 50%"}
+function fichaDocHTML(L){
+  const fh=docsOf(L.id,"foto_h").slice().sort((a,b)=>(a.orden||0)-(b.orden||0));
+  const portada=fh.find(d=>d.etiqueta==="portada")||fh[0];
+  const interior=fh.find(d=>d.etiqueta==="interior")||fh.find(d=>d!==portada)||portada;
+  const resto=fh.filter(d=>d!==portada);const ordenadas=[interior].concat(resto.filter(d=>d!==interior));
+  const fotos2=ordenadas.slice(0,ordenadas.length>=7?8:6);
+  const A=fichaAsesor();const tel=String(A.celular||"").replace(/\D/g,"");const telFmt=tel.length===10?tel.replace(/(\d{2})(\d{4})(\d{4})/,"$1 $2 $3"):A.celular;
+  const money=v=>v==null||v===""?"—":"$"+Math.round(+v).toLocaleString("es-MX");
+  const col=(L.direccion||"").split(",").map(s=>s.trim()).filter(Boolean);const colonia=col.length>1?col[1]:(col[0]||"");
+  const specs=[[L.recamaras,"Recámaras",""],[L.banos!=null&&L.banos!==""?(L.banos+(L.medios_banos?" + "+L.medios_banos+"½":"")):null,"Baños",""],[L.estacionamientos,"Estacionamientos",""],[L.m2_construccion?Math.round(L.m2_construccion)+" m²":null,"Construcción",""],[L.m2_terreno?Math.round(L.m2_terreno)+" m²":null,"Terreno",""],[L.nivel,"Nivel",""],[L.anio,"Año",""]].filter(x=>x[0]!=null&&x[0]!=="").slice(0,5);
+  const extras=[];if(L.mantenimiento)extras.push("Mantenimiento "+money(L.mantenimiento)+" / mes");if(L.tipo==="Venta"&&L.renta_esperada)extras.push("Expectativa de renta "+money(L.renta_esperada)+" / mes");if(L.exclusiva===true)extras.push("Exclusiva TRUST");
+  const desc=limpia(L.descripcion||"").trim();
+  const chips=(L.caracteristicas||[]).concat(L.amenidades||[]).slice(0,14);
+  const img=d=>d?pubUrl(d.path):"";
+  const ttl=esc(L.titulo||"Propiedad TRUST");
+  const nomb=A.nombre.split(" ")[0];
+  const logo="data:image/png;base64,"+LOGO_B64;
+  const asesorHTML=(dark)=>`<div class="nf-as"><div><div class="nf-as-n">${esc(A.nombre)}</div><div class="nf-as-s">Asesor TRUST${telFmt?" · "+esc(telFmt):""}</div></div>${A.foto?`<div class="nf-as-f" style="background-image:url('${esc(A.foto.split("#")[0])}');background-position:${fichaFotoPos(A.foto)}"></div>`:`<div class="nf-as-f nf-as-ini">${esc(A.nombre.charAt(0))}</div>`}</div>`;
+  const grid=(n)=>n<=1?"grid-template-columns:1fr;grid-template-rows:1fr":"grid-template-columns:1fr 1fr;grid-template-rows:repeat("+Math.ceil(n/2)+",1fr)";
+  return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ficha · ${ttl}</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap">
+<style>
+:root{--nf-p:#173F35;--nf-p-rgb:23,63,53;--nf-f:#EEF2EC;--nf-a:#5E7A70;--nf-a-rgb:94,122,112;--nf-linea:#C9D3C6;--nf-ink:#173F35;--nf-ink2:rgba(30,36,31,.86);--nf-mut:rgba(60,70,62,.62)}
+html,body{margin:0;background:#E7E4DC}
+.snap-bar{position:sticky;top:0;z-index:50;display:flex;gap:10px;align-items:center;justify-content:space-between;background:#173F35;color:#fff;padding:10px 18px;font-family:Poppins,sans-serif;font-size:13px}
+.snap-bar button{border:1px solid #B8956A;background:#B8956A;color:#fff;border-radius:999px;padding:8px 16px;font:inherit;font-weight:600;cursor:pointer}
+.nf-doc{zoom:var(--nfz,1);width:816px;margin:18px auto}
+.nf-page{width:816px;height:1056px;position:relative;overflow:hidden;box-sizing:border-box;background:var(--nf-f);color:var(--nf-ink);font-family:Poppins,'Segoe UI',sans-serif;font-size:10px;line-height:1.4;margin:0 auto 22px;box-shadow:0 4px 18px rgba(0,0,0,.08);-webkit-font-smoothing:antialiased}
+.nf-page *{box-sizing:border-box}
+.nf-page i,.nf-page em{font-family:Lora,Georgia,serif;font-style:italic;font-weight:400}
+.nf-img{background-color:rgba(var(--nf-p-rgb),.18);background-size:cover;background-position:center;background-repeat:no-repeat}
+.nf-head{position:relative;z-index:3;display:flex;justify-content:space-between;align-items:center;padding:38px 56px 0;color:#fff}
+.nf-logo{width:92px;line-height:0}.nf-logo img{width:100%;height:auto;display:block}
+.nf-head.light .nf-logo img{filter:brightness(0) invert(1)}
+.nf-as{display:flex;align-items:center;gap:10px;text-align:right}
+.nf-as-n{font-family:Lora,Georgia,serif;font-size:14px;line-height:1.25}
+.nf-as-s{font-size:8.5px;color:rgba(255,255,255,.92);margin-top:2px}
+.nf-as-f{width:42px;height:42px;border-radius:50%;background-size:cover;background-position:center;border:1.5px solid #fff;flex:none}
+.nf-as-ini{background:#B8956A;color:#fff;display:flex;align-items:center;justify-content:center;font-family:Lora,serif;font-size:17px}
+.nf-dark .nf-head{color:var(--nf-ink)}.nf-dark .nf-as-f{border-color:var(--nf-p)}.nf-dark .nf-as-s{color:var(--nf-mut)}
+.nf-pill{display:inline-block;background:#fff;color:var(--nf-p);border-radius:999px;padding:5px 13px;font-size:8px;font-weight:600;letter-spacing:.2em;text-transform:uppercase}
+.nf-foot{position:absolute;left:56px;right:56px;bottom:26px;text-align:center;font-size:7px;color:var(--nf-mut)}
+.nf-cta{display:block;width:460px;margin:0 auto;background:var(--nf-p);color:#fff;border-radius:999px;text-align:center;padding:13px 20px;font-size:9.5px}
+.nf-cta b{font-family:Lora,Georgia,serif;font-weight:500;font-size:17px}
+/* hoja 1 */
+.nf-p1 .nf-top{position:absolute;left:0;right:0;top:0;height:700px;background:var(--nf-p)}
+.nf-p1 .nf-top .nf-img{position:absolute;left:0;right:0;top:0;height:560px}
+.nf-p1 .nf-top .nf-grad{position:absolute;inset:0;background:linear-gradient(180deg,rgba(var(--nf-p-rgb),.30) 0%,rgba(var(--nf-p-rgb),.10) 22%,rgba(var(--nf-p-rgb),.55) 46%,rgba(var(--nf-p-rgb),.94) 66%,var(--nf-p) 80%)}
+.nf-p1 .nf-body{position:relative;z-index:2;padding:0 56px;color:#fff}
+.nf-p1 .nf-hero{margin-top:198px;height:150px}
+.nf-p1 h1{font-family:Lora,Georgia,serif;font-weight:400;font-size:37px;line-height:1.12;margin:12px 0 8px;letter-spacing:-.005em;text-shadow:0 1px 14px rgba(0,0,0,.18);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.nf-p1 .nf-sub{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nf-price{display:flex;justify-content:space-between;align-items:flex-end;gap:30px;margin-top:50px;height:112px}
+.nf-price .nf-lista{font-size:9.5px;color:rgba(255,255,255,.92);letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+.nf-price .nf-big{font-family:Lora,Georgia,serif;font-size:50px;line-height:1.08;letter-spacing:-.01em;white-space:nowrap}
+.nf-price .nf-big small{font-family:Poppins,sans-serif;font-size:14px;letter-spacing:0;color:rgba(255,255,255,.85)}
+.nf-price .nf-big-s{font-size:9px;color:rgba(255,255,255,.88);margin-top:2px}
+.nf-extras{text-align:right;font-size:9px;color:rgba(255,255,255,.9);line-height:1.7;padding-bottom:6px}
+.nf-extras span{display:block}
+.nf-card{position:relative;z-index:2;margin:32px 56px 0;background:#fff;border-radius:18px;box-shadow:0 22px 44px -26px rgba(40,20,10,.5);overflow:hidden}
+.nf-unit{display:flex;padding:18px 12px 18px}
+.nf-unit>div{flex:1;padding:0 14px;border-left:1px solid rgba(var(--nf-p-rgb),.16);min-width:0;text-align:center}
+.nf-unit>div:first-child{border-left:0}
+.nf-unit .nf-k{font-size:6.8px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--nf-mut)}
+.nf-unit .nf-v{font-family:Lora,Georgia,serif;font-size:21px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--nf-p)}
+.nf-desc{border-top:1px solid rgba(var(--nf-p-rgb),.12);padding:18px 24px 18px;font-size:10px;line-height:1.65;color:var(--nf-ink2);display:-webkit-box;-webkit-line-clamp:9;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line}
+.nf-chips{padding:0 22px 18px;display:flex;flex-wrap:wrap;gap:5px}
+.nf-chips span{border:1px solid var(--nf-linea);border-radius:999px;padding:3px 9px;font-size:7.5px;color:var(--nf-p)}
+.nf-p1 .nf-cta{position:relative;z-index:2;margin-top:34px}
+/* hoja 2 */
+.nf-band{position:relative;height:196px;background:var(--nf-p);color:#fff;overflow:hidden}
+.nf-band .nf-img{position:absolute;inset:0}
+.nf-band .nf-tint{position:absolute;inset:0;background:linear-gradient(180deg,rgba(var(--nf-p-rgb),.72),rgba(var(--nf-p-rgb),.90))}
+.nf-band .nf-tt{position:relative;z-index:2;padding:16px 56px 0}
+.nf-band h2{font-family:Lora,Georgia,serif;font-weight:400;font-size:31px;line-height:1.15;margin:0 0 6px}
+.nf-band .nf-sub{font-size:10px}
+.nf-p2 .nf-main{position:absolute;left:56px;right:56px;top:196px;bottom:96px;display:flex;flex-direction:column}
+.nf-grid{flex:1;display:grid;gap:4px;border-radius:16px;overflow:hidden;min-height:0;margin-top:30px}
+.nf-tile{position:relative;min-height:0;min-width:0}
+.nf-bye{text-align:center;font-family:Lora,Georgia,serif;font-size:21px;color:var(--nf-p);margin:28px 0 0;flex:none}
+.nf-bye i{color:var(--nf-a)}
+.nf-bye small{display:block;font-family:Poppins,sans-serif;font-size:9px;color:var(--nf-mut);margin-top:6px}
+@media print{
+  .snap-bar{display:none!important}html,body{background:#fff}
+  .nf-page,.nf-page *{box-shadow:none!important;text-shadow:none!important}
+  .nf-card{border:1px solid var(--nf-linea)}
+  .nf-doc{zoom:1!important;width:8.5in!important;margin:0!important}
+  .nf-page{margin:0!important;width:8.5in!important;height:10.99in!important;page-break-after:always;break-after:page;page-break-inside:avoid;break-inside:avoid}
+  .nf-page:last-child{page-break-after:auto;break-after:auto}
+  @page{size:letter portrait;margin:0}
+}
+</style></head><body>
+<div class="snap-bar"><span>Ficha · ${ttl}</span><button onclick="window.print()">⤓ Descargar PDF</button></div>
+<div class="nf-doc" id="nf-doc">
+<div class="nf-page nf-p1">
+  <div class="nf-top"><div class="nf-img" style="background-image:url('${img(portada)}')"></div><div class="nf-grad"></div></div>
+  <div class="nf-head light"><div class="nf-logo"><img src="${logo}" alt="TRUST"></div>${asesorHTML(false)}</div>
+  <div class="nf-body">
+    <div class="nf-hero"><span class="nf-pill">${esc(L.tipo||"Venta")}${colonia?" · "+esc(colonia):""}</span><h1>${ttl}</h1><div class="nf-sub">${esc(L.direccion||"")}</div></div>
+    <div class="nf-price"><div><div class="nf-lista">${L.tipo==="Renta"?"Renta mensual":"Precio de venta"}</div><div class="nf-big">${money(L.precio)}${L.tipo==="Renta"?" <small>/ mes</small>":""}</div><div class="nf-big-s">MXN · Entrega inmediata</div></div><div class="nf-extras">${extras.map(e=>`<span>${esc(e)}</span>`).join("")}</div></div>
+  </div>
+  <div class="nf-card">
+    ${specs.length?`<div class="nf-unit">${specs.map(s=>`<div><div class="nf-k">${s[1]}</div><div class="nf-v">${esc(s[0])}</div></div>`).join("")}</div>`:""}
+    ${desc?`<div class="nf-desc">${esc(desc)}</div>`:""}
+    ${chips.length?`<div class="nf-chips">${chips.map(c=>`<span>${esc(c)}</span>`).join("")}</div>`:""}
+  </div>
+  <div class="nf-cta">${telFmt?`Agenda tu visita con <b>${esc(nomb)}</b> · ${esc(telFmt)}`:`Agenda tu visita con <b>${esc(nomb)}</b>`}</div>
+  <div class="nf-foot">TRUST realtor · ${CONTACTO.web} · ${CONTACTO.tel} · Precio sujeto a cambio sin previo aviso · Fotos ilustrativas de la propiedad</div>
+</div>
+<div class="nf-page nf-p2">
+  <div class="nf-band"><div class="nf-img" style="background-image:url('${img(interior)}')"></div><div class="nf-tint"></div><div class="nf-head light" style="padding-top:28px"><div class="nf-logo"><img src="${logo}" alt="TRUST"></div>${asesorHTML(false)}</div><div class="nf-tt"><h2>Así se ve.</h2><div class="nf-sub">${ttl}${colonia?" · "+esc(colonia):""}</div></div></div>
+  <div class="nf-main">
+    <div class="nf-grid" style="${grid(fotos2.length)}">${fotos2.map(d=>`<div class="nf-tile nf-img" style="background-image:url('${img(d)}')"></div>`).join("")}</div>
+    <div class="nf-bye">¿La vemos? <i>Escríbele a ${esc(nomb)}.</i>${telFmt?`<small>${esc(telFmt)} · ${CONTACTO.mail}</small>`:""}</div>
+  </div>
+  <div class="nf-foot">TRUST realtor · ${CONTACTO.web} · ${CONTACTO.tel} · We are trustworthy</div>
+</div>
+</div>
+<script>(function(){var d=document.getElementById("nf-doc");function z(){d.style.setProperty("--nfz",Math.min(1,(document.documentElement.clientWidth-24)/816))}z();addEventListener("resize",z)})();<\/script>
+</body></html>`;
+}
 async function fichaPng(L){
   const fh=docsOf(L.id,"foto_h");if(!fh.length){toast("Este listing no tiene fotos horizontales",true);return}
-  toast("Generando ficha…");
-  const st=$("#ficha-stage");st.innerHTML=fichaHTML(L);
-  const el=$("#ficha-el");
-  const fcss=await fontCSS();
-  try{await document.fonts.load("500 66px Lora");await document.fonts.load("500 20px Poppins");await document.fonts.ready}catch(e){}
-  await Promise.all([...el.querySelectorAll("img")].map(i=>i.complete?1:new Promise(r=>{i.onload=i.onerror=r})));
-  await new Promise(r=>setTimeout(r,300));
-  try{
-    const url=await htmlToImage.toPng(el,{width:1080,height:1920,pixelRatio:1,cacheBust:true,fontEmbedCSS:fcss});
-    const a=document.createElement("a");a.href=url;a.download=`Ficha_${(L.titulo||"TRUST").replace(/[^\wáéíóúñ]+/gi,"_")}.png`;a.click();
-    toast("Ficha descargada");
-    if(ROLE==="admin"&&L===cur&&!cur.ficha_generada)await patch({ficha_generada:true});
-  }catch(e){console.error(e);toast("No se pudo generar la ficha: "+(e.message||e),true)}
-  st.innerHTML="";
+  const url=URL.createObjectURL(new Blob([fichaDocHTML(L)],{type:"text/html;charset=utf-8"}));
+  const w=window.open(url,"_blank");if(!w){toast("Tu navegador bloqueó la ventana; permite pop-ups para este sitio",true);return}
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+  toast("Ficha lista: descárgala con ⤓ Descargar PDF");
+  if(ROLE==="admin"&&L===cur&&!cur.ficha_generada)await patch({ficha_generada:true});
 }
 
 init();
