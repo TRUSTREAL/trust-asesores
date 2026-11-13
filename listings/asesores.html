@@ -992,7 +992,7 @@ html,body{margin:0;background:#E7E4DC}
 .nf-chips span{border:1px solid var(--nf-linea);background:rgba(var(--nf-p-rgb),.04);border-radius:999px;padding:5px 11px;font-size:9px;color:var(--nf-p);white-space:nowrap}
 .nf-p1{display:flex;flex-direction:column}
 .nf-p1 .nf-head,.nf-p1 .nf-body,.nf-p1 .nf-card{flex:none}
-.nf-strip{flex:1;min-height:120px;margin:16px 56px 0;display:grid;gap:5px;border-radius:14px;overflow:hidden;position:relative;z-index:2;max-height:230px}
+.nf-strip{flex:1;min-height:0;margin:16px 56px 0;display:grid;gap:5px;border-radius:14px;overflow:hidden;position:relative;z-index:2;max-height:230px}
 .nf-strip .nf-img{min-height:0}
 .nf-p1 .nf-sp{flex:1}
 .nf-p1 .nf-cta{position:relative;z-index:2;margin:22px auto 0;flex:none}
@@ -1048,7 +1048,15 @@ html,body{margin:0;background:#E7E4DC}
 </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"><\/script>
-<script>(function(){var d=document.getElementById("nf-doc");function z(){d.style.setProperty("--nfz",Math.min(1,(document.documentElement.clientWidth-24)/816))}z();addEventListener("resize",z)})();<\/script>
+<script>(function(){var d=document.getElementById("nf-doc");function z(){d.style.setProperty("--nfz",Math.min(1,(document.documentElement.clientWidth-24)/816))}z();addEventListener("resize",z)})();
+/* ajuste de la portada: si el contenido no cabe en la hoja, se recorta la tira de fotos y luego el aire del encabezado */
+(function(){function fit(){var p=document.querySelector(".nf-p1"),s=p.querySelector(".nf-strip"),h=p.querySelector(".nf-hero"),pr=p.querySelector(".nf-price");if(!p)return;
+  var over=function(){return p.scrollHeight-p.clientHeight>1};
+  if(!over())return;
+  if(s){s.style.maxHeight="110px";if(!over())return;s.style.maxHeight="80px";if(!over())return;s.style.display="none";if(!over())return}
+  if(h){h.style.marginTop="150px";if(!over())return;h.style.marginTop="110px";if(!over())return}
+  if(pr){pr.style.marginTop="20px";pr.style.height="auto"}}
+  if(document.readyState==="complete")fit();else addEventListener("load",fit);setTimeout(fit,600)})();<\/script>
 </body></html>`;
 }
 async function fichaPng(L){
