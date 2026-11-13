@@ -94,6 +94,9 @@ a.btn{text-decoration:none}
 .ccard .sp{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--text);margin-top:8px;padding-top:10px;border-top:1px solid var(--line)}
 .ccard .sp span{display:inline-flex;align-items:center;gap:4px}.ccard .sp i{font-style:normal;color:var(--faint)}
 .ccard .who{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-top:8px}
+.ccard .com{margin-top:8px;font-size:12px;color:var(--text);background:#FBF6EA;border:1px solid #EAD9B8;border-radius:10px;padding:6px 10px}
+.ccard .com b{color:#8A5A12;font-weight:600}
+.ccard .com.off{background:var(--surface-2);border-color:var(--line);color:var(--muted)}
 .av{width:26px;height:26px;border-radius:50%;background:var(--gold) center/cover no-repeat;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600;flex:none}
 /* detalle */
 #view-det .dhead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
@@ -518,6 +521,7 @@ function renderCat(){
     <div class="ph" style="${c?`background-image:url('${c}')`:""}"><span class="tp">${esc(l.tipo)}</span>${l.asesor===ME?`<span class="mine">Mía</span>`:""}${n?`<span class="n">${n} fotos</span>`:""}</div>
     <div class="bd"><div class="pr">${fmt(l.precio)}${l.tipo==="Renta"?" <small>/ mes</small>":""}</div><h3>${esc(l.titulo||"Sin título")}</h3><div class="adr">${esc(l.direccion||"")}</div>
     <div class="sp">${specsLine(l)||"<span><i>Sin datos de m²/recámaras</i></span>"}</div>
+    ${l.comision_pct!=null&&l.comision_pct!==""?`<div class="com"><b>Comisión ${l.comision_pct}%</b>${l.comparte_pct!=null&&l.comparte_pct!==""?` · se comparte ${l.comparte_pct}%`:""}${l.exclusiva===true?" · exclusiva":""}</div>`:`<div class="com off">Comisión sin capturar</div>`}
     <div class="who">${avHTML(l.asesor)}<span>${esc(l.asesor)}</span></div></div></div>`}).join("")
   :`<div class="empty" style="grid-column:1/-1"><b>Todavía no hay propiedades activas en el catálogo</b>Conforme TRUST dé de alta los listings, aparecerán aquí para todo el equipo.</div>`;
 }
