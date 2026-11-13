@@ -67,6 +67,9 @@ input.pin::placeholder{letter-spacing:0;font-weight:400;font-size:12px}
 .vacio{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:28px;text-align:center;color:var(--muted)}
 .vacio b{display:block;font-family:Lora,Georgia,serif;font-weight:500;font-size:20px;color:var(--green);margin-bottom:6px}
 .c-con{display:flex;flex-direction:column;gap:6px}
+.cum{display:flex;gap:4px;align-items:center;margin-top:6px}
+.cum select{font:inherit;font-size:12px;border:1px solid var(--line);border-radius:8px;padding:5px 6px;background:#fff;color:var(--text)}
+.cum small{font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;font-weight:600;margin-right:2px}
 .exp-btn{font:inherit;font-size:11.5px;font-weight:500;color:var(--green);background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;margin-top:6px;display:inline-flex;align-items:center;gap:5px}
 .exp-btn:hover{border-color:var(--green)}
 .exp-btn b{font-weight:600;background:var(--green);color:#fff;border-radius:999px;padding:0 6px;font-size:10px;min-width:16px;text-align:center}
@@ -112,7 +115,7 @@ input.pin::placeholder{letter-spacing:0;font-weight:400;font-size:12px}
     <div>
       <div class="eyebrow">TRUST realtor · Administración</div>
       <h1>Asesores</h1>
-      <div class="sub">Código de acceso, foto, celular, correo, expediente y última sesión de cada asesor. Lo que captures aquí es lo que sale en las cotizaciones y documentos que se envían a clientes.</div>
+      <div class="sub">Código de acceso, foto, celular, correo, cumpleaños, expediente y última sesión de cada asesor. Lo que captures aquí es lo que sale en las cotizaciones y documentos que se envían a clientes.</div>
     </div>
     <div class="topright">
       <a class="btn" href="./">← Panel</a>
@@ -158,6 +161,9 @@ function sesion(iso){
   return {c:dif<=2?"v":dif<=7?"a":"r",t:t,s:fecha};
 }
 
+const MESL=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+function cumHTML(a){const m=/^(\d{2})-(\d{2})$/.exec(a.cumple||"");const dd=m?+m[2]:0,mm=m?+m[1]:0;
+  return `<div class="cum" title="Cumpleaños: se felicita en el menú de asesores"><small>🎂</small><select data-cd><option value="0">Día</option>${Array.from({length:31},(_,i)=>`<option value="${i+1}" ${dd===i+1?"selected":""}>${i+1}</option>`).join("")}</select><select data-cm><option value="0">Mes</option>${MESL.map((x,i)=>`<option value="${i+1}" ${mm===i+1?"selected":""}>${x}</option>`).join("")}</select></div>`}
 function render(){
   const act=A.filter(a=>a.activo!==false);
   const hoy=act.filter(a=>sesion(a.ultima_sesion).t==="Hoy").length;
@@ -175,7 +181,7 @@ function render(){
     <div class="row ${a.activo===false?"off":""}" data-n="${n}">
       <div><div class="foto ${a.foto_url?"":"vacia"}" style="${a.foto_url?`background-image:url('${esc(fi.src)}');background-position:${fi.pos}`:""}" title="Subir o cambiar foto">${a.foto_url?"":esc(a.nombre.charAt(0))}<span class="cam">${a.foto_url?"Cambiar":"Subir"}</span><input type="file" accept="image/*" data-foto></div>${a.foto_url&&fi.o!=="s"?`<input class="enc" type="range" min="0" max="100" value="${fi.p}" data-enc title="Encuadre: mueve para centrar la cara">`:""}</div>
       <div class="nom"><b>${n}</b><div class="tags">${a.admin?'<span class="tag adm">Admin</span>':""}${a.activo===false?'<span class="tag">Sin acceso</span>':""}</div>${a.foto_url?'<button class="quitar" type="button" data-quitar>Quitar foto</button>':""}<br><button class="exp-btn" type="button" data-exp>▤ Expediente ${(NDOC[a.nombre]||0)?`<b>${NDOC[a.nombre]}</b>`:""}</button></div>
-      <label class="f c-nc"><span>Nombre completo</span><input class="t" type="text" data-k="nombre_completo" value="${esc(a.nombre_completo||"")}" placeholder="Como sale en la cotización" maxlength="60"></label>
+      <div class="c-nc"><label class="f"><span>Nombre completo</span><input class="t" type="text" data-k="nombre_completo" value="${esc(a.nombre_completo||"")}" placeholder="Como sale en la cotización" maxlength="60"></label>${cumHTML(a)}</div>
       <div class="c-con"><label class="f"><span>Celular</span><input class="t" type="tel" data-k="celular" value="${esc(a.celular||"")}" placeholder="33 1234 5678" maxlength="20"></label><label class="f"><span>Correo</span><input class="t" type="email" data-k="correo" value="${esc(a.correo||"")}" placeholder="nombre@trustreal.mx" maxlength="80"></label></div>
       <label class="f c-pin"><span>Código</span><input class="t pin" type="text" inputmode="numeric" data-k="pin" value="${esc(a.pin||"")}" placeholder="Sin código" maxlength="4"></label>
       <div class="ses c-ses ${s.c}"><i></i><div><b>${s.t}</b><small>${s.s}</small></div></div>
@@ -288,6 +294,8 @@ async function subirFoto(nombre,file){
 document.addEventListener("change",e=>{
   const t=e.target,row=t.closest(".row[data-n]"); if(!row)return; const n=row.dataset.n;
   if(t.matches("[data-foto]")){const f=t.files[0];t.value="";if(f)subirFoto(n,f);return}
+  if(t.matches("[data-cd],[data-cm]")){const box=t.closest(".cum");const dd=+box.querySelector("[data-cd]").value,mm=+box.querySelector("[data-cm]").value;
+    if(dd&&mm)guardar(n,{cumple:String(mm).padStart(2,"0")+"-"+String(dd).padStart(2,"0")});else if(!dd&&!mm)guardar(n,{cumple:null});return}
   if(t.matches("[data-enc]")){const a=A.find(x=>x.nombre===n),fi=fotoInfo(a.foto_url);guardar(n,{foto_url:fi.src+"#o="+fi.o+"&p="+(+t.value)});return}
   if(t.dataset.k){
     let v=t.value.trim();
