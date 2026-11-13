@@ -464,7 +464,7 @@ async function load(){
   const {data,error}=await q; if(error){toast("No se pudo cargar: "+error.message,true);return}
   ALL=(data||[]).map(l=>({...l,estatus:NORM[l.estatus]||l.estatus}));
   LISTINGS=ROLE==="admin"?ALL:ALL.filter(l=>l.asesor===ME);
-  if(!Object.keys(ASE).length){try{const a=await sb.from("asesores").select("nombre,celular,foto_url");(a.data||[]).forEach(x=>ASE[x.nombre]=x)}catch(e){}}
+  if(!Object.keys(ASE).length){try{const a=await sb.from("asesores").select("nombre,celular,correo,foto_url");(a.data||[]).forEach(x=>ASE[x.nombre]=x)}catch(e){}}
   const ids=ALL.filter(l=>l.estatus==="activo"||l.asesor===ME||ROLE==="admin").map(l=>l.id);
   if(ids.length){const r=await sb.from("listing_docs").select("*").in("listing_id",ids).order("orden");DOCS={};(r.data||[]).forEach(d=>{(DOCS[d.listing_id]=DOCS[d.listing_id]||[]).push(d)});}
   renderList();
@@ -905,7 +905,7 @@ async function generarFicha(){
 function fichaAsesor(){
   const A=window.AUTH||{};const n=(ROLE==="admin"?(A.nombre||""):(A.nombre||ME))||"";
   const a=(typeof ASE!=="undefined"&&ASE[n])||{};
-  return {nombre:n||"TRUST realtor",celular:a.celular||A.celular||"",foto:a.foto_url||A.foto||""};
+  return {nombre:n||"TRUST realtor",celular:a.celular||A.celular||"",correo:a.correo||A.correo||"",foto:a.foto_url||A.foto||""};
 }
 function fichaFotoPos(u){const m=/#o=([vhs])&p=(\d+)/.exec(u||"");if(!m)return "50% 50%";return m[1]==="v"?"50% "+m[2]+"%":m[1]==="h"?m[2]+"% 50%":"50% 50%"}
 function fichaDocHTML(L){
@@ -925,7 +925,7 @@ function fichaDocHTML(L){
   const ttl=esc(L.titulo||"Propiedad TRUST");
   const nomb=A.nombre.split(" ")[0];
   const logo="data:image/png;base64,"+LOGO_B64;
-  const asesorHTML=(dark)=>`<div class="nf-as"><div><div class="nf-as-n">${esc(A.nombre)}</div><div class="nf-as-s">Asesor TRUST${telFmt?" · "+esc(telFmt):""}</div></div>${A.foto?`<div class="nf-as-f" style="background-image:url('${esc(A.foto.split("#")[0])}');background-position:${fichaFotoPos(A.foto)}"></div>`:`<div class="nf-as-f nf-as-ini">${esc(A.nombre.charAt(0))}</div>`}</div>`;
+  const asesorHTML=(dark)=>`<div class="nf-as"><div><div class="nf-as-n">${esc(A.nombre)}</div><div class="nf-as-s">Asesor TRUST${telFmt?" · "+esc(telFmt):""}${A.correo?" · "+esc(A.correo):""}</div></div>${A.foto?`<div class="nf-as-f" style="background-image:url('${esc(A.foto.split("#")[0])}');background-position:${fichaFotoPos(A.foto)}"></div>`:`<div class="nf-as-f nf-as-ini">${esc(A.nombre.charAt(0))}</div>`}</div>`;
   const grid=(n)=>n<=1?"grid-template-columns:1fr;grid-template-rows:1fr":"grid-template-columns:1fr 1fr;grid-template-rows:repeat("+Math.ceil(n/2)+",1fr)";
   return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ficha · ${ttl}</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap">
@@ -1021,7 +1021,7 @@ html,body{margin:0;background:#E7E4DC}
   <div class="nf-band"><div class="nf-img" style="background-image:url('${img(interior)}')"></div><div class="nf-tint"></div><div class="nf-head light" style="padding-top:28px"><div class="nf-logo"><img src="${logo}" alt="TRUST"></div>${asesorHTML(false)}</div><div class="nf-tt"><h2>Así se ve.</h2><div class="nf-sub">${ttl}${colonia?" · "+esc(colonia):""}</div></div></div>
   <div class="nf-main">
     <div class="nf-grid" style="${grid(fotos2.length)}">${fotos2.map(d=>`<div class="nf-tile nf-img" style="background-image:url('${img(d)}')"></div>`).join("")}</div>
-    <div class="nf-bye">¿La vemos? <i>Escríbele a ${esc(nomb)}.</i>${telFmt?`<small>${esc(telFmt)} · ${CONTACTO.mail}</small>`:""}</div>
+    <div class="nf-bye">¿La vemos? <i>Escríbele a ${esc(nomb)}.</i>${telFmt||A.correo?`<small>${[telFmt,A.correo].filter(Boolean).map(esc).join(" · ")}</small>`:""}</div>
   </div>
   <div class="nf-foot">TRUST realtor · ${CONTACTO.web} · ${CONTACTO.tel} · We are trustworthy</div>
 </div>

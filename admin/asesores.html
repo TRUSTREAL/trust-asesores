@@ -32,7 +32,7 @@ body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--bg);co
 .resumen b{display:block;font-family:Lora,Georgia,serif;font-weight:500;font-size:24px;color:var(--green);line-height:1.2}
 .resumen span{font-size:12px;color:var(--muted)}
 .lista{display:flex;flex-direction:column;gap:10px}
-.row{display:grid;grid-template-columns:64px 1.1fr 1.3fr 1fr 110px 1.15fr 92px;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.row{display:grid;grid-template-columns:64px 1.05fr 1.2fr 1.25fr 96px 1.1fr 84px;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
 .row.off{opacity:.62}
 .row.head{background:none;border:0;padding:0 16px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .foto{width:60px;height:60px;border-radius:50%;background:var(--surface-2) center/cover no-repeat;border:1px solid var(--line-2);position:relative;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:Lora,Georgia,serif;font-size:22px;color:var(--green);overflow:hidden}
@@ -66,12 +66,39 @@ input.pin::placeholder{letter-spacing:0;font-weight:400;font-size:12px}
 .nota b{color:var(--text);font-weight:600}
 .vacio{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:28px;text-align:center;color:var(--muted)}
 .vacio b{display:block;font-family:Lora,Georgia,serif;font-weight:500;font-size:20px;color:var(--green);margin-bottom:6px}
+.c-con{display:flex;flex-direction:column;gap:6px}
+.exp-btn{font:inherit;font-size:11.5px;font-weight:500;color:var(--green);background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;margin-top:6px;display:inline-flex;align-items:center;gap:5px}
+.exp-btn:hover{border-color:var(--green)}
+.exp-btn b{font-weight:600;background:var(--green);color:#fff;border-radius:999px;padding:0 6px;font-size:10px;min-width:16px;text-align:center}
+/* expediente */
+.modal{position:fixed;inset:0;background:rgba(20,30,25,.45);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:40;overflow:auto}
+.modal.on{display:flex}
+.mbox{background:var(--bg);border-radius:18px;width:min(720px,100%);box-shadow:0 24px 60px rgba(0,0,0,.25);padding:22px 24px 24px}
+.mhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
+.mhead h2{font-family:Lora,Georgia,serif;font-weight:500;font-size:24px;color:var(--green)}
+.mhead p{color:var(--muted);font-size:12.5px;margin-top:2px}
+.mclose{font:inherit;border:1px solid var(--line-2);background:#fff;border-radius:999px;width:34px;height:34px;cursor:pointer;font-size:16px;color:var(--muted)}
+.up{display:grid;grid-template-columns:1fr 1.4fr auto;gap:8px;align-items:end;background:var(--surface);border:1px dashed var(--line-2);border-radius:14px;padding:14px 16px;margin-bottom:14px}
+.up label{display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:4px}
+.up select,.up input[type=text]{font:inherit;font-size:13px;width:100%;border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:#fff}
+.up label.dz{text-transform:none;letter-spacing:0;margin:0;position:relative;display:inline-flex;align-items:center;gap:6px;background:var(--green);color:#fff;border-radius:999px;padding:9px 16px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap}
+.up .dz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.docs{display:flex;flex-direction:column;gap:8px}
+.doc{display:grid;grid-template-columns:40px 1fr auto auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.doc .ic{width:40px;height:40px;border-radius:10px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--green);letter-spacing:.04em}
+.doc .nm{font-weight:500;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.doc .mt{font-size:11.5px;color:var(--muted)}
+.doc a{font-size:12.5px;color:var(--green);font-weight:500;text-decoration:none;border:1px solid var(--line-2);border-radius:999px;padding:5px 11px}
+.doc button{font:inherit;font-size:12px;color:var(--muted);background:none;border:0;cursor:pointer;text-decoration:underline}
+.doc button:hover{color:var(--red)}
+.dvacio{color:var(--muted);font-size:13px;text-align:center;padding:22px;border:1px dashed var(--line-2);border-radius:12px;background:var(--surface)}
+@media (max-width:640px){.up{grid-template-columns:1fr}.doc{grid-template-columns:40px 1fr;row-gap:6px}}
 @media (max-width:900px){
   .row.head{display:none}
   .row{grid-template-columns:64px 1fr 1fr;gap:12px}
   .row .nom{grid-column:2/4}
   label.f span{display:block}
-  .row .c-nc,.row .c-cel{grid-column:span 3}
+  .row .c-nc,.row .c-con{grid-column:span 3}
   .row .c-pin{grid-column:1/3}
   .row .c-ses{grid-column:1/3}
 }
@@ -85,7 +112,7 @@ input.pin::placeholder{letter-spacing:0;font-weight:400;font-size:12px}
     <div>
       <div class="eyebrow">TRUST realtor · Administración</div>
       <h1>Asesores</h1>
-      <div class="sub">Código de acceso, foto, celular y última sesión de cada asesor. Lo que captures aquí es lo que sale en las cotizaciones y documentos que se envían a clientes.</div>
+      <div class="sub">Código de acceso, foto, celular, correo, expediente y última sesión de cada asesor. Lo que captures aquí es lo que sale en las cotizaciones y documentos que se envían a clientes.</div>
     </div>
     <div class="topright">
       <a class="btn" href="./">← Panel</a>
@@ -95,8 +122,13 @@ input.pin::placeholder{letter-spacing:0;font-weight:400;font-size:12px}
   <div class="sync" id="sync">Cargando…</div>
   <div class="resumen" id="resumen"></div>
   <div class="lista" id="lista"></div>
+  <div class="modal" id="exp"><div class="mbox">
+    <div class="mhead"><div><h2 id="exp-t">Expediente</h2><p id="exp-s"></p></div><button class="mclose" id="exp-close" type="button" title="Cerrar">✕</button></div>
+    <div class="up"><div><label>Tipo de documento</label><select id="exp-tipo"></select></div><div><label>Nombre (opcional)</label><input type="text" id="exp-nom" placeholder="Si lo dejas vacío usa el nombre del archivo" maxlength="80"></div><label class="dz">⇪ Subir archivo<input type="file" id="exp-file" multiple accept=".pdf,image/*,.doc,.docx,.xls,.xlsx"></label></div>
+    <div class="docs" id="exp-docs"></div>
+  </div></div>
   <div class="nota">
-    <b>Cómo funciona.</b> El <b>código</b> es de 4 dígitos; si lo dejas vacío, ese asesor entra sin contraseña. La <b>foto</b> y el <b>celular</b> aparecen en la firma de las cotizaciones; la foto se muestra en círculo, y con el control que aparece debajo la mueves para centrar la cara. <b>Acceso al portal</b> apagado = ya no puede entrar, pero su nombre y su historial (leads, ventas, documentos) se conservan. La <b>última sesión</b> se registra cuando el asesor abre cualquier módulo de su portal (no cuenta el panel de administración). Los cambios aplican en el dispositivo de cada asesor la siguiente vez que abra o recargue el portal.
+    <b>Cómo funciona.</b> El <b>código</b> es de 4 dígitos; si lo dejas vacío, ese asesor entra sin contraseña. La <b>foto</b>, el <b>celular</b> y el <b>correo</b> aparecen en la firma de las cotizaciones y fichas; la foto se muestra en círculo, y con el control que aparece debajo la mueves para centrar la cara. <b>Acceso al portal</b> apagado = ya no puede entrar, pero su nombre y su historial (leads, ventas, documentos) se conservan. La <b>última sesión</b> se registra cuando el asesor abre cualquier módulo de su portal (no cuenta el panel de administración). Los cambios aplican en el dispositivo de cada asesor la siguiente vez que abra o recargue el portal.
   </div>
 </div>
 <script>
@@ -107,6 +139,9 @@ let sb=null; try{ sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); }c
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 let A=[];           // asesores
+let NDOC={};        // documentos de expediente por asesor
+let EXP=null;       // asesor con el expediente abierto
+const TIPOS=["Contrato","INE","CURP","RFC / Constancia fiscal","Comprobante de domicilio","Carta de confidencialidad","Otro"];
 let saveT=null;
 const sync=(t,err)=>{const el=$("#sync");el.textContent=t;el.className="sync"+(err?" err":"")};
 const slug=t=>String(t).normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
@@ -135,13 +170,13 @@ function render(){
     <div><b>${sinPin}</b><span>sin código de acceso</span></div>
     <div><b>${sinFoto}</b><span>sin foto</span></div>`:"";
   if(!A.length){$("#lista").innerHTML=`<div class="vacio"><b>Aún no hay asesores cargados</b>Corre el SQL <b>asesores.sql</b> en Supabase para crear la tabla con el equipo actual.</div>`;return}
-  $("#lista").innerHTML=`<div class="row head"><span>Foto</span><span>Asesor</span><span>Nombre completo</span><span>Celular</span><span>Código</span><span>Última sesión</span><span>Acceso</span></div>`+
+  $("#lista").innerHTML=`<div class="row head"><span>Foto</span><span>Asesor</span><span>Nombre completo</span><span>Celular y correo</span><span>Código</span><span>Última sesión</span><span>Acceso</span></div>`+
   A.map(a=>{const s=sesion(a.ultima_sesion);const n=esc(a.nombre);const fi=fotoInfo(a.foto_url);return `
     <div class="row ${a.activo===false?"off":""}" data-n="${n}">
       <div><div class="foto ${a.foto_url?"":"vacia"}" style="${a.foto_url?`background-image:url('${esc(fi.src)}');background-position:${fi.pos}`:""}" title="Subir o cambiar foto">${a.foto_url?"":esc(a.nombre.charAt(0))}<span class="cam">${a.foto_url?"Cambiar":"Subir"}</span><input type="file" accept="image/*" data-foto></div>${a.foto_url&&fi.o!=="s"?`<input class="enc" type="range" min="0" max="100" value="${fi.p}" data-enc title="Encuadre: mueve para centrar la cara">`:""}</div>
-      <div class="nom"><b>${n}</b><div class="tags">${a.admin?'<span class="tag adm">Admin</span>':""}${a.activo===false?'<span class="tag">Sin acceso</span>':""}</div>${a.foto_url?'<button class="quitar" type="button" data-quitar>Quitar foto</button>':""}</div>
+      <div class="nom"><b>${n}</b><div class="tags">${a.admin?'<span class="tag adm">Admin</span>':""}${a.activo===false?'<span class="tag">Sin acceso</span>':""}</div>${a.foto_url?'<button class="quitar" type="button" data-quitar>Quitar foto</button>':""}<br><button class="exp-btn" type="button" data-exp>▤ Expediente ${(NDOC[a.nombre]||0)?`<b>${NDOC[a.nombre]}</b>`:""}</button></div>
       <label class="f c-nc"><span>Nombre completo</span><input class="t" type="text" data-k="nombre_completo" value="${esc(a.nombre_completo||"")}" placeholder="Como sale en la cotización" maxlength="60"></label>
-      <label class="f c-cel"><span>Celular</span><input class="t" type="tel" data-k="celular" value="${esc(a.celular||"")}" placeholder="33 1234 5678" maxlength="20"></label>
+      <div class="c-con"><label class="f"><span>Celular</span><input class="t" type="tel" data-k="celular" value="${esc(a.celular||"")}" placeholder="33 1234 5678" maxlength="20"></label><label class="f"><span>Correo</span><input class="t" type="email" data-k="correo" value="${esc(a.correo||"")}" placeholder="nombre@trustreal.mx" maxlength="80"></label></div>
       <label class="f c-pin"><span>Código</span><input class="t pin" type="text" inputmode="numeric" data-k="pin" value="${esc(a.pin||"")}" placeholder="Sin código" maxlength="4"></label>
       <div class="ses c-ses ${s.c}"><i></i><div><b>${s.t}</b><small>${s.s}</small></div></div>
       <div class="sw"><button type="button" class="${a.activo===false?"":"on"}" data-acceso title="Acceso al portal"></button>${a.activo===false?"Apagado":"Activo"}</div>
@@ -152,8 +187,57 @@ async function cargar(){
   if(!sb){sync("No se pudo conectar con Supabase.",true);return}
   const {data,error}=await sb.from("asesores").select("*").order("orden",{ascending:true}).order("nombre");
   if(error){sync("No se pudo leer la tabla de asesores: "+error.message+" · ¿Ya corriste asesores.sql en Supabase?",true);A=[];render();return}
-  A=data||[];render();sync(A.length?"Los cambios se guardan solos.":"");
+  A=data||[];
+  try{const r=await sb.from("asesor_documentos").select("asesor");NDOC={};(r.data||[]).forEach(d=>NDOC[d.asesor]=(NDOC[d.asesor]||0)+1)}catch(e){}
+  render();sync(A.length?"Los cambios se guardan solos.":"");
 }
+/* ---------- expediente por asesor (tabla asesor_documentos · bucket documentos/asesores/expediente) ---------- */
+const fmtKB=b=>b==null?"":b>1048576?(b/1048576).toFixed(1)+" MB":Math.max(1,Math.round(b/1024))+" KB";
+const extDe=n=>(String(n).split(".").pop()||"").toUpperCase().slice(0,4);
+async function abrirExp(nombre){
+  EXP=nombre;const a=A.find(x=>x.nombre===nombre)||{};
+  $("#exp-t").textContent="Expediente de "+(a.nombre_completo||nombre);
+  $("#exp-s").textContent="Documentos generales del asesor. Solo se ven aquí, en administración.";
+  $("#exp-tipo").innerHTML=TIPOS.map(x=>`<option>${x}</option>`).join("");$("#exp-nom").value="";
+  $("#exp-docs").innerHTML='<div class="dvacio">Cargando…</div>';$("#exp").classList.add("on");
+  await renderExp();
+}
+async function renderExp(){
+  const r=await sb.from("asesor_documentos").select("*").eq("asesor",EXP).order("created_at",{ascending:false});
+  if(r.error){$("#exp-docs").innerHTML=`<div class="dvacio">No se pudo leer el expediente: ${esc(r.error.message)}<br>¿Ya corriste el SQL <b>asesores_correo_expediente.sql</b>?</div>`;return}
+  const D=r.data||[];NDOC[EXP]=D.length;
+  $("#exp-docs").innerHTML=D.length?D.map(d=>`<div class="doc" data-id="${d.id}"><div class="ic">${esc(extDe(d.path))}</div><div><div class="nm">${esc(d.nombre)}</div><div class="mt">${esc(d.tipo||"")}${d.tipo?" · ":""}${new Date(d.created_at).toLocaleDateString("es-MX",{day:"numeric",month:"short",year:"numeric"})}${d.tamano?" · "+fmtKB(d.tamano):""}</div></div><a href="${esc(sb.storage.from(BUCKET).getPublicUrl(d.path).data.publicUrl)}" target="_blank" rel="noopener">Abrir ↗</a><button type="button" data-del>Quitar</button></div>`).join("")
+    :'<div class="dvacio">Todavía no hay documentos en este expediente.</div>';
+}
+async function subirExp(file){
+  if(!file||!EXP)return;
+  if(file.size>25*1048576){alert("El archivo pesa más de 25 MB. Comprímelo o súbelo en partes.");return}
+  const tipo=$("#exp-tipo").value,nom=($("#exp-nom").value||"").trim()||file.name.replace(/\.[^.]+$/,"");
+  sync("Subiendo "+file.name+"…");
+  try{
+    const ext=(file.name.split(".").pop()||"bin").toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,6);
+    const path="asesores/expediente/"+slug(EXP)+"/"+Date.now()+"_"+slug(nom).slice(0,40)+"."+ext;
+    const up=await sb.storage.from(BUCKET).upload(path,file,{upsert:false,contentType:file.type||"application/octet-stream"});
+    if(up.error)throw up.error;
+    const ins=await sb.from("asesor_documentos").insert({asesor:EXP,nombre:nom,tipo:tipo,path:path,tamano:file.size});
+    if(ins.error)throw ins.error;
+    $("#exp-nom").value="";sync("Documento guardado en el expediente de "+EXP);
+    await renderExp();render();
+  }catch(e){sync("No se pudo subir: "+(e.message||e),true)}
+}
+async function quitarExp(id){
+  const row=$(`.doc[data-id="${id}"]`);const nm=row?row.querySelector(".nm").textContent:"";
+  if(!confirm("¿Quitar \""+nm+"\" del expediente de "+EXP+"?"))return;
+  const r=await sb.from("asesor_documentos").select("path").eq("id",id).single();
+  const del=await sb.from("asesor_documentos").delete().eq("id",id);
+  if(del.error){sync("No se pudo quitar: "+del.error.message,true);return}
+  if(r.data&&r.data.path)sb.storage.from(BUCKET).remove([r.data.path]).then(()=>{},()=>{});
+  await renderExp();render();
+}
+$("#exp-close").addEventListener("click",()=>{$("#exp").classList.remove("on");EXP=null});
+$("#exp").addEventListener("click",e=>{if(e.target===$("#exp")){$("#exp").classList.remove("on");EXP=null}});
+$("#exp-file").addEventListener("change",e=>{const fs=[...e.target.files];e.target.value="";(async()=>{for(const f of fs)await subirExp(f)})()});
+$("#exp-docs").addEventListener("click",e=>{const b=e.target.closest("[data-del]");if(b)quitarExp(b.closest(".doc").dataset.id)});
 function guardar(nombre,cambios,despues){
   const a=A.find(x=>x.nombre===nombre); if(!a)return;
   Object.assign(a,cambios); sync("Guardando…");
@@ -227,6 +311,7 @@ document.addEventListener("click",e=>{
     if(!nuevo&&!confirm("¿Quitar el acceso al portal a "+a.nombre+"?\nYa no podrá entrar. Su historial se conserva."))return;
     guardar(a.nombre,{activo:nuevo},render);return;
   }
+  if(row&&e.target.closest("[data-exp]")){abrirExp(row.dataset.n);return}
   if(row&&e.target.matches("[data-quitar]")){
     const a=A.find(x=>x.nombre===row.dataset.n); if(!confirm("¿Quitar la foto de "+a.nombre+"?"))return;
     const vieja=a.foto_path; guardar(a.nombre,{foto_url:null,foto_path:null},()=>{if(vieja)sb.storage.from(BUCKET).remove([vieja]).then(()=>{},()=>{});render()});return;
@@ -243,7 +328,7 @@ $("#btn-add").addEventListener("click",async()=>{
   sync("Agregando…");
   const {error}=await sb.from("asesores").insert({nombre:n,orden:orden,activo:true});
   if(error){sync("No se pudo agregar: "+error.message,true);return}
-  await cargar(); sync("Agregado: "+n+". Captura su código, celular y foto.");
+  await cargar(); sync("Agregado: "+n+". Captura su código, celular, correo y foto.");
 });
 cargar();
 </script>

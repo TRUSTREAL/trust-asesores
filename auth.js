@@ -30,7 +30,7 @@
   function refrescar(cb){
     var listo=false,fin=function(c){if(listo)return;listo=true;if(cb)cb(c)};
     try{
-      fetch(SB_URL+"/rest/v1/asesores?select=nombre,nombre_completo,celular,pin,foto_url,activo,admin,orden&order=orden.asc,nombre.asc",{headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY}})
+      fetch(SB_URL+"/rest/v1/asesores?select=nombre,nombre_completo,celular,correo,pin,foto_url,activo,admin,orden&order=orden.asc,nombre.asc",{headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY}})
         .then(function(r){return r.ok?r.json():null})
         .then(function(d){
           if(!d||!d.length||!d[0].nombre){fin(false);return}
@@ -61,7 +61,7 @@
   if(user){
     if(!ES_ADMIN)fijar(user);
     var yo=EQ.filter(function(a){return a.nombre===user})[0]||{};
-    window.AUTH={nombre:user,rol:ADMINS.indexOf(user)>=0?"admin":"asesor",nombreCompleto:yo.nombre_completo||"",celular:yo.celular||"",foto:yo.foto_url||""};
+    window.AUTH={nombre:user,rol:ADMINS.indexOf(user)>=0?"admin":"asesor",nombreCompleto:yo.nombre_completo||"",celular:yo.celular||"",correo:yo.correo||"",foto:yo.foto_url||""};
     /* Última sesión en el portal de asesores (se ve en Admin → Asesores). Máximo un registro cada 10 minutos. */
     if(!ES_ADMIN){try{
       var pk="trust_ping_"+user,ult=+(LS.get(pk)||0),ahora=Date.now();
