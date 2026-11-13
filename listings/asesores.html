@@ -817,17 +817,21 @@ document.addEventListener("change",async e=>{
   const inp=e.target;if(inp.type!=="file")return;const kind=inp.closest(".dz").dataset.kind;
   if(!cur.id){toast("Guarda primero la propiedad",true);inp.value="";return}
   const files=[...inp.files];if(!files.length)return;
-  let orden=docsOf(cur.id,kind).length;
+  let orden=docsOf(cur.id,kind).length;const fallas=[];let ok=0;
+  toast("Subiendo "+files.length+" archivo"+(files.length===1?"":"s")+"…");
   for(let f of files){
-    try{f=await normalizarImagen(f,kind)}catch(err){toast("No se pudo procesar "+f.name+": "+(err.message||err),true);continue}
+    const nombreOrig=f.name;
+    try{f=await normalizarImagen(f,kind)}catch(err){fallas.push(nombreOrig+": no se pudo procesar ("+(err.message||err)+")");continue}
     const ext=(f.name.split(".").pop()||"bin").toLowerCase();const name=`${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`;const path=`${cur.id}/${kind}/${name}`;
     const up=await sb.storage.from(BUCKET).upload(path,f,{contentType:f.type||undefined});
-    if(up.error){toast("No se subió "+f.name+": "+up.error.message,true);continue}
+    if(up.error){fallas.push(nombreOrig+": "+(up.error.message||up.error.error||"error de almacenamiento"));continue}
     const r=await sb.from("listing_docs").insert({listing_id:cur.id,tipo:kind,path,nombre:f.name,orden:orden++}).select().single();
-    if(r.error){toast("No se registró "+f.name,true);continue}
-    (DOCS[cur.id]=DOCS[cur.id]||[]).push(r.data);
+    if(r.error){fallas.push(nombreOrig+": subió pero no se registró ("+r.error.message+")");continue}
+    (DOCS[cur.id]=DOCS[cur.id]||[]).push(r.data);ok++;
   }
-  inp.value="";renderDocs();refresh();toast("Archivos subidos");
+  inp.value="";renderDocs();refresh();
+  if(fallas.length){console.error("Fallas al subir:",fallas);alert((ok?ok+" archivo"+(ok===1?"":"s")+" subido"+(ok===1?"":"s")+".\n\n":"")+"No se pudo subir:\n• "+fallas.join("\n• ")+"\n\nSi el mensaje habla de tamaño, cuota o “exceeded”, avísale a TRUST: puede ser el almacenamiento.");toast(fallas.length+" archivo"+(fallas.length===1?"":"s")+" con error",true)}
+  else toast(ok+" archivo"+(ok===1?"":"s")+" subido"+(ok===1?"":"s"));
 });
 function renderDocs(){["autorizacion","cliente","foto_h","foto_v","video_lona"].forEach(renderDocList)}
 function renderDocList(kind){
