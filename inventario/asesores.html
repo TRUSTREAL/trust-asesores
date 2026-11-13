@@ -209,6 +209,66 @@ select.st{padding-right:10px}
 .doc .del{flex:none}
 .upl{margin-top:14px;border:1px dashed var(--line-2);border-radius:10px;padding:18px;text-align:center;color:var(--muted);font-size:13px;background:var(--surface)}
 /* ---- Renders ---- */
+/* ---- Edificio (stacking plan) ---- */
+.edwrap{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start;margin-top:14px}
+.edbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px}
+.edbar .chip{border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:12.5px;color:var(--text);cursor:pointer;font:inherit}
+.edbar .chip[aria-pressed="true"]{background:var(--green,#173F35);border-color:var(--green,#173F35);color:#fff}
+.edleg{margin-left:auto;display:flex;gap:10px;font-size:11.5px;color:var(--muted);flex-wrap:wrap}
+.edleg span{display:inline-flex;align-items:center;gap:5px}.edleg i{width:12px;height:12px;border-radius:4px;display:inline-block}
+.edbld{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px 18px 12px;overflow-x:auto}
+.edtow{display:grid;gap:0 8px;align-items:center;min-width:640px}
+.edth{font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);text-align:center;padding-bottom:6px;white-space:nowrap}
+.edth b{display:block;font-family:Lora,Georgia,serif;font-weight:500;font-size:15px;letter-spacing:0;text-transform:none;color:var(--green,#173F35)}
+.edroof{height:10px;border-radius:10px 10px 0 0;background:var(--green,#173F35);margin-bottom:6px}
+.edfl{display:flex;flex-direction:column;justify-content:center;align-items:center;background:var(--surface-2);border-radius:10px;font-family:Lora,Georgia,serif;font-size:17px;color:var(--green,#173F35);height:60px;min-width:46px}
+.edfl small{font-family:Poppins,sans-serif;font-size:8px;color:var(--muted);letter-spacing:.1em}
+.edrow{display:grid;gap:4px;padding:3px 0;min-width:0}
+.edmid{height:100%;position:relative;min-width:18px}.edmid i{position:absolute;top:0;bottom:0;left:50%;border-left:1px dashed var(--line-2)}
+.eu{border-radius:9px;border:1.5px solid #2E7D5B;background:#E1F1E8;padding:6px 5px 5px;height:60px;width:100%;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer;position:relative;min-width:0;text-align:left;font:inherit}
+.eu b{font-family:Lora,Georgia,serif;font-weight:500;font-size:14px;color:var(--green,#173F35);line-height:1}
+.eu .t{font-size:9px;letter-spacing:-.01em;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.eu .t em{font-style:normal;font-weight:600;color:var(--text)}
+.eu .p{font-size:10px;font-weight:600;color:var(--green,#173F35);white-space:nowrap}
+.eu.st-apartado{background:#F2C94C;border-color:#F2C94C}.eu.st-apartado b{color:#5E4A00}
+.eu.st-vendido{background:#2F5597;border-color:#2F5597}.eu.st-vendido b,.eu.st-vendido .p,.eu.st-vendido .t,.eu.st-vendido .t em{color:#fff}
+.eu.st-bloqueado{background:#B8B8B5;border-color:#B8B8B5}.eu.st-bloqueado b{color:#fff}
+.eu.st-aportante{background:#E07A2F;border-color:#E07A2F}.eu.st-aportante b{color:#fff}
+.eu.st-otro{background:#D9D6CE;border-color:#D9D6CE}.eu.st-otro b{color:#fff}
+.eu.mute{justify-content:flex-start}
+.eu.sel{outline:3px solid #1E241F;outline-offset:1px}
+.eu.dim{opacity:.22}
+.eu.hid{background:#EDEBE5;border-color:#EDEBE5;cursor:default}.eu.hid b{color:#C9C5BA}
+.edgf{margin-top:10px;padding-top:10px;border-top:2px solid var(--green,#173F35)}
+.edgf .lbl{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.edtot{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+.edtot div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 14px;min-width:110px}
+.edtot b{display:block;font-family:Lora,Georgia,serif;font-weight:500;font-size:20px;color:var(--green,#173F35)}.edtot span{font-size:11px;color:var(--muted)}
+.edside{position:sticky;top:16px}
+.edcard{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.edcard .ph{height:170px;background:var(--surface-2) center/cover no-repeat;position:relative;cursor:zoom-in}
+.edcard .ph.plan{background-size:contain;background-color:#fff}
+.edcard .ph span{position:absolute;left:12px;bottom:12px;background:rgba(255,255,255,.94);border-radius:999px;padding:4px 11px;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--green,#173F35)}
+.edcard .thumbs{display:flex;gap:5px;padding:6px 8px 0;overflow-x:auto}
+.edcard .thumbs div{width:56px;height:42px;border-radius:6px;background:var(--surface-2) center/cover no-repeat;flex:none;cursor:pointer;border:2px solid transparent}
+.edcard .thumbs div.on{border-color:var(--green,#173F35)}
+.edcard .bd{padding:14px 16px 16px}
+.edst{display:inline-block;border-radius:999px;padding:3px 10px;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;background:#E1F1E8;color:#2E7D5B}
+.edcard h2{font-family:Lora,Georgia,serif;font-weight:500;font-size:25px;margin:8px 0 0}.edcard .sub{color:var(--muted);font-size:12px}
+.edprice{font-family:Lora,Georgia,serif;font-size:24px;color:var(--green,#173F35);margin:10px 0 0}.edpm2{font-size:11px;color:var(--muted)}
+.edspecs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:12px 0 0}
+.edspecs div{background:var(--surface-2);border-radius:10px;padding:7px 9px}.edspecs b{display:block;font-family:Lora,Georgia,serif;font-weight:500;font-size:16px;color:var(--green,#173F35)}.edspecs span{font-size:9.5px;color:var(--muted)}
+.edbtns{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+.edbtns .btn{justify-content:center;text-decoration:none}
+.edempty{padding:26px 18px;text-align:center;color:var(--muted);font-size:13px}
+.edempty b{display:block;font-family:Lora,Georgia,serif;font-weight:500;font-size:18px;color:var(--green,#173F35);margin-bottom:4px}
+@media (max-width:980px){.edwrap{grid-template-columns:1fr}.edside{position:static}}
+/* renders de unidades: etiquetas */
+.rtag{position:absolute;left:6px;bottom:6px;background:rgba(255,255,255,.94);color:var(--green,#173F35);border-radius:999px;padding:2px 8px;font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.rtag.pl{background:var(--green,#173F35);color:#fff}
+.rsub{font-size:12px;color:var(--muted);margin:12px 0 0;font-weight:500}
+.rupx{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;margin-bottom:10px;font-size:12.5px;color:var(--muted)}
+.rupx select{font:inherit;font-size:12.5px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:var(--surface);color:var(--text)}
+
 .rcats{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px}
 .rcats button{font:inherit;font-size:12.5px;font-weight:500;border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:6px 12px;cursor:pointer;color:var(--muted);display:inline-flex;gap:6px;align-items:center}
 .rcats button b{font-size:10.5px;background:var(--surface-2);border-radius:999px;padding:1px 6px;font-weight:600}
@@ -519,7 +579,7 @@ function renderMain(){
   :`<div class="empty" style="margin-top:18px;border:1px dashed var(--line-2);border-radius:0"><b>Sin unidades cargadas</b>${READONLY?"Aún no hay inventario capturado para este proyecto.":"Agrega las unidades desde la lista de precios o el Excel del desarrollador."}</div>`;
   if(renta&&vista==="politica")vista="precios";
   if(READONLY&&vista==="ventas")vista="precios";
-  const seg=`<div class="vseg" role="tablist" aria-label="Vista"><button data-vista="precios" aria-pressed="${vista==="precios"}">Precios</button>${renta?"":`<button data-vista="politica" aria-pressed="${vista==="politica"}">Política de venta</button>`}<button data-vista="docs" aria-pressed="${vista==="docs"}">Documentos${(docs[p.id]||[]).length?` · ${(docs[p.id]||[]).length}`:""}</button><button data-vista="renders" aria-pressed="${vista==="renders"}">Renders${(rend[p.id]||[]).length?` · ${(rend[p.id]||[]).length}`:""}</button><button data-vista="video" aria-pressed="${vista==="video"}">Video${(Array.isArray(p.videos)&&p.videos.length)?` · ${p.videos.length}`:""}</button>${READONLY?"":`<button data-vista="ventas" aria-pressed="${vista==="ventas"}">${renta?"Rentas":"Ventas"}${c.Vendido?` · ${c.Vendido}`:""}</button>`}</div>`;
+  const seg=`<div class="vseg" role="tablist" aria-label="Vista"><button data-vista="precios" aria-pressed="${vista==="precios"}">Precios</button><button data-vista="edificio" aria-pressed="${vista==="edificio"}">Edificio</button>${renta?"":`<button data-vista="politica" aria-pressed="${vista==="politica"}">Política de venta</button>`}<button data-vista="docs" aria-pressed="${vista==="docs"}">Documentos${(docs[p.id]||[]).length?` · ${(docs[p.id]||[]).length}`:""}</button><button data-vista="renders" aria-pressed="${vista==="renders"}">Renders${(rend[p.id]||[]).length?` · ${(rend[p.id]||[]).length}`:""}</button><button data-vista="video" aria-pressed="${vista==="video"}">Video${(Array.isArray(p.videos)&&p.videos.length)?` · ${p.videos.length}`:""}</button>${READONLY?"":`<button data-vista="ventas" aria-pressed="${vista==="ventas"}">${renta?"Rentas":"Ventas"}${c.Vendido?` · ${c.Vendido}`:""}</button>`}</div>`;
   const pols=Array.isArray(p.politicas)?p.politicas:[];
   const minP=Math.min(...p.units.filter(u=>u.estatus==="Disponible").map(u=>u.precio).concat([Infinity]));
   const pol=(pols.length?`<div class="pols">${pols.map(x=>polCard(x,isFinite(minP)?minP:null)).join("")}</div>`:`<div class="pol empty"><b>Sin políticas de venta</b>${READONLY?"Pronto estarán disponibles para este proyecto.":"Usa \"Editar políticas\" para capturarlas."}</div>`)+(p.politica?`<div class="polnote">${polHTML(p.politica)}</div>`:"");
@@ -530,8 +590,8 @@ function renderMain(){
       <div class="actions">${READONLY?`<button class="btn ${VENTAS?"primary":""}" id="btn-ventas" aria-pressed="${VENTAS}" title="${VENTAS?"Salir del modo ventas":"Oculta estatus y unidades no disponibles para mostrar a clientes"}">${VENTAS?"✓ Modo ventas":"Modo ventas"}</button>`:""}<button class="btn" id="btn-pdf" ${rows.length?"":"disabled"} title="Lista de precios de las unidades que se muestran en la tabla">⤓ Lista de precios (PDF)</button>${renta?"":`<button class="btn" id="btn-pol-pdf" ${(pols.length||p.politica)?"":"disabled"} title="Políticas de pago del proyecto, listas para compartir con el cliente">⤓ Políticas de pago (PDF)</button>`}${READONLY?"":`<button class="btn" id="btn-edit-project">Editar proyecto</button>${renta?"":`<button class="btn" id="btn-edit-pol">Editar políticas</button>`}<button class="btn" id="btn-import">⇪ Importar</button><button class="btn primary" id="btn-add-unit">+ Unidad</button>`}</div>
     </div>
     ${seg}
-    ${vista==="precios"?(VENTAS?"":tiles)+table+(p.notas?`<div class="notes"><span class="eyebrow">Notas</span><p>${esc(p.notas)}</p></div>`:""):vista==="politica"?pol:vista==="ventas"?ventasHTML(p):vista==="renders"?rendHTML(p):vista==="video"?videoHTML(p):docsHTML(p)}`;
-  if(vista==="renders"&&sb&&!rend[p.id])loadRend(p.id).then(()=>{if(vista==="renders")renderMain()});
+    ${vista==="precios"?(VENTAS?"":tiles)+table+(p.notas?`<div class="notes"><span class="eyebrow">Notas</span><p>${esc(p.notas)}</p></div>`:""):vista==="politica"?pol:vista==="ventas"?ventasHTML(p):vista==="renders"?rendHTML(p):vista==="video"?videoHTML(p):vista==="edificio"?edificioHTML(p):docsHTML(p)}`;
+  if((vista==="renders"||vista==="edificio")&&sb&&!rend[p.id])loadRend(p.id).then(()=>{if(vista==="renders"||vista==="edificio")renderMain()});
   if(vista==="docs"&&sb&&!docs[p.id])loadDocs(p.id).then(()=>{if(vista==="docs")renderMain()});
 }
 
@@ -591,7 +651,7 @@ document.addEventListener("click",e=>{
   if(t.dataset.cat){S.cat=t.dataset.cat;filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};save();render();return}
   if(t.id==="btn-ventas"){VENTAS=!VENTAS;try{localStorage.setItem("inv_ventas",VENTAS?"1":"0")}catch(e){}filt.estatus="";renderMain();return}
   if(t.id==="pbtn"){const pk=$("#picker");const open=pk.toggleAttribute("open");t.setAttribute("aria-expanded",open);if(open)($("#picker .pitem[aria-current='true']")||$("#picker .pitem"))?.focus();return}
-  if(t.classList.contains("pitem")){S.sel=t.dataset.id;vista="precios";rcat="";delete docs[t.dataset.id];delete rend[t.dataset.id];filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};sort={k:null,dir:"asc"};save();render();return}
+  if(t.classList.contains("pitem")){S.sel=t.dataset.id;vista="precios";rcat="";ED={sel:null,filt:"",disp:false};delete docs[t.dataset.id];delete rend[t.dataset.id];filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};sort={k:null,dir:"asc"};save();render();return}
   if(t.dataset.vista){vista=t.dataset.vista;renderMain();return}
   if(t.dataset.rcat!==undefined){rcat=t.dataset.rcat;renderMain();return}
   if(t.dataset.rdel!==undefined&&!READONLY){e.preventDefault();deleteRend(S.sel,+t.dataset.rdel);return}
@@ -908,8 +968,12 @@ async function loadRend(pid){
   if(!sb){rend[pid]=rend[pid]||[];return}
   const dirs=[""].concat(RCATS.map(c=>c[0]));
   const res=await Promise.all(dirs.map(d=>sb.storage.from(BUCKET).list(pid+"/renders"+(d?"/"+d:""),{limit:300,sortBy:{column:"name",order:"asc"}})));
-  const out=[];
-  res.forEach((r,i)=>{const d=dirs[i];(r.data||[]).filter(f=>f.name&&!f.name.startsWith(".")&&f.id).forEach(f=>out.push({cat:d||"otros",name:f.name,size:f.metadata?.size||0,path:pid+"/renders/"+(d?d+"/":"")+f.name,url:sb.storage.from(BUCKET).getPublicUrl(pid+"/renders/"+(d?d+"/":"")+f.name).data.publicUrl}))});
+  const out=[];const kindOf=n=>/^planta_/i.test(n)?"planta":"render";
+  res.forEach((r,i)=>{const d=dirs[i];(r.data||[]).filter(f=>f.name&&!f.name.startsWith(".")&&f.id).forEach(f=>out.push({cat:d||"otros",tipol:"",kind:kindOf(f.name),name:f.name,size:f.metadata?.size||0,path:pid+"/renders/"+(d?d+"/":"")+f.name,url:sb.storage.from(BUCKET).getPublicUrl(pid+"/renders/"+(d?d+"/":"")+f.name).data.publicUrl}))});
+  // unidades: una subcarpeta por tipología
+  const ru=res[dirs.indexOf("unidades")];const subs=((ru&&ru.data)||[]).filter(f=>f.name&&!f.id).map(f=>f.name);
+  if(subs.length){const r2=await Promise.all(subs.map(s=>sb.storage.from(BUCKET).list(pid+"/renders/unidades/"+s,{limit:300,sortBy:{column:"name",order:"asc"}})));
+    r2.forEach((r,i)=>{const s=subs[i];(r.data||[]).filter(f=>f.name&&!f.name.startsWith(".")&&f.id).forEach(f=>out.push({cat:"unidades",tipol:s,kind:kindOf(f.name),name:f.name,size:f.metadata?.size||0,path:pid+"/renders/unidades/"+s+"/"+f.name,url:sb.storage.from(BUCKET).getPublicUrl(pid+"/renders/unidades/"+s+"/"+f.name).data.publicUrl}))})}
   rend[pid]=out;
 }
 function rendHTML(p){
@@ -919,9 +983,12 @@ function rendHTML(p){
   const cats=RCATS.concat(list.some(d=>d.cat==="otros")?[["otros","Sin categoría"]]:[]);
   const n=c=>list.filter(d=>d.cat===c).length;
   const pills=`<div class="rcats"><button data-rcat="" aria-pressed="${rcat===""}">Todos <b>${list.length}</b></button>${cats.map(c=>`<button data-rcat="${c[0]}" aria-pressed="${rcat===c[0]}">${c[1]} <b>${n(c[0])}</b></button>`).join("")}</div>`;
-  const tile=d=>{const i=list.indexOf(d);return `<div class="rend" data-ri="${i}" style="background-image:url('${d.url}')" title="${esc(d.name)}"><a class="rdl" href="${d.url}" download target="_blank" rel="noopener" title="Descargar">⤓</a>${READONLY?"":`<button class="rdel" data-rdel="${i}" title="Eliminar render">✕</button>`}</div>`};
+  const TIPS=tipologias(p);const tipName=sl=>(TIPS.find(x=>x.slug===sl)||{}).tip||sl;
+  const tile=d=>{const i=list.indexOf(d);return `<div class="rend" data-ri="${i}" style="background-image:url('${d.url}')" title="${esc(d.name)}"><a class="rdl" href="${d.url}" download target="_blank" rel="noopener" title="Descargar">⤓</a>${READONLY?"":`<button class="rdel" data-rdel="${i}" title="Eliminar render">✕</button>`}${d.cat==="unidades"&&d.kind==="planta"?`<span class="rtag pl">Planta</span>`:""}</div>`};
   const show=rcat?cats.filter(c=>c[0]===rcat):cats.filter(c=>n(c[0]));
-  const secs=show.map(c=>`<div class="rsec"><h4>${c[1]} <span>${n(c[0])}</span></h4><div class="rgrid">${list.filter(d=>d.cat===c[0]).map(tile).join("")}</div></div>`).join("");
+  const secs=show.map(c=>{const L=list.filter(d=>d.cat===c[0]);
+    if(c[0]==="unidades"){const groups=[...new Set(L.map(d=>d.tipol))];const g=groups.map(sl=>`<div class="rsub">${sl?esc(tipName(sl)):"Sin tipología"} · ${L.filter(d=>d.tipol===sl).length}</div><div class="rgrid" style="margin-top:6px">${L.filter(d=>d.tipol===sl).sort((a,b)=>(a.kind==="planta"?0:1)-(b.kind==="planta"?0:1)).map(tile).join("")}</div>`).join("");return `<div class="rsec"><h4>${c[1]} <span>${n(c[0])}</span></h4>${g}</div>`}
+    return `<div class="rsec"><h4>${c[1]} <span>${n(c[0])}</span></h4><div class="rgrid">${L.map(tile).join("")}</div></div>`}).join("");
   const empty=`<div class="pol empty"><b>Sin renders${rcat?" en esta categoría":""}</b>${READONLY?"Aún no hay renders para este proyecto.":"Elige la categoría y sube los renders del proyecto."}</div>`;
   const upl=READONLY?"":`<div class="upl" id="rupl"><div class="rupcat">Subir a: ${RCATS.map(c=>`<label><input type="radio" name="rupcat" value="${c[0]}" ${(rcat||"exteriores")===c[0]?"checked":""}> ${c[1]}</label>`).join("")}</div><input type="file" id="rend-file" multiple accept="image/*,.heic,.heif"><label for="rend-file">Elegir imágenes</label> · se reducen a 2400 px antes de subir<div class="prog" id="rend-prog"></div></div>`;
   return pills+(show.length&&show.some(c=>n(c[0]))?secs:empty)+upl;
@@ -941,6 +1008,81 @@ function videoHTML(p){
   const add=READONLY?"":`<div class="vadd"><input id="v-url" placeholder="Liga de YouTube (https://youtu.be/… o youtube.com/watch?v=…)"><input id="v-tit" placeholder="Título (opcional): Recorrido virtual, Avance de obra…" maxlength="60"><button class="btn primary" id="v-add">+ Agregar video</button></div>`;
   return (vs.length?`<div class="vgrid">${items}</div>`:empty)+add;
 }
+
+
+// ---------- tipologías (del campo tipo de cada unidad: "405 | Fresno") ----------
+function uParse(u){const s=String(u.tipo||"").trim();let num=s,tip="";const sp=s.split(/\s*[|·]\s*/);if(sp.length>=2){num=sp[0];tip=sp.slice(1).join(" ")}else{const m=s.match(/^(\S+)\s+(.*)$/);if(m){num=m[1];tip=m[2].replace(/^\d+\s+/,"")}}return {num:num.trim(),tip:tip.trim()}}
+const slugT=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+function tipologias(p){const m=new Map();(p.units||[]).forEach(u=>{const t=uParse(u).tip;if(t)m.set(t,(m.get(t)||0)+1)});return [...m.entries()].sort((a,b)=>b[1]-a[1]).map(([t,n])=>({tip:t,slug:slugT(t),n}))}
+function rendTip(p,tip,kind){const sl=slugT(tip);return (rend[p.id]||[]).filter(d=>d.cat==="unidades"&&d.tipol===sl&&(!kind||d.kind===kind))}
+// ---------- Edificio (stacking plan) ----------
+let ED={sel:null,filt:"",disp:false};
+const EDST=s=>{s=String(s||"").toLowerCase();return s==="disponible"?"disponible":s==="apartado"?"apartado":s==="vendido"?"vendido":s==="aportante"?"aportante":s==="bloqueado"?"bloqueado":"otro"};
+const EDCOL={disponible:"#2E7D5B",apartado:"#F2C94C",vendido:"#2F5597",aportante:"#E07A2F",bloqueado:"#B8B8B5"};
+const edM=p=>"$"+(p/1e6).toFixed(2)+" M";
+const edRec=u=>{const r=String(u.recamaras||"").trim();if(!r)return "";if(/estudio/i.test(r))return "Est";if(/comerc|local/i.test(r))return "Local";return r};
+const edTerr=u=>{const mt=+u.m2terr||0;const tot=+u.m2tot||0,mi=+u.m2int||0;return mt>0?mt:Math.max(0,tot-mi)};
+function edLevels(units){const lv=[...new Set(units.map(u=>String(u.nivel??"").trim()).filter(Boolean))];const w=l=>/^pb$|^planta/i.test(l)?-1:/^ph/i.test(l)?9999:/^\d+$/.test(l)?+l:5000;return lv.sort((a,b)=>w(b)-w(a))}
+function edificioHTML(p){
+  const all=p.units||[];if(!all.length)return `<div class="pol empty"><b>Sin unidades</b>Captura las unidades del proyecto para ver el edificio.</div>`;
+  const isLocal=u=>/comerc|local/i.test(String(u.recamaras||""));
+  const deps=all.filter(u=>!isLocal(u)),locs=all.filter(isLocal);
+  const towers=[...new Set(deps.map(u=>String(u.torre||"").trim()))];
+  const levels=edLevels(deps);
+  const recW=r=>{const m=/^(\d)R(\+)?(G)?$/i.exec(r);if(/^est/i.test(r))return 0;if(m)return +m[1]*10+(m[2]?1:0)+(m[3]?5:0);if(/local/i.test(r))return 99;return 50};
+  const recs=[...new Set(all.map(edRec).filter(Boolean))].sort((a,b)=>recW(a)-recW(b));
+  const pass=u=>(!ED.filt||edRec(u)===ED.filt)&&(!ED.disp||EDST(u.estatus)==="disponible");
+  const tile=u=>{const st=EDST(u.estatus),{num}=uParse(u);const mute=st!=="disponible"&&st!=="vendido";
+    if(VENTAS&&st!=="disponible")return `<div class="eu hid"><b>${esc(num)}</b></div>`;
+    const terr=edTerr(u),mi=+u.m2int||0;
+    return `<button type="button" class="eu st-${st} ${mute?"mute":""} ${ED.sel===u.id?"sel":""} ${pass(u)?"":"dim"}" data-eu="${u.id}"><b>${esc(num)}</b>${mute?"":`<span class="t"><em>${esc(edRec(u))}</em>${edRec(u)?"·":""}${terr>0?`${mi.toFixed(0)}+${terr.toFixed(0)}`:mi.toFixed(0)}m²</span><span class="p">${st==="disponible"?edM(+u.precio||0):"Vendido"}</span>`}</button>`};
+  const colsOf=tw=>Math.max(1,...levels.map(l=>deps.filter(u=>String(u.torre||"").trim()===tw&&String(u.nivel).trim()===l).length));
+  const cols=towers.map(colsOf);
+  let gt="46px";towers.forEach((tw,i)=>{gt+=` minmax(0,${cols[i]}fr)`;if(i<towers.length-1)gt+=" 16px"});
+  let h=`<div class="edtow" style="grid-template-columns:${gt}"><div></div>`;
+  towers.forEach((tw,i)=>{const vs=[...new Set(deps.filter(u=>String(u.torre||"").trim()===tw).map(u=>u.vista).filter(Boolean))];h+=`<div class="edth"><b>${towers.length>1?"Torre "+esc(tw||"—"):esc(p.nombre)}</b>${vs.length?"vista "+esc(vs.join(" / ")):""}</div>`;if(i<towers.length-1)h+="<div></div>"});
+  h+=`<div></div>`;towers.forEach((tw,i)=>{h+=`<div class="edroof"></div>`;if(i<towers.length-1)h+="<div></div>"});
+  levels.forEach(l=>{
+    h+=`<div class="edfl">${esc(l)}<small>${/^pb$/i.test(l)?"P. BAJA":/^ph/i.test(l)?"":"NIVEL"}</small></div>`;
+    towers.forEach((tw,i)=>{const us=deps.filter(u=>String(u.torre||"").trim()===tw&&String(u.nivel).trim()===l).sort((a,b)=>uParse(a).num.localeCompare(uParse(b).num,undefined,{numeric:true}));
+      h+=`<div class="edrow" style="grid-template-columns:repeat(${cols[i]},minmax(0,1fr))">${us.map(tile).join("")}</div>`;if(i<towers.length-1)h+=`<div class="edmid"><i></i></div>`});
+  });
+  h+=`</div>`;
+  if(locs.length)h+=`<div class="edgf"><div class="lbl">Locales comerciales</div><div class="edrow" style="grid-template-columns:repeat(${Math.max(locs.length,6)},minmax(0,1fr))">${locs.sort((a,b)=>uParse(a).num.localeCompare(uParse(b).num,undefined,{numeric:true})).map(tile).join("")}</div></div>`;
+  const c=k=>all.filter(u=>EDST(u.estatus)===k).length;
+  const tot=VENTAS?"":`<div class="edtot"><div><b>${c("disponible")}</b><span>disponibles</span></div><div><b style="color:#C9A227">${c("apartado")}</b><span>apartados</span></div><div><b style="color:#2F5597">${c("vendido")}</b><span>vendidos</span></div>${c("aportante")?`<div><b style="color:#E07A2F">${c("aportante")}</b><span>aportantes</span></div>`:""}${c("bloqueado")?`<div><b style="color:#9A9A98">${c("bloqueado")}</b><span>bloqueados</span></div>`:""}</div>`;
+  const bar=`<div class="edbar"><button class="chip" data-edf="" aria-pressed="${ED.filt===""}">Todas</button>${recs.map(r=>`<button class="chip" data-edf="${esc(r)}" aria-pressed="${ED.filt===r}">${esc(r==="Est"?"Estudio":r)}</button>`).join("")}<button class="chip" data-eddisp aria-pressed="${ED.disp}">Solo disponibles</button>
+    <div class="edleg"><span><i style="background:#E1F1E8;border:1px solid #2E7D5B"></i>Disponible</span><span><i style="background:#F2C94C"></i>Apartado</span><span><i style="background:#2F5597"></i>Vendido</span>${VENTAS?"":`<span><i style="background:#E07A2F"></i>Aportante</span><span><i style="background:#B8B8B5"></i>Bloqueado</span>`}</div></div>`;
+  return bar+`<div class="edwrap"><div><div class="edbld">${h}</div>${tot}</div><div class="edside" id="edside">${edSideHTML(p)}</div></div>`;
+}
+function edSideHTML(p){
+  const u=(p.units||[]).find(x=>x.id===ED.sel);
+  if(!u)return `<div class="edcard"><div class="edempty"><b>Elige un departamento</b>Toca cualquier cuadro del edificio para ver su planta, renders y precio.</div></div>`;
+  const {num,tip}=uParse(u);const st=EDST(u.estatus);const planta=rendTip(p,tip,"planta")[0];const rs=rendTip(p,tip,"render");
+  const gal=(planta?[planta]:[]).concat(rs);const main=gal[0];
+  const terr=edTerr(u),mi=+u.m2int||0,tot=(+u.m2tot||0)||(mi+terr);
+  const stLab={disponible:"Disponible",apartado:"Apartado",vendido:"Vendido",aportante:"Aportante",bloqueado:"Bloqueado",otro:esc(u.estatus||"")}[st];
+  const stCss=st==="disponible"?"":`style="background:${EDCOL[st]||"#D9D6CE"};color:${st==="apartado"?"#5E4A00":"#fff"}"`;
+  const showPrice=st==="disponible"||!VENTAS;
+  return `<div class="edcard">
+    ${main?`<div class="ph ${main.kind==="planta"?"plan":""}" data-edlb="0" style="background-image:url('${main.url}')"><span>${main.kind==="planta"?"Planta":"Render"} · ${esc(tip||"")}</span></div>`:`<div class="ph" style="display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;cursor:default">Sin planta ni renders de ${esc(tip||"esta tipología")}</div>`}
+    ${gal.length>1?`<div class="thumbs">${gal.map((g,i)=>`<div class="${i===0?"on":""}" data-edth="${i}" style="background-image:url('${g.url}')" title="${g.kind==="planta"?"Planta":"Render"}"></div>`).join("")}</div>`:""}
+    <div class="bd"><span class="edst" ${stCss}>${stLab}</span><h2>${/local|comerc/i.test(String(u.recamaras||""))?"Local":"Depa"} ${esc(num)}</h2><div class="sub">${esc(tip||"")}${u.torre&&String(u.torre).trim()?" · Torre "+esc(u.torre):""}${u.nivel?" · Nivel "+esc(u.nivel):""}${u.vista?" · Vista "+esc(String(u.vista).toLowerCase()):""}</div>
+    ${showPrice?`<div class="edprice">${"$"+Math.round(+u.precio||0).toLocaleString("es-MX")}</div><div class="edpm2">${tot?"$"+Math.round((+u.precio||0)/tot).toLocaleString("es-MX")+" / m² total":""}</div>`:""}
+    <div class="edspecs"><div><b>${mi.toFixed(2)}</b><span>m² interior</span></div><div><b>${terr.toFixed(2)}</b><span>m² terraza</span></div><div><b>${tot.toFixed(2)}</b><span>m² total</span></div></div>
+    <div class="edspecs"><div><b>${esc(u.recamaras||"—")}</b><span>Tipología</span></div><div><b>${u.banos??"—"}</b><span>Baños</span></div><div><b>${u.parking??"—"}</b><span>Cajones</span></div></div>
+    <div class="edbtns">${st==="disponible"&&typeof cotUrl==="function"?`<a class="btn primary" href="${cotUrl(p,u)}" target="_blank" rel="noopener">Cotizar esta unidad →</a>`:""}${gal.length?`<button class="btn" data-edlb="0" type="button">Ver planta y renders</button>`:""}</div>
+    </div></div>`;
+}
+let EDG=[];
+document.addEventListener("click",e=>{
+  const t=e.target;const p=S.projects.find(p=>p.id===S.sel);if(!p)return;
+  const eu=t.closest&&t.closest("[data-eu]");if(eu){ED.sel=eu.dataset.eu;document.querySelectorAll(".eu.sel").forEach(x=>x.classList.remove("sel"));eu.classList.add("sel");const s=document.getElementById("edside");if(s){s.innerHTML=edSideHTML(p);if(window.innerWidth<980)s.scrollIntoView({behavior:"smooth",block:"start"})}return}
+  const f=t.closest&&t.closest("[data-edf]");if(f){ED.filt=f.dataset.edf;renderMain();return}
+  if(t.closest&&t.closest("[data-eddisp]")){ED.disp=!ED.disp;renderMain();return}
+  const th=t.closest&&t.closest("[data-edth]");if(th){const u=(p.units||[]).find(x=>x.id===ED.sel);const {tip}=uParse(u||{});const g=(rendTip(p,tip,"planta").slice(0,1)).concat(rendTip(p,tip,"render"));const i=+th.dataset.edth;const ph=th.closest(".edcard").querySelector(".ph");ph.style.backgroundImage=`url('${g[i].url}')`;ph.classList.toggle("plan",g[i].kind==="planta");ph.querySelector("span").textContent=(g[i].kind==="planta"?"Planta":"Render")+" · "+tip;th.parentNode.querySelectorAll("div").forEach(x=>x.classList.toggle("on",x===th));return}
+  const lb=t.closest&&t.closest("[data-edlb]");if(lb){const u=(p.units||[]).find(x=>x.id===ED.sel);const {tip}=uParse(u||{});const g=(rendTip(p,tip,"planta").slice(0,1)).concat(rendTip(p,tip,"render"));if(!g.length)return;RLB={list:g,i:0};rendShow(0);return}
+});
 
 async function loadDocs(pid){
   if(!sb){docs[pid]=docs[pid]||[];return}
