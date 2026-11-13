@@ -72,6 +72,10 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
 .lcard .adr{color:var(--muted);font-size:12px;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lcard .pr{font-family:Lora,serif;font-size:19px;color:var(--green);margin-bottom:10px}
 .lcard .meta{font-size:12px;color:var(--muted);margin-top:8px;display:flex;justify-content:space-between}
+.disp{margin-top:10px;font:inherit;font-size:12px;font-weight:500;display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:5px 12px 5px 6px;cursor:pointer;color:var(--muted)}
+.disp i{width:30px;height:16px;border-radius:999px;background:var(--line-2);position:relative;display:inline-block;transition:background .15s}
+.disp i:after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:left .15s}
+.disp.on{color:var(--ok);border-color:#BFE0CC}.disp.on i{background:var(--ok)}.disp.on i:after{left:16px}
 .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
 .filters input,.filters select{border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:8px 14px;font-size:13px}
 .filters input{min-width:240px}
@@ -375,9 +379,9 @@ const LOGO_B64="iVBORw0KGgoAAAANSUhEUgAAAtAAAACTCAYAAACnBC53AABDfklEQVR42u2de3yc
 const ASESORES=(window.TRUST_ASESORES||["Ana Lu","Carlos","Fanny","María","Paola","Paola M","Ramsés","Rodrigo","Álvaro","Majo","Berna"]).slice();
 const CARACT=["Balcón","Cisterna","Garaje","Jardín","Patio","Roof garden","Terraza","Aire acondicionado","Alarma","Amueblado","Bodega","Cocina equipada","Cocina integral","Fraccionamiento privado","Panel solar","Penthouse","Recámara en planta baja","Seguridad 12 hrs","Seguridad 24 hrs","No se aceptan mascotas","Mascotas permitidas"];
 const AMEN=["Alberca","Área de juegos infantiles","Cancha de tenis","Cancha de pádel","Cine","Gimnasio","Jacuzzi","Salón de usos múltiples"];
-const STAGES=[["borrador","En captura"],["nuevo","Por dar de alta"],["activo","Activo"]];
+const STAGES=[["borrador","En captura"],["nuevo","Por dar de alta"],["activo","Disponible"]];
 const NORM={documentacion:"borrador",verificacion:"nuevo",ficha:"nuevo"};
-const ESTATUS_LABEL={borrador:"En captura",nuevo:"Nuevo · por dar de alta",activo:"Activo",pausado:"Pausado",cerrado:"Cerrado"};
+const ESTATUS_LABEL={borrador:"En captura",nuevo:"Nuevo · por dar de alta",activo:"Disponible",pausado:"No disponible",cerrado:"No disponible"};
 const CONTACTO={tel:"33 3376 5616",mail:"bb@trustreal.mx",web:"www.trustreal.mx"};
 
 let sb=null; try{ sb=(window.SBC||window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY)); }catch(e){}
@@ -425,15 +429,15 @@ $("#btn-cambiar").onclick=()=>{ME="";localStorage.removeItem("lst_me");init()};
 function renderList(){
   const sel=$("#f-est");if(sel.options.length<=1){Object.entries(ESTATUS_LABEL).forEach(([k,v])=>{const o=document.createElement("option");o.value=k;o.textContent=v;sel.appendChild(o)})}
   if(ROLE==="admin"){
-    const c=k=>LISTINGS.filter(l=>l.estatus===k).length;
-    $("#tiles").innerHTML=[["nuevo","Nuevos por dar de alta"],["activo","Activos"],["borrador","En captura (asesor)"],["pausado","Pausados"],["","Todos"]].map(([k,l])=>`<div class="tile ${filt.est===k?"sel":""}" data-k="${k}"><span class="l">${l}</span><span class="v">${k?c(k):LISTINGS.length}</span></div>`).join("");
+    const c=k=>k==="nodisp"?LISTINGS.filter(l=>["pausado","cerrado"].includes(l.estatus)).length:LISTINGS.filter(l=>l.estatus===k).length;
+    $("#tiles").innerHTML=[["nuevo","Nuevos por dar de alta"],["activo","Disponibles"],["nodisp","No disponibles"],["borrador","En captura (asesor)"],["","Todos"]].map(([k,l])=>`<div class="tile ${filt.est===k?"sel":""}" data-k="${k}"><span class="l">${l}</span><span class="v">${k?c(k):LISTINGS.length}</span></div>`).join("");
   } else $("#tiles").innerHTML="";
-  const rows=LISTINGS.filter(l=>(!filt.tipo||l.tipo===filt.tipo)&&(!filt.est||l.estatus===filt.est)&&(!filt.q||[l.titulo,l.direccion,l.asesor].join(" ").toLowerCase().includes(filt.q.toLowerCase())));
+  const rows=LISTINGS.filter(l=>(!filt.tipo||l.tipo===filt.tipo)&&(!filt.est||(filt.est==="nodisp"?["pausado","cerrado"].includes(l.estatus):l.estatus===filt.est))&&(!filt.q||[l.titulo,l.direccion,l.asesor].join(" ").toLowerCase().includes(filt.q.toLowerCase())));
   $("#count").textContent=`${rows.length} de ${LISTINGS.length}`;
   $("#list").innerHTML=rows.length?rows.map(l=>{const c=cover(l);return `<div class="lcard" data-id="${l.id}">
     <div class="ph" style="${c?`background-image:url('${c}')`:""}"><span class="st ${l.estatus}">${ESTATUS_LABEL[l.estatus]||l.estatus}</span>${l.correccion_en&&l.estatus==="nuevo"?`<span class="corr" style="position:absolute;left:12px;bottom:12px">✎ Corregida</span>`:""}<span class="tp">${esc(l.tipo)}</span></div>
     <div class="bd"><h3>${esc(l.titulo||"Sin título")}</h3><div class="adr">${esc(l.direccion||"Sin dirección")}</div><div class="pr">${fmt(l.precio)}${l.tipo==="Renta"?" <small style='font-size:12px;color:var(--muted)'>/ mes</small>":""}</div>
-    ${stagesHTML(l)}<div class="meta"><span>${ROLE==="admin"?esc(l.asesor):""}</span><span>${docsOf(l.id,"foto_h").length} fotos · ${fecha(l.created_at)}</span></div></div></div>`}).join("")
+    ${stagesHTML(l)}<div class="meta"><span>${ROLE==="admin"?esc(l.asesor):""}</span><span>${docsOf(l.id,"foto_h").length} fotos · ${fecha(l.created_at)}</span></div>${ROLE==="admin"&&["activo","pausado","cerrado"].includes(l.estatus)?`<button type="button" class="disp ${l.estatus==="activo"?"on":""}" data-disp title="Cambiar disponibilidad"><i></i>${l.estatus==="activo"?"Disponible":"No disponible"}</button>`:""}</div></div>`}).join("")
   :`<div class="empty" style="grid-column:1/-1"><b>Sin listings</b>${ROLE==="admin"?"Todavía no hay propiedades capturadas.":"Captura tu primera propiedad con “+ Nuevo listing”."}</div>`;
 }
 function stageIdx(l){return Math.max(0,STAGES.findIndex(s=>s[0]===l.estatus))}
@@ -442,7 +446,13 @@ $("#tiles").addEventListener("click",e=>{const t=e.target.closest(".tile");if(!t
 $("#f-q").addEventListener("input",e=>{filt.q=e.target.value;renderList()});
 $("#f-tipo").addEventListener("change",e=>{filt.tipo=e.target.value;renderList()});
 $("#f-est").addEventListener("change",e=>{filt.est=e.target.value;renderList()});
-$("#list").addEventListener("click",e=>{const c=e.target.closest(".lcard");if(c)openEd(LISTINGS.find(l=>l.id===c.dataset.id))});
+$("#list").addEventListener("click",async e=>{
+  const q=e.target.closest("[data-disp]");
+  if(q){e.stopPropagation();const l=LISTINGS.find(x=>x.id===q.closest(".lcard").dataset.id);const on=l.estatus==="activo";
+    if(on&&!confirm("¿Marcar “"+(l.titulo||"")+"” como no disponible?"))return;
+    const r=await sb.from("listings").update(on?{estatus:"pausado"}:{estatus:"activo"}).eq("id",l.id);
+    if(r.error){toast("No se pudo cambiar: "+r.error.message,true);return}l.estatus=on?"pausado":"activo";toast(on?"No disponible":"Disponible");renderList();return}
+  const c=e.target.closest(".lcard");if(c)openEd(LISTINGS.find(l=>l.id===c.dataset.id))});
 $("#btn-new").onclick=()=>openEd(null);
 $("#btn-back").onclick=()=>{load();show("list")};
 
@@ -623,7 +633,7 @@ function renderAlta(){
     <div class="check">
     ${ck(1,s1,"Cargar en Easy Broker","Pega la liga del anuncio ya publicado.",`<input id="eb_url" value="${esc(l.easybroker_url||"")}" placeholder="https://www.easybroker.com/…"><button class="btn primary" id="eb_save">Guardar liga</button>${s1?`<a class="btn" href="${esc(l.easybroker_url)}" target="_blank" rel="noopener">Abrir ↗</a>`:""}`)}
     ${ck(2,s2,"Ficha técnica","Se genera desde aquí con la portada e interior elegidas abajo. Puedes regenerarla las veces que quieras.",`<button class="btn gold" id="act-ficha">⤓ Ficha PDF</button>${s2?`<span class="hint">Generada ✓</span>`:""}`)}
-    ${ck(3,s3,"Activar listing","Queda visible como activo para el asesor y en el tablero.",s3?(l.estatus==="activo"?`<span class="st activo">Activo</span><button class="btn" id="act-pausar">Pausar</button><button class="btn" id="act-cerrar">Cerrar (vendido/rentado)</button>`:`<span class="st ${l.estatus}">${ESTATUS_LABEL[l.estatus]}</span><button class="btn" id="act-reactivar">Reactivar</button>`):`<button class="btn primary" id="act-activar" ${s1&&s2?"":"disabled"} title="${s1&&s2?"":"Primero la liga y la ficha"}">Activar listing ✓</button>`)}
+    ${ck(3,s3,"Disponibilidad","Disponible = sale en el catálogo de Brokerage para todos los asesores. No disponible = se va a la píldora “No disponibles” (vendida, rentada o retirada).",s3?(l.estatus==="activo"?`<span class="st activo">Disponible</span><button class="btn" id="act-pausar">Marcar no disponible</button>`:`<span class="st ${l.estatus}">No disponible</span><button class="btn primary" id="act-reactivar">Marcar disponible</button>`):`<button class="btn primary" id="act-activar" ${s1&&s2?"":"disabled"} title="${s1&&s2?"":"Primero la liga y la ficha"}">Publicar como disponible ✓</button>`)}
     </div>
     <div class="sect">${fichaFotosHTML(l)}</div>
     <div class="sect"><h3>Lona</h3><div class="actions" style="margin-top:0">${l.lona_solicitada?`<span class="hint">Solicitada por el asesor${l.lona_entregada?" · entregada":""}</span>`:`<span class="hint">El asesor no la ha solicitado</span>`}${l.lona_solicitada&&!l.lona_entregada?`<button class="btn" id="lona_ok">Marcar lona entregada</button>`:""}</div>
@@ -632,10 +642,9 @@ function renderAlta(){
   const on=(id,fn)=>{const x=$("#"+id);if(x)x.onclick=fn};
   on("eb_save",async()=>{const u=$("#eb_url").value.trim();if(!u){toast("Pega la liga",true);return}if(await patch({easybroker_url:u}))toast("Liga guardada")});
   on("act-ficha",generarFicha);
-  on("act-activar",async()=>{if(await patch({estatus:"activo"}))toast("Listing activo")});
-  on("act-pausar",async()=>{if(await patch({estatus:"pausado"}))toast("Pausado")});
-  on("act-cerrar",async()=>{if(confirm("¿Cerrar el listing (vendido o rentado)?")&&await patch({estatus:"cerrado"}))toast("Cerrado")});
-  on("act-reactivar",async()=>{if(await patch({estatus:"activo"}))toast("Reactivado")});
+  on("act-activar",async()=>{if(await patch({estatus:"activo"}))toast("Publicada: ya sale en el catálogo de Brokerage")});
+  on("act-pausar",async()=>{if(confirm("¿Marcar como no disponible? Deja de salir en el catálogo de los asesores y pasa a “No disponibles”.")&&await patch({estatus:"pausado"}))toast("Marcada como no disponible")});
+  on("act-reactivar",async()=>{if(await patch({estatus:"activo"}))toast("Disponible de nuevo en el catálogo")});
   on("lona_ok",async()=>{if(await patch({lona_entregada:true}))toast("Lona entregada")});
   renderDocList("video_lona");
 }

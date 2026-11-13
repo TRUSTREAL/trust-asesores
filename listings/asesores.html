@@ -79,6 +79,10 @@ a.btn{text-decoration:none}
 .tabs button.on{background:var(--surface);color:var(--green);box-shadow:var(--shadow)}
 .tabs button b{font-weight:600;font-size:11px;background:var(--green);color:#fff;border-radius:999px;padding:1px 7px}
 .tabs button.on b{background:var(--green)}.tabs button:not(.on) b{background:var(--line-2)}
+.tabs.pills{background:none;padding:0;gap:8px;margin:-6px 0 14px}
+.tabs.pills button{border:1px solid var(--line-2);background:var(--surface)}
+.tabs.pills button.on{border-color:var(--green);background:var(--green);color:#fff;box-shadow:none}.tabs.pills button.on b{background:#fff;color:var(--green)}
+.ccard.nodisp .ph{filter:grayscale(.7) brightness(.85)}.ccard.nodisp .ph .tp{background:#3F4440;color:#fff}.ccard.nodisp .pr{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
 /* tarjetas de catálogo */
 .ccard{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden;cursor:pointer;box-shadow:var(--shadow);display:flex;flex-direction:column;transition:transform .15s,border-color .15s}
 .ccard:hover{border-color:var(--green);transform:translateY(-2px)}
@@ -325,6 +329,7 @@ a.btn{text-decoration:none}
   <section id="view-list" style="display:none">
     <div class="tabs" id="tabs"><button data-t="cat" class="on">Catálogo TRUST <b id="n-cat">0</b></button><button data-t="mine">Mis listings <b id="n-mine">0</b></button></div>
     <div id="tiles" class="tiles"></div>
+    <div class="tabs pills" id="dispills" style="display:none"></div>
     <div class="filters">
       <input id="f-q" placeholder="Buscar título, colonia, asesor…">
       <select id="f-tipo"><option value="">Tipo</option><option>Venta</option><option>Renta</option></select>
@@ -442,9 +447,9 @@ const LOGO_B64="iVBORw0KGgoAAAANSUhEUgAAAtAAAACTCAYAAACnBC53AABDfklEQVR42u2de3yc
 const ASESORES=(window.TRUST_ASESORES||["Ana Lu","Carlos","Fanny","María","Paola","Paola M","Ramsés","Rodrigo","Álvaro","Majo","Berna"]).slice();
 const CARACT=["Balcón","Cisterna","Garaje","Jardín","Patio","Roof garden","Terraza","Aire acondicionado","Alarma","Amueblado","Bodega","Cocina equipada","Cocina integral","Fraccionamiento privado","Panel solar","Penthouse","Recámara en planta baja","Seguridad 12 hrs","Seguridad 24 hrs","No se aceptan mascotas","Mascotas permitidas"];
 const AMEN=["Alberca","Área de juegos infantiles","Cancha de tenis","Cancha de pádel","Cine","Gimnasio","Jacuzzi","Salón de usos múltiples"];
-const STAGES=[["borrador","En captura"],["nuevo","Por dar de alta"],["activo","Activo"]];
+const STAGES=[["borrador","En captura"],["nuevo","Por dar de alta"],["activo","Disponible"]];
 const NORM={documentacion:"borrador",verificacion:"nuevo",ficha:"nuevo"};
-const ESTATUS_LABEL={borrador:"En captura",nuevo:"Nuevo · por dar de alta",activo:"Activo",pausado:"Pausado",cerrado:"Cerrado"};
+const ESTATUS_LABEL={borrador:"En captura",nuevo:"Nuevo · por dar de alta",activo:"Disponible",pausado:"No disponible",cerrado:"No disponible"};
 const CONTACTO={tel:"33 3376 5616",mail:"bb@trustreal.mx",web:"www.trustreal.mx"};
 
 let sb=null; try{ sb=(window.SBC||window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY)); }catch(e){}
@@ -458,7 +463,7 @@ const fecha=d=>d?new Date(d).toLocaleDateString("es-MX",{day:"numeric",month:"sh
 const limpia=s=>String(s??"").replace(/\*\*|__|^#+\s*/gm,"").replace(/^\s*[-•]\s+/gm,"• ");
 
 let ME=ROLE==="admin"?"admin":(localStorage.getItem("lst_me")||"");
-let LISTINGS=[], ALL=[], DOCS={}, cur=null, filt={q:"",tipo:"",est:"",ord:""}, TAB=ROLE==="admin"?"mine":"cat", ASE={}, det=null, gi=0;
+let LISTINGS=[], ALL=[], DOCS={}, cur=null, filt={q:"",tipo:"",est:"",ord:"",disp:"si"}, TAB=ROLE==="admin"?"mine":"cat", ASE={}, det=null, gi=0;
 
 /* ---------- load ---------- */
 async function load(){
@@ -468,7 +473,7 @@ async function load(){
   ALL=(data||[]).map(l=>({...l,estatus:NORM[l.estatus]||l.estatus}));
   LISTINGS=ROLE==="admin"?ALL:ALL.filter(l=>l.asesor===ME);
   if(!Object.keys(ASE).length){try{const a=await sb.from("asesores").select("nombre,celular,correo,foto_url");(a.data||[]).forEach(x=>ASE[x.nombre]=x)}catch(e){}}
-  const ids=ALL.filter(l=>l.estatus==="activo"||l.asesor===ME||ROLE==="admin").map(l=>l.id);
+  const ids=ALL.filter(l=>["activo","pausado","cerrado"].includes(l.estatus)||l.asesor===ME||ROLE==="admin").map(l=>l.id);
   if(ids.length){const r=await sb.from("listing_docs").select("*").in("listing_id",ids).order("orden");DOCS={};(r.data||[]).forEach(d=>{(DOCS[d.listing_id]=DOCS[d.listing_id]||[]).push(d)});}
   renderList();
 }
@@ -491,6 +496,7 @@ $("#btn-cambiar").onclick=()=>{ME="";localStorage.removeItem("lst_me");init()};
 
 /* ---------- list ---------- */
 const catalogo=()=>ALL.filter(l=>l.estatus==="activo");
+const noDisp=()=>ALL.filter(l=>["pausado","cerrado"].includes(l.estatus));
 function avHTML(n,cls){const a=ASE[n]||{};const u=a.foto_url||"";if(!u)return `<span class="av ${cls||""}">${esc((n||"?").charAt(0))}</span>`;const m=/#o=([vhs])&p=(\d+)/.exec(u),o=m?m[1]:"s",pp=m?+m[2]:50;const pos=o==="v"?"50% "+pp+"%":o==="h"?pp+"% 50%":"50% 50%";return `<span class="av ${cls||""}" style="background-image:url('${esc(u.split("#")[0])}');background-position:${pos}"></span>`}
 function specsLine(l){const s=[];if(l.recamaras)s.push(`<span>${l.recamaras} <i>rec</i></span>`);if(l.banos)s.push(`<span>${l.banos}${l.medios_banos?"½":""} <i>baños</i></span>`);if(l.estacionamientos)s.push(`<span>${l.estacionamientos} <i>est</i></span>`);if(l.m2_construccion)s.push(`<span>${Math.round(l.m2_construccion)} <i>m²</i></span>`);return s.join("")}
 function ordena(rows){if(filt.ord==="pa")return rows.slice().sort((a,b)=>(+a.precio||0)-(+b.precio||0));if(filt.ord==="pd")return rows.slice().sort((a,b)=>(+b.precio||0)-(+a.precio||0));return rows}
@@ -498,7 +504,7 @@ function renderList(){
   $("#n-cat").textContent=catalogo().length;$("#n-mine").textContent=LISTINGS.length;
   $$("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===TAB));
   if(TAB==="cat"&&ROLE!=="admin"){renderCat();return}
-  $("#f-est").style.display="";$("#f-ord").style.display="none";
+  $("#f-est").style.display="";$("#f-ord").style.display="none";$("#dispills").style.display="none";
   const sel=$("#f-est");if(sel.options.length<=1){Object.entries(ESTATUS_LABEL).forEach(([k,v])=>{const o=document.createElement("option");o.value=k;o.textContent=v;sel.appendChild(o)})}
   if(ROLE==="admin"){
     const c=k=>LISTINGS.filter(l=>l.estatus===k).length;
@@ -514,17 +520,19 @@ function renderList(){
 }
 function renderCat(){
   $("#tiles").innerHTML="";$("#f-est").style.display="none";$("#f-ord").style.display="";
-  const base=catalogo();
+  const base=filt.disp==="no"?noDisp():catalogo();
+  $("#dispills").innerHTML=`<button class="${filt.disp==="si"?"on":""}" data-d="si">Disponibles <b>${catalogo().length}</b></button><button class="${filt.disp==="no"?"on":""}" data-d="no">No disponibles <b>${noDisp().length}</b></button>`;$("#dispills").style.display="";
   const rows=ordena(base.filter(l=>(!filt.tipo||l.tipo===filt.tipo)&&(!filt.q||[l.titulo,l.direccion,l.asesor,l.descripcion].join(" ").toLowerCase().includes(filt.q.toLowerCase()))));
   $("#count").textContent=`${rows.length} de ${base.length}`;
-  $("#list").innerHTML=rows.length?rows.map(l=>{const c=cover(l),n=docsOf(l.id,"foto_h").length;return `<div class="ccard" data-id="${l.id}">
-    <div class="ph" style="${c?`background-image:url('${c}')`:""}"><span class="tp">${esc(l.tipo)}</span>${l.asesor===ME?`<span class="mine">Mía</span>`:""}${n?`<span class="n">${n} fotos</span>`:""}</div>
+  $("#list").innerHTML=rows.length?rows.map(l=>{const c=cover(l),n=docsOf(l.id,"foto_h").length;return `<div class="ccard ${l.estatus!=="activo"?"nodisp":""}" data-id="${l.id}">
+    <div class="ph" style="${c?`background-image:url('${c}')`:""}"><span class="tp">${l.estatus!=="activo"?"No disponible":esc(l.tipo)}</span>${l.asesor===ME?`<span class="mine">Mía</span>`:""}${n?`<span class="n">${n} fotos</span>`:""}</div>
     <div class="bd"><div class="pr">${fmt(l.precio)}${l.tipo==="Renta"?" <small>/ mes</small>":""}</div><h3>${esc(l.titulo||"Sin título")}</h3><div class="adr">${esc(l.direccion||"")}</div>
     <div class="sp">${specsLine(l)||"<span><i>Sin datos de m²/recámaras</i></span>"}</div>
     ${l.comision_pct!=null&&l.comision_pct!==""?`<div class="com"><b>Comisión ${l.comision_pct}%</b>${l.comparte_pct!=null&&l.comparte_pct!==""?` · se comparte ${l.comparte_pct}%`:""}${l.exclusiva===true?" · exclusiva":""}</div>`:`<div class="com off">Comisión sin capturar</div>`}
     <div class="who">${avHTML(l.asesor)}<span>${esc(l.asesor)}</span></div></div></div>`}).join("")
-  :`<div class="empty" style="grid-column:1/-1"><b>Todavía no hay propiedades activas en el catálogo</b>Conforme TRUST dé de alta los listings, aparecerán aquí para todo el equipo.</div>`;
+  :(filt.disp==="no"?`<div class="empty" style="grid-column:1/-1"><b>No hay propiedades no disponibles</b>Aquí se van las que TRUST marca como vendidas, rentadas o retiradas.</div>`:`<div class="empty" style="grid-column:1/-1"><b>Todavía no hay propiedades disponibles en el catálogo</b>Conforme TRUST dé de alta los listings, aparecerán aquí para todo el equipo.</div>`);
 }
+$("#dispills").addEventListener("click",e=>{const b=e.target.closest("button[data-d]");if(!b)return;filt.disp=b.dataset.d;renderList()});
 /* ---------- detalle (catálogo) ---------- */
 function fotosDe(l){return docsOf(l.id,"foto_h").slice().sort((a,b)=>{if(a.etiqueta==="portada")return -1;if(b.etiqueta==="portada")return 1;return (a.orden||0)-(b.orden||0)})}
 function openDet(l){
