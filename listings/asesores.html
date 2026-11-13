@@ -924,7 +924,8 @@ function fichaDocHTML(L){
   const money=v=>v==null||v===""?"—":"$"+Math.round(+v).toLocaleString("es-MX");
   const col=(L.direccion||"").split(",").map(s=>s.trim()).filter(Boolean);const colonia=col.length>1?col[1]:(col[0]||"");
   const specs=[[L.recamaras,"Recámaras",""],[L.banos!=null&&L.banos!==""?(L.banos+(L.medios_banos?" + "+L.medios_banos+"½":"")):null,"Baños",""],[L.estacionamientos,"Estacionamientos",""],[L.m2_construccion?Math.round(L.m2_construccion)+" m²":null,"Construcción",""],[L.m2_terreno?Math.round(L.m2_terreno)+" m²":null,"Terreno",""],[L.nivel,"Nivel",""],[L.anio,"Año",""]].filter(x=>x[0]!=null&&x[0]!=="").slice(0,5);
-  const extras=[];if(L.mantenimiento)extras.push("Mantenimiento "+money(L.mantenimiento)+" / mes");if(L.tipo==="Venta"&&L.renta_esperada)extras.push("Expectativa de renta "+money(L.renta_esperada)+" / mes");if(L.exclusiva===true)extras.push("Exclusiva TRUST");
+  const extras=[];if(L.exclusiva===true)extras.push("Exclusiva TRUST");
+  const sec=[];if(L.mantenimiento)sec.push([money(L.mantenimiento)+" <small>/ mes</small>","Mantenimiento"]);if(L.tipo==="Venta"&&L.renta_esperada)sec.push([money(L.renta_esperada)+" <small>/ mes</small>","Expectativa de renta"]);
   const desc=limpia(L.descripcion||"").trim();
   const chips=(L.caracteristicas||[]).concat(L.amenidades||[]).slice(0,14);
   const img=d=>d?pubUrl(d.path):"";
@@ -978,6 +979,9 @@ html,body{margin:0;background:#E7E4DC}
 .nf-unit{display:flex;padding:20px 12px 18px}
 .nf-unit>div{flex:1;padding:0 14px;border-left:1px solid rgba(var(--nf-p-rgb),.16);min-width:0;text-align:center}
 .nf-unit>div:first-child{border-left:0}
+.nf-unit.sec{border-top:1px solid rgba(var(--nf-p-rgb),.12);padding:14px 12px 14px;background:rgba(var(--nf-p-rgb),.035)}
+.nf-unit.sec .nf-v{font-size:22px}
+.nf-unit.sec .nf-v small{font-family:Poppins,sans-serif;font-size:9px;color:var(--nf-mut)}
 .nf-unit .nf-k{font-size:7.4px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--nf-mut)}
 .nf-unit .nf-v{font-family:Lora,Georgia,serif;font-size:32px;line-height:1.1;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--nf-p)}
 .nf-desc{border-top:1px solid rgba(var(--nf-p-rgb),.12);padding:18px 24px 18px;font-size:10px;line-height:1.65;color:var(--nf-ink2);display:-webkit-box;-webkit-line-clamp:9;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line}
@@ -1027,6 +1031,7 @@ html,body{margin:0;background:#E7E4DC}
   </div>
   <div class="nf-card">
     ${specs.length?`<div class="nf-unit">${specs.map(s=>`<div><div class="nf-k">${s[1]}</div><div class="nf-v">${esc(s[0])}</div></div>`).join("")}</div>`:""}
+    ${sec.length?`<div class="nf-unit sec">${sec.map(s=>`<div><div class="nf-k">${s[1]}</div><div class="nf-v">${s[0]}</div></div>`).join("")}</div>`:""}
     ${(L.caracteristicas||[]).length||(L.amenidades||[]).length?`<div class="nf-feat">${(L.caracteristicas||[]).length?`<div><div class="nf-k">Características</div><div class="nf-chips">${(L.caracteristicas||[]).slice(0,16).map(c=>`<span>${esc(c)}</span>`).join("")}</div></div>`:""}${(L.amenidades||[]).length?`<div><div class="nf-k">Amenidades</div><div class="nf-chips">${(L.amenidades||[]).slice(0,12).map(c=>`<span>${esc(c)}</span>`).join("")}</div></div>`:""}</div>`:""}
   </div>
   ${tira.length?`<div class="nf-strip" style="grid-template-columns:repeat(${tira.length},1fr)">${tira.map(d=>`<div class="nf-img" style="background-image:url('${img(d)}')"></div>`).join("")}</div>`:`<div class="nf-sp"></div>`}
