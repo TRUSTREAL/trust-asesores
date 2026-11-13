@@ -28,6 +28,12 @@ body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--bg);co
 .sync{font-size:12px;color:var(--muted);min-height:18px;margin-bottom:12px}
 .sync.err{color:var(--red);font-weight:500}
 .resumen{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.frase-box{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:18px}
+.fr-row{display:grid;grid-template-columns:2fr 1fr auto;gap:8px;margin-top:6px}
+.fr-prev{background:var(--green);color:#fff;border-radius:12px;padding:12px 16px;text-align:center;min-height:62px;display:flex;flex-direction:column;justify-content:center}
+.fr-prev q{quotes:"“" "”";font-family:Lora,Georgia,serif;font-style:italic;font-size:15px;line-height:1.3}
+.fr-prev .au{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.7);margin-top:5px;font-weight:600}
+@media (max-width:760px){.frase-box{grid-template-columns:1fr}.fr-row{grid-template-columns:1fr}}
 .resumen div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 16px;min-width:150px}
 .resumen b{display:block;font-family:Lora,Georgia,serif;font-weight:500;font-size:24px;color:var(--green);line-height:1.2}
 .resumen span{font-size:12px;color:var(--muted)}
@@ -123,6 +129,10 @@ input.pin::placeholder{letter-spacing:0;font-weight:400;font-size:12px}
     </div>
   </div>
   <div class="sync" id="sync">Cargando…</div>
+  <div class="frase-box" id="frase-box">
+    <div><div class="eyebrow">Frase del mes · menú de asesores</div><div class="fr-row"><input class="t" id="fr-texto" placeholder="Frase (sin comillas)" maxlength="140"><input class="t" id="fr-autor" placeholder="Autor" maxlength="40"><button class="btn pri" id="fr-save" type="button">Guardar</button></div></div>
+    <div class="fr-prev" id="fr-prev"></div>
+  </div>
   <div class="resumen" id="resumen"></div>
   <div class="lista" id="lista"></div>
   <div class="modal" id="exp"><div class="mbox">
@@ -144,6 +154,14 @@ const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",
 let A=[];           // asesores
 let NDOC={};        // documentos de expediente por asesor
 let EXP=null;       // asesor con el expediente abierto
+let REGLAS={};      // ventas_reglas.reglas (aquí solo usamos .frase)
+function frPrev(){const tx=$("#fr-texto").value.trim(),au=$("#fr-autor").value.trim();$("#fr-prev").innerHTML=tx?`<q>${esc(tx)}</q>${au?`<div class="au">— ${esc(au)}</div>`:""}`:'<span style="font-size:12px;color:rgba(255,255,255,.7)">Sin frase: el menú muestra la de Wayne Gretzky por default.</span>'}
+document.addEventListener("input",e=>{if(e.target.id==="fr-texto"||e.target.id==="fr-autor")frPrev()});
+document.addEventListener("click",async e=>{if(e.target.id!=="fr-save")return;
+  const tx=$("#fr-texto").value.trim(),au=$("#fr-autor").value.trim();
+  REGLAS.frase=tx?{texto:tx,autor:au,desde:new Date().toISOString().slice(0,10)}:null;sync("Guardando frase…");
+  const r=await sb.from("ventas_reglas").upsert({id:1,reglas:REGLAS,updated_at:new Date().toISOString()});
+  if(r.error){sync("No se guardó la frase: "+r.error.message,true);return}sync("Frase del mes guardada. Se ve en el menú de asesores al recargar.")});
 const TIPOS=["Contrato","INE","CURP","RFC / Constancia fiscal","Comprobante de domicilio","Carta de confidencialidad","Otro"];
 let saveT=null;
 const sync=(t,err)=>{const el=$("#sync");el.textContent=t;el.className="sync"+(err?" err":"")};
@@ -194,6 +212,7 @@ async function cargar(){
   const {data,error}=await sb.from("asesores").select("*").order("orden",{ascending:true}).order("nombre");
   if(error){sync("No se pudo leer la tabla de asesores: "+error.message+" · ¿Ya corriste asesores.sql en Supabase?",true);A=[];render();return}
   A=data||[];
+  try{const r=await sb.from("ventas_reglas").select("reglas").eq("id",1).maybeSingle();REGLAS=(r.data&&r.data.reglas)||{};const f=REGLAS.frase||{};$("#fr-texto").value=f.texto||"";$("#fr-autor").value=f.autor||"";frPrev()}catch(e){}
   try{const r=await sb.from("asesor_documentos").select("asesor");NDOC={};(r.data||[]).forEach(d=>NDOC[d.asesor]=(NDOC[d.asesor]||0)+1)}catch(e){}
   render();sync(A.length?"Los cambios se guardan solos.":"");
 }
