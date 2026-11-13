@@ -254,7 +254,7 @@ select.st{padding-right:10px}
 .edleg{margin-left:auto;display:flex;gap:10px;font-size:11.5px;color:var(--muted);flex-wrap:wrap}
 .edleg span{display:inline-flex;align-items:center;gap:5px}.edleg i{width:12px;height:12px;border-radius:4px;display:inline-block}
 .edbld{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px 18px 12px;overflow-x:auto}
-.edtow{display:grid;gap:0 8px;align-items:center;min-width:640px}
+.edtow{display:grid;gap:0 8px;align-items:center;width:max-content;min-width:100%}
 .edth{font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);text-align:center;padding-bottom:6px;white-space:nowrap}
 .edth b{display:block;font-family:Lora,Georgia,serif;font-weight:500;font-size:15px;letter-spacing:0;text-transform:none;color:var(--green,#173F35)}
 .edroof{height:10px;border-radius:10px 10px 0 0;background:var(--green,#173F35);margin-bottom:6px}
@@ -1083,7 +1083,8 @@ function videoHTML(p){
 
 
 // ---------- tipologías (del campo tipo de cada unidad: "405 | Fresno") ----------
-function uParse(u){const s=String(u.tipo||"").trim();let num=s,tip="";const sp=s.split(/\s*[|·]\s*/);if(sp.length>=2){num=sp[0];tip=sp.slice(1).join(" ")}else{const m=s.match(/^(\S+)\s+(.*)$/);if(m){num=m[1];tip=m[2].replace(/^\d+\s+/,"")}}return {num:num.trim(),tip:tip.trim()}}
+const torreEsTipo=v=>/^\s*(tipo|tip\.|modelo|mod\.|prototipo)\b/i.test(String(v||""));
+function uParse(u){const s=String(u.tipo||"").trim();let num=s,tip="";const sp=s.split(/\s*[|·]\s*/);if(sp.length>=2){num=sp[0];tip=sp.slice(1).join(" ")}else{const m=s.match(/^(\S+)\s+(.*)$/);if(m){num=m[1];tip=m[2].replace(/^\d+\s+/,"")}}if(!tip&&torreEsTipo(u.torre))tip=String(u.torre).trim();return {num:num.trim(),tip:tip.trim()}}
 const slugT=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 function tipologias(p){const m=new Map();(p.units||[]).forEach(u=>{const t=uParse(u).tip;if(t)m.set(t,(m.get(t)||0)+1)});return [...m.entries()].sort((a,b)=>b[1]-a[1]).map(([t,n])=>({tip:t,slug:slugT(t),n}))}
 function rendTip(p,tip,kind){const sl=slugT(tip);return (rend[p.id]||[]).filter(d=>d.cat==="unidades"&&d.tipol===sl&&(!kind||d.kind===kind))}
@@ -1092,14 +1093,17 @@ let ED={sel:null,filt:"",disp:false};
 const EDST=s=>{s=String(s||"").toLowerCase();return s==="disponible"?"disponible":s==="apartado"?"apartado":s==="vendido"?"vendido":s==="aportante"?"aportante":s==="bloqueado"?"bloqueado":"otro"};
 const EDCOL={disponible:"#2E7D5B",apartado:"#F2C94C",vendido:"#2F5597",aportante:"#E07A2F",bloqueado:"#B8B8B5"};
 const edM=p=>"$"+(p/1e6).toFixed(2)+" M";
-const edRec=u=>{const r=String(u.recamaras||"").trim();if(!r)return "";if(/estudio/i.test(r))return "Est";if(/comerc|local/i.test(r))return "Local";return r};
+const edRec=u=>{const r=String(u.recamaras||"").trim().replace(/\s*\+\s*/g,"+");if(!r)return "";if(/estudio/i.test(r))return "Est";if(/comerc|local/i.test(r))return "Local";return r};
 const edTerr=u=>{const mt=(+u.m2terr||0)+(+u.m2desc||0);if(mt>0)return mt;const tot=+u.m2tot||0,mi=+u.m2int||0;return Math.max(0,tot-mi)};
 function edLevels(units){const lv=[...new Set(units.map(u=>String(u.nivel??"").trim()).filter(Boolean))];const w=l=>/^pb$|^planta/i.test(l)?-1:/^ph/i.test(l)?9999:/^\d+$/.test(l)?+l:5000;return lv.sort((a,b)=>w(b)-w(a))}
 function edificioHTML(p){
   const all=p.units||[];if(!all.length)return `<div class="pol empty"><b>Sin unidades</b>Captura las unidades del proyecto para ver el edificio.</div>`;
   const isLocal=u=>/comerc|local/i.test(String(u.recamaras||""));
   const deps=all.filter(u=>!isLocal(u)),locs=all.filter(isLocal);
-  const towers=[...new Set(deps.map(u=>String(u.torre||"").trim()))];
+  const rawT=[...new Set(deps.map(u=>String(u.torre||"").trim()))];
+  const torreReal=rawT.length<=3&&!rawT.some(torreEsTipo);
+  const torreDe=u=>torreReal?String(u.torre||"").trim():"";
+  const towers=torreReal?rawT:[""];
   const levels=edLevels(deps);
   const recW=r=>{const m=/^(\d)R(\+)?(G)?$/i.exec(r);if(/^est/i.test(r))return 0;if(m)return +m[1]*10+(m[2]?1:0)+(m[3]?5:0);if(/local/i.test(r))return 99;return 50};
   const recs=[...new Set(all.map(edRec).filter(Boolean))].sort((a,b)=>recW(a)-recW(b));
@@ -1108,19 +1112,19 @@ function edificioHTML(p){
     if(VENTAS&&st!=="disponible")return `<div class="eu hid"><b>${esc(num)}</b></div>`;
     const terr=edTerr(u),mi=+u.m2int||0;
     return `<button type="button" class="eu st-${st} ${mute?"mute":""} ${ED.sel===u.id?"sel":""} ${pass(u)?"":"dim"}" data-eu="${u.id}"><b>${esc(num)}</b>${mute?"":`<span class="t"><em>${esc(edRec(u))}</em>${edRec(u)?"·":""}${terr>0?`${mi.toFixed(0)}+${terr.toFixed(0)}`:mi.toFixed(0)}m²</span><span class="p">${st==="disponible"?edM(+u.precio||0):"Vendido"}</span>`}</button>`};
-  const colsOf=tw=>Math.max(1,...levels.map(l=>deps.filter(u=>String(u.torre||"").trim()===tw&&String(u.nivel).trim()===l).length));
+  const colsOf=tw=>Math.max(1,...levels.map(l=>deps.filter(u=>torreDe(u)===tw&&String(u.nivel).trim()===l).length));
   const cols=towers.map(colsOf);
-  let gt="46px";towers.forEach((tw,i)=>{gt+=` minmax(0,${cols[i]}fr)`;if(i<towers.length-1)gt+=" 16px"});
+  let gt="46px";towers.forEach((tw,i)=>{gt+=` minmax(${cols[i]*96}px,${cols[i]}fr)`;if(i<towers.length-1)gt+=" 16px"});
   let h=`<div class="edtow" style="grid-template-columns:${gt}"><div></div>`;
-  towers.forEach((tw,i)=>{const vs=[...new Set(deps.filter(u=>String(u.torre||"").trim()===tw).map(u=>u.vista).filter(Boolean))];h+=`<div class="edth"><b>${towers.length>1?"Torre "+esc(tw||"—"):esc(p.nombre)}</b>${vs.length?"vista "+esc(vs.join(" / ")):""}</div>`;if(i<towers.length-1)h+="<div></div>"});
+  towers.forEach((tw,i)=>{const vs=[...new Set(deps.filter(u=>torreDe(u)===tw).map(u=>u.vista).filter(Boolean))];h+=`<div class="edth"><b>${towers.length>1?"Torre "+esc(tw||"—"):esc(p.nombre)}</b>${vs.length&&vs.length<=3?"vista "+esc(vs.join(" / ")):""}</div>`;if(i<towers.length-1)h+="<div></div>"});
   h+=`<div></div>`;towers.forEach((tw,i)=>{h+=`<div class="edroof"></div>`;if(i<towers.length-1)h+="<div></div>"});
   levels.forEach(l=>{
     h+=`<div class="edfl">${esc(l)}<small>${/^pb$/i.test(l)?"P. BAJA":/^ph/i.test(l)?"":"NIVEL"}</small></div>`;
-    towers.forEach((tw,i)=>{const us=deps.filter(u=>String(u.torre||"").trim()===tw&&String(u.nivel).trim()===l).sort((a,b)=>uParse(a).num.localeCompare(uParse(b).num,undefined,{numeric:true}));
-      h+=`<div class="edrow" style="grid-template-columns:repeat(${cols[i]},minmax(0,1fr))">${us.map(tile).join("")}</div>`;if(i<towers.length-1)h+=`<div class="edmid"><i></i></div>`});
+    towers.forEach((tw,i)=>{const us=deps.filter(u=>torreDe(u)===tw&&String(u.nivel).trim()===l).sort((a,b)=>uParse(a).num.localeCompare(uParse(b).num,undefined,{numeric:true}));
+      h+=`<div class="edrow" style="grid-template-columns:repeat(${cols[i]},minmax(92px,1fr))">${us.map(tile).join("")}</div>`;if(i<towers.length-1)h+=`<div class="edmid"><i></i></div>`});
   });
   h+=`</div>`;
-  if(locs.length)h+=`<div class="edgf"><div class="lbl">Locales comerciales</div><div class="edrow" style="grid-template-columns:repeat(${Math.max(locs.length,6)},minmax(0,1fr))">${locs.sort((a,b)=>uParse(a).num.localeCompare(uParse(b).num,undefined,{numeric:true})).map(tile).join("")}</div></div>`;
+  if(locs.length)h+=`<div class="edgf"><div class="lbl">Locales comerciales</div><div class="edrow" style="grid-template-columns:repeat(${Math.max(locs.length,6)},minmax(92px,1fr))">${locs.sort((a,b)=>uParse(a).num.localeCompare(uParse(b).num,undefined,{numeric:true})).map(tile).join("")}</div></div>`;
   const c=k=>all.filter(u=>EDST(u.estatus)===k).length;
   const tot=VENTAS?"":`<div class="edtot"><div><b>${c("disponible")}</b><span>disponibles</span></div><div><b style="color:#C9A227">${c("apartado")}</b><span>apartados</span></div><div><b style="color:#2F5597">${c("vendido")}</b><span>vendidos</span></div>${c("aportante")?`<div><b style="color:#E07A2F">${c("aportante")}</b><span>aportantes</span></div>`:""}${c("bloqueado")?`<div><b style="color:#9A9A98">${c("bloqueado")}</b><span>bloqueados</span></div>`:""}</div>`;
   const bar=`<div class="edbar"><button class="chip" data-edf="" aria-pressed="${ED.filt===""}">Todas</button>${recs.map(r=>`<button class="chip" data-edf="${esc(r)}" aria-pressed="${ED.filt===r}">${esc(r==="Est"?"Estudio":r)}</button>`).join("")}<button class="chip" data-eddisp aria-pressed="${ED.disp}">Solo disponibles</button>
@@ -1139,7 +1143,7 @@ function edSideHTML(p){
   return `<div class="edcard">
     ${main?`<div class="ph ${main.kind==="planta"?"plan":""}" data-edlb="0" style="background-image:url('${main.url}')"><span>${main.kind==="planta"?"Planta":"Render"} · ${esc(tip||"")}</span></div>`:`<div class="ph" style="display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;cursor:default">Sin planta ni renders de ${esc(tip||"esta tipología")}</div>`}
     ${gal.length>1?`<div class="thumbs">${gal.map((g,i)=>`<div class="${i===0?"on":""}" data-edth="${i}" style="background-image:url('${g.url}')" title="${g.kind==="planta"?"Planta":"Render"}"></div>`).join("")}</div>`:""}
-    <div class="bd"><span class="edst" ${stCss}>${stLab}</span><h2>${/local|comerc/i.test(String(u.recamaras||""))?"Local":"Depa"} ${esc(num)}</h2><div class="sub">${esc(tip||"")}${u.torre&&String(u.torre).trim()?" · Torre "+esc(u.torre):""}${u.nivel?" · Nivel "+esc(u.nivel):""}${u.vista?" · Vista "+esc(String(u.vista).toLowerCase()):""}</div>
+    <div class="bd"><span class="edst" ${stCss}>${stLab}</span><h2>${/local|comerc/i.test(String(u.recamaras||""))?"Local":"Depa"} ${esc(num)}</h2><div class="sub">${esc(tip||"")}${u.torre&&String(u.torre).trim()&&!torreEsTipo(u.torre)?" · Torre "+esc(u.torre):""}${u.nivel?" · Nivel "+esc(u.nivel):""}${u.vista?" · Vista "+esc(String(u.vista).toLowerCase()):""}</div>
     ${showPrice?`<div class="edprice">${"$"+Math.round(+u.precio||0).toLocaleString("es-MX")}</div><div class="edpm2">${tot?"$"+Math.round((+u.precio||0)/tot).toLocaleString("es-MX")+" / m² total":""}</div>`:""}
     <div class="edspecs"><div><b>${mi.toFixed(2)}</b><span>m² interior</span></div><div><b>${terr.toFixed(2)}</b><span>m² terraza${(+u.m2desc||0)>0?" (techada + descubierta)":""}</span></div><div><b>${tot.toFixed(2)}</b><span>m² total</span></div></div>
     <div class="edspecs"><div><b>${esc(u.recamaras||"—")}</b><span>Tipología</span></div><div><b>${u.banos??"—"}</b><span>Baños</span></div><div><b>${u.parking??"—"}</b><span>Cajones</span></div></div>
