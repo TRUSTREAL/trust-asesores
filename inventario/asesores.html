@@ -209,7 +209,13 @@ select.st{padding-right:10px}
 .doc .del{flex:none}
 .upl{margin-top:14px;border:1px dashed var(--line-2);border-radius:10px;padding:18px;text-align:center;color:var(--muted);font-size:13px;background:var(--surface)}
 /* ---- Renders ---- */
-.rgrid{margin-top:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.rcats{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px}
+.rcats button{font:inherit;font-size:12.5px;font-weight:500;border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:6px 12px;cursor:pointer;color:var(--muted);display:inline-flex;gap:6px;align-items:center}
+.rcats button b{font-size:10.5px;background:var(--surface-2);border-radius:999px;padding:1px 6px;font-weight:600}
+.rcats button[aria-pressed="true"]{background:var(--green,#173F35);border-color:var(--green,#173F35);color:#fff}.rcats button[aria-pressed="true"] b{background:rgba(255,255,255,.2);color:#fff}
+.rsec h4{font-family:Lora,Georgia,serif;font-weight:500;font-size:17px;margin:18px 0 0;color:var(--green,#173F35)}.rsec h4 span{font-family:Poppins,sans-serif;font-size:11px;color:var(--muted);margin-left:6px}
+.rupcat{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;margin-bottom:12px;font-size:12.5px;color:var(--muted)}.upl .rupcat label{display:inline-flex;align-items:center;gap:6px;cursor:pointer;text-decoration:none;color:var(--text);border:1px solid var(--line-2);border-radius:999px;padding:5px 11px;background:var(--surface);font-weight:500}.upl .rupcat label:has(input:checked){background:var(--green,#173F35);border-color:var(--green,#173F35);color:#fff}.upl .rupcat input{display:inline-block!important;width:13px;height:13px;accent-color:#fff;margin:0;position:static;opacity:1}
+.rgrid{margin-top:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
 .rend{position:relative;aspect-ratio:4/3;border-radius:12px;overflow:hidden;background:var(--surface-2) center/cover no-repeat;border:1px solid var(--line);cursor:zoom-in}
 .rend .rn{position:absolute;left:0;right:0;bottom:0;padding:18px 10px 8px;background:linear-gradient(transparent,rgba(0,0,0,.55));color:#fff;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rend .rdel{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:14px;cursor:pointer;display:none}
@@ -585,9 +591,10 @@ document.addEventListener("click",e=>{
   if(t.dataset.cat){S.cat=t.dataset.cat;filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};save();render();return}
   if(t.id==="btn-ventas"){VENTAS=!VENTAS;try{localStorage.setItem("inv_ventas",VENTAS?"1":"0")}catch(e){}filt.estatus="";renderMain();return}
   if(t.id==="pbtn"){const pk=$("#picker");const open=pk.toggleAttribute("open");t.setAttribute("aria-expanded",open);if(open)($("#picker .pitem[aria-current='true']")||$("#picker .pitem"))?.focus();return}
-  if(t.classList.contains("pitem")){S.sel=t.dataset.id;vista="precios";delete docs[t.dataset.id];delete rend[t.dataset.id];filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};sort={k:null,dir:"asc"};save();render();return}
+  if(t.classList.contains("pitem")){S.sel=t.dataset.id;vista="precios";rcat="";delete docs[t.dataset.id];delete rend[t.dataset.id];filt={q:"",estatus:"",nivel:"",vista:"",recamaras:""};sort={k:null,dir:"asc"};save();render();return}
   if(t.dataset.vista){vista=t.dataset.vista;renderMain();return}
-  if(t.dataset.rdel!==undefined&&!READONLY){e.preventDefault();deleteRend(S.sel,t.dataset.rdel);return}
+  if(t.dataset.rcat!==undefined){rcat=t.dataset.rcat;renderMain();return}
+  if(t.dataset.rdel!==undefined&&!READONLY){e.preventDefault();deleteRend(S.sel,+t.dataset.rdel);return}
   if(t.closest&&t.closest(".rend")&&!t.closest(".rdl")){const p=S.projects.find(p=>p.id===S.sel);rendOpen(p,+t.closest(".rend").dataset.ri);return}
   if(t.dataset.vdel!==undefined&&!READONLY){const p=S.projects.find(p=>p.id===S.sel);if(!confirm("¿Quitar este video del proyecto?"))return;p.videos=(p.videos||[]).filter((_,i)=>i!==+t.dataset.vdel);saveVideos(p);return}
   if(t.id==="v-add"&&!READONLY){const p=S.projects.find(p=>p.id===S.sel);const u=$("#v-url").value.trim(),ti=$("#v-tit").value.trim();if(!ytId(u)){alert("Pega una liga de YouTube válida (youtu.be/… o youtube.com/watch?v=…).");return}p.videos=(Array.isArray(p.videos)?p.videos:[]).concat([{url:u,titulo:ti}]);saveVideos(p);return}
@@ -895,20 +902,29 @@ const fmtSize=b=>b>1048576?(b/1048576).toFixed(1)+" MB":b>1024?Math.round(b/1024
 
 // ---------- renders (bucket documentos/<proyecto>/renders) ----------
 let rend={}; // proyecto_id -> [{name,url,size}]
+const RCATS=[["exteriores","Exteriores"],["amenidades","Amenidades"],["unidades","Unidades"],["interiores","Interiores"]];
+let rcat=""; // filtro de categoría en la galería ("" = todas)
 async function loadRend(pid){
   if(!sb){rend[pid]=rend[pid]||[];return}
-  const {data,error}=await sb.storage.from(BUCKET).list(pid+"/renders",{limit:300,sortBy:{column:"name",order:"asc"}});
-  if(error){rend[pid]=[];return}
-  rend[pid]=(data||[]).filter(f=>f.name&&!f.name.startsWith(".")&&f.id).map(f=>({name:f.name,size:f.metadata?.size||0,url:sb.storage.from(BUCKET).getPublicUrl(pid+"/renders/"+f.name).data.publicUrl}));
+  const dirs=[""].concat(RCATS.map(c=>c[0]));
+  const res=await Promise.all(dirs.map(d=>sb.storage.from(BUCKET).list(pid+"/renders"+(d?"/"+d:""),{limit:300,sortBy:{column:"name",order:"asc"}})));
+  const out=[];
+  res.forEach((r,i)=>{const d=dirs[i];(r.data||[]).filter(f=>f.name&&!f.name.startsWith(".")&&f.id).forEach(f=>out.push({cat:d||"otros",name:f.name,size:f.metadata?.size||0,path:pid+"/renders/"+(d?d+"/":"")+f.name,url:sb.storage.from(BUCKET).getPublicUrl(pid+"/renders/"+(d?d+"/":"")+f.name).data.publicUrl}))});
+  rend[pid]=out;
 }
 function rendHTML(p){
   const list=rend[p.id];
   if(!sb)return `<div class="pol empty"><b>Renders</b>Disponible cuando el panel está conectado a Supabase.</div>`;
   if(!list)return `<div class="pol empty">Cargando renders…</div>`;
-  const items=list.map((d,i)=>`<div class="rend" data-ri="${i}" style="background-image:url('${d.url}')" title="${esc(d.name)}"><a class="rdl" href="${d.url}" download target="_blank" rel="noopener" title="Descargar">⤓</a>${READONLY?"":`<button class="rdel" data-rdel="${esc(d.name)}" title="Eliminar render">✕</button>`}<div class="rn">${esc(d.name.replace(/^\d+_/,"").replace(/\.[^.]+$/,""))}</div></div>`).join("");
-  const empty=`<div class="pol empty"><b>Sin renders</b>${READONLY?"Aún no hay renders para este proyecto.":"Sube los renders del proyecto: fachada, amenidades, interiores."}</div>`;
-  const upl=READONLY?"":`<div class="upl" id="rupl"><input type="file" id="rend-file" multiple accept="image/*,.heic,.heif"><label for="rend-file">Elegir imágenes</label> · se reducen a 2400 px antes de subir<div class="prog" id="rend-prog"></div></div>`;
-  return (list.length?`<div class="rgrid">${items}</div>`:empty)+upl;
+  const cats=RCATS.concat(list.some(d=>d.cat==="otros")?[["otros","Sin categoría"]]:[]);
+  const n=c=>list.filter(d=>d.cat===c).length;
+  const pills=`<div class="rcats"><button data-rcat="" aria-pressed="${rcat===""}">Todos <b>${list.length}</b></button>${cats.map(c=>`<button data-rcat="${c[0]}" aria-pressed="${rcat===c[0]}">${c[1]} <b>${n(c[0])}</b></button>`).join("")}</div>`;
+  const tile=d=>{const i=list.indexOf(d);return `<div class="rend" data-ri="${i}" style="background-image:url('${d.url}')" title="${esc(d.name)}"><a class="rdl" href="${d.url}" download target="_blank" rel="noopener" title="Descargar">⤓</a>${READONLY?"":`<button class="rdel" data-rdel="${i}" title="Eliminar render">✕</button>`}<div class="rn">${esc(d.name.replace(/^\d+_/,"").replace(/\.[^.]+$/,""))}</div></div>`};
+  const show=rcat?cats.filter(c=>c[0]===rcat):cats.filter(c=>n(c[0]));
+  const secs=show.map(c=>`<div class="rsec"><h4>${c[1]} <span>${n(c[0])}</span></h4><div class="rgrid">${list.filter(d=>d.cat===c[0]).map(tile).join("")}</div></div>`).join("");
+  const empty=`<div class="pol empty"><b>Sin renders${rcat?" en esta categoría":""}</b>${READONLY?"Aún no hay renders para este proyecto.":"Elige la categoría y sube los renders del proyecto."}</div>`;
+  const upl=READONLY?"":`<div class="upl" id="rupl"><div class="rupcat">Subir a: ${RCATS.map(c=>`<label><input type="radio" name="rupcat" value="${c[0]}" ${(rcat||"exteriores")===c[0]?"checked":""}> ${c[1]}</label>`).join("")}</div><input type="file" id="rend-file" multiple accept="image/*,.heic,.heif"><label for="rend-file">Elegir imágenes</label> · se reducen a 2400 px antes de subir<div class="prog" id="rend-prog"></div></div>`;
+  return pills+(show.length&&show.some(c=>n(c[0]))?secs:empty)+upl;
 }
 let RLB={list:[],i:0};
 function rendOpen(p,i){RLB={list:rend[p.id]||[],i};rendShow(0)}
