@@ -1087,7 +1087,7 @@ const EDST=s=>{s=String(s||"").toLowerCase();return s==="disponible"?"disponible
 const EDCOL={disponible:"#2E7D5B",apartado:"#F2C94C",vendido:"#2F5597",aportante:"#E07A2F",bloqueado:"#B8B8B5"};
 const edM=p=>"$"+(p/1e6).toFixed(2)+" M";
 const edRec=u=>{const r=String(u.recamaras||"").trim();if(!r)return "";if(/estudio/i.test(r))return "Est";if(/comerc|local/i.test(r))return "Local";return r};
-const edTerr=u=>{const mt=+u.m2terr||0;const tot=+u.m2tot||0,mi=+u.m2int||0;return mt>0?mt:Math.max(0,tot-mi)};
+const edTerr=u=>{const mt=(+u.m2terr||0)+(+u.m2desc||0);if(mt>0)return mt;const tot=+u.m2tot||0,mi=+u.m2int||0;return Math.max(0,tot-mi)};
 function edLevels(units){const lv=[...new Set(units.map(u=>String(u.nivel??"").trim()).filter(Boolean))];const w=l=>/^pb$|^planta/i.test(l)?-1:/^ph/i.test(l)?9999:/^\d+$/.test(l)?+l:5000;return lv.sort((a,b)=>w(b)-w(a))}
 function edificioHTML(p){
   const all=p.units||[];if(!all.length)return `<div class="pol empty"><b>Sin unidades</b>Captura las unidades del proyecto para ver el edificio.</div>`;
@@ -1126,7 +1126,7 @@ function edSideHTML(p){
   if(!u)return `<div class="edcard"><div class="edempty"><b>Elige un departamento</b>Toca cualquier cuadro del edificio para ver su planta, renders y precio.</div></div>`;
   const {num,tip}=uParse(u);const st=EDST(u.estatus);const planta=rendTip(p,tip,"planta")[0];const rs=rendTip(p,tip,"render");
   const gal=(planta?[planta]:[]).concat(rs);const main=gal[0];
-  const terr=edTerr(u),mi=+u.m2int||0,tot=(+u.m2tot||0)||(mi+terr);
+  const terr=edTerr(u),mi=+u.m2int||0,tot=mi+terr;
   const stLab={disponible:"Disponible",apartado:"Apartado",vendido:"Vendido",aportante:"Aportante",bloqueado:"Bloqueado",otro:esc(u.estatus||"")}[st];
   const stCss=st==="disponible"?"":`style="background:${EDCOL[st]||"#D9D6CE"};color:${st==="apartado"?"#5E4A00":"#fff"}"`;
   const showPrice=st==="disponible"||!VENTAS;
@@ -1135,7 +1135,7 @@ function edSideHTML(p){
     ${gal.length>1?`<div class="thumbs">${gal.map((g,i)=>`<div class="${i===0?"on":""}" data-edth="${i}" style="background-image:url('${g.url}')" title="${g.kind==="planta"?"Planta":"Render"}"></div>`).join("")}</div>`:""}
     <div class="bd"><span class="edst" ${stCss}>${stLab}</span><h2>${/local|comerc/i.test(String(u.recamaras||""))?"Local":"Depa"} ${esc(num)}</h2><div class="sub">${esc(tip||"")}${u.torre&&String(u.torre).trim()?" · Torre "+esc(u.torre):""}${u.nivel?" · Nivel "+esc(u.nivel):""}${u.vista?" · Vista "+esc(String(u.vista).toLowerCase()):""}</div>
     ${showPrice?`<div class="edprice">${"$"+Math.round(+u.precio||0).toLocaleString("es-MX")}</div><div class="edpm2">${tot?"$"+Math.round((+u.precio||0)/tot).toLocaleString("es-MX")+" / m² total":""}</div>`:""}
-    <div class="edspecs"><div><b>${mi.toFixed(2)}</b><span>m² interior</span></div><div><b>${terr.toFixed(2)}</b><span>m² terraza</span></div><div><b>${tot.toFixed(2)}</b><span>m² total</span></div></div>
+    <div class="edspecs"><div><b>${mi.toFixed(2)}</b><span>m² interior</span></div><div><b>${terr.toFixed(2)}</b><span>m² terraza${(+u.m2desc||0)>0?" (techada + descubierta)":""}</span></div><div><b>${tot.toFixed(2)}</b><span>m² total</span></div></div>
     <div class="edspecs"><div><b>${esc(u.recamaras||"—")}</b><span>Tipología</span></div><div><b>${u.banos??"—"}</b><span>Baños</span></div><div><b>${u.parking??"—"}</b><span>Cajones</span></div></div>
     <div class="edbtns">${st==="disponible"&&typeof cotUrl==="function"?`<a class="btn primary" href="${cotUrl(p,u)}" target="_blank" rel="noopener">Cotizar esta unidad →</a>`:""}${gal.length?`<button class="btn" data-edlb="0" type="button">Ver planta y renders</button>`:""}</div>
     </div></div>`;
