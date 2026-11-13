@@ -919,7 +919,7 @@ function rendHTML(p){
   const cats=RCATS.concat(list.some(d=>d.cat==="otros")?[["otros","Sin categoría"]]:[]);
   const n=c=>list.filter(d=>d.cat===c).length;
   const pills=`<div class="rcats"><button data-rcat="" aria-pressed="${rcat===""}">Todos <b>${list.length}</b></button>${cats.map(c=>`<button data-rcat="${c[0]}" aria-pressed="${rcat===c[0]}">${c[1]} <b>${n(c[0])}</b></button>`).join("")}</div>`;
-  const tile=d=>{const i=list.indexOf(d);return `<div class="rend" data-ri="${i}" style="background-image:url('${d.url}')" title="${esc(d.name)}"><a class="rdl" href="${d.url}" download target="_blank" rel="noopener" title="Descargar">⤓</a>${READONLY?"":`<button class="rdel" data-rdel="${i}" title="Eliminar render">✕</button>`}<div class="rn">${esc(d.name.replace(/^\d+_/,"").replace(/\.[^.]+$/,""))}</div></div>`};
+  const tile=d=>{const i=list.indexOf(d);return `<div class="rend" data-ri="${i}" style="background-image:url('${d.url}')" title="${esc(d.name)}"><a class="rdl" href="${d.url}" download target="_blank" rel="noopener" title="Descargar">⤓</a>${READONLY?"":`<button class="rdel" data-rdel="${i}" title="Eliminar render">✕</button>`}</div>`};
   const show=rcat?cats.filter(c=>c[0]===rcat):cats.filter(c=>n(c[0]));
   const secs=show.map(c=>`<div class="rsec"><h4>${c[1]} <span>${n(c[0])}</span></h4><div class="rgrid">${list.filter(d=>d.cat===c[0]).map(tile).join("")}</div></div>`).join("");
   const empty=`<div class="pol empty"><b>Sin renders${rcat?" en esta categoría":""}</b>${READONLY?"Aún no hay renders para este proyecto.":"Elige la categoría y sube los renders del proyecto."}</div>`;
