@@ -5219,10 +5219,29 @@ html,body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--t
 
 
 <script>
+/* ===== Lista de desarrollos desde Inventario (tabla proyectos): In House y Off House ===== */
+window.PROY_LISTOS=(async function(){
+  const sel=document.getElementById("selector-proyecto"); if(!sel) return;
+  try{
+    const U="https://xshhjvdmkuqesdlvczbb.supabase.co",K="sb_publishable_5erZfpELyuncW1nrReTaZw_BQj0bc-P";
+    const r=await fetch(U+"/rest/v1/proyectos?select=nombre,cat,orden&order=cat.asc,orden.asc,nombre.asc",{headers:{apikey:K,Authorization:"Bearer "+K}});
+    const rows=r.ok?await r.json():[];
+    const nombres=[...new Set(rows.map(x=>String(x.nombre||"").trim()).filter(Boolean))];
+    if(!nombres.length) return;
+    const actual=sel.value;
+    const fijos=[...sel.options].filter(o=>o.value!=="Otro").map(o=>o.textContent.trim());
+    const norm=s=>s.toLowerCase().replace(/[^a-z0-9]/g,"");
+    const extra=fijos.filter(f=>!nombres.some(n=>norm(n)===norm(f)||norm(n).includes(norm(f))||norm(f).includes(norm(n))));
+    const lista=nombres.concat(extra);
+    sel.innerHTML=lista.map(n=>`<option>${n.replace(/</g,"&lt;")}</option>`).join("")+'<option value="Otro">Otro proyecto (externo)</option>';
+    const keep=[...sel.options].find(o=>o.textContent===actual); sel.value=keep?actual:lista[0];
+  }catch(e){console.warn("No se pudo leer la lista de proyectos",e)}
+})();
 /* ===== Precarga desde Inventario (?u=<base64 json>) ===== */
-(function(){
+(async function(){
   try{
     const q=new URLSearchParams(location.search).get("u"); if(!q) return;
+    try{await window.PROY_LISTOS}catch(e){}
     const u=JSON.parse(decodeURIComponent(escape(atob(q.replace(/-/g,"+").replace(/_/g,"/")))));
     const set=(id,v)=>{const el=document.getElementById(id);if(el&&v!=null&&v!=="")el.value=v;};
     // proyecto
