@@ -205,7 +205,7 @@ td.m{color:var(--trust-gray)}
 .repbox{border:1px solid var(--trust-gray-light);padding:14px 16px}
 .repbox h2{font-size:15px;margin-bottom:8px}
 .lhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-.lhead h2{margin-bottom:6px}.lhead .sub{margin-bottom:12px}
+.lhead h2{margin-bottom:6px}.lhead h2 .cnt{display:inline-block;vertical-align:middle;margin-left:6px;font-family:Poppins,sans-serif;font-size:12px;font-weight:600;background:var(--trust-green);color:#fff;border-radius:999px;padding:2px 9px;line-height:1.4}.lhead .sub{margin-bottom:12px}
 .vtog{display:inline-flex;border:1px solid var(--trust-gray-light);border-radius:999px;overflow:hidden;flex:0 0 auto}
 .vtog button{border:0;background:#fff;padding:8px 14px;font:inherit;font-size:13px;cursor:pointer;color:var(--trust-gray)}
 .vtog button+button{border-left:1px solid var(--trust-gray-light)}.vtog button.on{background:var(--trust-green);color:#fff}
@@ -703,7 +703,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
       <div class="kpi kpibtn" id="aPerdBox" onclick="kpiFilt('perdido')" title="Ver solo los leads perdidos"><b id="aShare">0</b><span>perdidos</span></div>
     </div>
     <div class="card" style="margin-bottom:16px"><h2>Conversión</h2><div id="aFunnel"></div></div>
-    <div class="card" style="margin-bottom:16px"><div class="lhead"><div><h2>Leads activos</h2><p class="sub">Marca el estatus de cada lead.</p><div class="afl" id="aFlagF" title="Filtra por estatus; puedes elegir varios"></div></div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div class="vtog"><button id="vList" class="on" onclick="setAseView('list')">Lista</button><button id="vKan" onclick="setAseView('kanban')">Etapas</button></div><input type="text" id="aQ" class="sbtn" style="background-image:none;padding-right:14px;width:260px;flex:0 0 auto" placeholder="Buscar nombre o teléfono" oninput="asePage=0;renderAse()"></div></div><div id="aList"></div><div id="aKanban" style="display:none"></div></div>
+    <div class="card" style="margin-bottom:16px"><div class="lhead"><div><h2>Leads activos <span class="cnt" id="aListN"></span></h2><p class="sub">Marca el estatus de cada lead.</p><div class="afl" id="aFlagF" title="Filtra por estatus; puedes elegir varios"></div></div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div class="vtog"><button id="vList" class="on" onclick="setAseView('list')">Lista</button><button id="vKan" onclick="setAseView('kanban')">Etapas</button></div><input type="text" id="aQ" class="sbtn" style="background-image:none;padding-right:14px;width:260px;flex:0 0 auto" placeholder="Buscar nombre o teléfono" oninput="asePage=0;renderAse()"></div></div><div id="aList"></div><div id="aKanban" style="display:none"></div></div>
     <div class="card" style="margin-bottom:16px"><h2>Proyección contra estándar</h2><div id="aProj"></div></div>
     <div class="card" style="margin-bottom:16px"><h2>Citas del periodo</h2><p class="sub">Leads que llegaron a cita (incluye los que después se apartaron, vendieron o perdieron).</p><div id="aCitas"></div></div>
     <div class="grid2">
@@ -1692,6 +1692,7 @@ function renderAse(){
   // list (paginada de 10)
   const list=document.getElementById("aList");
   const lrows= fe==="perdido" ? rows : rows.filter(l=>estatusDe(l)!=="perdido");  // futuros sí se muestran (se retoman)
+  {const n=document.getElementById("aListN"); if(n) n.textContent=lrows.length;}
   if(!lrows.length){ list.innerHTML=`<p class="empty">${rows.length?"Sin leads activos en este periodo (los perdidos se ocultan; usa el filtro Estatus: Perdido para verlos).":"Sin leads en este periodo."}</p>`; return; }
   const PER=1e9, pages=1; asePage=0; // vista de asesor: todos los leads en una sola lista (scroll), sin paginar
   const page=aseSorted(lrows).slice(asePage*PER, asePage*PER+PER);
