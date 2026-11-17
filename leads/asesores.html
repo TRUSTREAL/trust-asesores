@@ -296,6 +296,9 @@ th.sortable{cursor:pointer;user-select:none;white-space:nowrap}th.sortable:hover
 .vis{font-weight:400;font-size:12px;color:var(--st-vis);margin-top:2px;white-space:normal;max-width:260px}
 .razon{font-weight:400;font-size:12px;color:var(--trust-gray);margin-top:2px;white-space:normal;max-width:260px}
 #aList table,#aCitas table,#baseList table{min-width:820px}
+/* lista del asesor: alto fijo (~10 filas) con scroll interno; encabezado pegado */
+#aList{max-height:470px;overflow-y:auto;overscroll-behavior:contain}
+#aList table th{position:sticky;top:0;background:#fff;z-index:1;box-shadow:0 1px 0 var(--trust-gray-light)}
 .flags{flex-wrap:nowrap}
 /* Funnel visual */
 .fz{display:grid;grid-template-columns:1.3fr 1fr;gap:28px;align-items:start}
