@@ -341,7 +341,25 @@ select.st{padding-right:10px}
 .drawer footer{display:flex;justify-content:space-between;gap:8px;padding:14px 20px;border-top:1px solid var(--line);padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
 .hint{grid-column:1/-1;font-size:12px;color:var(--faint);margin:0}
 @media (prefers-reduced-motion:no-preference){.drawer{animation:in .18s ease-out}@keyframes in{from{transform:translateX(30px);opacity:0}}}
+/* ---------- Mercado (proyectos de la ciudad, solo informativo) ---------- */
+.mk{margin-top:18px}
+.mkbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.mkbar select,.mkbar input{border:1px solid var(--line-2);background:var(--surface);border-radius:8px;padding:8px 12px;font:inherit;font-size:13px;color:var(--text)}
+.mkbar input{min-width:220px;flex:1}
+.mkbar .count{color:var(--muted);font-size:12px;margin-left:auto}
+.mkwrap{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:auto;box-shadow:var(--shadow)}
+.mkwrap table{min-width:900px}
+.mkwrap td{white-space:normal;vertical-align:top}
+.mkwrap tr.row{cursor:pointer}.mkwrap tr.row:hover td{background:var(--surface-2)}
+.mkwrap td.n{font-weight:600;color:var(--green)}
+.mkwrap td.p{font-variant-numeric:tabular-nums;white-space:nowrap}
+.mkwrap td.notes{color:var(--muted);font-size:12px;max-width:320px}
+.mkwrap a{color:var(--green)}
+.zchip{display:inline-block;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:2px 9px;font-size:11.5px;white-space:nowrap}
+.mkempty{padding:40px 20px;text-align:center;color:var(--muted)}
+.mkempty b{display:block;font-family:Lora,serif;font-size:18px;color:var(--text);font-weight:500;margin-bottom:6px}
 </style>
+
 
 <div class="wrap">
   <div class="top">
@@ -354,6 +372,7 @@ select.st{padding-right:10px}
     <div class="seg" role="tablist" aria-label="Categoría">
       <button id="tab-in" role="tab" aria-pressed="true" data-cat="In House">In House</button>
       <button id="tab-off" role="tab" aria-pressed="false" data-cat="Off House">Off House</button>
+      <button id="tab-mk" role="tab" aria-pressed="false" data-cat="Mercado">Mercado</button>
     </div></div>
   </div>
 
@@ -515,6 +534,7 @@ let sort={k:null,dir:"asc"};
 // ---------- render ----------
 function render(){
   document.querySelectorAll(".seg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.cat===S.cat));
+  if(S.cat==="Mercado"){S.sel=null;renderMercado();return}
   const list=S.projects.filter(p=>p.cat===S.cat);
   if(!list.find(p=>p.id===S.sel)) S.sel=list[0]?.id||null;
   renderMain();
@@ -1177,6 +1197,63 @@ function drawer(title,body,onSave,onDelete){
 const fld=(name,label,val="",attrs="",full=false)=>`<div class="f ${full?"full":""}"><label for="fx-${name}">${label}</label><input id="fx-${name}" name="${name}" value="${esc(val)}" ${attrs}></div>`;
 const fsel=(name,label,val,opts,full=false)=>`<div class="f ${full?"full":""}"><label for="fx-${name}">${label}</label><select id="fx-${name}" name="${name}">${opts.map(o=>{const [v,l]=Array.isArray(o)?o:[o,o];return `<option value="${v}" ${v===val?"selected":""}>${l}</option>`}).join("")}</select></div>`;
 
+// ---------- Mercado: base informativa de proyectos de la ciudad (sin unidades, sin cotizar) ----------
+const ZONAS=["Americana","Zona Real","Providencia","Country Club","Jardines del Bosque","Monraz","Chapalita"];
+let MK={zona:"",q:"",ord:"nombre"};
+const mkRow=p=>({id:p.id,nombre:p.nombre,cat:"Mercado",giro:p.giro||"",desarrollador:p.desarrollador||"",ubicacion:p.ubicacion||"",zona:p.zona||"",precio_desde:p.precio_desde===""||p.precio_desde==null?null:+p.precio_desde,inmobiliaria:p.inmobiliaria||"",link:p.link||"",notas:p.notas||""});
+function renderMercado(){
+  const m=$("#main");
+  const all=S.projects.filter(p=>p.cat==="Mercado");
+  const zonas=[...new Set(ZONAS.concat(all.map(p=>p.zona).filter(Boolean)))];
+  let rows=all.filter(p=>(!MK.zona||p.zona===MK.zona)&&(!MK.q||[p.nombre,p.zona,p.desarrollador,p.inmobiliaria,p.giro,p.ubicacion,p.notas].join(" ").toLowerCase().includes(MK.q.toLowerCase())));
+  rows=rows.slice().sort((a,b)=>{if(MK.ord==="pa")return (+a.precio_desde||Infinity)-(+b.precio_desde||Infinity);if(MK.ord==="pd")return (+b.precio_desde||0)-(+a.precio_desde||0);if(MK.ord==="zona")return String(a.zona||"").localeCompare(String(b.zona||""))||String(a.nombre).localeCompare(String(b.nombre));return String(a.nombre).localeCompare(String(b.nombre))});
+  const lnk=u=>{if(!u)return "—";const h=/^https?:\/\//i.test(u)?u:"https://"+u;let t=u.replace(/^https?:\/\//i,"").replace(/^www\./,"").split("/")[0];return `<a href="${esc(h)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(t)} ↗</a>`};
+  m.innerHTML=`<div class="phead"><div class="left"><span class="eyebrow">Mercado</span><h2>Proyectos de la ciudad</h2><div class="hint" style="color:var(--muted);font-size:13px">Base informativa de desarrollos que no comercializa TRUST: zona, desarrollador, precio desde e inmobiliaria. Sin inventario ni cotización.</div></div>
+    ${READONLY?"":`<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="mk-paste" type="button">Pegar desde Excel</button><button class="btn primary" id="mk-add" type="button">+ Agregar proyecto</button></div>`}</div>
+    <div class="mk"><div class="mkbar"><input id="mk-q" placeholder="Buscar proyecto, desarrollador, inmobiliaria…" value="${esc(MK.q)}">
+      <select id="mk-zona"><option value="">Todas las zonas</option>${zonas.map(z=>`<option ${MK.zona===z?"selected":""}>${esc(z)}</option>`).join("")}</select>
+      <select id="mk-ord"><option value="nombre" ${MK.ord==="nombre"?"selected":""}>Por nombre</option><option value="zona" ${MK.ord==="zona"?"selected":""}>Por zona</option><option value="pa" ${MK.ord==="pa"?"selected":""}>Precio desde: menor a mayor</option><option value="pd" ${MK.ord==="pd"?"selected":""}>Precio desde: mayor a menor</option></select>
+      <span class="count">${rows.length} de ${all.length}</span></div>
+    ${rows.length?`<div class="mkwrap"><table><thead><tr><th>Proyecto</th><th>Zona</th><th>Desarrollador</th><th>Giro</th><th>Precio desde</th><th>Inmobiliaria</th><th>Link</th><th>Notas</th></tr></thead><tbody>
+      ${rows.map(p=>`<tr class="row" data-mk="${p.id}"><td class="n">${esc(p.nombre)}${p.ubicacion?`<div style="font-weight:400;color:var(--muted);font-size:12px">${esc(p.ubicacion)}</div>`:""}</td><td>${p.zona?`<span class="zchip">${esc(p.zona)}</span>`:"—"}</td><td>${esc(p.desarrollador||"—")}</td><td>${esc(p.giro||"—")}</td><td class="p">${p.precio_desde?fmt(+p.precio_desde):"—"}</td><td>${esc(p.inmobiliaria||"—")}</td><td>${lnk(p.link)}</td><td class="notes">${esc(p.notas||"")}</td></tr>`).join("")}
+    </tbody></table></div>`:`<div class="mkempty"><b>${all.length?"Ningún proyecto coincide":"Todavía no hay proyectos de mercado"}</b>${all.length?"Prueba con otra zona o búsqueda.":(READONLY?"Cuando TRUST los capture, aparecerán aquí.":"Agrega el primero o pega una lista desde Excel.")}</div>`}</div>`;
+}
+function openMercado(p){
+  const giros=["Departamentos en preventa","Departamentos","Casas","Oficinas","Locales","Terrenos","Mixto","Otro"];
+  const zona=p?.zona||"";const zonaEnLista=!zona||ZONAS.includes(zona);
+  drawer(p?"Editar proyecto de mercado":"Nuevo proyecto de mercado",
+    fld("nombre","Nombre del proyecto",p?.nombre||"","required",true)+
+    fsel("zona","Zona",zonaEnLista?zona:"__otra",ZONAS.map(z=>[z,z]).concat([["__otra","Otra zona…"]]))+
+    fld("zona_otra","Otra zona (si aplica)",zonaEnLista?"":zona,"placeholder='Escribe la zona'")+
+    fld("desarrollador","Desarrollador",p?.desarrollador||"")+
+    fsel("giro","Giro",p?.giro||giros[0],giros)+
+    fld("precio_desde","Precio desde (MXN)",p?.precio_desde??"","type=number step=1 min=0 placeholder='Ej. 3500000'")+
+    fld("inmobiliaria","Inmobiliaria que comercializa",p?.inmobiliaria||"")+
+    fld("ubicacion","Dirección / referencia",p?.ubicacion||"","placeholder='Opcional'")+
+    fld("link","Link (sitio o brochure)",p?.link||"","placeholder='Opcional'",true)+
+    `<div class="f full"><label for="fx-notas">Notas</label><textarea id="fx-notas" name="notas">${esc(p?.notas||"")}</textarea></div>`,
+    d=>{const v={nombre:d.nombre.trim(),cat:"Mercado",zona:(d.zona==="__otra"?d.zona_otra:d.zona).trim(),desarrollador:d.desarrollador.trim(),giro:d.giro,precio_desde:d.precio_desde===""?null:+d.precio_desde,inmobiliaria:d.inmobiliaria.trim(),ubicacion:d.ubicacion.trim(),link:d.link.trim(),notas:d.notas.trim()};
+      if(p){Object.assign(p,v);db(()=>sb.from("proyectos").update(mkRow(p)).eq("id",p.id))}else{const np={id:newId(),units:[],...v};S.projects.push(np);db(()=>sb.from("proyectos").insert(mkRow(np)))}},
+    p?()=>{S.projects=S.projects.filter(x=>x!==p);db(()=>sb.from("proyectos").delete().eq("id",p.id))}:null);
+}
+function openMercadoPaste(){
+  drawer("Pegar desde Excel",
+    `<p class="hint" style="grid-column:1/-1;margin:0 0 6px">Copia las filas desde Excel o Sheets (sin encabezado) con las columnas en este orden:<br><b>Proyecto · Zona · Desarrollador · Precio desde · Inmobiliaria · Giro · Link · Notas</b>. Las últimas tres son opcionales.</p>
+     <div class="f full"><label for="fx-paste">Filas</label><textarea id="fx-paste" name="paste" style="min-height:220px;font-family:ui-monospace,monospace;font-size:12px" placeholder="Torre Alba	Providencia	Grupo X	4,200,000	Inmobiliaria Y	Departamentos en preventa"></textarea></div>`,
+    d=>{const lines=String(d.paste||"").split(/\r?\n/).map(l=>l.trim()).filter(Boolean);const nuevos=[];
+      lines.forEach(l=>{const c=l.split("\t").map(x=>x.trim());if(c.length<2||!c[0])return;const precio=c[3]?+String(c[3]).replace(/[^0-9.]/g,""):null;
+        nuevos.push({id:newId(),units:[],cat:"Mercado",nombre:c[0],zona:c[1]||"",desarrollador:c[2]||"",precio_desde:precio||null,inmobiliaria:c[4]||"",giro:c[5]||"Departamentos en preventa",link:c[6]||"",notas:c[7]||"",ubicacion:""})});
+      if(!nuevos.length){alert("No encontré filas válidas. Deben venir separadas por tabulador (copiadas desde Excel/Sheets).");return}
+      S.projects.push(...nuevos);db(()=>sb.from("proyectos").insert(nuevos.map(mkRow)))},null);
+}
+document.addEventListener("click",e=>{
+  if(S.cat!=="Mercado")return;
+  const r=e.target.closest("tr[data-mk]");if(r&&!READONLY){const p=S.projects.find(x=>x.id===r.dataset.mk);if(p)openMercado(p);return}
+  if(e.target.closest("#mk-add")){openMercado(null);return}
+  if(e.target.closest("#mk-paste")){openMercadoPaste();return}
+});
+document.addEventListener("input",e=>{if(e.target.id==="mk-q"){MK.q=e.target.value;const pos=e.target.selectionStart;renderMercado();const i=$("#mk-q");i.focus();i.setSelectionRange(pos,pos)}});
+document.addEventListener("change",e=>{if(e.target.id==="mk-zona"){MK.zona=e.target.value;renderMercado()}if(e.target.id==="mk-ord"){MK.ord=e.target.value;renderMercado()}});
 function openProject(p){
   const giros=["Departamentos en preventa","Oficinas en renta","Oficinas en venta","Locales","Terrenos","Otro"];
   drawer(p?"Editar proyecto":"Nuevo proyecto",

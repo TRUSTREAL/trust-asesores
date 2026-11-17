@@ -270,7 +270,7 @@ async function loadP(){
     sb.from("proyectos").select("id,nombre,giro,desarrollador,ubicacion,orden,comision_broker,cat,proximamente,brokers_visible").order("orden",{ascending:true}).order("nombre"),
     sb.from("unidades").select("proyecto_id,estatus,precio")]);
   if(e1){$("#pcards").innerHTML=`<div class="empty">Error: ${esc(e1.message)}</div>`;return}
-  P=(ps||[]).map(p=>{const d=(us||[]).filter(u=>u.proyecto_id===p.id&&u.estatus==="Disponible");return {...p,visible:p.brokers_visible==null?p.cat==="In House":!!p.brokers_visible,disp:d.length,desde:d.length?Math.min(...d.map(u=>+u.precio||Infinity)):null,portada:null}});
+  P=(ps||[]).filter(p=>p.cat!=="Mercado").map(p=>{const d=(us||[]).filter(u=>u.proyecto_id===p.id&&u.estatus==="Disponible");return {...p,visible:p.brokers_visible==null?p.cat==="In House":!!p.brokers_visible,disp:d.length,desde:d.length?Math.min(...d.map(u=>+u.precio||Infinity)):null,portada:null}});
   P.sort((a,b)=>(b.visible-a.visible)||((a.orden||99)-(b.orden||99))||a.nombre.localeCompare(b.nombre));
   await Promise.all(P.map(async p=>{try{const {data}=await sb.storage.from(BUCKET).list(p.id,{limit:200});const f=(data||[]).find(x=>/^portada\.(jpe?g|png|webp)$/i.test(x.name||""));if(f)p.portada={name:f.name,url:sb.storage.from(BUCKET).getPublicUrl(p.id+"/"+f.name).data.publicUrl+"?v="+Date.now()}}catch(e){}}));
   renderP();

@@ -5224,7 +5224,7 @@ window.PROY_LISTOS=(async function(){
   const sel=document.getElementById("selector-proyecto"); if(!sel) return;
   try{
     const U="https://xshhjvdmkuqesdlvczbb.supabase.co",K="sb_publishable_5erZfpELyuncW1nrReTaZw_BQj0bc-P";
-    const r=await fetch(U+"/rest/v1/proyectos?select=nombre,cat,orden&order=cat.asc,orden.asc,nombre.asc",{headers:{apikey:K,Authorization:"Bearer "+K}});
+    const r=await fetch(U+"/rest/v1/proyectos?select=nombre,cat,orden&cat=neq.Mercado&order=cat.asc,orden.asc,nombre.asc",{headers:{apikey:K,Authorization:"Bearer "+K}});
     const rows=r.ok?await r.json():[];
     const nombres=[...new Set(rows.map(x=>String(x.nombre||"").trim()).filter(Boolean))];
     if(!nombres.length) return;
