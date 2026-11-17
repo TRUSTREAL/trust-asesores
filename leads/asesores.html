@@ -1690,7 +1690,7 @@ function renderAse(){
   const list=document.getElementById("aList");
   const lrows= fe==="perdido" ? rows : rows.filter(l=>estatusDe(l)!=="perdido");  // futuros sí se muestran (se retoman)
   if(!lrows.length){ list.innerHTML=`<p class="empty">${rows.length?"Sin leads activos en este periodo (los perdidos se ocultan; usa el filtro Estatus: Perdido para verlos).":"Sin leads en este periodo."}</p>`; return; }
-  const PER=10, pages=Math.ceil(lrows.length/PER); if(asePage>=pages) asePage=pages-1; if(asePage<0) asePage=0;
+  const PER=1e9, pages=1; asePage=0; // vista de asesor: todos los leads en una sola lista (scroll), sin paginar
   const page=aseSorted(lrows).slice(asePage*PER, asePage*PER+PER);
   const fl=(l,k,lab,cls)=>`<button class="flag ${l[k]?"on":""} ${cls||""}" onclick="toggleFlag(${JSON.stringify(l.id)},'${k}')">${lab}</button>`;
   list.innerHTML=`<table><tr>${aseTh("fecha","Fecha")}${aseTh("dias","Días")}${aseTh("nombre","Nombre")}${aseTh("telefono","Teléfono")}${aseTh("canal","Canal")}${aseTh("proyecto","Proyecto")}${aseTh("estatus","Estatus")}<th></th></tr>`+
