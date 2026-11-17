@@ -710,7 +710,6 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
       <div class="card"><h2>Por proyecto</h2><div class="bars" id="aBProy"></div></div>
       <div class="card"><h2>Por canal</h2><div class="bars" id="aBCanal"></div></div>
     </div>
-    <div class="card" style="margin-top:16px"><h2>Proyecto × canal</h2><div id="aCross"></div></div>
   </section>
 
 </div>
@@ -1674,7 +1673,7 @@ function renderAse(){
   // (broker KPI retirado)
   bars("aBProy",p,rows.length); bars("aBCanal",c,rows.length);
   // crosstab
-  const cross=document.getElementById("aCross");
+  const cross=document.getElementById("aCross")||{};
   if(!rows.length){ cross.innerHTML=`<p class="empty">Sin leads en este periodo.</p>`; }
   else{
     const cols=c.map(x=>x[0]); const m={};
