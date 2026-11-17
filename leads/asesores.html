@@ -706,10 +706,6 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
     <div class="card" style="margin-bottom:16px"><div class="lhead"><div><h2>Leads activos <span class="cnt" id="aListN"></span></h2><p class="sub">Marca el estatus de cada lead.</p><div class="afl" id="aFlagF" title="Filtra por estatus; puedes elegir varios"></div></div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div class="vtog"><button id="vList" class="on" onclick="setAseView('list')">Lista</button><button id="vKan" onclick="setAseView('kanban')">Etapas</button></div><input type="text" id="aQ" class="sbtn" style="background-image:none;padding-right:14px;width:260px;flex:0 0 auto" placeholder="Buscar nombre o teléfono" oninput="asePage=0;renderAse()"></div></div><div id="aList"></div><div id="aKanban" style="display:none"></div></div>
     <div class="card" style="margin-bottom:16px"><h2>Proyección contra estándar</h2><div id="aProj"></div></div>
     <div class="card" style="margin-bottom:16px"><h2>Citas del periodo</h2><p class="sub">Leads que llegaron a cita (incluye los que después se apartaron, vendieron o perdieron).</p><div id="aCitas"></div></div>
-    <div class="grid2">
-      <div class="card"><h2>Por proyecto</h2><div class="bars" id="aBProy"></div></div>
-      <div class="card"><h2>Por canal</h2><div class="bars" id="aBCanal"></div></div>
-    </div>
   </section>
 
 </div>
@@ -1671,7 +1667,7 @@ function renderAse(){
   const nHot=base.filter(l=>l.hot).length; document.getElementById("aHot").innerHTML=nHot+sm(pct(nHot,base.length)); document.getElementById("aHotBox").classList.toggle("hot", nHot>0);
   const nApa=base.filter(l=>l.apartado||l.venta).length; document.getElementById("aApa").innerHTML=nApa+sm(pct(nApa,base.length)); document.getElementById("aApaBox").classList.toggle("apa", nApa>0);
   // (broker KPI retirado)
-  bars("aBProy",p,rows.length); bars("aBCanal",c,rows.length);
+  // (boxes Por proyecto / Por canal / Proyecto × canal retirados a petición de Álvaro)
   // crosstab
   const cross=document.getElementById("aCross")||{};
   if(!rows.length){ cross.innerHTML=`<p class="empty">Sin leads en este periodo.</p>`; }
