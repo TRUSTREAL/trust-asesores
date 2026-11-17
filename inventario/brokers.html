@@ -274,7 +274,7 @@ select.st{padding-right:10px}
 .eu.mute{justify-content:flex-start}
 .eu.sel{outline:3px solid #1E241F;outline-offset:1px}
 .eu.dim{opacity:.22}
-.eu.hid{background:#EDEBE5;border-color:#EDEBE5;cursor:default}.eu.hid b{color:#C9C5BA}
+.eu.hid{background:#E4E1D9;border-color:#E4E1D9;cursor:default}.eu.hid b{color:#9A9C97}
 .edgf{margin-top:10px;padding-top:10px;border-top:2px solid var(--green,#173F35)}
 .edgf .lbl{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
 .edtot{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
@@ -576,7 +576,7 @@ async function loadAll(){
   const byId=Object.fromEntries(S.projects.map(p=>[p.id,p]));
   (us||[]).sort((a,b)=>nivKey(a.nivel)-nivKey(b.nivel)).forEach(u=>{const p=byId[u.proyecto_id];if(p)p.units.push({id:u.id,estatus:u.estatus,tipo:u.tipo,torre:u.torre,nivel:u.nivel,vista:u.vista,m2int:+u.m2int||0,m2terr:+u.m2terr||0,m2desc:u.m2desc!=null?+u.m2desc:null,m2tot:(+u.m2desc>0)?+((+u.m2int||0)+(+u.m2terr||0)+(+u.m2desc)).toFixed(2):(+u.m2tot||0),parking:u.parking,precio:+u.precio||0,recamaras:u.recamaras,banos:u.banos,
     precio_cierre:u.precio_cierre!=null?+u.precio_cierre:null,fecha_cierre:u.fecha_cierre||null,comprador:u.comprador||null,asesor_cierre:u.asesor_cierre||null,notas_cierre:u.notas_cierre||null})});
-  S.projects.forEach(p=>{p.units=p.units.filter(u=>u.estatus==="Disponible")}); // brokers: solo disponibles
+  S.projects.forEach(p=>{p.unitsAll=p.units.slice();p.units=p.units.filter(u=>u.estatus==="Disponible")}); // brokers: solo disponibles en precios; edificio completo (unitsAll)
   lastSync=new Date(); setSync();
   S.projects.forEach(p=>{ if(!docs[p.id]) loadDocs(p.id).then(()=>{ if(!S.sel) renderHome(); else if(p.id===S.sel && !$("#drawer-root").innerHTML && document.activeElement?.id!=="f-q") renderMain(); }); });
 }
@@ -1252,7 +1252,7 @@ const edRec=u=>{const r=String(u.recamaras||"").trim().replace(/\s*\+\s*/g,"+");
 const edTerr=u=>{const mt=(+u.m2terr||0)+(+u.m2desc||0);if(mt>0)return mt;const tot=+u.m2tot||0,mi=+u.m2int||0;return Math.max(0,tot-mi)};
 function edLevels(units){const lv=[...new Set(units.map(u=>String(u.nivel??"").trim()).filter(Boolean))];const w=l=>/^pb$|^planta/i.test(l)?-1:/^ph/i.test(l)?9999:/^\d+$/.test(l)?+l:5000;return lv.sort((a,b)=>w(b)-w(a))}
 function edificioHTML(p){
-  const all=p.units||[];if(!all.length)return `<div class="pol empty"><b>Sin unidades</b>Captura las unidades del proyecto para ver el edificio.</div>`;
+  const all=p.unitsAll||p.units||[];if(!all.length)return `<div class="pol empty"><b>Sin unidades</b>Captura las unidades del proyecto para ver el edificio.</div>`;
   const isLocal=u=>/comerc|local/i.test(String(u.recamaras||""));
   const deps=all.filter(u=>!isLocal(u)),locs=all.filter(isLocal);
   const rawT=[...new Set(deps.map(u=>String(u.torre||"").trim()))];
@@ -1264,7 +1264,7 @@ function edificioHTML(p){
   const recs=[...new Set(all.map(edRec).filter(Boolean))].sort((a,b)=>recW(a)-recW(b));
   const pass=u=>(!ED.filt||edRec(u)===ED.filt)&&(!ED.disp||EDST(u.estatus)==="disponible");
   const tile=u=>{const st=EDST(u.estatus),{num}=uParse(u);const mute=st!=="disponible"&&st!=="vendido";
-    if(VENTAS&&st!=="disponible")return `<div class="eu hid"><b>${esc(num)}</b></div>`;
+    if(VENTAS&&st!=="disponible")return `<div class="eu hid" title="No disponible"><b>${esc(num)}</b></div>`;
     const terr=edTerr(u),mi=+u.m2int||0;
     return `<button type="button" class="eu st-${st} ${mute?"mute":""} ${ED.sel===u.id?"sel":""} ${pass(u)?"":"dim"}" data-eu="${u.id}"><b>${esc(num)}</b>${mute?"":`<span class="t"><em>${esc(edRec(u))}</em>${edRec(u)?"·":""}${terr>0?`${mi.toFixed(0)}+${terr.toFixed(0)}`:mi.toFixed(0)}m²</span><span class="p">${st==="disponible"?edM(+u.precio||0):"Vendido"}</span>`}</button>`};
   const colsOf=tw=>Math.max(1,...levels.map(l=>deps.filter(u=>torreDe(u)===tw&&String(u.nivel).trim()===l).length));
@@ -1281,9 +1281,9 @@ function edificioHTML(p){
   h+=`</div>`;
   if(locs.length)h+=`<div class="edgf"><div class="lbl">Locales comerciales</div><div class="edrow" style="grid-template-columns:repeat(${Math.max(locs.length,6)},minmax(92px,1fr))">${locs.sort((a,b)=>uParse(a).num.localeCompare(uParse(b).num,undefined,{numeric:true})).map(tile).join("")}</div></div>`;
   const c=k=>all.filter(u=>EDST(u.estatus)===k).length;
-  const tot=VENTAS?"":`<div class="edtot"><div><b>${c("disponible")}</b><span>disponibles</span></div><div><b style="color:#C9A227">${c("apartado")}</b><span>apartados</span></div><div><b style="color:#2F5597">${c("vendido")}</b><span>vendidos</span></div>${c("aportante")?`<div><b style="color:#E07A2F">${c("aportante")}</b><span>aportantes</span></div>`:""}${c("bloqueado")?`<div><b style="color:#9A9A98">${c("bloqueado")}</b><span>bloqueados</span></div>`:""}</div>`;
+  const tot=VENTAS?`<div class="edtot"><div><b>${c("disponible")}</b><span>disponibles</span></div><div><b style="color:#9A9C97">${all.length-c("disponible")}</b><span>no disponibles</span></div></div>`:`<div class="edtot"><div><b>${c("disponible")}</b><span>disponibles</span></div><div><b style="color:#C9A227">${c("apartado")}</b><span>apartados</span></div><div><b style="color:#2F5597">${c("vendido")}</b><span>vendidos</span></div>${c("aportante")?`<div><b style="color:#E07A2F">${c("aportante")}</b><span>aportantes</span></div>`:""}${c("bloqueado")?`<div><b style="color:#9A9A98">${c("bloqueado")}</b><span>bloqueados</span></div>`:""}</div>`;
   const bar=`<div class="edbar"><button class="chip" data-edf="" aria-pressed="${ED.filt===""}">Todas</button>${recs.map(r=>`<button class="chip" data-edf="${esc(r)}" aria-pressed="${ED.filt===r}">${esc(r==="Est"?"Estudio":r)}</button>`).join("")}<button class="chip" data-eddisp aria-pressed="${ED.disp}">Solo disponibles</button>
-    <div class="edleg"><span><i style="background:#E1F1E8;border:1px solid #2E7D5B"></i>Disponible</span><span><i style="background:#F2C94C"></i>Apartado</span><span><i style="background:#2F5597"></i>Vendido</span>${VENTAS?"":`<span><i style="background:#E07A2F"></i>Aportante</span><span><i style="background:#B8B8B5"></i>Bloqueado</span>`}</div></div>`;
+    <div class="edleg"><span><i style="background:#E1F1E8;border:1px solid #2E7D5B"></i>Disponible</span>${VENTAS?`<span><i style="background:#E4E1D9"></i>No disponible</span>`:`<span><i style="background:#F2C94C"></i>Apartado</span><span><i style="background:#2F5597"></i>Vendido</span>`}${VENTAS?"":`<span><i style="background:#E07A2F"></i>Aportante</span><span><i style="background:#B8B8B5"></i>Bloqueado</span>`}</div></div>`;
   return bar+`<div class="edwrap"><div><div class="edbld">${h}</div>${tot}</div><div class="edside" id="edside">${edSideHTML(p)}</div></div>`;
 }
 function edSideHTML(p){
