@@ -607,11 +607,16 @@ function rankingHTML(y){
 
 /* ---------- cobranza ---------- */
 let cobView="pend"; // pend = pendientes + pago parcial · pag = cobradas
+let cobSort={k:"fecha",dir:"desc"};
 function renderCobranza(){
   const el=$("#pane-cobranza");
   const all=VENTAS.filter(v=>inPeriodo(v.fecha)).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
   const pend=all.filter(v=>estatusDe(v)==="pendiente"),parc=all.filter(v=>estatusDe(v)==="parcial"),pag=all.filter(v=>estatusDe(v)==="pagada");
-  const rows=cobView==="pag"?pag:all.filter(v=>estatusDe(v)!=="pagada");
+  let rows=cobView==="pag"?pag:all.filter(v=>estatusDe(v)!=="pagada");
+  {const d=cobSort.dir==="asc"?1:-1,ORD={pendiente:0,parcial:1,pagada:2};
+   const val=v=>({fecha:String(v.fecha||""),cliente:(v.cliente||"").toLowerCase(),proyecto:(v.proyecto||"").toLowerCase(),asesor:(v.asesor||"").toLowerCase(),comision:comTotal(v),cobrado:cobradoFx(v),pendiente:Math.max(0,comTotal(v)-cobradoFx(v)),estatus:ORD[estatusDe(v)]??9})[cobSort.k];
+   rows=rows.slice().sort((a,b)=>{const x=val(a),y=val(b);return (typeof x==="number"?x-y:String(x).localeCompare(String(y)))*d||String(b.fecha).localeCompare(String(a.fecha))});}
+  const cth=(k,l,n)=>`<th class="sortable ${cobSort.k===k?"on":""} ${n?"num":""}" data-k="${k}">${l}${cobSort.k===k?(cobSort.dir==="asc"?" ↑":" ↓"):""}</th>`;
   const sum=l=>l.reduce((a,v)=>a+comTotal(v),0), sumCob=l=>l.reduce((a,v)=>a+cobradoFx(v),0);
   const porCobrar=[...pend,...parc].reduce((a,v)=>a+Math.max(0,comTotal(v)-cobradoFx(v)),0);
   const cobP=COBROS.filter(c=>inPeriodo(c.fecha)).reduce((a,c)=>a+(+c.monto||0),0);
@@ -628,12 +633,13 @@ function renderCobranza(){
   </div>
   <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Cobranza · ${periodoTxt()}</h3><div class="qseg" id="cb-seg"><button data-v="pend" class="${cobView==="pend"?"on":""}">Pendientes · ${pend.length+parc.length}</button><button data-v="pag" class="${cobView==="pag"?"on":""}">Cobradas · ${pag.length}</button></div></div>
     <p class="hint" style="margin:6px 0 10px">Lo que el desarrollador / cliente nos ha pagado por cada venta. "Pago parcial" registra un cobro con monto (en Cobradas sirve para corregir una venta que en realidad fue parcial); "Pagada" liquida el resto. Independiente del pago a asesores.</p>
-    <div class="twrap" style="border:0"><table><thead><tr><th>Mes</th><th>Cliente</th><th>Proyecto</th><th>Asesor</th><th class="num">Comisión</th><th class="num">Cobrado</th><th class="num">Pendiente</th><th>Estatus de cobro</th></tr></thead>
+    <div class="twrap" style="border:0"><table><thead><tr>${cth("fecha","Mes")}${cth("cliente","Cliente")}${cth("proyecto","Proyecto")}${cth("asesor","Asesor")}${cth("comision","Comisión",1)}${cth("cobrado","Cobrado",1)}${cth("pendiente","Pendiente",1)}${cth("estatus","Estatus de cobro")}</tr></thead>
     <tbody>${rows.map(v=>{const tot=comTotal(v),cob=cobradoFx(v),pd=Math.max(0,tot-cob),n=cobrosDe(v.id).length;return `<tr class="${estatusDe(v)==="pagada"?"dimrow":""}"><td class="dim">${fechaM(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${esCredito(v)?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(v.proyecto)}${v.unidad?` <span class="dim">· ${esc(v.unidad)}</span>`:""}</td><td>${esc(v.asesor)}</td><td class="num com">${fmt(tot)}</td><td class="num ${cob?"paid":""}">${fmt(cob)}${n?` <button class="ico cobs" data-id="${v.id}" title="Ver cobros">${n}</button>`:""}</td><td class="num money" style="color:${pd>EPS?"var(--bad)":"var(--ok)"}">${fmt(pd)}</td><td>${seg(v)}</td></tr>`}).join("")}</tbody></table>
     ${rows.length?"":`<div class="empty">${cobView==="pag"?`<b>Sin cobradas</b>Todavía no hay ventas cobradas por completo en ${periodoTxt().toLowerCase()}.`:`<b>Todo cobrado</b>No hay ventas por cobrar en ${periodoTxt().toLowerCase()}.`}</div>`}</div></div>
   ${otrosHTML()}`;
   wireOtros(el);
   el.querySelectorAll("#cb-seg button").forEach(b=>b.onclick=()=>{cobView=b.dataset.v;renderCobranza()});
+  el.querySelectorAll("#pane-cobranza th.sortable").forEach(t=>t.onclick=()=>{const k=t.dataset.k;cobSort=cobSort.k===k?{k,dir:cobSort.dir==="asc"?"desc":"asc"}:{k,dir:["fecha","comision","cobrado","pendiente"].includes(k)?"desc":"asc"};renderCobranza()});
   el.querySelectorAll(".cobs").forEach(b=>b.onclick=()=>openCobro(VENTAS.find(x=>x.id===b.dataset.id)));
   el.querySelectorAll(".segc:not(.so) button").forEach(b=>b.onclick=async()=>{const id=b.closest(".segc").dataset.id,k=b.dataset.k;const v=VENTAS.find(x=>x.id===id);
     if(k==="parcial"){
