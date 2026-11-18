@@ -169,7 +169,7 @@ function ficha(r,p){
   const st=(l,v)=>`<div class="stp"><b>${v}</b><span>${l}</span></div>`;
   let h=`<div class="fhead"><div class="av"${avStyle(r.n)}>${fotoDe(r.n)?"":r.eq?"★":r.otros?"EX":esc(iniciales(r.n))}</div><div><h2 style="margin:0">${esc(r.n)}</h2><div class="nota">${esc(p.t)} · ${esc(p.s)}</div></div></div>`;
   h+=`<h2>Marketing <small>leads registrados en el periodo</small></h2>
-  <div class="kpis">${kp(r.leads,"Leads")}${rate(r.c,r.leads,ESTANDAR_CITA,"Citas","10 %")}${rate(r.vi,r.leads,ESTANDAR_VISITA,"Visitas","5 %")}${kp(r.ht,"Hot leads")}${rate(r.ap+r.v,r.leads,ESTANDAR_APARTADO,"Apartados","2 %")}${rate(r.v,r.leads,ESTANDAR_CIERRE,"Ventas","1 %")}</div>`;
+  <div class="kpis">${kp(r.leads,"Leads")}${rate(r.c,r.leads,ESTANDAR_CITA,"Citas","10 %")}${rate(r.vi,r.leads,ESTANDAR_VISITA,"Visitas","5 %")}${rate(r.ap+r.v,r.leads,ESTANDAR_APARTADO,"Apartados","2 %")}${kp(r.ht,"Hot leads")}${rate(r.v,r.leads,ESTANDAR_CIERRE,"Ventas","1 %")}</div>`;
   h+=`<h2>Ventas <small>operaciones realizadas en el periodo · sin crédito hipotecario</small></h2>
   <div class="kpis">${kp(r.cier,"Cierres")}${kp($m(r.monto),"Monto operado")}${kp($m(r.ing),"Ingreso a TRUST",1)}${kp(r.apN,"Apartados (de leads)")}</div>`;
   const cs=r.cierres.slice().sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));
