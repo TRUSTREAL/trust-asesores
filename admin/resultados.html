@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Resultados | TRUST</title>
+<link rel="icon" href="../icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--green:#173F35;--green-2:#1F5446;--gold:#B8956A;--gold-2:#9C7A4E;--bg:#FAF8F2;--surface:#fff;--surface-2:#F1EDE3;--line:#E3DDD0;--line-2:#CFC6B4;--text:#1E241F;--muted:#6F726B;--faint:#97999B;--red:#A8342A;--ok:#2F7A4F;--shadow:0 1px 2px rgba(23,63,53,.06),0 8px 24px rgba(23,63,53,.06)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Poppins,"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.45;min-height:100vh}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 16px 60px}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-bottom:18px;border-bottom:3px solid var(--green);margin-bottom:20px}
+.top h1{font-family:Lora,Georgia,serif;font-weight:500;font-size:28px;color:var(--green);line-height:1.15}
+.top .sub{color:var(--muted);font-size:13px;margin-top:4px}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-2);font-weight:600;margin-bottom:6px}
+.btn{font:inherit;font-size:13px;font-weight:500;border-radius:999px;padding:9px 16px;border:1px solid var(--line-2);background:#fff;color:var(--text);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--green);color:var(--green)}
+.seg{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.seg button{font:inherit;font-size:15px;font-weight:500;padding:12px 24px;border-radius:14px;border:1px solid var(--line-2);background:#fff;color:var(--text);cursor:pointer;min-width:170px;text-align:left;line-height:1.25}
+.seg button small{display:block;font-size:11px;color:var(--muted);font-weight:400;margin-top:2px}
+.seg button:hover{border-color:var(--green)}
+.seg button[aria-pressed=true]{background:var(--green);border-color:var(--green);color:#fff}
+.seg button[aria-pressed=true] small{color:rgba(255,255,255,.75)}
+.rango{font-size:12px;color:var(--muted);margin:10px 0 18px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:22px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.kpi b{display:block;font-family:Lora,Georgia,serif;font-weight:500;font-size:26px;color:var(--green);line-height:1.15}
+.kpi span{font-size:12px;color:var(--muted)}
+.kpi.g{background:var(--green)}.kpi.g b,.kpi.g span{color:#fff}.kpi.g span{opacity:.8}
+h2{font-family:Lora,Georgia,serif;font-weight:500;font-size:21px;color:var(--green);margin:6px 0 10px;display:flex;align-items:baseline;gap:10px}
+h2 small{font-family:Poppins;font-size:12px;color:var(--muted);font-weight:400}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:auto;margin-bottom:26px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;text-align:right;padding:11px 12px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;background:var(--surface-2)}
+th:first-child,td:first-child{text-align:left}
+th.on{color:var(--green)}
+td{padding:11px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td.n{font-weight:500;color:var(--green);cursor:pointer}
+td.n:hover{text-decoration:underline}
+tr.dim td{color:var(--faint)}
+tr.tot td{background:var(--surface-2);font-weight:600;border-top:2px solid var(--green)}
+td.lead{font-weight:600;color:var(--green)}
+td .crown{color:var(--gold-2);font-size:12px;margin-left:4px}
+.bar{display:inline-block;height:6px;border-radius:3px;background:var(--gold);vertical-align:middle;margin-right:8px;min-width:2px}
+.pill{display:inline-block;border-radius:999px;padding:1px 8px;font-size:12px}
+.pill.ok{background:#E3F0E8;color:var(--ok)}.pill.lo{background:#F6E3E0;color:var(--red)}
+.nota{font-size:12px;color:var(--muted);line-height:1.5}
+.msg{padding:30px;text-align:center;color:var(--muted)}
+.modal{position:fixed;inset:0;background:rgba(23,63,53,.45);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+.modal.on{display:flex}
+.mbox{background:#fff;border-radius:18px;max-width:640px;width:100%;max-height:88vh;overflow:auto;padding:22px}
+.mbox h3{font-family:Lora,serif;font-weight:500;font-size:22px;color:var(--green);margin-bottom:12px}
+.mbox table td,.mbox table th{padding:8px 10px}
+.mbox .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px}
+@media (max-width:640px){.mbox .cols{grid-template-columns:1fr}.seg button{min-width:0;flex:1}}
+@media print{.noprint,.btn,.seg{display:none!important}body{background:#fff}.wrap{padding:0}.card{box-shadow:none;overflow:visible}.seg button[aria-pressed=true]{display:inline-block!important}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/auth.js"></script>
+<script src="/auth.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div><div class="eyebrow">Administración</div><h1>Resultados del equipo</h1><div class="sub">Marketing y ventas por asesor, listo para la junta semanal.</div></div>
+    <div class="noprint" style="display:flex;gap:8px"><button class="btn" id="imp" type="button">Imprimir / PDF</button><a class="btn" href="index.html">← Administración</a></div>
+  </div>
+  <div class="seg noprint" id="seg" role="group" aria-label="Periodo"></div>
+  <div class="rango" id="rango"></div>
+  <div id="out"><div class="msg">Cargando resultados…</div></div>
+</div>
+<div class="modal" id="modal"><div class="mbox" id="mbox"></div></div>
+<script>
+const SB="https://xshhjvdmkuqesdlvczbb.supabase.co",KEY="sb_publishable_5erZfpELyuncW1nrReTaZw_BQj0bc-P";
+let sb=null;try{sb=window.supabase.createClient(SB,KEY)}catch(e){}
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const MESES=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const ESTANDAR_CITA=0.10;
+const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const $m=n=>"$"+Math.round(+n||0).toLocaleString("es-MX");
+const fmtD=s=>{const[y,m,d]=s.split("-");return +d+" "+MESES[+m-1].slice(0,3).toLowerCase()+" "+y};
+const esCita=l=>!!(l.cita||l.apartado||l.venta);
+const esCredito=v=>v.tipo==="Crédito hipotecario";
+const comTotal=v=>v.comision_monto!=null?+v.comision_monto:(+v.monto||0)*(+v.comision_pct||0)/100;
+
+function periodos(){
+  const h=new Date(),y=h.getFullYear(),m=h.getMonth();
+  const qm=Math.floor(m/3)*3;
+  const ant=new Date(y,m-1,1),antFin=new Date(y,m,0);
+  return {
+    q:{k:"q",t:"Q acumulado",s:"T"+(qm/3+1)+" · "+MESES[qm].slice(0,3)+"–"+MESES[qm+2].slice(0,3)+" "+y,a:iso(new Date(y,qm,1)),b:iso(h)},
+    ant:{k:"ant",t:"Mes anterior",s:MESES[ant.getMonth()]+" "+ant.getFullYear(),a:iso(ant),b:iso(antFin)},
+    act:{k:"act",t:"Mes actual",s:MESES[m]+" "+y+" (a hoy)",a:iso(new Date(y,m,1)),b:iso(h)}
+  };
+}
+const P=periodos();
+let CUR="ant";try{const s=localStorage.getItem("resPer");if(s&&P[s])CUR=s}catch(e){}
+let LEADS=[],VENTAS=[],APART=[],EQ=[],SORT={mk:{k:"leads",d:-1},vt:{k:"ing",d:-1}};
+
+async function fetchAll(tabla,order){
+  let all=[],from=0;
+  for(;;){
+    let q=sb.from(tabla).select("*").range(from,from+999);if(order)q=q.order(order,{ascending:false});
+    const {data,error}=await q;if(error)throw error;
+    all=all.concat(data||[]);if(!data||data.length<1000)break;from+=1000;
+  }
+  return all;
+}
+async function cargar(){
+  try{
+    const [l,v]=await Promise.all([fetchAll("leads","fecha"),fetchAll("ventas","fecha")]);
+    LEADS=l;VENTAS=v;
+    try{APART=await fetchAll("apartados","fecha")}catch(e){APART=[]}
+    try{const {data}=await sb.from("asesores").select("*");EQ=data||[]}catch(e){EQ=[]}
+    pintar();
+  }catch(e){$("#out").innerHTML='<div class="msg">No se pudieron cargar los datos: '+esc(e.message||e)+'</div>'}
+}
+function botones(){
+  $("#seg").innerHTML=["q","ant","act"].map(k=>`<button type="button" data-p="${k}" aria-pressed="${k===CUR}">${P[k].t}<small>${esc(P[k].s)}</small></button>`).join("");
+}
+function nombreAse(x){x=String(x||"").trim();return x}
+function calc(p){
+  const inR=f=>{f=String(f||"").slice(0,10);return f>=p.a&&f<=p.b};
+  const M={};
+  const get=n=>{n=nombreAse(n);const k=(!n||/^(ex|otro)$/i.test(n))?"__otros":n;return M[k]||(M[k]={n:k==="__otros"?"Otros / ex-asesores":k,otros:k==="__otros",leads:0,c:0,vi:0,ht:0,ap:0,v:0,cier:0,monto:0,ing:0,apN:0,apM:0,cierres:[]})};
+  EQ.filter(a=>a.activo!==false&&!a.admin).forEach(a=>get(a.nombre));
+  LEADS.filter(l=>inR(l.fecha)).forEach(l=>{const r=get(l.asesor);r.leads++;if(esCita(l))r.c++;if(l.visita)r.vi++;if(l.hot)r.ht++;if(l.apartado)r.ap++;if(l.venta)r.v++});
+  VENTAS.filter(v=>inR(v.fecha)&&!esCredito(v)).forEach(v=>{const r=get(v.asesor);r.cier++;r.monto+=+v.monto||0;r.ing+=comTotal(v);r.cierres.push(v)});
+  APART.filter(a=>inR(a.fecha)&&a.estatus!=="devuelto").forEach(a=>{const r=get(a.asesor);r.apN++;r.apM+=+a.monto||0});
+  return Object.values(M);
+}
+const ordenar=(rows,s)=>rows.slice().sort((a,b)=>{if(a.otros)return 1;if(b.otros)return -1;const x=a[s.k],y=b[s.k];return (typeof x==="string"?x.localeCompare(y):(x-y))*s.d||a.n.localeCompare(b.n)});
+const pct=(a,b)=>b?Math.round(a/b*100)+"%":"—";
+function th(tab,k,t){const s=SORT[tab];return `<th class="${s.k===k?"on":""}" data-s="${tab}:${k}">${t}${s.k===k?(s.d<0?" ↓":" ↑"):""}</th>`}
+function pintar(){
+  botones();const p=P[CUR];
+  $("#rango").textContent="Del "+fmtD(p.a)+" al "+fmtD(p.b);
+  const R=calc(p);
+  const act=R.filter(r=>r.leads||r.cier||r.apN||r.c||r.vi||r.ht);
+  const T=k=>R.reduce((a,r)=>a+r[k],0);
+  const ing=T("ing"),mk=ordenar(act.length?R:[],SORT.mk),vt=ordenar(R,SORT.vt);
+  const maxLeads=Math.max(0,...R.filter(r=>!r.otros).map(r=>r.leads)),maxIng=Math.max(0,...R.filter(r=>!r.otros).map(r=>r.ing));
+  const dim=r=>!r.otros&&!(r.leads||r.cier||r.apN||r.c||r.vi||r.ht)?"dim":"";
+  const kp=(b,s,g)=>`<div class="kpi${g?" g":""}"><b>${b}</b><span>${s}</span></div>`;
+  const tc=T("c"),tl=T("leads");
+  let h=`<div class="kpis">${kp(tl,"Leads nuevos")}${kp(tc,"Citas · "+pct(tc,tl)+" de leads")}${kp(T("vi"),"Visitas")}${kp(T("ht"),"Hot leads")}${kp(T("apN"),"Apartados · "+$m(T("apM")))}${kp(T("cier"),"Cierres · "+$m(T("monto")),0)}${kp($m(ing),"Ingreso a TRUST",1)}</div>`;
+  h+=`<h2>Marketing <small>embudo de leads registrados en el periodo</small></h2><div class="card"><table><thead><tr>${th("mk","n","Asesor")}${th("mk","leads","Leads")}${th("mk","c","Citas")}${th("mk","pc","% cita")}${th("mk","vi","Visitas")}${th("mk","ht","Hot")}${th("mk","ap","Apartados")}${th("mk","v","Ventas")}</tr></thead><tbody>`;
+  const mkRows=ordenar(R.map(r=>({...r,pc:r.leads?r.c/r.leads:0})),SORT.mk);
+  h+=mkRows.map(r=>{const pc=r.leads?r.c/r.leads:0,ok=pc>=ESTANDAR_CITA;return `<tr class="${dim(r)}"><td class="n" data-d="${esc(r.n)}">${esc(r.n)}${r.leads&&r.leads===maxLeads&&!r.otros?'<span class="crown" title="Más leads">★</span>':""}</td><td>${r.leads}</td><td>${r.c}</td><td>${r.leads?`<span class="pill ${ok?"ok":"lo"}">${Math.round(pc*100)}%</span>`:"—"}</td><td>${r.vi}</td><td>${r.ht}</td><td>${r.ap}</td><td>${r.v}</td></tr>`}).join("");
+  h+=`<tr class="tot"><td>Equipo</td><td>${tl}</td><td>${tc}</td><td>${pct(tc,tl)}</td><td>${T("vi")}</td><td>${T("ht")}</td><td>${T("ap")}</td><td>${T("v")}</td></tr></tbody></table></div>`;
+  h+=`<h2>Ventas <small>cierres con fecha en el periodo · sin crédito hipotecario</small></h2><div class="card"><table><thead><tr>${th("vt","n","Asesor")}${th("vt","cier","Cierres")}${th("vt","monto","Monto operado")}${th("vt","ing","Ingreso a TRUST")}${th("vt","apN","Apartados")}</tr></thead><tbody>`;
+  h+=vt.map(r=>{const w=maxIng?Math.round(r.ing/maxIng*90):0;return `<tr class="${dim(r)}"><td class="n" data-d="${esc(r.n)}">${esc(r.n)}${r.ing&&r.ing===maxIng&&!r.otros?'<span class="crown" title="Mayor ingreso">★</span>':""}</td><td>${r.cier}</td><td>${r.monto?$m(r.monto):"—"}</td><td>${r.ing?`<span class="bar" style="width:${w}px"></span>${$m(r.ing)}`:"—"}</td><td>${r.apN?r.apN+" · "+$m(r.apM):"—"}</td></tr>`}).join("");
+  h+=`<tr class="tot"><td>Equipo</td><td>${T("cier")}</td><td>${$m(T("monto"))}</td><td>${$m(ing)}</td><td>${T("apN")} · ${$m(T("apM"))}</td></tr></tbody></table></div>`;
+  h+=`<p class="nota">Marketing cuenta los leads registrados en el periodo por su fecha de alta y su estatus actual (cita incluye apartados y ventas). Ventas usa la fecha de cada cierre; los créditos hipotecarios no se cuentan, igual que en Top Realtor. "% cita" se marca en verde si alcanza el estándar de 10 %. Toca el nombre de un asesor para ver su detalle.</p>`;
+  $("#out").innerHTML=h;
+  window.__R=R;
+}
+function detalle(n){
+  const p=P[CUR],R=(window.__R||[]).find(r=>r.n===n);if(!R)return;
+  const inR=f=>{f=String(f||"").slice(0,10);return f>=p.a&&f<=p.b};
+  const key=x=>{x=String(x||"").trim();return(!x||/^(ex|otro)$/i.test(x))?"Otros / ex-asesores":x};
+  const ap=APART.filter(a=>inR(a.fecha)&&a.estatus!=="devuelto"&&key(a.asesor)===n);
+  const row=(a,b)=>`<tr><td>${a}</td><td>${b}</td></tr>`;
+  let h=`<h3>${esc(n)} · ${esc(p.s)}</h3><div class="cols"><table><tbody>${row("Leads",R.leads)}${row("Citas",R.c)}${row("Visitas",R.vi)}${row("Hot leads",R.ht)}${row("Apartados (leads)",R.ap)}${row("Ventas (leads)",R.v)}</tbody></table><table><tbody>${row("Cierres",R.cier)}${row("Monto operado",$m(R.monto))}${row("Ingreso a TRUST",$m(R.ing))}${row("Apartados",R.apN+" · "+$m(R.apM))}</tbody></table></div>`;
+  if(R.cierres.length)h+=`<table><thead><tr><th>Fecha</th><th>Proyecto / unidad</th><th>Monto</th><th>Ingreso</th></tr></thead><tbody>${R.cierres.sort((a,b)=>String(a.fecha).localeCompare(b.fecha)).map(v=>`<tr><td style="text-align:left">${esc(fmtD(String(v.fecha).slice(0,10)))}</td><td style="text-align:left;white-space:normal">${esc([v.proyecto,v.unidad].filter(Boolean).join(" · ")||v.cliente||"—")}</td><td>${$m(v.monto)}</td><td>${$m(comTotal(v))}</td></tr>`).join("")}</tbody></table>`;
+  else h+='<p class="nota">Sin cierres en el periodo.</p>';
+  h+='<div style="margin-top:14px;text-align:right"><button class="btn" id="mc" type="button">Cerrar</button></div>';
+  $("#mbox").innerHTML=h;$("#modal").classList.add("on");
+}
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-p]");if(b){CUR=b.dataset.p;try{localStorage.setItem("resPer",CUR)}catch(x){}pintar();return}
+  const s=e.target.closest("[data-s]");if(s){const[t,k]=s.dataset.s.split(":");const o=SORT[t];o.d=o.k===k?-o.d:(k==="n"?1:-1);o.k=k;pintar();return}
+  const d=e.target.closest("[data-d]");if(d){detalle(d.dataset.d);return}
+  if(e.target.id==="mc"||e.target.id==="modal"){$("#modal").classList.remove("on");return}
+  if(e.target.id==="imp")window.print();
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")$("#modal").classList.remove("on")});
+botones();cargar();
+</script>
+</body>
+</html>
