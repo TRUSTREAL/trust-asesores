@@ -127,7 +127,6 @@ async function cargar(){
   try{
     const [l,v]=await Promise.all([fetchAll("leads","fecha"),fetchAll("ventas","fecha")]);
     LEADS=l;VENTAS=v;
-    try{APART=await fetchAll("apartados","fecha")}catch(e){APART=[]}
     try{const {data}=await sb.from("asesores").select("*");EQ=data||[]}catch(e){EQ=[]}
     pintar();
   }catch(e){$("#out").innerHTML='<div class="msg">No se pudieron cargar los datos: '+esc(e.message||e)+'</div>'}
@@ -141,9 +140,8 @@ function calc(p){
   const M={};
   const get=n=>{n=nombreAse(n);const k=(!n||/^(ex|otro)$/i.test(n))?"__otros":n;return M[k]||(M[k]={n:k==="__otros"?"Otros / ex-asesores":k,otros:k==="__otros",leads:0,c:0,vi:0,ht:0,ap:0,v:0,cier:0,monto:0,ing:0,apN:0,apM:0,cierres:[],apars:[]})};
   EQ.filter(a=>a.activo!==false&&!a.admin).forEach(a=>get(a.nombre));
-  LEADS.filter(l=>inR(l.fecha)).forEach(l=>{const r=get(l.asesor);r.leads++;if(esCita(l))r.c++;if(l.visita)r.vi++;if(l.hot)r.ht++;if(l.apartado)r.ap++;if(l.venta)r.v++});
+  LEADS.filter(l=>inR(l.fecha)).forEach(l=>{const r=get(l.asesor);r.leads++;if(esCita(l))r.c++;if(l.visita)r.vi++;if(l.hot)r.ht++;if(l.apartado)r.ap++;if(l.venta)r.v++;if(l.apartado||l.venta){r.apN++;r.apars.push(l)}});
   VENTAS.filter(v=>inR(v.fecha)&&!esCredito(v)).forEach(v=>{const r=get(v.asesor);r.cier++;r.monto+=+v.monto||0;r.ing+=comTotal(v);r.cierres.push(v)});
-  APART.filter(a=>inR(a.fecha)&&a.estatus!=="devuelto").forEach(a=>{const r=get(a.asesor);r.apN++;r.apM+=+a.monto||0;r.apars.push(a)});
   return Object.values(M);
 }
 const pct=(a,b)=>b?Math.round(a/b*100)+"%":"—";
@@ -173,11 +171,11 @@ function ficha(r,p){
   h+=`<h2>Marketing <small>leads registrados en el periodo</small></h2>
   <div class="kpis">${kp(r.leads,"Leads")}${kp(r.c,"Citas")}${kp(r.leads?`<span class="pill ${ok?"ok":"lo"}" style="font-size:22px;padding:0 12px">${Math.round(pc*100)}%</span>`:"—","Leads a cita (estándar 10 %)")}${kp(r.leads?`<span class="pill ${r.vi/r.leads>=ESTANDAR_VISITA?"ok":"lo"}" style="font-size:22px;padding:0 12px">${Math.round(r.vi/r.leads*100)}%</span>`:"—","Leads a visita (estándar 5 %)")}${kp(r.vi,"Visitas")}${kp(r.ht,"Hot leads")}${rate(r.ap+r.v,r.leads,ESTANDAR_APARTADO,"Leads a apartado (estándar 2 %)")}${kp(r.ap+r.v,"Apartados")}${rate(r.v,r.leads,ESTANDAR_CIERRE,"Leads a cierre (estándar 1 %)")}${kp(r.v,"Ventas")}</div>`;
   h+=`<h2>Ventas <small>operaciones realizadas en el periodo · sin crédito hipotecario</small></h2>
-  <div class="kpis">${kp(r.cier,"Cierres")}${kp($m(r.monto),"Monto operado")}${kp($m(r.ing),"Ingreso a TRUST",1)}${kp(r.apN+" · "+$m(r.apM),"Apartados")}</div>`;
+  <div class="kpis">${kp(r.cier,"Cierres")}${kp($m(r.monto),"Monto operado")}${kp($m(r.ing),"Ingreso a TRUST",1)}${kp(r.apN,"Apartados (de leads)")}</div>`;
   const cs=r.cierres.slice().sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));
   h+=cs.length?`<div class="card"><table class="lt"><thead><tr><th style="cursor:default">Fecha</th>${r.eq?'<th style="cursor:default">Asesor</th>':""}<th style="cursor:default">Cliente</th><th style="cursor:default">Proyecto · unidad</th><th style="cursor:default">Inmueble</th><th class="r" style="cursor:default">Monto</th><th class="r" style="cursor:default">Comisión</th><th class="r" style="cursor:default">Ingreso TRUST</th></tr></thead><tbody>${cs.map(v=>`<tr><td>${esc(fmtD(String(v.fecha).slice(0,10)))}</td>${r.eq?`<td>${esc(v.asesor||"—")}</td>`:""}<td style="font-weight:500;color:var(--green)">${esc(v.cliente||"—")}</td><td style="white-space:normal">${esc([v.proyecto,v.unidad].filter(Boolean).join(" · ")||"—")}</td><td>${esc(v.inmueble||v.tipo||"—")}</td><td class="r">${$m(v.monto)}</td><td class="r">${v.comision_pct!=null&&v.comision_pct!==""?(+v.comision_pct)+" %":"—"}</td><td class="r"><b>${$m(comTotal(v))}</b></td></tr>`).join("")}<tr class="tot"><td>Total</td>${r.eq?"<td></td>":""}<td></td><td></td><td></td><td class="r">${$m(r.monto)}</td><td></td><td class="r">${$m(r.ing)}</td></tr></tbody></table></div>`:'<div class="card"><div class="msg">Sin ventas cerradas en el periodo.</div></div>';
-  if(r.apars.length){h+=`<h2>Apartados <small>del periodo</small></h2><div class="card"><table class="lt"><thead><tr><th style="cursor:default">Fecha</th>${r.eq?'<th style="cursor:default">Asesor</th>':""}<th style="cursor:default">Prospecto</th><th style="cursor:default">Proyecto · unidad</th><th class="r" style="cursor:default">Monto</th><th style="cursor:default">Estatus</th></tr></thead><tbody>${r.apars.slice().sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha))).map(a=>`<tr><td>${esc(fmtD(String(a.fecha).slice(0,10)))}</td>${r.eq?`<td>${esc(a.asesor||"—")}</td>`:""}<td style="font-weight:500;color:var(--green)">${esc(a.prospecto||"—")}</td><td style="white-space:normal">${esc([a.proyecto,a.unidad].filter(Boolean).join(" · ")||"—")}</td><td class="r">${$m(a.monto)}</td><td>${esc(a.estatus||"vigente")}</td></tr>`).join("")}</tbody></table></div>`}
-  return h+`<p class="nota">Marketing cuenta los leads registrados en el periodo con su estatus actual (cita incluye apartados y ventas). Ventas usa la fecha de cada cierre; los créditos hipotecarios no cuentan, igual que en Top Realtor.</p>`;
+  if(r.apars.length){const L=r.apars.slice().sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));h+=`<h2>Apartados <small>leads en apartado o venta del periodo</small></h2><div class="card"><table class="lt"><thead><tr><th style="cursor:default">Fecha del lead</th>${r.eq?'<th style="cursor:default">Asesor</th>':""}<th style="cursor:default">Prospecto</th><th style="cursor:default">Proyecto</th><th style="cursor:default">Canal</th><th style="cursor:default">Estatus</th></tr></thead><tbody>${L.map(l=>`<tr><td>${esc(fmtD(String(l.fecha).slice(0,10)))}</td>${r.eq?`<td>${esc(l.asesor||"—")}</td>`:""}<td style="font-weight:500;color:var(--green)">${esc(l.nombre||"—")}</td><td>${esc(l.proyecto||"—")}</td><td>${esc(l.canal||"—")}</td><td>${l.venta?"Venta":"Apartado"}</td></tr>`).join("")}</tbody></table></div>`}
+  return h+`<p class="nota">Marketing cuenta los leads registrados en el periodo con su estatus actual (cita incluye apartados y ventas). Las ventas (monto e ingreso) usan la fecha de cada cierre; los apartados salen de la base de leads; los créditos hipotecarios no cuentan, igual que en Top Realtor.</p>`;
 }
 document.addEventListener("click",e=>{
   const b=e.target.closest("[data-p]");if(b){CUR=b.dataset.p;try{localStorage.setItem("resPer",CUR)}catch(x){}pintar();return}
