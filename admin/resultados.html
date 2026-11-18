@@ -92,7 +92,7 @@ let sb=null;try{sb=window.supabase.createClient(SB,KEY)}catch(e){}
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const MESES=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-const ESTANDAR_CITA=0.10;
+const ESTANDAR_CITA=0.10,ESTANDAR_VISITA=0.05;
 const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 const $m=n=>"$"+Math.round(+n||0).toLocaleString("es-MX");
 const fmtD=s=>{const[y,m,d]=s.split("-");return +d+" "+MESES[+m-1].slice(0,3).toLowerCase()+" "+y};
@@ -170,7 +170,7 @@ function ficha(r,p){
   const st=(l,v)=>`<div class="stp"><b>${v}</b><span>${l}</span></div>`;
   let h=`<div class="fhead"><div class="av"${avStyle(r.n)}>${fotoDe(r.n)?"":r.eq?"★":r.otros?"EX":esc(iniciales(r.n))}</div><div><h2 style="margin:0">${esc(r.n)}</h2><div class="nota">${esc(p.t)} · ${esc(p.s)}</div></div></div>`;
   h+=`<h2>Marketing <small>leads registrados en el periodo</small></h2>
-  <div class="kpis">${kp(r.leads,"Leads")}${kp(r.c,"Citas")}${kp(r.leads?`<span class="pill ${ok?"ok":"lo"}" style="font-size:22px;padding:0 12px">${Math.round(pc*100)}%</span>`:"—","Leads a cita (estándar 10 %)")}${kp(r.vi,"Visitas")}${kp(r.ht,"Hot leads")}${kp(r.ap,"Apartados")}${kp(r.v,"Ventas")}</div>`;
+  <div class="kpis">${kp(r.leads,"Leads")}${kp(r.c,"Citas")}${kp(r.leads?`<span class="pill ${ok?"ok":"lo"}" style="font-size:22px;padding:0 12px">${Math.round(pc*100)}%</span>`:"—","Leads a cita (estándar 10 %)")}${kp(r.leads?`<span class="pill ${r.vi/r.leads>=ESTANDAR_VISITA?"ok":"lo"}" style="font-size:22px;padding:0 12px">${Math.round(r.vi/r.leads*100)}%</span>`:"—","Leads a visita (estándar 5 %)")}${kp(r.vi,"Visitas")}${kp(r.ht,"Hot leads")}${kp(r.ap,"Apartados")}${kp(r.v,"Ventas")}</div>`;
   h+=`<h2>Ventas <small>operaciones realizadas en el periodo · sin crédito hipotecario</small></h2>
   <div class="kpis">${kp(r.cier,"Cierres")}${kp($m(r.monto),"Monto operado")}${kp($m(r.ing),"Ingreso a TRUST",1)}${kp(r.apN+" · "+$m(r.apM),"Apartados")}</div>`;
   const cs=r.cierres.slice().sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));
