@@ -55,6 +55,18 @@ td .crown{color:var(--gold-2);font-size:12px;margin-left:4px}
 .mbox h3{font-family:Lora,serif;font-weight:500;font-size:22px;color:var(--green);margin-bottom:12px}
 .mbox table td,.mbox table th{padding:8px 10px}
 .mbox .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px}
+.lt th,.lt td{text-align:left}.lt .r{text-align:right}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-size:14px;font-weight:500;border-radius:999px;border:1px solid var(--line-2);background:#fff;color:var(--text);padding:8px 16px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.chip i{font-style:normal;font-size:11px;color:var(--muted);font-weight:400}
+.chip:hover{border-color:var(--green)}
+.chip.on{background:var(--gold);border-color:var(--gold);color:#fff}.chip.on i{color:rgba(255,255,255,.85)}
+.chip.eq{border-style:dashed}
+.ctip{font-size:11px;color:var(--faint);margin:6px 0 20px}
+.fhead{display:flex;align-items:center;gap:16px;margin-bottom:14px}
+.fhead h2{font-size:28px}
+.av{width:56px;height:56px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-family:Lora,serif;font-size:20px;flex:none}
+@media print{.chips,.ctip{display:none}}
 @media (max-width:640px){.mbox .cols{grid-template-columns:1fr}.seg button{min-width:0;flex:1}}
 @media print{.noprint,.btn,.seg{display:none!important}body{background:#fff}.wrap{padding:0}.card{box-shadow:none;overflow:visible}.seg button[aria-pressed=true]{display:inline-block!important}}
 </style>
@@ -72,7 +84,6 @@ td .crown{color:var(--gold-2);font-size:12px;margin-left:4px}
   <div class="rango" id="rango"></div>
   <div id="out"><div class="msg">Cargando resultados…</div></div>
 </div>
-<div class="modal" id="modal"><div class="mbox" id="mbox"></div></div>
 <script>
 const SB="https://xshhjvdmkuqesdlvczbb.supabase.co",KEY="sb_publishable_5erZfpELyuncW1nrReTaZw_BQj0bc-P";
 let sb=null;try{sb=window.supabase.createClient(SB,KEY)}catch(e){}
@@ -99,7 +110,7 @@ function periodos(){
 }
 const P=periodos();
 let CUR="ant";try{const s=localStorage.getItem("resPer");if(s&&P[s])CUR=s}catch(e){}
-let LEADS=[],VENTAS=[],APART=[],EQ=[],SORT={mk:{k:"leads",d:-1},vt:{k:"ing",d:-1}};
+let LEADS=[],VENTAS=[],APART=[],EQ=[];
 
 async function fetchAll(tabla,order){
   let all=[],from=0;
@@ -126,59 +137,47 @@ function nombreAse(x){x=String(x||"").trim();return x}
 function calc(p){
   const inR=f=>{f=String(f||"").slice(0,10);return f>=p.a&&f<=p.b};
   const M={};
-  const get=n=>{n=nombreAse(n);const k=(!n||/^(ex|otro)$/i.test(n))?"__otros":n;return M[k]||(M[k]={n:k==="__otros"?"Otros / ex-asesores":k,otros:k==="__otros",leads:0,c:0,vi:0,ht:0,ap:0,v:0,cier:0,monto:0,ing:0,apN:0,apM:0,cierres:[]})};
+  const get=n=>{n=nombreAse(n);const k=(!n||/^(ex|otro)$/i.test(n))?"__otros":n;return M[k]||(M[k]={n:k==="__otros"?"Otros / ex-asesores":k,otros:k==="__otros",leads:0,c:0,vi:0,ht:0,ap:0,v:0,cier:0,monto:0,ing:0,apN:0,apM:0,cierres:[],apars:[]})};
   EQ.filter(a=>a.activo!==false&&!a.admin).forEach(a=>get(a.nombre));
   LEADS.filter(l=>inR(l.fecha)).forEach(l=>{const r=get(l.asesor);r.leads++;if(esCita(l))r.c++;if(l.visita)r.vi++;if(l.hot)r.ht++;if(l.apartado)r.ap++;if(l.venta)r.v++});
   VENTAS.filter(v=>inR(v.fecha)&&!esCredito(v)).forEach(v=>{const r=get(v.asesor);r.cier++;r.monto+=+v.monto||0;r.ing+=comTotal(v);r.cierres.push(v)});
-  APART.filter(a=>inR(a.fecha)&&a.estatus!=="devuelto").forEach(a=>{const r=get(a.asesor);r.apN++;r.apM+=+a.monto||0});
+  APART.filter(a=>inR(a.fecha)&&a.estatus!=="devuelto").forEach(a=>{const r=get(a.asesor);r.apN++;r.apM+=+a.monto||0;r.apars.push(a)});
   return Object.values(M);
 }
-const ordenar=(rows,s)=>rows.slice().sort((a,b)=>{if(a.otros)return 1;if(b.otros)return -1;const x=a[s.k],y=b[s.k];return (typeof x==="string"?x.localeCompare(y):(x-y))*s.d||a.n.localeCompare(b.n)});
 const pct=(a,b)=>b?Math.round(a/b*100)+"%":"—";
-function th(tab,k,t){const s=SORT[tab];return `<th class="${s.k===k?"on":""}" data-s="${tab}:${k}">${t}${s.k===k?(s.d<0?" ↓":" ↑"):""}</th>`}
+let SEL="";try{SEL=localStorage.getItem("resAse")||""}catch(e){}
+const iniciales=n=>n.split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase();
+function agregado(R){const E={n:"Equipo",eq:true,leads:0,c:0,vi:0,ht:0,ap:0,v:0,cier:0,monto:0,ing:0,apN:0,apM:0,cierres:[],apars:[]};R.forEach(r=>{["leads","c","vi","ht","ap","v","cier","monto","ing","apN","apM"].forEach(k=>E[k]+=r[k]);E.cierres=E.cierres.concat(r.cierres);E.apars=E.apars.concat(r.apars)});return E}
 function pintar(){
   botones();const p=P[CUR];
   $("#rango").textContent="Del "+fmtD(p.a)+" al "+fmtD(p.b);
-  const R=calc(p);
-  const act=R.filter(r=>r.leads||r.cier||r.apN||r.c||r.vi||r.ht);
-  const T=k=>R.reduce((a,r)=>a+r[k],0);
-  const ing=T("ing"),mk=ordenar(act.length?R:[],SORT.mk),vt=ordenar(R,SORT.vt);
-  const maxLeads=Math.max(0,...R.filter(r=>!r.otros).map(r=>r.leads)),maxIng=Math.max(0,...R.filter(r=>!r.otros).map(r=>r.ing));
-  const dim=r=>!r.otros&&!(r.leads||r.cier||r.apN||r.c||r.vi||r.ht)?"dim":"";
-  const kp=(b,s,g)=>`<div class="kpi${g?" g":""}"><b>${b}</b><span>${s}</span></div>`;
-  const tc=T("c"),tl=T("leads");
-  let h=`<div class="kpis">${kp(tl,"Leads nuevos")}${kp(tc,"Citas · "+pct(tc,tl)+" de leads")}${kp(T("vi"),"Visitas")}${kp(T("ht"),"Hot leads")}${kp(T("apN"),"Apartados · "+$m(T("apM")))}${kp(T("cier"),"Cierres · "+$m(T("monto")),0)}${kp($m(ing),"Ingreso a TRUST",1)}</div>`;
-  h+=`<h2>Marketing <small>embudo de leads registrados en el periodo</small></h2><div class="card"><table><thead><tr>${th("mk","n","Asesor")}${th("mk","leads","Leads")}${th("mk","c","Citas")}${th("mk","pc","% cita")}${th("mk","vi","Visitas")}${th("mk","ht","Hot")}${th("mk","ap","Apartados")}${th("mk","v","Ventas")}</tr></thead><tbody>`;
-  const mkRows=ordenar(R.map(r=>({...r,pc:r.leads?r.c/r.leads:0})),SORT.mk);
-  h+=mkRows.map(r=>{const pc=r.leads?r.c/r.leads:0,ok=pc>=ESTANDAR_CITA;return `<tr class="${dim(r)}"><td class="n" data-d="${esc(r.n)}">${esc(r.n)}${r.leads&&r.leads===maxLeads&&!r.otros?'<span class="crown" title="Más leads">★</span>':""}</td><td>${r.leads}</td><td>${r.c}</td><td>${r.leads?`<span class="pill ${ok?"ok":"lo"}">${Math.round(pc*100)}%</span>`:"—"}</td><td>${r.vi}</td><td>${r.ht}</td><td>${r.ap}</td><td>${r.v}</td></tr>`}).join("");
-  h+=`<tr class="tot"><td>Equipo</td><td>${tl}</td><td>${tc}</td><td>${pct(tc,tl)}</td><td>${T("vi")}</td><td>${T("ht")}</td><td>${T("ap")}</td><td>${T("v")}</td></tr></tbody></table></div>`;
-  h+=`<h2>Ventas <small>cierres con fecha en el periodo · sin crédito hipotecario</small></h2><div class="card"><table><thead><tr>${th("vt","n","Asesor")}${th("vt","cier","Cierres")}${th("vt","monto","Monto operado")}${th("vt","ing","Ingreso a TRUST")}${th("vt","apN","Apartados")}</tr></thead><tbody>`;
-  h+=vt.map(r=>{const w=maxIng?Math.round(r.ing/maxIng*90):0;return `<tr class="${dim(r)}"><td class="n" data-d="${esc(r.n)}">${esc(r.n)}${r.ing&&r.ing===maxIng&&!r.otros?'<span class="crown" title="Mayor ingreso">★</span>':""}</td><td>${r.cier}</td><td>${r.monto?$m(r.monto):"—"}</td><td>${r.ing?`<span class="bar" style="width:${w}px"></span>${$m(r.ing)}`:"—"}</td><td>${r.apN?r.apN+" · "+$m(r.apM):"—"}</td></tr>`}).join("");
-  h+=`<tr class="tot"><td>Equipo</td><td>${T("cier")}</td><td>${$m(T("monto"))}</td><td>${$m(ing)}</td><td>${T("apN")} · ${$m(T("apM"))}</td></tr></tbody></table></div>`;
-  h+=`<p class="nota">Marketing cuenta los leads registrados en el periodo por su fecha de alta y su estatus actual (cita incluye apartados y ventas). Ventas usa la fecha de cada cierre; los créditos hipotecarios no se cuentan, igual que en Top Realtor. "% cita" se marca en verde si alcanza el estándar de 10 %. Toca el nombre de un asesor para ver su detalle.</p>`;
-  $("#out").innerHTML=h;
-  window.__R=R;
+  const R=calc(p);window.__R=R;
+  const lista=R.filter(r=>!r.otros||r.leads||r.cier||r.apN).sort((a,b)=>a.otros-b.otros||a.n.localeCompare(b.n));
+  const E=agregado(R);
+  if(SEL!=="__eq"&&!lista.find(r=>r.n===SEL))SEL=lista.length?lista[0].n:"__eq";
+  const chips=lista.map(r=>`<button type="button" class="chip${r.n===SEL?" on":""}" data-a="${esc(r.n)}">${esc(r.n)}<i>${r.leads+r.cier?r.leads+" · "+r.cier:"—"}</i></button>`).join("")+`<button type="button" class="chip eq${SEL==="__eq"?" on":""}" data-a="__eq">Equipo</button>`;
+  const F=SEL==="__eq"?E:lista.find(r=>r.n===SEL);
+  $("#out").innerHTML=`<div class="chips noprint" aria-label="Asesor">${chips}</div><div class="ctip noprint">Leads · cierres del periodo en cada nombre</div>`+(F?ficha(F,p):'<div class="msg">Sin datos.</div>');
 }
-function detalle(n){
-  const p=P[CUR],R=(window.__R||[]).find(r=>r.n===n);if(!R)return;
-  const inR=f=>{f=String(f||"").slice(0,10);return f>=p.a&&f<=p.b};
-  const key=x=>{x=String(x||"").trim();return(!x||/^(ex|otro)$/i.test(x))?"Otros / ex-asesores":x};
-  const ap=APART.filter(a=>inR(a.fecha)&&a.estatus!=="devuelto"&&key(a.asesor)===n);
-  const row=(a,b)=>`<tr><td>${a}</td><td>${b}</td></tr>`;
-  let h=`<h3>${esc(n)} · ${esc(p.s)}</h3><div class="cols"><table><tbody>${row("Leads",R.leads)}${row("Citas",R.c)}${row("Visitas",R.vi)}${row("Hot leads",R.ht)}${row("Apartados (leads)",R.ap)}${row("Ventas (leads)",R.v)}</tbody></table><table><tbody>${row("Cierres",R.cier)}${row("Monto operado",$m(R.monto))}${row("Ingreso a TRUST",$m(R.ing))}${row("Apartados",R.apN+" · "+$m(R.apM))}</tbody></table></div>`;
-  if(R.cierres.length)h+=`<table><thead><tr><th>Fecha</th><th>Proyecto / unidad</th><th>Monto</th><th>Ingreso</th></tr></thead><tbody>${R.cierres.sort((a,b)=>String(a.fecha).localeCompare(b.fecha)).map(v=>`<tr><td style="text-align:left">${esc(fmtD(String(v.fecha).slice(0,10)))}</td><td style="text-align:left;white-space:normal">${esc([v.proyecto,v.unidad].filter(Boolean).join(" · ")||v.cliente||"—")}</td><td>${$m(v.monto)}</td><td>${$m(comTotal(v))}</td></tr>`).join("")}</tbody></table>`;
-  else h+='<p class="nota">Sin cierres en el periodo.</p>';
-  h+='<div style="margin-top:14px;text-align:right"><button class="btn" id="mc" type="button">Cerrar</button></div>';
-  $("#mbox").innerHTML=h;$("#modal").classList.add("on");
+function ficha(r,p){
+  const kp=(b,s,g)=>`<div class="kpi${g?" g":""}"><b>${b}</b><span>${s}</span></div>`;
+  const pc=r.leads?r.c/r.leads:0,ok=pc>=ESTANDAR_CITA;
+  const st=(l,v)=>`<div class="stp"><b>${v}</b><span>${l}</span></div>`;
+  let h=`<div class="fhead"><div class="av">${r.eq?"★":esc(iniciales(r.n))}</div><div><h2 style="margin:0">${esc(r.n)}</h2><div class="nota">${esc(p.t)} · ${esc(p.s)}</div></div></div>`;
+  h+=`<h2>Marketing <small>leads registrados en el periodo</small></h2>
+  <div class="kpis">${kp(r.leads,"Leads")}${kp(r.c,"Citas")}${kp(r.leads?`<span class="pill ${ok?"ok":"lo"}" style="font-size:22px;padding:0 12px">${Math.round(pc*100)}%</span>`:"—","Leads a cita (estándar 10 %)")}${kp(r.vi,"Visitas")}${kp(r.ht,"Hot leads")}${kp(r.ap,"Apartados")}${kp(r.v,"Ventas")}</div>`;
+  h+=`<h2>Ventas <small>operaciones realizadas en el periodo · sin crédito hipotecario</small></h2>
+  <div class="kpis">${kp(r.cier,"Cierres")}${kp($m(r.monto),"Monto operado")}${kp($m(r.ing),"Ingreso a TRUST",1)}${kp(r.apN+" · "+$m(r.apM),"Apartados")}</div>`;
+  const cs=r.cierres.slice().sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));
+  h+=cs.length?`<div class="card"><table class="lt"><thead><tr><th style="cursor:default">Fecha</th>${r.eq?'<th style="cursor:default">Asesor</th>':""}<th style="cursor:default">Cliente</th><th style="cursor:default">Proyecto · unidad</th><th style="cursor:default">Inmueble</th><th class="r" style="cursor:default">Monto</th><th class="r" style="cursor:default">Comisión</th><th class="r" style="cursor:default">Ingreso TRUST</th></tr></thead><tbody>${cs.map(v=>`<tr><td>${esc(fmtD(String(v.fecha).slice(0,10)))}</td>${r.eq?`<td>${esc(v.asesor||"—")}</td>`:""}<td style="font-weight:500;color:var(--green)">${esc(v.cliente||"—")}</td><td style="white-space:normal">${esc([v.proyecto,v.unidad].filter(Boolean).join(" · ")||"—")}</td><td>${esc(v.inmueble||v.tipo||"—")}</td><td class="r">${$m(v.monto)}</td><td class="r">${v.comision_pct!=null&&v.comision_pct!==""?(+v.comision_pct)+" %":"—"}</td><td class="r"><b>${$m(comTotal(v))}</b></td></tr>`).join("")}<tr class="tot"><td>Total</td>${r.eq?"<td></td>":""}<td></td><td></td><td></td><td class="r">${$m(r.monto)}</td><td></td><td class="r">${$m(r.ing)}</td></tr></tbody></table></div>`:'<div class="card"><div class="msg">Sin ventas cerradas en el periodo.</div></div>';
+  if(r.apars.length){h+=`<h2>Apartados <small>del periodo</small></h2><div class="card"><table class="lt"><thead><tr><th style="cursor:default">Fecha</th>${r.eq?'<th style="cursor:default">Asesor</th>':""}<th style="cursor:default">Prospecto</th><th style="cursor:default">Proyecto · unidad</th><th class="r" style="cursor:default">Monto</th><th style="cursor:default">Estatus</th></tr></thead><tbody>${r.apars.slice().sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha))).map(a=>`<tr><td>${esc(fmtD(String(a.fecha).slice(0,10)))}</td>${r.eq?`<td>${esc(a.asesor||"—")}</td>`:""}<td style="font-weight:500;color:var(--green)">${esc(a.prospecto||"—")}</td><td style="white-space:normal">${esc([a.proyecto,a.unidad].filter(Boolean).join(" · ")||"—")}</td><td class="r">${$m(a.monto)}</td><td>${esc(a.estatus||"vigente")}</td></tr>`).join("")}</tbody></table></div>`}
+  return h+`<p class="nota">Marketing cuenta los leads registrados en el periodo con su estatus actual (cita incluye apartados y ventas). Ventas usa la fecha de cada cierre; los créditos hipotecarios no cuentan, igual que en Top Realtor.</p>`;
 }
 document.addEventListener("click",e=>{
   const b=e.target.closest("[data-p]");if(b){CUR=b.dataset.p;try{localStorage.setItem("resPer",CUR)}catch(x){}pintar();return}
-  const s=e.target.closest("[data-s]");if(s){const[t,k]=s.dataset.s.split(":");const o=SORT[t];o.d=o.k===k?-o.d:(k==="n"?1:-1);o.k=k;pintar();return}
-  const d=e.target.closest("[data-d]");if(d){detalle(d.dataset.d);return}
-  if(e.target.id==="mc"||e.target.id==="modal"){$("#modal").classList.remove("on");return}
+  const c=e.target.closest("[data-a]");if(c){SEL=c.dataset.a;try{localStorage.setItem("resAse",SEL)}catch(x){}pintar();return}
   if(e.target.id==="imp")window.print();
 });
-document.addEventListener("keydown",e=>{if(e.key==="Escape")$("#modal").classList.remove("on")});
 botones();cargar();
 </script>
 </body>
