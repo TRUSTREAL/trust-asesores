@@ -381,7 +381,25 @@ select.st{padding-right:10px}
 .pcard .pedit:hover{border-color:var(--green)}
 .pempty{margin-top:18px;padding:40px 20px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line-2);border-radius:18px}
 .pempty b{display:block;font-family:Lora,serif;font-size:18px;color:var(--text);font-weight:500;margin-bottom:6px}
+/* ---------- Obra (avance de obra por proyecto) ---------- */
+.ogrid{margin-top:18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+.ocard{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px}
+.ocard .otop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.ocard h3{font-family:Lora,serif;font-weight:500;font-size:19px;line-height:1.2;color:var(--green)}
+.ocard .ocat{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.ocard .otot{font-family:Lora,serif;font-size:28px;color:var(--green);line-height:1;text-align:right}
+.ocard .otot small{display:block;font-family:Poppins,sans-serif;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+.ocard .orow{display:grid;grid-template-columns:104px 1fr 42px;align-items:center;gap:10px;font-size:13px}
+.ocard .orow .t{height:9px;border-radius:5px;background:var(--surface-2);overflow:hidden}
+.ocard .orow .t i{display:block;height:100%;border-radius:5px;background:var(--gold)}
+.ocard .orow.done .t i{background:var(--green)}
+.ocard .orow b{text-align:right;font-weight:600;color:var(--text)}
+.ocard .onota{font-size:12px;color:var(--muted);line-height:1.45}
+.ocard .ofoot{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);margin-top:auto}
+.ocard .oedit{border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:12px;color:var(--text);cursor:pointer}
+.ocard .oedit:hover{border-color:var(--green)}
 </style>
+
 
 
 
@@ -398,6 +416,7 @@ select.st{padding-right:10px}
       <button id="tab-off" role="tab" aria-pressed="false" data-cat="Off House">Off House</button>
       <button id="tab-mk" role="tab" aria-pressed="false" data-cat="Mercado">Mercado</button>
       <button id="tab-port" role="tab" aria-pressed="false" data-cat="Portales">Portales</button>
+      <button id="tab-obra" role="tab" aria-pressed="false" data-cat="Obra">Obra</button>
     </div></div>
   </div>
 
@@ -561,6 +580,7 @@ function render(){
   document.querySelectorAll(".seg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.cat===S.cat));
   if(S.cat==="Mercado"){S.sel=null;renderMercado();return}
   if(S.cat==="Portales"){S.sel=null;renderPortales();return}
+  if(S.cat==="Obra"){S.sel=null;renderObra();return}
   const list=S.projects.filter(p=>p.cat===S.cat);
   if(!list.find(p=>p.id===S.sel)) S.sel=list[0]?.id||null;
   renderMain();
@@ -1327,6 +1347,46 @@ document.addEventListener("click",e=>{
   if(ed){e.preventDefault();e.stopPropagation();openPortal(PORTALES.find(x=>x.id===ed.dataset.pedit));return}
   if(e.target.closest("#port-add")){openPortal(null);return}
   const a=e.target.closest("a.pcard");if(a&&a.getAttribute("href")==="#")e.preventDefault();
+});
+// ---------- Obra: avance de obra por proyecto (tabla obra_avance) ----------
+const OBRA_ETAPAS=[["excavacion","Excavación"],["sotanos","Sótanos"],["estructura","Estructura"],["acabados","Acabados"],["escrituracion","Escrituración"]];
+let OBRA={},OBRA_LOADED=false;
+async function loadObra(){
+  if(!sb)return;
+  const {data,error}=await sb.from("obra_avance").select("*");
+  if(error){console.warn("obra_avance",error.message);OBRA_ERR=error.message;OBRA_LOADED=true;return}
+  OBRA={};(data||[]).forEach(r=>{OBRA[r.proyecto_id]=r});OBRA_LOADED=true;
+}
+let OBRA_ERR="";
+const obraPct=v=>Math.max(0,Math.min(100,Math.round(+v||0)));
+function renderObra(){
+  const m=$("#main");
+  if(!OBRA_LOADED){loadObra().then(()=>{if(S.cat==="Obra")renderObra()})}
+  const ps=S.projects.filter(p=>p.cat==="In House"||p.cat==="Off House").sort((a,b)=>(a.cat===b.cat?0:a.cat==="In House"?-1:1));
+  const cards=ps.map(p=>{
+    const o=OBRA[p.id]||{};const vals=OBRA_ETAPAS.map(([k])=>obraPct(o[k]));
+    const tot=Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
+    const f=o.updated_at?new Date(o.updated_at).toLocaleDateString("es-MX",{day:"numeric",month:"short",year:"numeric"}):"";
+    return `<div class="ocard"><div class="otop"><div><div class="ocat">${esc(p.cat)}</div><h3>${esc(p.nombre)}</h3></div><div class="otot">${tot}%<small>avance general</small></div></div>
+      ${OBRA_ETAPAS.map(([k,l],i)=>`<div class="orow${vals[i]>=100?" done":""}"><span>${l}</span><div class="t"><i style="width:${vals[i]}%"></i></div><b>${vals[i]}%</b></div>`).join("")}
+      ${o.notas?`<div class="onota">${esc(o.notas)}</div>`:""}
+      <div class="ofoot"><span>${f?"Actualizado "+f:"Sin actualizar"}</span>${READONLY?"":`<button type="button" class="oedit" data-oedit="${esc(p.id)}">Editar avance</button>`}</div></div>`}).join("");
+  m.innerHTML=`<div class="phead"><div class="left"><span class="eyebrow">Obra</span><h2>Avance de obra</h2><div class="hint" style="color:var(--muted);font-size:13px">Porcentaje de avance por etapa en cada proyecto. El avance general es el promedio de las cinco etapas.</div></div></div>
+    ${OBRA_ERR&&!READONLY?`<div class="pempty"><b>Falta crear la tabla de obra</b>Corre el SQL obra_avance.sql en Supabase. (${esc(OBRA_ERR)})</div>`:""}
+    ${ps.length?`<div class="ogrid">${cards}</div>`:`<div class="pempty"><b>Sin proyectos</b>Da de alta proyectos en In House u Off House.</div>`}`;
+}
+function openObra(p){
+  const o=OBRA[p.id]||{};
+  drawer("Avance de obra · "+p.nombre,
+    OBRA_ETAPAS.map(([k,l])=>fld(k,l+" (%)",obraPct(o[k]),"type=number min=0 max=100 step=1 inputmode=numeric")).join("")+
+    `<div class="f full"><label for="fx-notas">Notas</label><textarea id="fx-notas" name="notas">${esc(o.notas||"")}</textarea></div>`,
+    d=>{const v={proyecto_id:p.id,notas:(d.notas||"").trim(),updated_at:new Date().toISOString()};OBRA_ETAPAS.forEach(([k])=>{v[k]=obraPct(d[k])});
+      OBRA[p.id]=v;OBRA_ERR="";db(()=>sb.from("obra_avance").upsert(v,{onConflict:"proyecto_id"}));},null);
+}
+document.addEventListener("click",e=>{
+  if(S.cat!=="Obra")return;
+  const ed=e.target.closest("[data-oedit]");
+  if(ed){const p=S.projects.find(x=>String(x.id)===ed.dataset.oedit);if(p)openObra(p)}
 });
 function openProject(p){
   const giros=["Departamentos en preventa","Oficinas en renta","Oficinas en venta","Locales","Terrenos","Otro"];
