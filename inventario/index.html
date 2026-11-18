@@ -393,7 +393,31 @@ select.st{padding-right:10px}
 .zchip{display:inline-block;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:2px 9px;font-size:11.5px;white-space:nowrap}
 .mkempty{padding:40px 20px;text-align:center;color:var(--muted)}
 .mkempty b{display:block;font-family:Lora,serif;font-size:18px;color:var(--text);font-weight:500;margin-bottom:6px}
+/* ---------- Portales (accesos a portales de desarrolladores / inmobiliarias) ---------- */
+.pgrid{margin-top:18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.pcard{position:relative;display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px 18px 16px;box-shadow:var(--shadow);text-decoration:none;color:var(--text);transition:transform .15s,border-color .15s;cursor:pointer}
+.pcard:hover{border-color:var(--green);transform:translateY(-2px)}
+.pcard .ptop{display:flex;align-items:center;gap:12px}
+.pcard .plogo{width:46px;height:46px;border-radius:12px;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-family:Lora,serif;font-size:20px;flex:none;overflow:hidden}
+.pcard .plogo img{width:100%;height:100%;object-fit:contain;background:#fff}
+.pcard h3{font-family:Lora,serif;font-weight:500;font-size:18px;line-height:1.2;color:var(--green)}
+.pcard .ptipo{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.pcard .purl{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcard .pcred{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pcard .pcred>div{background:var(--surface-2);border-radius:10px;padding:8px 10px;min-width:0}
+.pcard .pcred .l{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.pcard .pcred .v{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:var(--text);margin-top:2px;display:flex;align-items:center;gap:6px;min-width:0}
+.pcard .pcred .v span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcard .pcred .v button{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:0 2px;font-size:13px;line-height:1;flex:none}
+.pcard .pcred .v button:hover{color:var(--green)}
+.pcard .pnotas{font-size:12px;color:var(--muted);line-height:1.4}
+.pcard .pgo{margin-top:auto;display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:500;color:var(--green)}
+.pcard .pedit{border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:4px 10px;font-size:12px;color:var(--text);cursor:pointer}
+.pcard .pedit:hover{border-color:var(--green)}
+.pempty{margin-top:18px;padding:40px 20px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line-2);border-radius:18px}
+.pempty b{display:block;font-family:Lora,serif;font-size:18px;color:var(--text);font-weight:500;margin-bottom:6px}
 </style>
+
 
 
 <div class="wrap">
@@ -408,6 +432,7 @@ select.st{padding-right:10px}
       <button id="tab-in" role="tab" aria-pressed="true" data-cat="In House">In House</button>
       <button id="tab-off" role="tab" aria-pressed="false" data-cat="Off House">Off House</button>
       <button id="tab-mk" role="tab" aria-pressed="false" data-cat="Mercado">Mercado</button>
+      <button id="tab-port" role="tab" aria-pressed="false" data-cat="Portales">Portales</button>
     </div></div>
   </div>
 
@@ -570,6 +595,7 @@ let sort={k:null,dir:"asc"};
 function render(){
   document.querySelectorAll(".seg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.cat===S.cat));
   if(S.cat==="Mercado"){S.sel=null;renderMercado();return}
+  if(S.cat==="Portales"){S.sel=null;renderPortales();return}
   const list=S.projects.filter(p=>p.cat===S.cat);
   if(!list.find(p=>p.id===S.sel)) S.sel=list[0]?.id||null;
   renderMain();
@@ -1413,6 +1439,54 @@ document.addEventListener("click",e=>{
 });
 document.addEventListener("input",e=>{if(e.target.id==="mk-q"){MK.q=e.target.value;const pos=e.target.selectionStart;renderMercado();const i=$("#mk-q");i.focus();i.setSelectionRange(pos,pos)}});
 document.addEventListener("change",e=>{if(e.target.id==="mk-zona"){MK.zona=e.target.value;renderMercado()}if(e.target.id==="mk-ord"){MK.ord=e.target.value;renderMercado()}});
+// ---------- Portales: accesos directos a portales de desarrolladores / inmobiliarias (tabla portales) ----------
+let PORTALES=[],PORT_LOADED=false;
+async function loadPortales(){
+  if(!sb)return;
+  const {data,error}=await sb.from("portales").select("*").order("orden",{ascending:true}).order("nombre");
+  if(error){console.warn("portales",error.message);return}
+  PORTALES=data||[];PORT_LOADED=true;
+}
+const portUrl=u=>{u=String(u||"").trim();return u?(/^https?:\/\//i.test(u)?u:"https://"+u):""};
+const portHost=u=>portUrl(u).replace(/^https?:\/\//i,"").replace(/^www\./,"").replace(/\/$/,"");
+function renderPortales(){
+  const m=$("#main");
+  if(!PORT_LOADED){loadPortales().then(()=>{if(S.cat==="Portales")renderPortales()})}
+  const cards=PORTALES.map(p=>{const u=portUrl(p.url);const ini=(p.nombre||"?").trim().charAt(0).toUpperCase();
+    const cred=(l,v,k)=>`<div><div class="l">${l}</div><div class="v"><span title="${esc(v)}">${v?esc(v):"—"}</span>${v?`<button type="button" data-copy="${esc(v)}" title="Copiar ${l.toLowerCase()}">⧉</button>`:""}</div></div>`;
+    return `<a class="pcard" href="${esc(u)||"#"}" target="_blank" rel="noopener" data-port="${p.id}">
+      <div class="ptop"><div class="plogo">${p.logo_url?`<img src="${esc(p.logo_url)}" alt="">`:esc(ini)}</div><div style="min-width:0"><div class="ptipo">${esc(p.tipo||"Portal")}</div><h3>${esc(p.nombre)}</h3><div class="purl">${esc(portHost(p.url))||"Sin liga"}</div></div></div>
+      <div class="pcred">${cred("Usuario",p.usuario||"")}${cred("Contraseña",p.password||"")}</div>
+      ${p.notas?`<div class="pnotas">${esc(p.notas)}</div>`:""}
+      <div class="pgo"><span>Abrir portal ↗</span>${READONLY?"":`<button type="button" class="pedit" data-pedit="${p.id}">Editar</button>`}</div></a>`}).join("");
+  m.innerHTML=`<div class="phead"><div class="left"><span class="eyebrow">Portales</span><h2>Portales de desarrolladores e inmobiliarias</h2><div class="hint" style="color:var(--muted);font-size:13px">Accesos directos a los portales que comparten inventario con TRUST. Toca la tarjeta para abrir el portal; el usuario y la contraseña se copian con ⧉.</div></div>
+    ${READONLY?"":`<button class="btn primary" id="port-add" type="button">+ Agregar portal</button>`}</div>
+    ${PORTALES.length?`<div class="pgrid">${cards}</div>`:`<div class="pempty"><b>${PORT_LOADED?"Todavía no hay portales":"Cargando…"}</b>${PORT_LOADED?(READONLY?"Cuando TRUST los dé de alta, aparecerán aquí.":"Agrega el primero con el botón de arriba."):""}</div>`}`;
+}
+function openPortal(p){
+  drawer(p?"Editar portal":"Nuevo portal",
+    fld("nombre","Desarrollador / inmobiliaria",p?.nombre||"","required",true)+
+    fsel("tipo","Tipo",p?.tipo||"Desarrollador",["Desarrollador","Inmobiliaria","Otro"])+
+    fld("orden","Orden (menor = primero)",p?.orden??"","type=number step=1")+
+    fld("url","Liga del portal",p?.url||"","required placeholder='https://portal.desarrollador.com'",true)+
+    fld("usuario","Usuario / correo",p?.usuario||"","placeholder='Opcional si solo hay contraseña'")+
+    fld("password","Contraseña",p?.password||"","placeholder='Propia de TRUST o general'")+
+    fld("logo_url","Logo (liga a imagen, opcional)",p?.logo_url||"","",true)+
+    `<div class="f full"><label for="fx-notas">Notas para los asesores</label><textarea id="fx-notas" name="notas">${esc(p?.notas||"")}</textarea></div>`,
+    d=>{const v={nombre:d.nombre.trim(),tipo:d.tipo,orden:d.orden===""?null:+d.orden,url:d.url.trim(),usuario:d.usuario.trim(),password:d.password,logo_url:d.logo_url.trim(),notas:d.notas.trim()};
+      if(p){Object.assign(p,v);db(()=>sb.from("portales").update(v).eq("id",p.id))}else{const np={id:newId(),...v};PORTALES.push(np);db(()=>sb.from("portales").insert(np))}
+      PORTALES.sort((a,b)=>((a.orden??999)-(b.orden??999))||String(a.nombre).localeCompare(String(b.nombre)));},
+    p?()=>{PORTALES=PORTALES.filter(x=>x!==p);db(()=>sb.from("portales").delete().eq("id",p.id))}:null);
+}
+document.addEventListener("click",e=>{
+  if(S.cat!=="Portales")return;
+  const cp=e.target.closest("[data-copy]");
+  if(cp){e.preventDefault();e.stopPropagation();const t=cp.dataset.copy;(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>{cp.textContent="✓";setTimeout(()=>cp.textContent="⧉",1200)}).catch(()=>{prompt("Copia el dato:",t)});return}
+  const ed=e.target.closest("[data-pedit]");
+  if(ed){e.preventDefault();e.stopPropagation();openPortal(PORTALES.find(x=>x.id===ed.dataset.pedit));return}
+  if(e.target.closest("#port-add")){openPortal(null);return}
+  const a=e.target.closest("a.pcard");if(a&&a.getAttribute("href")==="#")e.preventDefault();
+});
 function openProject(p){
   const giros=["Departamentos en preventa","Oficinas en renta","Oficinas en venta","Locales","Terrenos","Otro"];
   drawer(p?"Editar proyecto":"Nuevo proyecto",
