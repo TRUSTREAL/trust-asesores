@@ -430,10 +430,25 @@ select.st{padding-right:10px}
 .ocard .orow.done .t i{background:var(--green)}
 .ocard .orow b{text-align:right;font-weight:600;color:var(--text)}
 .ocard .onota{font-size:12px;color:var(--muted);line-height:1.45}
-.ocard .ofoot{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);margin-top:auto}
-.ocard .oedit{border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:12px;color:var(--text);cursor:pointer}
+.ocard .ofoot{flex-wrap:wrap;gap:8px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);margin-top:auto}
+.ocard .oedit{white-space:nowrap;border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:12px;color:var(--text);cursor:pointer}
 .ocard .oedit:hover{border-color:var(--green)}
+.ocard .ofotos{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.ocard .ofoto{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--surface-2);border:0;padding:0;cursor:pointer}
+.ocard .ofoto img{width:100%;height:100%;object-fit:cover;display:block}
+.ocard .ofoto em{position:absolute;inset:0;background:rgba(23,63,53,.62);color:#fff;font-style:normal;font-size:18px;font-family:Lora,serif;display:flex;align-items:center;justify-content:center}
+.ocard .odesc{background:var(--surface-2);border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.5;color:var(--text);white-space:pre-wrap}
+.ocard .odesc b{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-2);margin-bottom:4px;font-weight:600}
+.ocard .oacts{display:flex;gap:8px;align-items:center}
+.olb{position:fixed;inset:0;background:rgba(10,20,17,.9);z-index:200;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:20px}
+.olb.on{display:flex}
+.olb img{max-width:94vw;max-height:78vh;border-radius:10px;object-fit:contain}
+.olb .cap{color:#fff;font-size:13px;display:flex;gap:14px;align-items:center}
+.olb button{background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:999px;padding:8px 16px;font:inherit;font-size:13px;cursor:pointer}
+.olb .pv,.olb .nx{position:absolute;top:50%;transform:translateY(-50%);font-size:24px;width:46px;height:46px;padding:0}
+.olb .pv{left:14px}.olb .nx{right:14px}
 </style>
+
 
 
 
@@ -1507,16 +1522,24 @@ document.addEventListener("click",e=>{
   if(e.target.closest("#port-add")){openPortal(null);return}
   const a=e.target.closest("a.pcard");if(a&&a.getAttribute("href")==="#")e.preventDefault();
 });
-// ---------- Obra: avance de obra por proyecto (tabla obra_avance) ----------
+// ---------- Obra: avance de obra por proyecto (tabla obra_avance + fotos en storage documentos/<proyecto>/obra) ----------
 const OBRA_ETAPAS=[["excavacion","Excavación"],["sotanos","Sótanos"],["estructura","Estructura"],["acabados","Acabados"],["escrituracion","Escrituración"]];
-let OBRA={},OBRA_LOADED=false;
+let OBRA={},OBRA_FOTOS={},OBRA_LOADED=false,OBRA_ERR="";
+const OBRA_BUCKET="documentos";
 async function loadObra(){
   if(!sb)return;
   const {data,error}=await sb.from("obra_avance").select("*");
   if(error){console.warn("obra_avance",error.message);OBRA_ERR=error.message;OBRA_LOADED=true;return}
   OBRA={};(data||[]).forEach(r=>{OBRA[r.proyecto_id]=r});OBRA_LOADED=true;
+  const ids=S.projects.filter(p=>p.cat==="In House"||p.cat==="Off House").map(p=>String(p.id));
+  await Promise.all(ids.map(id=>loadObraFotos(id)));
 }
-let OBRA_ERR="";
+async function loadObraFotos(pid){
+  try{
+    const {data}=await sb.storage.from(OBRA_BUCKET).list(pid+"/obra",{limit:300,sortBy:{column:"name",order:"desc"}});
+    OBRA_FOTOS[pid]=(data||[]).filter(f=>f.name&&!f.name.startsWith(".")&&f.id).map(f=>({name:f.name,path:pid+"/obra/"+f.name,url:sb.storage.from(OBRA_BUCKET).getPublicUrl(pid+"/obra/"+f.name).data.publicUrl,ts:+(f.name.split("_")[0])||0})).sort((a,b)=>b.ts-a.ts);
+  }catch(e){OBRA_FOTOS[pid]=[]}
+}
 const obraPct=v=>Math.max(0,Math.min(100,Math.round(+v||0)));
 function renderObra(){
   const m=$("#main");
@@ -1526,26 +1549,71 @@ function renderObra(){
     const o=OBRA[p.id]||{};const vals=OBRA_ETAPAS.map(([k])=>obraPct(o[k]));
     const tot=Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
     const f=o.updated_at?new Date(o.updated_at).toLocaleDateString("es-MX",{day:"numeric",month:"short",year:"numeric"}):"";
+    const fotos=OBRA_FOTOS[String(p.id)]||[];const show=fotos.slice(0,4);
     return `<div class="ocard"><div class="otop"><div><div class="ocat">${esc(p.cat)}</div><h3>${esc(p.nombre)}</h3></div><div class="otot">${tot}%<small>avance general</small></div></div>
       ${OBRA_ETAPAS.map(([k,l],i)=>`<div class="orow${vals[i]>=100?" done":""}"><span>${l}</span><div class="t"><i style="width:${vals[i]}%"></i></div><b>${vals[i]}%</b></div>`).join("")}
-      ${o.notas?`<div class="onota">${esc(o.notas)}</div>`:""}
-      <div class="ofoot"><span>${f?"Actualizado "+f:"Sin actualizar"}</span>${READONLY?"":`<button type="button" class="oedit" data-oedit="${esc(p.id)}">Editar avance</button>`}</div></div>`}).join("");
-  m.innerHTML=`<div class="phead"><div class="left"><span class="eyebrow">Obra</span><h2>Avance de obra</h2><div class="hint" style="color:var(--muted);font-size:13px">Porcentaje de avance por etapa en cada proyecto. El avance general es el promedio de las cinco etapas.</div></div></div>
+      ${o.notas?`<div class="odesc"><b>Descripción del avance</b>${esc(o.notas)}</div>`:""}
+      ${fotos.length?`<div class="ofotos">${show.map((x,i)=>`<button type="button" class="ofoto" data-ofoto="${esc(p.id)}" data-i="${i}"><img src="${esc(x.url)}" alt="Obra" loading="lazy">${i===3&&fotos.length>4?`<em>+${fotos.length-3}</em>`:""}</button>`).join("")}</div>`:""}
+      <div class="ofoot"><span>${f?"Actualizado "+f:"Sin actualizar"}${fotos.length?" · "+fotos.length+" foto"+(fotos.length>1?"s":""):""}</span>${READONLY?"":`<div class="oacts"><button type="button" class="oedit" data-oup="${esc(p.id)}">+ Fotos</button><button type="button" class="oedit" data-oedit="${esc(p.id)}">Editar avance</button></div>`}</div></div>`}).join("");
+  m.innerHTML=`<div class="phead"><div class="left"><span class="eyebrow">Obra</span><h2>Avance de obra</h2><div class="hint" style="color:var(--muted);font-size:13px">Porcentaje de avance por etapa, descripción y fotos de cada proyecto. El avance general es el promedio de las cinco etapas.</div></div></div>
     ${OBRA_ERR&&!READONLY?`<div class="pempty"><b>Falta crear la tabla de obra</b>Corre el SQL obra_avance.sql en Supabase. (${esc(OBRA_ERR)})</div>`:""}
-    ${ps.length?`<div class="ogrid">${cards}</div>`:`<div class="pempty"><b>Sin proyectos</b>Da de alta proyectos en In House u Off House.</div>`}`;
+    ${ps.length?`<div class="ogrid">${cards}</div>`:`<div class="pempty"><b>Sin proyectos</b>Da de alta proyectos en In House u Off House.</div>`}
+    <input type="file" id="obra-file" accept="image/*" multiple hidden>`;
 }
 function openObra(p){
   const o=OBRA[p.id]||{};
   drawer("Avance de obra · "+p.nombre,
     OBRA_ETAPAS.map(([k,l])=>fld(k,l+" (%)",obraPct(o[k]),"type=number min=0 max=100 step=1 inputmode=numeric")).join("")+
-    `<div class="f full"><label for="fx-notas">Notas</label><textarea id="fx-notas" name="notas">${esc(o.notas||"")}</textarea></div>`,
-    d=>{const v={proyecto_id:p.id,notas:(d.notas||"").trim(),updated_at:new Date().toISOString()};OBRA_ETAPAS.forEach(([k])=>{v[k]=obraPct(d[k])});
+    `<div class="f full"><label for="fx-notas">Descripción del avance</label><textarea id="fx-notas" name="notas" rows="6" placeholder="Qué se hizo, en qué va la obra, siguientes pasos, fecha estimada de entrega…" style="min-height:130px">${esc(o.notas||"")}</textarea></div>`,
+    d=>{const v={proyecto_id:String(p.id),notas:(d.notas||"").trim(),updated_at:new Date().toISOString()};OBRA_ETAPAS.forEach(([k])=>{v[k]=obraPct(d[k])});
       OBRA[p.id]=v;OBRA_ERR="";db(()=>sb.from("obra_avance").upsert(v,{onConflict:"proyecto_id"}));},null);
+}
+function obraReducir(file,max,q){return new Promise((ok,no)=>{const u=URL.createObjectURL(file);const im=new Image();im.onload=()=>{URL.revokeObjectURL(u);const sc=Math.min(1,max/Math.max(im.width,im.height));const cv=document.createElement("canvas");cv.width=Math.round(im.width*sc);cv.height=Math.round(im.height*sc);cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);cv.toBlob(b=>b?ok(b):no(new Error("No se pudo procesar")),"image/jpeg",q)};im.onerror=()=>{URL.revokeObjectURL(u);no(new Error("Formato no soportado (usa JPG o PNG)"))};im.src=u})}
+async function obraSubir(pid,files){
+  const fallas=[];let n=0;const btn=document.querySelector('[data-oup="'+pid+'"]');
+  for(const f of files){
+    if(btn)btn.textContent=`Subiendo ${++n}/${files.length}…`;
+    try{
+      const blob=await obraReducir(f,2400,0.88);
+      const base=f.name.replace(/\.[^.]+$/,"").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^A-Za-z0-9 _-]+/g,"").trim().replace(/\s+/g,"_").slice(0,40)||"obra";
+      const {error}=await sb.storage.from(OBRA_BUCKET).upload(pid+"/obra/"+Date.now()+"_"+base+".jpg",blob,{upsert:false,contentType:"image/jpeg"});
+      if(error)throw error;
+    }catch(e){fallas.push(f.name+": "+(e.message||e))}
+  }
+  await loadObraFotos(pid);
+  if(OBRA[pid]){OBRA[pid].updated_at=new Date().toISOString();db(()=>sb.from("obra_avance").update({updated_at:OBRA[pid].updated_at}).eq("proyecto_id",pid))}
+  else{const v={proyecto_id:pid,updated_at:new Date().toISOString()};OBRA[pid]=v;db(()=>sb.from("obra_avance").upsert(v,{onConflict:"proyecto_id"}))}
+  if(S.cat==="Obra")renderObra();
+  if(fallas.length)alert("No se subieron:\n• "+fallas.join("\n• "));
+}
+let OLB={pid:"",i:0};
+function obraLb(d){
+  const L=OBRA_FOTOS[OLB.pid]||[];if(!L.length){const e=document.getElementById("olb");if(e)e.classList.remove("on");return}
+  OLB.i=(OLB.i+d+L.length)%L.length;
+  let lb=document.getElementById("olb");
+  if(!lb){lb=document.createElement("div");lb.id="olb";lb.className="olb";lb.innerHTML='<button class="pv" type="button">‹</button><img alt=""><button class="nx" type="button">›</button><div class="cap"><span></span>'+(READONLY?"":'<button type="button" class="del">Eliminar foto</button>')+'<button type="button" class="x">Cerrar</button></div>';document.body.appendChild(lb);
+    lb.addEventListener("click",async e=>{
+      if(e.target.closest(".pv")){obraLb(-1);return}if(e.target.closest(".nx")){obraLb(1);return}
+      if(e.target.closest(".del")){const x=(OBRA_FOTOS[OLB.pid]||[])[OLB.i];if(!x||!confirm("¿Eliminar esta foto de la obra?"))return;
+        const {error}=await sb.storage.from(OBRA_BUCKET).remove([x.path]);if(error){alert("No se pudo eliminar: "+error.message);return}
+        await loadObraFotos(OLB.pid);if(S.cat==="Obra")renderObra();OLB.i=0;obraLb(0);return}
+      if(e.target===lb||e.target.closest(".x"))lb.classList.remove("on")});
+    document.addEventListener("keydown",e=>{if(!lb.classList.contains("on"))return;if(e.key==="Escape")lb.classList.remove("on");if(e.key==="ArrowLeft")obraLb(-1);if(e.key==="ArrowRight")obraLb(1)})}
+  const x=L[OLB.i];lb.querySelector("img").src=x.url;
+  lb.querySelector(".cap span").textContent=(OLB.i+1)+" / "+L.length+(x.ts?" · "+new Date(x.ts).toLocaleDateString("es-MX",{day:"numeric",month:"short",year:"numeric"}):"");
+  lb.classList.add("on");
 }
 document.addEventListener("click",e=>{
   if(S.cat!=="Obra")return;
   const ed=e.target.closest("[data-oedit]");
-  if(ed){const p=S.projects.find(x=>String(x.id)===ed.dataset.oedit);if(p)openObra(p)}
+  if(ed){const p=S.projects.find(x=>String(x.id)===ed.dataset.oedit);if(p)openObra(p);return}
+  const up=e.target.closest("[data-oup]");
+  if(up){const inp=document.getElementById("obra-file");inp.dataset.pid=up.dataset.oup;inp.value="";inp.click();return}
+  const ft=e.target.closest("[data-ofoto]");
+  if(ft){OLB={pid:String(ft.dataset.ofoto),i:+ft.dataset.i};obraLb(0)}
+});
+document.addEventListener("change",e=>{
+  if(e.target.id==="obra-file"&&e.target.files.length&&e.target.dataset.pid)obraSubir(e.target.dataset.pid,[...e.target.files]);
 });
 function openProject(p){
   const giros=["Departamentos en preventa","Oficinas en renta","Oficinas en venta","Locales","Terrenos","Otro"];
