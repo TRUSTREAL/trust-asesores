@@ -1316,12 +1316,21 @@ document.addEventListener("click",e=>{
 document.addEventListener("input",e=>{if(e.target.id==="mk-q"){MK.q=e.target.value;const pos=e.target.selectionStart;renderMercado();const i=$("#mk-q");i.focus();i.setSelectionRange(pos,pos)}});
 document.addEventListener("change",e=>{if(e.target.id==="mk-zona"){MK.zona=e.target.value;renderMercado()}if(e.target.id==="mk-ord"){MK.ord=e.target.value;renderMercado()}});
 // ---------- Portales: accesos directos a portales de desarrolladores / inmobiliarias (tabla portales) ----------
-let PORTALES=[],PORT_LOADED=false;
+let PORTALES=[],PORT_LOADED=false,PORT_ACC={}; // PORT_ACC[portal_id][asesor]={usuario,password}
 async function loadPortales(){
   if(!sb)return;
   const {data,error}=await sb.from("portales").select("*").order("orden",{ascending:true}).order("nombre");
   if(error){console.warn("portales",error.message);return}
-  PORTALES=data||[];PORT_LOADED=true;
+  PORTALES=data||[];PORT_ACC={};
+  try{let q=sb.from("portales_accesos").select("*");if(READONLY){const yo=(window.AUTH&&window.AUTH.nombre)||"";q=q.eq("asesor",yo||"__nadie__")}
+    const r=await q;if(!r.error)(r.data||[]).forEach(a=>{(PORT_ACC[a.portal_id]=PORT_ACC[a.portal_id]||{})[a.asesor]={usuario:a.usuario||"",password:a.password||""}});else console.warn("portales_accesos",r.error.message)}catch(e){}
+  PORT_LOADED=true;
+}
+// credenciales efectivas: el asesor ve las suyas si existen (campo vacío = usa la general)
+function portCred(p){
+  const m=PORT_ACC[p.id]||{};
+  if(READONLY){const yo=(window.AUTH&&window.AUTH.nombre)||"",a=m[yo];if(a&&(a.usuario||a.password))return {u:a.usuario||p.usuario||"",pw:a.password||p.password||"",propio:true,n:0}}
+  return {u:p.usuario||"",pw:p.password||"",propio:false,n:Object.values(m).filter(a=>a.usuario||a.password).length};
 }
 const portUrl=u=>{u=String(u||"").trim();return u?(/^https?:\/\//i.test(u)?u:"https://"+u):""};
 const portHost=u=>portUrl(u).replace(/^https?:\/\//i,"").replace(/^www\./,"").replace(/\/$/,"");
@@ -1330,15 +1339,17 @@ function renderPortales(){
   if(!PORT_LOADED){loadPortales().then(()=>{if(S.cat==="Portales")renderPortales()})}
   const cards=PORTALES.map(p=>{const u=portUrl(p.url);const ini=(p.nombre||"?").trim().charAt(0).toUpperCase();
     const cred=(l,v,k)=>`<div><div class="l">${l}</div><div class="v"><span title="${esc(v)}">${v?esc(v):"—"}</span>${v?`<button type="button" data-copy="${esc(v)}" title="Copiar ${l.toLowerCase()}">⧉</button>`:""}</div></div>`;
+    const pc=portCred(p);
     return `<a class="pcard" href="${esc(u)||"#"}" target="_blank" rel="noopener" data-port="${p.id}">
-      <div class="ptop"><div class="plogo">${p.logo_url?`<img src="${esc(p.logo_url)}" alt="">`:esc(ini)}</div><div style="min-width:0"><div class="ptipo">${esc(p.tipo||"Portal")}</div><h3>${esc(p.nombre)}</h3><div class="purl">${esc(portHost(p.url))||"Sin liga"}</div></div></div>
-      <div class="pcred">${cred("Usuario",p.usuario||"")}${cred("Contraseña",p.password||"")}</div>
-      ${p.notas?`<div class="pnotas">${esc(p.notas)}</div>`:""}
+      <div class="ptop"><div class="plogo">${p.logo_url?`<img src="${esc(p.logo_url)}" alt="">`:esc(ini)}</div><div style="min-width:0"><div class="ptipo">${esc(p.tipo||"Portal")}${pc.propio?" · acceso personal":""}</div><h3>${esc(p.nombre)}</h3><div class="purl">${esc(portHost(p.url))||"Sin liga"}</div></div></div>
+      <div class="pcred">${cred("Usuario",pc.u)}${cred("Contraseña",pc.pw)}</div>
+      ${p.notas?`<div class="pnotas">${esc(p.notas)}</div>`:""}${(!READONLY&&pc.n)?`<div class="pnotas">👤 ${pc.n} acceso${pc.n>1?"s":""} individual${pc.n>1?"es":""}</div>`:""}
       <div class="pgo"><span>Abrir portal ↗</span>${READONLY?"":`<button type="button" class="pedit" data-pedit="${p.id}">Editar</button>`}</div></a>`}).join("");
   m.innerHTML=`<div class="phead"><div class="left"><span class="eyebrow">Portales</span><h2>Portales de desarrolladores e inmobiliarias</h2><div class="hint" style="color:var(--muted);font-size:13px">Accesos directos a los portales que comparten inventario con TRUST. Toca la tarjeta para abrir el portal; el usuario y la contraseña se copian con ⧉.</div></div>
     ${READONLY?"":`<button class="btn primary" id="port-add" type="button">+ Agregar portal</button>`}</div>
     ${PORTALES.length?`<div class="pgrid">${cards}</div>`:`<div class="pempty"><b>${PORT_LOADED?"Todavía no hay portales":"Cargando…"}</b>${PORT_LOADED?(READONLY?"Cuando TRUST los dé de alta, aparecerán aquí.":"Agrega el primero con el botón de arriba."):""}</div>`}`;
 }
+const PORT_ASES=()=>ASESORES.filter(a=>a!=="EX");
 function openPortal(p){
   drawer(p?"Editar portal":"Nuevo portal",
     fld("nombre","Desarrollador / inmobiliaria",p?.nombre||"","required",true)+
@@ -1347,12 +1358,19 @@ function openPortal(p){
     fld("url","Liga del portal",p?.url||"","required placeholder='https://portal.desarrollador.com'",true)+
     fld("usuario","Usuario / correo",p?.usuario||"","placeholder='Opcional si solo hay contraseña'")+
     fld("password","Contraseña",p?.password||"","placeholder='Propia de TRUST o general'")+
+    `<div class="f full"><label>Accesos individuales por asesor <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted)">· si lo llenas, ese asesor ve estos datos en lugar de los generales; vacío = usa los generales</span></label></div>`+
+    PORT_ASES().map((a,i)=>{const x=((p&&PORT_ACC[p.id])||{})[a]||{};return `<div class="f full" style="display:grid;grid-template-columns:96px 1fr 1fr;gap:8px;align-items:center"><span style="font-size:13px;font-weight:500">${esc(a)}</span><input name="au_${i}" value="${esc(x.usuario||"")}" placeholder="Usuario" aria-label="Usuario de ${esc(a)}"><input name="ap_${i}" value="${esc(x.password||"")}" placeholder="Contraseña" aria-label="Contraseña de ${esc(a)}"></div>`}).join("")+
     fld("logo_url","Logo (liga a imagen, opcional)",p?.logo_url||"","",true)+
     `<div class="f full"><label for="fx-notas">Notas para los asesores</label><textarea id="fx-notas" name="notas">${esc(p?.notas||"")}</textarea></div>`,
     d=>{const v={nombre:d.nombre.trim(),tipo:d.tipo,orden:d.orden===""?null:+d.orden,url:d.url.trim(),usuario:d.usuario.trim(),password:d.password,logo_url:d.logo_url.trim(),notas:d.notas.trim()};
       if(p){Object.assign(p,v);db(()=>sb.from("portales").update(v).eq("id",p.id))}else{const np={id:newId(),...v};PORTALES.push(np);db(()=>sb.from("portales").insert(np))}
-      PORTALES.sort((a,b)=>((a.orden??999)-(b.orden??999))||String(a.nombre).localeCompare(String(b.nombre)));},
-    p?()=>{PORTALES=PORTALES.filter(x=>x!==p);db(()=>sb.from("portales").delete().eq("id",p.id))}:null);
+      PORTALES.sort((a,b)=>((a.orden??999)-(b.orden??999))||String(a.nombre).localeCompare(String(b.nombre)));
+      const pid=String(p?p.id:PORTALES.find(x=>x.nombre===v.nombre&&x.url===v.url)?.id||"");
+      if(pid&&sb){const rows=[],vacios=[];PORT_ASES().forEach((a,i)=>{const u=(d["au_"+i]||"").trim(),pw=(d["ap_"+i]||"").trim();if(u||pw)rows.push({portal_id:pid,asesor:a,usuario:u,password:pw});else vacios.push(a)});
+        PORT_ACC[pid]={};rows.forEach(r=>{PORT_ACC[pid][r.asesor]={usuario:r.usuario,password:r.password}});
+        if(rows.length)db(()=>sb.from("portales_accesos").upsert(rows,{onConflict:"portal_id,asesor"}));
+        if(vacios.length)db(()=>sb.from("portales_accesos").delete().eq("portal_id",pid).in("asesor",vacios))}},
+    p?()=>{PORTALES=PORTALES.filter(x=>x!==p);db(()=>sb.from("portales").delete().eq("id",p.id));db(()=>sb.from("portales_accesos").delete().eq("portal_id",String(p.id)))}:null);
 }
 document.addEventListener("click",e=>{
   if(S.cat!=="Portales")return;
