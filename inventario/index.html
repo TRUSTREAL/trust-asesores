@@ -446,6 +446,7 @@ select.st{padding-right:10px}
 .olb .cap{color:#fff;font-size:13px;display:flex;gap:14px;align-items:center}
 .olb button{background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:999px;padding:8px 16px;font:inherit;font-size:13px;cursor:pointer}
 .olb .pv,.olb .nx{position:absolute;top:50%;transform:translateY(-50%);font-size:24px;width:46px;height:46px;padding:0}
+.ocard.obra1{margin-top:16px;max-width:760px}.ocard.obra1 .ofotos{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}.ocard.obra1 .orow{grid-template-columns:130px 1fr 48px}
 .olb .pv{left:14px}.olb .nx{right:14px}
 </style>
 
@@ -466,7 +467,6 @@ select.st{padding-right:10px}
       <button id="tab-off" role="tab" aria-pressed="false" data-cat="Off House">Off House</button>
       <button id="tab-mk" role="tab" aria-pressed="false" data-cat="Mercado">Mercado</button>
       <button id="tab-port" role="tab" aria-pressed="false" data-cat="Portales">Portales</button>
-      <button id="tab-obra" role="tab" aria-pressed="false" data-cat="Obra">Obra</button>
     </div></div>
   </div>
 
@@ -630,7 +630,6 @@ function render(){
   document.querySelectorAll(".seg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.cat===S.cat));
   if(S.cat==="Mercado"){S.sel=null;renderMercado();return}
   if(S.cat==="Portales"){S.sel=null;renderPortales();return}
-  if(S.cat==="Obra"){S.sel=null;renderObra();return}
   const list=S.projects.filter(p=>p.cat===S.cat);
   if(!list.find(p=>p.id===S.sel)) S.sel=list[0]?.id||null;
   renderMain();
@@ -695,7 +694,7 @@ function renderMain(){
   :`<div class="empty" style="margin-top:18px;border:1px dashed var(--line-2);border-radius:0"><b>Sin unidades cargadas</b>${READONLY?"Aún no hay inventario capturado para este proyecto.":"Agrega las unidades desde la lista de precios o el Excel del desarrollador."}</div>`;
   if(renta&&vista==="politica")vista="precios";
   if(READONLY&&(vista==="ventas"||vista==="cotizacion"))vista="precios";
-  const seg=`<div class="vseg" role="tablist" aria-label="Vista"><button data-vista="precios" aria-pressed="${vista==="precios"}">Precios</button><button data-vista="edificio" aria-pressed="${vista==="edificio"}">Edificio</button>${renta?"":`<button data-vista="politica" aria-pressed="${vista==="politica"}">Política de venta</button>`}<button data-vista="docs" aria-pressed="${vista==="docs"}">Documentos${(docs[p.id]||[]).length?` · ${(docs[p.id]||[]).length}`:""}</button><button data-vista="renders" aria-pressed="${vista==="renders"}">Renders${(rend[p.id]||[]).length?` · ${(rend[p.id]||[]).length}`:""}</button><button data-vista="video" aria-pressed="${vista==="video"}">Video${(Array.isArray(p.videos)&&p.videos.length)?` · ${p.videos.length}`:""}</button>${READONLY?"":`<button data-vista="ventas" aria-pressed="${vista==="ventas"}">${renta?"Rentas":"Ventas"}${c.Vendido?` · ${c.Vendido}`:""}</button><button data-vista="cotizacion" aria-pressed="${vista==="cotizacion"}">Cotización${czReady(p)?"":" · ⚠"}</button>`}</div>`;
+  const seg=`<div class="vseg" role="tablist" aria-label="Vista"><button data-vista="precios" aria-pressed="${vista==="precios"}">Precios</button><button data-vista="edificio" aria-pressed="${vista==="edificio"}">Edificio</button>${renta?"":`<button data-vista="politica" aria-pressed="${vista==="politica"}">Política de venta</button>`}<button data-vista="docs" aria-pressed="${vista==="docs"}">Documentos${(docs[p.id]||[]).length?` · ${(docs[p.id]||[]).length}`:""}</button><button data-vista="renders" aria-pressed="${vista==="renders"}">Renders${(rend[p.id]||[]).length?` · ${(rend[p.id]||[]).length}`:""}</button><button data-vista="video" aria-pressed="${vista==="video"}">Video${(Array.isArray(p.videos)&&p.videos.length)?` · ${p.videos.length}`:""}</button><button data-vista="obra" aria-pressed="${vista==="obra"}">Obra${OBRA_READY[String(p.id)]&&OBRA[String(p.id)]?` · ${obraTot(OBRA[String(p.id)])}%`:""}</button>${READONLY?"":`<button data-vista="ventas" aria-pressed="${vista==="ventas"}">${renta?"Rentas":"Ventas"}${c.Vendido?` · ${c.Vendido}`:""}</button><button data-vista="cotizacion" aria-pressed="${vista==="cotizacion"}">Cotización${czReady(p)?"":" · ⚠"}</button>`}</div>`;
   const pols=Array.isArray(p.politicas)?p.politicas:[];
   const minP=Math.min(...p.units.filter(u=>u.estatus==="Disponible").map(u=>u.precio).concat([Infinity]));
   const pol=(pols.length?`<div class="pols">${pols.map(x=>polCard(x,isFinite(minP)?minP:null)).join("")}</div>`:`<div class="pol empty"><b>Sin políticas de venta</b>${READONLY?"Pronto estarán disponibles para este proyecto.":"Usa \"Editar políticas\" para capturarlas."}</div>`)+(p.politica?`<div class="polnote">${polHTML(p.politica)}</div>`:"");
@@ -706,8 +705,9 @@ function renderMain(){
       <div class="actions">${READONLY?`<button class="btn ${VENTAS?"primary":""}" id="btn-ventas" aria-pressed="${VENTAS}" title="${VENTAS?"Salir del modo ventas":"Oculta estatus y unidades no disponibles para mostrar a clientes"}">${VENTAS?"✓ Modo ventas":"Modo ventas"}</button>`:""}<button class="btn" id="btn-pdf" ${rows.length?"":"disabled"} title="Lista de precios de las unidades que se muestran en la tabla">⤓ Lista de precios (PDF)</button>${renta?"":`<button class="btn" id="btn-pol-pdf" ${(pols.length||p.politica)?"":"disabled"} title="Políticas de pago del proyecto, listas para compartir con el cliente">⤓ Políticas de pago (PDF)</button>`}${READONLY?"":`<button class="btn" id="btn-edit-project">Editar proyecto</button>${renta?"":`<button class="btn" id="btn-edit-pol">Editar políticas</button>`}<button class="btn" id="btn-import">⇪ Importar</button><button class="btn primary" id="btn-add-unit">+ Unidad</button>`}</div>
     </div>
     ${seg}
-    ${vista==="precios"?(VENTAS?"":tiles)+table+(p.notas?`<div class="notes"><span class="eyebrow">Notas</span><p>${esc(p.notas)}</p></div>`:""):vista==="politica"?pol:vista==="ventas"?ventasHTML(p):vista==="cotizacion"?czHTML(p):vista==="renders"?rendHTML(p):vista==="video"?videoHTML(p):vista==="edificio"?edificioHTML(p):docsHTML(p)}`;
+    ${vista==="precios"?(VENTAS?"":tiles)+table+(p.notas?`<div class="notes"><span class="eyebrow">Notas</span><p>${esc(p.notas)}</p></div>`:""):vista==="politica"?pol:vista==="ventas"?ventasHTML(p):vista==="cotizacion"?czHTML(p):vista==="renders"?rendHTML(p):vista==="video"?videoHTML(p):vista==="obra"?obraHTML(p):vista==="edificio"?edificioHTML(p):docsHTML(p)}`;
   if((vista==="renders"||vista==="edificio")&&sb&&!rend[p.id])loadRend(p.id).then(()=>{if(vista==="renders"||vista==="edificio")renderMain()});
+  if(vista==="obra"&&!OBRA_READY[String(p.id)])loadObraP(p.id).then(()=>{if(vista==="obra")renderMain()});
   if(vista==="cotizacion"&&sb&&!CZ[p.id])loadCz(p.id).then(()=>{if(vista==="cotizacion")renderMain()});
   if(vista==="docs"&&sb&&!docs[p.id])loadDocs(p.id).then(()=>{if(vista==="docs")renderMain()});
 }
@@ -1522,17 +1522,17 @@ document.addEventListener("click",e=>{
   if(e.target.closest("#port-add")){openPortal(null);return}
   const a=e.target.closest("a.pcard");if(a&&a.getAttribute("href")==="#")e.preventDefault();
 });
-// ---------- Obra: avance de obra por proyecto (tabla obra_avance + fotos en storage documentos/<proyecto>/obra) ----------
+// ---------- Obra (píldora del proyecto): avance por etapa + descripción + fotos (tabla obra_avance; fotos en storage documentos/<proyecto>/obra) ----------
 const OBRA_ETAPAS=[["excavacion","Excavación"],["sotanos","Sótanos"],["estructura","Estructura"],["acabados","Acabados"],["escrituracion","Escrituración"]];
-let OBRA={},OBRA_FOTOS={},OBRA_LOADED=false,OBRA_ERR="";
+let OBRA={},OBRA_FOTOS={},OBRA_READY={},OBRA_ERR="";
 const OBRA_BUCKET="documentos";
-async function loadObra(){
-  if(!sb)return;
-  const {data,error}=await sb.from("obra_avance").select("*");
-  if(error){console.warn("obra_avance",error.message);OBRA_ERR=error.message;OBRA_LOADED=true;return}
-  OBRA={};(data||[]).forEach(r=>{OBRA[r.proyecto_id]=r});OBRA_LOADED=true;
-  const ids=S.projects.filter(p=>p.cat==="In House"||p.cat==="Off House").map(p=>String(p.id));
-  await Promise.all(ids.map(id=>loadObraFotos(id)));
+const obraPct=v=>Math.max(0,Math.min(100,Math.round(+v||0)));
+const obraTot=o=>Math.round(OBRA_ETAPAS.reduce((a,[k])=>a+obraPct((o||{})[k]),0)/OBRA_ETAPAS.length);
+async function loadObraP(pid){
+  pid=String(pid);if(!sb){OBRA_READY[pid]=true;return}
+  const r=await sb.from("obra_avance").select("*").eq("proyecto_id",pid).maybeSingle();
+  if(r.error){OBRA_ERR=r.error.message}else{OBRA_ERR="";if(r.data)OBRA[pid]=r.data}
+  await loadObraFotos(pid);OBRA_READY[pid]=true;
 }
 async function loadObraFotos(pid){
   try{
@@ -1540,33 +1540,27 @@ async function loadObraFotos(pid){
     OBRA_FOTOS[pid]=(data||[]).filter(f=>f.name&&!f.name.startsWith(".")&&f.id).map(f=>({name:f.name,path:pid+"/obra/"+f.name,url:sb.storage.from(OBRA_BUCKET).getPublicUrl(pid+"/obra/"+f.name).data.publicUrl,ts:+(f.name.split("_")[0])||0})).sort((a,b)=>b.ts-a.ts);
   }catch(e){OBRA_FOTOS[pid]=[]}
 }
-const obraPct=v=>Math.max(0,Math.min(100,Math.round(+v||0)));
-function renderObra(){
-  const m=$("#main");
-  if(!OBRA_LOADED){loadObra().then(()=>{if(S.cat==="Obra")renderObra()})}
-  const ps=S.projects.filter(p=>p.cat==="In House"||p.cat==="Off House").sort((a,b)=>(a.cat===b.cat?0:a.cat==="In House"?-1:1));
-  const cards=ps.map(p=>{
-    const o=OBRA[p.id]||{};const vals=OBRA_ETAPAS.map(([k])=>obraPct(o[k]));
-    const tot=Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
-    const f=o.updated_at?new Date(o.updated_at).toLocaleDateString("es-MX",{day:"numeric",month:"short",year:"numeric"}):"";
-    const fotos=OBRA_FOTOS[String(p.id)]||[];const show=fotos.slice(0,4);
-    return `<div class="ocard"><div class="otop"><div><div class="ocat">${esc(p.cat)}</div><h3>${esc(p.nombre)}</h3></div><div class="otot">${tot}%<small>avance general</small></div></div>
-      ${OBRA_ETAPAS.map(([k,l],i)=>`<div class="orow${vals[i]>=100?" done":""}"><span>${l}</span><div class="t"><i style="width:${vals[i]}%"></i></div><b>${vals[i]}%</b></div>`).join("")}
-      ${o.notas?`<div class="odesc"><b>Descripción del avance</b>${esc(o.notas)}</div>`:""}
-      ${fotos.length?`<div class="ofotos">${show.map((x,i)=>`<button type="button" class="ofoto" data-ofoto="${esc(p.id)}" data-i="${i}"><img src="${esc(x.url)}" alt="Obra" loading="lazy">${i===3&&fotos.length>4?`<em>+${fotos.length-3}</em>`:""}</button>`).join("")}</div>`:""}
-      <div class="ofoot"><span>${f?"Actualizado "+f:"Sin actualizar"}${fotos.length?" · "+fotos.length+" foto"+(fotos.length>1?"s":""):""}</span>${READONLY?"":`<div class="oacts"><button type="button" class="oedit" data-oup="${esc(p.id)}">+ Fotos</button><button type="button" class="oedit" data-oedit="${esc(p.id)}">Editar avance</button></div>`}</div></div>`}).join("");
-  m.innerHTML=`<div class="phead"><div class="left"><span class="eyebrow">Obra</span><h2>Avance de obra</h2><div class="hint" style="color:var(--muted);font-size:13px">Porcentaje de avance por etapa, descripción y fotos de cada proyecto. El avance general es el promedio de las cinco etapas.</div></div></div>
-    ${OBRA_ERR&&!READONLY?`<div class="pempty"><b>Falta crear la tabla de obra</b>Corre el SQL obra_avance.sql en Supabase. (${esc(OBRA_ERR)})</div>`:""}
-    ${ps.length?`<div class="ogrid">${cards}</div>`:`<div class="pempty"><b>Sin proyectos</b>Da de alta proyectos en In House u Off House.</div>`}
+function obraHTML(p){
+  const pid=String(p.id),o=OBRA[pid]||{};
+  if(!OBRA_READY[pid])return `<div class="pol empty"><b>Cargando avance de obra…</b></div>`;
+  const vals=OBRA_ETAPAS.map(([k])=>obraPct(o[k])),tot=obraTot(o);
+  const f=o.updated_at?new Date(o.updated_at).toLocaleDateString("es-MX",{day:"numeric",month:"short",year:"numeric"}):"";
+  const fotos=OBRA_FOTOS[pid]||[];
+  return `${OBRA_ERR&&!READONLY?`<div class="pempty"><b>Falta crear la tabla de obra</b>Corre el SQL obra_avance.sql en Supabase. (${esc(OBRA_ERR)})</div>`:""}
+  <div class="ocard obra1"><div class="otop"><div><div class="ocat">Avance de obra</div><h3>${esc(p.nombre)}</h3></div><div class="otot">${tot}%<small>avance general</small></div></div>
+    ${OBRA_ETAPAS.map(([k,l],i)=>`<div class="orow${vals[i]>=100?" done":""}"><span>${l}</span><div class="t"><i style="width:${vals[i]}%"></i></div><b>${vals[i]}%</b></div>`).join("")}
+    ${o.notas?`<div class="odesc"><b>Descripción del avance</b>${esc(o.notas)}</div>`:(READONLY?"":`<div class="odesc"><b>Descripción del avance</b><span style="color:var(--muted)">Aún sin descripción. Usa Editar avance para escribirla.</span></div>`)}
+    ${fotos.length?`<div class="ofotos">${fotos.map((x,i)=>`<button type="button" class="ofoto" data-ofoto="${pid}" data-i="${i}"><img src="${esc(x.url)}" alt="Obra" loading="lazy"></button>`).join("")}</div>`:(READONLY?"":`<div class="onota">Sin fotos todavía. Sube las primeras con + Fotos.</div>`)}
+    <div class="ofoot"><span>${f?"Actualizado "+f:"Sin actualizar"}${fotos.length?" · "+fotos.length+" foto"+(fotos.length>1?"s":""):""}</span>${READONLY?"":`<div class="oacts"><button type="button" class="oedit" data-oup="${pid}">+ Fotos</button><button type="button" class="oedit" data-oedit="${pid}">Editar avance</button></div>`}</div></div>
     <input type="file" id="obra-file" accept="image/*" multiple hidden>`;
 }
 function openObra(p){
-  const o=OBRA[p.id]||{};
+  const o=OBRA[String(p.id)]||{};
   drawer("Avance de obra · "+p.nombre,
     OBRA_ETAPAS.map(([k,l])=>fld(k,l+" (%)",obraPct(o[k]),"type=number min=0 max=100 step=1 inputmode=numeric")).join("")+
     `<div class="f full"><label for="fx-notas">Descripción del avance</label><textarea id="fx-notas" name="notas" rows="6" placeholder="Qué se hizo, en qué va la obra, siguientes pasos, fecha estimada de entrega…" style="min-height:130px">${esc(o.notas||"")}</textarea></div>`,
     d=>{const v={proyecto_id:String(p.id),notas:(d.notas||"").trim(),updated_at:new Date().toISOString()};OBRA_ETAPAS.forEach(([k])=>{v[k]=obraPct(d[k])});
-      OBRA[p.id]=v;OBRA_ERR="";db(()=>sb.from("obra_avance").upsert(v,{onConflict:"proyecto_id"}));},null);
+      OBRA[String(p.id)]=v;OBRA_ERR="";db(()=>sb.from("obra_avance").upsert(v,{onConflict:"proyecto_id"}));},null);
 }
 function obraReducir(file,max,q){return new Promise((ok,no)=>{const u=URL.createObjectURL(file);const im=new Image();im.onload=()=>{URL.revokeObjectURL(u);const sc=Math.min(1,max/Math.max(im.width,im.height));const cv=document.createElement("canvas");cv.width=Math.round(im.width*sc);cv.height=Math.round(im.height*sc);cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);cv.toBlob(b=>b?ok(b):no(new Error("No se pudo procesar")),"image/jpeg",q)};im.onerror=()=>{URL.revokeObjectURL(u);no(new Error("Formato no soportado (usa JPG o PNG)"))};im.src=u})}
 async function obraSubir(pid,files){
@@ -1581,9 +1575,10 @@ async function obraSubir(pid,files){
     }catch(e){fallas.push(f.name+": "+(e.message||e))}
   }
   await loadObraFotos(pid);
-  if(OBRA[pid]){OBRA[pid].updated_at=new Date().toISOString();db(()=>sb.from("obra_avance").update({updated_at:OBRA[pid].updated_at}).eq("proyecto_id",pid))}
-  else{const v={proyecto_id:pid,updated_at:new Date().toISOString()};OBRA[pid]=v;db(()=>sb.from("obra_avance").upsert(v,{onConflict:"proyecto_id"}))}
-  if(S.cat==="Obra")renderObra();
+  const ts=new Date().toISOString();
+  if(OBRA[pid]){OBRA[pid].updated_at=ts;db(()=>sb.from("obra_avance").update({updated_at:ts}).eq("proyecto_id",pid))}
+  else{const v={proyecto_id:pid,updated_at:ts};OBRA[pid]=v;db(()=>sb.from("obra_avance").upsert(v,{onConflict:"proyecto_id"}))}
+  if(vista==="obra")renderMain();
   if(fallas.length)alert("No se subieron:\n• "+fallas.join("\n• "));
 }
 let OLB={pid:"",i:0};
@@ -1596,7 +1591,7 @@ function obraLb(d){
       if(e.target.closest(".pv")){obraLb(-1);return}if(e.target.closest(".nx")){obraLb(1);return}
       if(e.target.closest(".del")){const x=(OBRA_FOTOS[OLB.pid]||[])[OLB.i];if(!x||!confirm("¿Eliminar esta foto de la obra?"))return;
         const {error}=await sb.storage.from(OBRA_BUCKET).remove([x.path]);if(error){alert("No se pudo eliminar: "+error.message);return}
-        await loadObraFotos(OLB.pid);if(S.cat==="Obra")renderObra();OLB.i=0;obraLb(0);return}
+        await loadObraFotos(OLB.pid);if(vista==="obra")renderMain();OLB.i=0;obraLb(0);return}
       if(e.target===lb||e.target.closest(".x"))lb.classList.remove("on")});
     document.addEventListener("keydown",e=>{if(!lb.classList.contains("on"))return;if(e.key==="Escape")lb.classList.remove("on");if(e.key==="ArrowLeft")obraLb(-1);if(e.key==="ArrowRight")obraLb(1)})}
   const x=L[OLB.i];lb.querySelector("img").src=x.url;
@@ -1604,7 +1599,7 @@ function obraLb(d){
   lb.classList.add("on");
 }
 document.addEventListener("click",e=>{
-  if(S.cat!=="Obra")return;
+  if(vista!=="obra")return;
   const ed=e.target.closest("[data-oedit]");
   if(ed){const p=S.projects.find(x=>String(x.id)===ed.dataset.oedit);if(p)openObra(p);return}
   const up=e.target.closest("[data-oup]");
