@@ -200,6 +200,17 @@ async function init(){
   document.title="TRUST realtor | "+PROY+" — Portal del desarrollador";
   try{await load()}catch(e){gate("No se pudieron leer los datos",e.message||String(e));return}
   window.addEventListener("hashchange",render);render();
+  fondo();
+}
+/* fondo del inicio: primer render del proyecto (Inventario → Renders; exteriores primero) */
+async function fondo(){
+  if(!PROYECTO)return;const pid=PROYECTO.id,img=/\.(jpe?g|png|webp)$/i;
+  for(const d of ["exteriores","","amenidades","interiores"]){
+    const dir=pid+"/renders"+(d?"/"+d:"");
+    const r=await soft(sb.storage.from(BUCKET).list(dir,{limit:100,sortBy:{column:"name",order:"asc"}}));
+    const fl=(Array.isArray(r&&r.data)?r.data:[]).find(x=>x.id&&img.test(x.name)&&!/^planta_/i.test(x.name));
+    if(fl){const url=sb.storage.from(BUCKET).getPublicUrl(dir+"/"+fl.name).data.publicUrl;const im=new Image();im.onload=()=>{document.querySelector(".bg").style.backgroundImage=`url("${url}")`;document.querySelector(".bg").style.backgroundPosition="center"};im.src=url;return}
+  }
 }
 async function load(){
   const [p,l,m,h,v,c,d]=await Promise.all([
