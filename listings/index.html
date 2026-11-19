@@ -248,9 +248,14 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
   .tiles{grid-template-columns:repeat(2,1fr)}
   .tl{grid-template-columns:1fr}
 }
-.lona-alert{position:absolute;right:12px;bottom:12px;display:inline-flex;align-items:center;gap:6px;background:#A8342A;color:#fff;border-radius:999px;padding:4px 11px 4px 9px;font-size:11.5px;font-weight:600;box-shadow:0 2px 8px rgba(168,52,42,.35)}
-.lona-alert i{width:8px;height:8px;border-radius:50%;background:#fff;animation:lonap 1.6s ease-in-out infinite}
-.lona-alert.inl{position:static;box-shadow:none;margin-left:4px}
+.lona-chip{position:absolute;right:12px;bottom:12px;display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 11px 4px 9px;font-size:11.5px;font-weight:600;background:#fff;border:1px solid var(--line-2);color:var(--muted)}
+.lona-chip i{width:8px;height:8px;border-radius:50%;background:currentColor}
+.lona-chip.det{position:static}
+.lona-chip.nosol{background:#FFF4E0;border-color:#E8C98C;color:#8A5A12}
+.lona-chip.sol{background:#FFF4E0;border-color:#E8C98C;color:#8A5A12}.lona-chip.sol i{background:#D9962A}
+.lona-chip.nocol{background:#A8342A;border-color:#A8342A;color:#fff;box-shadow:0 2px 8px rgba(168,52,42,.35)}.lona-chip.nocol i{background:#fff;animation:lonap 1.6s ease-in-out infinite}
+.lona-chip.col{background:#E3F0E8;border-color:#BFDCCB;color:#2F7A4F}
+.lona-chip.noperm{background:#EEE;border-color:#D5D5D5;color:#6F726B}
 @keyframes lonap{50%{opacity:.35}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -283,6 +288,7 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
       <input id="f-q" placeholder="Buscar título, colonia, asesor…">
       <select id="f-tipo"><option value="">Tipo</option><option>Venta</option><option>Renta</option></select>
       <select id="f-est"><option value="">Estatus</option></select>
+      <select id="f-lona"><option value="">Lona</option><option value="nosol">No solicitada</option><option value="sol">Solicitada</option><option value="nocol">No colocada</option><option value="col">Colocada</option><option value="noperm">Sin lona (propietario)</option></select>
       <span class="count" id="count"></span>
       <button class="btn primary" id="btn-new">+ Nuevo listing</button>
     </div>
@@ -436,17 +442,26 @@ $("#names").addEventListener("click",e=>{const b=e.target.closest("button");if(!
 $("#btn-cambiar").onclick=()=>{ME="";localStorage.removeItem("lst_me");init()};
 
 /* ---------- list ---------- */
-const lonaFalta=l=>!!(l.lona_solicitada&&l.estatus!=="cerrado"&&l.estatus!=="borrador"&&!docsOf(l.id,"video_lona").length);
+const LONA_TXT={nosol:"Lona no solicitada",sol:"Lona solicitada",nocol:"Lona no colocada",col:"Lona colocada",noperm:"Sin lona · propietario"};
+function lonaEstado(l){
+  if(l.lona_no_permitida)return "noperm";
+  if(docsOf(l.id,"video_lona").length)return "col";
+  if(l.lona_entregada)return "nocol";
+  if(l.lona_solicitada)return "sol";
+  return "nosol";
+}
+const lonaAplica=l=>!["cerrado","borrador"].includes(l.estatus);
+const lonaChip=(l,cls)=>{const e=lonaEstado(l);return `<span class="lona-chip ${e} ${cls||""}" ${cls==="det"?'id="lona-est"':""} title="${esc(e==="noperm"&&l.lona_motivo?l.lona_motivo:LONA_TXT[e])}"><i></i>${LONA_TXT[e]}</span>`};
 function renderList(){
   const sel=$("#f-est");if(sel.options.length<=1){Object.entries(ESTATUS_LABEL).forEach(([k,v])=>{const o=document.createElement("option");o.value=k;o.textContent=v;sel.appendChild(o)})}
   if(ROLE==="admin"){
     const c=k=>k==="nodisp"?LISTINGS.filter(l=>["pausado","cerrado"].includes(l.estatus)).length:LISTINGS.filter(l=>l.estatus===k).length;
     $("#tiles").innerHTML=[["nuevo","Nuevos por dar de alta"],["activo","Disponibles"],["nodisp","No disponibles"],["borrador","En captura (asesor)"],["","Todos"]].map(([k,l])=>`<div class="tile ${filt.est===k?"sel":""}" data-k="${k}"><span class="l">${l}</span><span class="v">${k?c(k):LISTINGS.length}</span></div>`).join("");
   } else $("#tiles").innerHTML="";
-  const rows=LISTINGS.filter(l=>(!filt.tipo||l.tipo===filt.tipo)&&(!filt.est||(filt.est==="nodisp"?["pausado","cerrado"].includes(l.estatus):l.estatus===filt.est))&&(!filt.q||[l.titulo,l.direccion,l.asesor].join(" ").toLowerCase().includes(filt.q.toLowerCase())));
+  const rows=LISTINGS.filter(l=>(!filt.lona||(lonaAplica(l)&&lonaEstado(l)===filt.lona))&&(!filt.tipo||l.tipo===filt.tipo)&&(!filt.est||(filt.est==="nodisp"?["pausado","cerrado"].includes(l.estatus):l.estatus===filt.est))&&(!filt.q||[l.titulo,l.direccion,l.asesor].join(" ").toLowerCase().includes(filt.q.toLowerCase())));
   $("#count").textContent=`${rows.length} de ${LISTINGS.length}`;
   $("#list").innerHTML=rows.length?rows.map(l=>{const c=cover(l);return `<div class="lcard" data-id="${l.id}">
-    <div class="ph" style="${c?`background-image:url('${c}')`:""}"><span class="st ${l.estatus}">${ESTATUS_LABEL[l.estatus]||l.estatus}</span>${l.correccion_en&&l.estatus==="nuevo"?`<span class="corr" style="position:absolute;left:12px;bottom:12px">✎ Corregida</span>`:""}<span class="tp">${esc(l.tipo)}</span>${ROLE==="admin"&&lonaFalta(l)?`<span class="lona-alert" title="El asesor solicitó la lona pero no ha subido la foto o video de la lona colocada"><i></i>Sin foto de lona</span>`:""}</div>
+    <div class="ph" style="${c?`background-image:url('${c}')`:""}"><span class="st ${l.estatus}">${ESTATUS_LABEL[l.estatus]||l.estatus}</span>${l.correccion_en&&l.estatus==="nuevo"?`<span class="corr" style="position:absolute;left:12px;bottom:12px">✎ Corregida</span>`:""}<span class="tp">${esc(l.tipo)}</span>${ROLE==="admin"&&lonaAplica(l)?lonaChip(l):""}</div>
     <div class="bd"><h3>${esc(l.titulo||"Sin título")}</h3><div class="adr">${esc(l.direccion||"Sin dirección")}</div><div class="pr">${fmt(l.precio)}${l.tipo==="Renta"?" <small style='font-size:12px;color:var(--muted)'>/ mes</small>":""}</div>
     ${stagesHTML(l)}<div class="meta"><span>${ROLE==="admin"?esc(l.asesor):""}</span><span>${docsOf(l.id,"foto_h").length} fotos · ${fecha(l.created_at)}</span></div>${ROLE==="admin"&&["activo","pausado","cerrado"].includes(l.estatus)?`<button type="button" class="disp ${l.estatus==="activo"?"on":""}" data-disp title="Cambiar disponibilidad"><i></i>${l.estatus==="activo"?"Disponible":"No disponible"}</button>`:""}</div></div>`}).join("")
   :`<div class="empty" style="grid-column:1/-1"><b>Sin listings</b>${ROLE==="admin"?"Todavía no hay propiedades capturadas.":"Captura tu primera propiedad con “+ Nuevo listing”."}</div>`;
@@ -454,6 +469,7 @@ function renderList(){
 function stageIdx(l){return Math.max(0,STAGES.findIndex(s=>s[0]===l.estatus))}
 function stagesHTML(l){const i=["activo","pausado","cerrado"].includes(l.estatus)?3:stageIdx(l);return `<div class="stages">${STAGES.map((s,k)=>`<i class="${k<i?"on":k===i?"cur":""}"></i>`).join("")}</div>`}
 $("#tiles").addEventListener("click",e=>{const t=e.target.closest(".tile");if(!t)return;filt.est=filt.est===t.dataset.k?"":t.dataset.k;$("#f-est").value=filt.est;renderList()});
+$("#f-lona").addEventListener("change",e=>{filt.lona=e.target.value;renderList()});
 $("#f-q").addEventListener("input",e=>{filt.q=e.target.value;renderList()});
 $("#f-tipo").addEventListener("change",e=>{filt.tipo=e.target.value;renderList()});
 $("#f-est").addEventListener("change",e=>{filt.est=e.target.value;renderList()});
@@ -647,7 +663,7 @@ function renderAlta(){
     ${ck(3,s3,"Disponibilidad","Disponible = sale en el catálogo de Brokerage para todos los asesores. No disponible = se va a la píldora “No disponibles” (vendida, rentada o retirada).",s3?(l.estatus==="activo"?`<span class="st activo">Disponible</span><button class="btn" id="act-pausar">Marcar no disponible</button>`:`<span class="st ${l.estatus}">No disponible</span><button class="btn primary" id="act-reactivar">Marcar disponible</button>`):`<button class="btn primary" id="act-activar" ${s1&&s2?"":"disabled"} title="${s1&&s2?"":"Primero la liga y la ficha"}">Publicar como disponible ✓</button>`)}
     </div>
     <div class="sect">${fichaFotosHTML(l)}</div>
-    <div class="sect"><h3>Lona</h3><div class="actions" style="margin-top:0">${l.lona_solicitada?`<span class="hint">Solicitada por el asesor${l.lona_entregada?" · entregada":""}</span>${lonaFalta(l)?`<span class="lona-alert inl" id="lona-warn"><i></i>Sin foto de la lona colocada</span>`:""}`:`<span class="hint">El asesor no la ha solicitado</span>`}${l.lona_solicitada&&!l.lona_entregada?`<button class="btn" id="lona_ok">Marcar lona entregada</button>`:""}</div>
+    <div class="sect"><h3>Lona</h3><p class="hint" style="margin:0 0 8px">Toda propiedad debe llevar lona. Se marca como colocada cuando se sube la foto o video de evidencia.</p><div class="actions" style="margin-top:0">${lonaChip(l,"det")}${l.lona_no_permitida?`<span class="hint">${l.lona_motivo?esc(l.lona_motivo):"Motivo no registrado"}</span><button class="btn" id="lona_re">Reactivar lona</button>`:`${!l.lona_solicitada?`<button class="btn" id="lona_sol">Marcar solicitada</button>`:""}${l.lona_solicitada&&!l.lona_entregada?`<button class="btn" id="lona_ok">Marcar lona entregada</button>`:""}<button class="btn" id="lona_np">El propietario no la permite</button>`}</div>
       <label class="dz" data-kind="video_lona" style="margin-top:10px">⇪ Video de colocación de lona<input type="file" accept="video/*,image/*"></label><div class="doclist" id="docs-video_lona"></div></div>`;
   b.innerHTML=h;
   const on=(id,fn)=>{const x=$("#"+id);if(x)x.onclick=fn};
@@ -657,6 +673,9 @@ function renderAlta(){
   on("act-pausar",async()=>{if(confirm("¿Marcar como no disponible? Deja de salir en el catálogo de los asesores y pasa a “No disponibles”.")&&await patch({estatus:"pausado"}))toast("Marcada como no disponible")});
   on("act-reactivar",async()=>{if(await patch({estatus:"activo"}))toast("Disponible de nuevo en el catálogo")});
   on("lona_ok",async()=>{if(await patch({lona_entregada:true}))toast("Lona entregada")});
+  on("lona_sol",async()=>{if(await patch({lona_solicitada:true}))toast("Lona marcada como solicitada")});
+  on("lona_np",async()=>{const m=prompt("¿Por qué no se puede colocar? (por ejemplo: el propietario no lo permite, condominio, reglamento)","El propietario no la permite");if(m===null)return;if(await patch({lona_no_permitida:true,lona_motivo:m.trim()||"El propietario no la permite"}))toast("Marcada sin lona")});
+  on("lona_re",async()=>{if(await patch({lona_no_permitida:false,lona_motivo:null}))toast("Lona reactivada")});
   renderDocList("video_lona");
 }
 function fichaFotosHTML(l){
@@ -717,7 +736,7 @@ document.addEventListener("change",async e=>{
 });
 function renderDocs(){["autorizacion","cliente","foto_h","foto_v","video_lona"].forEach(renderDocList)}
 function renderDocList(kind){
-  if(kind==="video_lona"){const w=$("#lona-warn");if(w)w.style.display=docsOf(cur.id,kind).length?"none":""}
+  if(kind==="video_lona"){const w=$("#lona-est");if(w)w.outerHTML=lonaChip(cur,"det")}
   const el=$("#docs-"+kind);if(!el)return;
   const list=docsOf(cur.id,kind);
   if(kind==="foto_h"||kind==="foto_v"){
