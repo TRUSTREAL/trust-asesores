@@ -172,6 +172,7 @@ select.st{padding-right:10px}
 .cot{display:inline-block;font-size:12px;font-weight:500;color:var(--green);text-decoration:none;border:1px solid var(--line-2);border-radius:999px;padding:3px 10px;margin-right:4px;background:var(--surface)}
 .cot:hover{background:var(--green);color:#fff;border-color:var(--green)}
 .cot.off{opacity:.45}
+.cot.rr{padding:3px 9px;font-weight:600}
 .ico{border:0;background:transparent;color:var(--faint);padding:4px 6px;border-radius:6px;font-size:12px}
 .ico:hover{color:var(--green);background:var(--surface-2)}
 .empty{padding:40px 20px;text-align:center;color:var(--muted)}
@@ -605,6 +606,7 @@ const fmtM=n=>n>=1e6?"$ "+(n/1e6).toFixed(1).replace(/\.0$/,"")+" M":fmt(n);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const engMin=p=>{const pols=Array.isArray(p.politicas)?p.politicas:[];const pcts=pols.filter(x=>x.eng_tipo!=="monto"&&+x.eng>0).map(x=>+x.eng);if(pcts.length)return Math.min(...pcts);return (p.enganche==null||p.enganche===""||+p.enganche<=0)?5:+p.enganche};
 const COTIZADOR_URL="../cotizador/";
+const rentUrl=(p,u)=>{const m2=u.m2tot||((+u.m2int||0)+(+u.m2terr||0)+(+u.m2desc||0))||null;const o={proyecto:p.nombre,giro:p.giro,tipo:/preventa/i.test(p.giro)?"Preventa":"Obra terminada",id:u.tipo,nivel:u.nivel,m2:m2,precio:u.precio};const b=btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");return "../rentabilidad.html?u="+b};
 const cotUrl=(p,u)=>{const o={proyecto:p.nombre,giro:p.giro,tipo:/preventa/i.test(p.giro)?"Preventa":"Obra terminada",id:u.tipo,nivel:u.nivel,vista:u.vista,m2int:u.m2int,m2terr:u.m2terr,m2desc:u.m2desc,rec:u.recamaras,banos:u.banos,estac:u.parking,precio:u.precio};const b=btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");return COTIZADOR_URL+"?u="+b};
 const nivKey=v=>{const t=String(v??"").trim().toUpperCase();if(t==="PB"||t==="S"||t==="SÓTANO"||t==="SOTANO")return -1;if(t.startsWith("PH"))return 999;const n=parseFloat(t);return isNaN(n)?500:n};
 const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36);
@@ -689,7 +691,7 @@ function renderMain(){
         <td class="type">${esc(u.tipo)}</td><td>${esc(u.torre)}</td><td class="num">${esc(u.nivel??"")}</td><td>${esc(u.vista)}</td><td class="num dim">${esc(u.recamaras??"")}</td><td class="num dim">${u.banos??""}</td>
         <td class="num dim">${u.m2int?.toFixed(2)??""}</td><td class="num dim">${u.m2terr?u.m2terr.toFixed(2):"–"}</td>${hasDesc?`<td class="num dim">${u.m2desc?(+u.m2desc).toFixed(2):"–"}</td>`:""}<td class="num tot">${u.m2tot?.toFixed(2)??""}</td>
         <td class="num">${u.parking??""}</td>${sold(u)?`<td class="num sold">${renta?"Rentado":"Vendido"}</td><td class="num dim">–</td>${renta?"":`<td class="num eng">–</td>`}`:`<td class="num price">${fmt(u.precio)}</td><td class="num dim">${u.m2tot?fmt(u.precio/u.m2tot):"–"}</td>${renta?"":`<td class="num eng">${fmt(u.precio*eng/100)}</td>`}`}
-        <td style="white-space:nowrap"><a class="cot ${u.estatus==="Disponible"?"":"off"}" href="${cotUrl(p,u)}" target="_blank" rel="noopener" title="Cotizar esta unidad">Cotizar</a>${READONLY?"":`<button class="ico edit-u" data-id="${u.id}" title="Editar">✎</button>`}</td></tr>`).join("")}</tbody>
+        <td style="white-space:nowrap"><a class="cot ${u.estatus==="Disponible"?"":"off"}" href="${cotUrl(p,u)}" target="_blank" rel="noopener" title="Cotizar esta unidad">Cotizar</a><a class="cot rr ${u.estatus==="Disponible"?"":"off"}" href="${rentUrl(p,u)}" target="_blank" rel="noopener" title="Análisis de rentabilidad de esta unidad">R</a>${READONLY?"":`<button class="ico edit-u" data-id="${u.id}" title="Editar">✎</button>`}</td></tr>`).join("")}</tbody>
     </table>${rows.length?"":`<div class="empty">Ninguna unidad coincide con los filtros.</div>`}</div>`
   :`<div class="empty" style="margin-top:18px;border:1px dashed var(--line-2);border-radius:0"><b>Sin unidades cargadas</b>${READONLY?"Aún no hay inventario capturado para este proyecto.":"Agrega las unidades desde la lista de precios o el Excel del desarrollador."}</div>`;
   if(renta&&vista==="politica")vista="precios";
@@ -1222,7 +1224,7 @@ function edSideHTML(p){
     ${showPrice?`<div class="edprice">${"$"+Math.round(+u.precio||0).toLocaleString("es-MX")}</div><div class="edpm2">${tot?"$"+Math.round((+u.precio||0)/tot).toLocaleString("es-MX")+" / m² total":""}</div>`:""}
     <div class="edspecs"><div><b>${mi.toFixed(2)}</b><span>m² interior</span></div><div><b>${terr.toFixed(2)}</b><span>m² terraza${(+u.m2desc||0)>0?" (techada + descubierta)":""}</span></div><div><b>${tot.toFixed(2)}</b><span>m² total</span></div></div>
     <div class="edspecs"><div><b>${esc(u.recamaras||"—")}</b><span>Tipología</span></div><div><b>${u.banos??"—"}</b><span>Baños</span></div><div><b>${u.parking??"—"}</b><span>Cajones</span></div></div>
-    <div class="edbtns">${st==="disponible"&&typeof cotUrl==="function"?`<a class="btn primary" href="${cotUrl(p,u)}" target="_blank" rel="noopener">Cotizar esta unidad →</a>`:""}${gal.length?`<button class="btn" data-edlb="0" type="button">Ver planta y renders</button>`:""}</div>
+    <div class="edbtns">${st==="disponible"&&typeof cotUrl==="function"?`<a class="btn primary" href="${cotUrl(p,u)}" target="_blank" rel="noopener">Cotizar esta unidad →</a><a class="btn" href="${rentUrl(p,u)}" target="_blank" rel="noopener" title="Análisis de rentabilidad de esta unidad">Rentabilidad →</a>`:""}${gal.length?`<button class="btn" data-edlb="0" type="button">Ver planta y renders</button>`:""}</div>
     </div></div>`;
 }
 let EDG=[];

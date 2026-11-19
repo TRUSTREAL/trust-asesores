@@ -513,6 +513,13 @@ async function openEscenarios(){
   root.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{if(!confirm("¿Eliminar este escenario?"))return;const x=await sb.from("documentos").delete().eq("id",b.dataset.del);if(x.error){toast(x.error.message,true);return}if(DOC_ID===b.dataset.del)DOC_ID=null;openEscenarios()});
 }
 wire();fillForm();render();
+/* Viene desde Inventario (botón R): precarga la unidad en el análisis */
+(function(){try{const q=new URLSearchParams(location.search).get("u");if(!q)return;
+  const o=JSON.parse(decodeURIComponent(escape(atob(q.replace(/-/g,"+").replace(/_/g,"/")))));
+  S.tipo=/preventa/i.test(o.tipo||"")?"preventa":"corretaje";
+  S.unidad=[o.proyecto,o.id,o.nivel!=null&&o.nivel!==""?"Nivel "+o.nivel:""].filter(Boolean).join(" · ");
+  if(+o.precio>0)S.lista=+o.precio;if(+o.m2>0)S.m2=+o.m2;
+  fillForm();render()}catch(e){console.warn("precarga rentabilidad",e)}})();
 (async()=>{const u=new URLSearchParams(location.search);const id=u.get("doc");if(!id||!sb)return;const r=await sb.from("documentos").select("*").eq("id",id).maybeSingle();if(r.data){Object.assign(S,r.data.datos||{});DOC_ID=r.data.id;fillForm();render();if(u.get("pdf"))setTimeout(pdf,400)}})();
 </script>
 </body>
