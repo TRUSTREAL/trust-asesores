@@ -72,6 +72,7 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
 .lcard .adr{color:var(--muted);font-size:12px;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lcard .pr{font-family:Lora,serif;font-size:19px;color:var(--green);margin-bottom:10px}
 .lcard .meta{font-size:12px;color:var(--muted);margin-top:8px;display:flex;justify-content:space-between}
+.dispr{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.dispr .disp{margin-top:0}
 .disp{margin-top:10px;font:inherit;font-size:12px;font-weight:500;display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:5px 12px 5px 6px;cursor:pointer;color:var(--muted)}
 .disp i{width:30px;height:16px;border-radius:999px;background:var(--line-2);position:relative;display:inline-block;transition:background .15s}
 .disp i:after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:left .15s}
@@ -288,6 +289,7 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
       <input id="f-q" placeholder="Buscar título, colonia, asesor…">
       <select id="f-tipo"><option value="">Tipo</option><option>Venta</option><option>Renta</option></select>
       <select id="f-est"><option value="">Estatus</option></select>
+      <select id="f-i24"><option value="">Inmuebles24</option><option value="si">Ya en Inmuebles24</option><option value="no">Falta en Inmuebles24</option></select>
       <select id="f-lona"><option value="">Lona</option><option value="nosol">No solicitada</option><option value="sol">Solicitada</option><option value="nocol">No colocada</option><option value="col">Colocada</option><option value="noperm">Sin lona (propietario)</option></select>
       <span class="count" id="count"></span>
       <button class="btn primary" id="btn-new">+ Nuevo listing</button>
@@ -458,22 +460,27 @@ function renderList(){
     const c=k=>k==="nodisp"?LISTINGS.filter(l=>["pausado","cerrado"].includes(l.estatus)).length:LISTINGS.filter(l=>l.estatus===k).length;
     $("#tiles").innerHTML=[["nuevo","Nuevos por dar de alta"],["activo","Disponibles"],["nodisp","No disponibles"],["borrador","En captura (asesor)"],["","Todos"]].map(([k,l])=>`<div class="tile ${filt.est===k?"sel":""}" data-k="${k}"><span class="l">${l}</span><span class="v">${k?c(k):LISTINGS.length}</span></div>`).join("");
   } else $("#tiles").innerHTML="";
-  const rows=LISTINGS.filter(l=>(!filt.lona||(lonaAplica(l)&&lonaEstado(l)===filt.lona))&&(!filt.tipo||l.tipo===filt.tipo)&&(!filt.est||(filt.est==="nodisp"?["pausado","cerrado"].includes(l.estatus):l.estatus===filt.est))&&(!filt.q||[l.titulo,l.direccion,l.asesor].join(" ").toLowerCase().includes(filt.q.toLowerCase())));
+  const rows=LISTINGS.filter(l=>(!filt.i24||(["activo","pausado","cerrado"].includes(l.estatus)&&(filt.i24==="si"?!!l.en_inmuebles24:!l.en_inmuebles24)))&&(!filt.lona||(lonaAplica(l)&&lonaEstado(l)===filt.lona))&&(!filt.tipo||l.tipo===filt.tipo)&&(!filt.est||(filt.est==="nodisp"?["pausado","cerrado"].includes(l.estatus):l.estatus===filt.est))&&(!filt.q||[l.titulo,l.direccion,l.asesor].join(" ").toLowerCase().includes(filt.q.toLowerCase())));
   $("#count").textContent=`${rows.length} de ${LISTINGS.length}`;
   $("#list").innerHTML=rows.length?rows.map(l=>{const c=cover(l);return `<div class="lcard" data-id="${l.id}">
     <div class="ph" style="${c?`background-image:url('${c}')`:""}"><span class="st ${l.estatus}">${ESTATUS_LABEL[l.estatus]||l.estatus}</span>${l.correccion_en&&l.estatus==="nuevo"?`<span class="corr" style="position:absolute;left:12px;bottom:12px">✎ Corregida</span>`:""}<span class="tp">${esc(l.tipo)}</span>${ROLE==="admin"&&lonaAplica(l)?lonaChip(l):""}</div>
     <div class="bd"><h3>${esc(l.titulo||"Sin título")}</h3><div class="adr">${esc(l.direccion||"Sin dirección")}</div><div class="pr">${fmt(l.precio)}${l.tipo==="Renta"?" <small style='font-size:12px;color:var(--muted)'>/ mes</small>":""}</div>
-    ${stagesHTML(l)}<div class="meta"><span>${ROLE==="admin"?esc(l.asesor):""}</span><span>${docsOf(l.id,"foto_h").length} fotos · ${fecha(l.created_at)}</span></div>${ROLE==="admin"&&["activo","pausado","cerrado"].includes(l.estatus)?`<button type="button" class="disp ${l.estatus==="activo"?"on":""}" data-disp title="Cambiar disponibilidad"><i></i>${l.estatus==="activo"?"Disponible":"No disponible"}</button>`:""}</div></div>`}).join("")
+    ${stagesHTML(l)}<div class="meta"><span>${ROLE==="admin"?esc(l.asesor):""}</span><span>${docsOf(l.id,"foto_h").length} fotos · ${fecha(l.created_at)}</span></div>${ROLE==="admin"&&["activo","pausado","cerrado"].includes(l.estatus)?`<div class="dispr"><button type="button" class="disp ${l.estatus==="activo"?"on":""}" data-disp title="Cambiar disponibilidad"><i></i>${l.estatus==="activo"?"Disponible":"No disponible"}</button><button type="button" class="disp ${l.en_inmuebles24?"on":""}" data-i24 title="Indica si la propiedad está dada de alta en Inmuebles24"><i></i>Inmuebles24</button></div>`:""}</div></div>`}).join("")
   :`<div class="empty" style="grid-column:1/-1"><b>Sin listings</b>${ROLE==="admin"?"Todavía no hay propiedades capturadas.":"Captura tu primera propiedad con “+ Nuevo listing”."}</div>`;
 }
 function stageIdx(l){return Math.max(0,STAGES.findIndex(s=>s[0]===l.estatus))}
 function stagesHTML(l){const i=["activo","pausado","cerrado"].includes(l.estatus)?3:stageIdx(l);return `<div class="stages">${STAGES.map((s,k)=>`<i class="${k<i?"on":k===i?"cur":""}"></i>`).join("")}</div>`}
 $("#tiles").addEventListener("click",e=>{const t=e.target.closest(".tile");if(!t)return;filt.est=filt.est===t.dataset.k?"":t.dataset.k;$("#f-est").value=filt.est;renderList()});
+$("#f-i24").addEventListener("change",e=>{filt.i24=e.target.value;renderList()});
 $("#f-lona").addEventListener("change",e=>{filt.lona=e.target.value;renderList()});
 $("#f-q").addEventListener("input",e=>{filt.q=e.target.value;renderList()});
 $("#f-tipo").addEventListener("change",e=>{filt.tipo=e.target.value;renderList()});
 $("#f-est").addEventListener("change",e=>{filt.est=e.target.value;renderList()});
 $("#list").addEventListener("click",async e=>{
+  const i24=e.target.closest("[data-i24]");
+  if(i24){e.stopPropagation();const l=LISTINGS.find(x=>x.id===i24.closest(".lcard").dataset.id);const nv=!l.en_inmuebles24;
+    const r=await sb.from("listings").update({en_inmuebles24:nv}).eq("id",l.id);
+    if(r.error){toast("No se pudo guardar: "+r.error.message+" (¿corriste el SQL de Inmuebles24?)",true);return}l.en_inmuebles24=nv;toast(nv?"Marcada en Inmuebles24":"Quitada de Inmuebles24");renderList();return}
   const q=e.target.closest("[data-disp]");
   if(q){e.stopPropagation();const l=LISTINGS.find(x=>x.id===q.closest(".lcard").dataset.id);const on=l.estatus==="activo";
     if(on&&!confirm("¿Marcar “"+(l.titulo||"")+"” como no disponible?"))return;
