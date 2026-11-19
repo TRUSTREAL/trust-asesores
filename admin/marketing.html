@@ -460,9 +460,9 @@ $("#btn-reglas").onclick=()=>{
     const reglas={...REGLAS_ALL,marketing:R};const r=await sb.from("ventas_reglas").upsert({id:1,reglas,updated_at:new Date().toISOString()});if(r.error){toast("No se guardó: "+r.error.message,true);return}REGLAS={...REGLAS_DEF,...R};REGLAS_ALL=reglas;close();toast("Reglas guardadas")};
 };
 
-/* ---------- links para desarrolladores (Lead Management) ---------- */
+/* ---------- links para desarrolladores (portal) ---------- */
 const DEV_BASE=location.origin+location.pathname.replace(/admin\/[^/]*$/,"");
-function devURL(r){ return r.proyecto==="Tanhia"&&r.key==="tanhia-JenZ37kQoxRQ" ? DEV_BASE+"leads/tanhia.html?k="+encodeURIComponent(r.key) : DEV_BASE+"leads/desarrollador.html?p="+encodeURIComponent(r.proyecto)+"&k="+encodeURIComponent(r.key); }
+function devURL(r){ return DEV_BASE+"desarrollador/?p="+encodeURIComponent(r.proyecto)+"&k="+encodeURIComponent(r.key); }
 function devKey(p){ const a=new Uint8Array(9);crypto.getRandomValues(a);const s=btoa(String.fromCharCode(...a)).replace(/[+/=]/g,"");return p.normalize("NFD").replace(/[^a-zA-Z]/g,"").toLowerCase().slice(0,6)+"-"+s; }
 $("#btn-links").onclick=async()=>{
   const root=$("#drawer-root");
@@ -473,7 +473,7 @@ $("#btn-links").onclick=async()=>{
     const libres=PROYECTOS.filter(p=>!usados.has(p)&&p!=="Otro"&&p!=="TRUST"&&p!=="Corretaje");
     root.innerHTML=`<div class="scrim" id="scrim"></div><div class="drawer" role="dialog" style="width:min(720px,100%)">
       <header><h3>Links para desarrolladores</h3><button class="ico" id="d-close">✕</button></header>
-      <div class="body"><p class="hint" style="margin:0 0 12px">Cada desarrollador recibe una liga de solo lectura con el tablero y la base de prospectos de su proyecto (Lead Management). Si la liga se filtra, <b>Regenerar</b> crea una nueva y la anterior deja de funcionar.</p>
+      <div class="body"><p class="hint" style="margin:0 0 12px">Cada desarrollador recibe una liga a su portal: Lead Management, Marketing, Ventas y Clientes de su proyecto. Si la liga se filtra, <b>Regenerar</b> crea una nueva y la anterior deja de funcionar.</p>
         <table><thead><tr><th>Proyecto</th><th style="width:44%">Liga</th><th>Estado</th><th></th></tr></thead><tbody>${rows.length?rows.map(r=>`<tr data-p="${esc(r.proyecto)}">
           <td><b>${esc(r.proyecto)}</b><div class="hint">${r.ultimo_acceso?"Último acceso "+new Date(r.ultimo_acceso).toLocaleDateString("es-MX",{day:"numeric",month:"short",year:"numeric"}):"Sin accesos aún"}</div></td>
           <td><input readonly value="${esc(devURL(r))}" style="width:100%;font-size:12px" onclick="this.select()"></td>
@@ -481,7 +481,7 @@ $("#btn-links").onclick=async()=>{
           <td style="white-space:nowrap"><button class="btn sm" data-a="copy">Copiar</button> <button class="btn sm" data-a="regen">Regenerar</button> <button class="btn sm" data-a="tog">${r.activo?"Desactivar":"Activar"}</button></td></tr>`).join(""):`<tr><td colspan="4" class="hint">Aún no hay ligas. Corre el SQL de dev_links o agrega una abajo.</td></tr>`}</tbody></table>
         <div style="display:flex;gap:8px;align-items:center;margin-top:14px"><select id="dl-new"><option value="">Agregar liga para…</option>${libres.map(p=>`<option>${esc(p)}</option>`).join("")}</select><button class="btn primary" id="dl-add">+ Generar liga</button></div>
       </div>
-      <footer><span class="hint">Las ligas abren <code>leads/desarrollador.html</code>; Tanhia conserva su liga original.</span><button class="btn" id="d-cancel">Cerrar</button></footer></div>`;
+      <footer><span class="hint">Las ligas abren el portal del desarrollador (<code>/desarrollador/</code>). Las ligas anteriores de Lead Management siguen funcionando.</span><button class="btn" id="d-cancel">Cerrar</button></footer></div>`;
     const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#d-cancel").onclick=close;
     root.querySelectorAll("tr[data-p] button").forEach(b=>b.onclick=async()=>{
       const p=b.closest("tr").dataset.p;const r=rows.find(x=>x.proyecto===p);
