@@ -206,7 +206,7 @@ async function init(){
 async function fondo(){
   if(!PROYECTO)return;const pid=PROYECTO.id,img=/\.(jpe?g|png|webp)$/i;
   const put=url=>{const im=new Image();im.onload=()=>{const b=document.querySelector(".bg");b.style.backgroundImage=`url("${url}")`;b.style.backgroundPosition="center 38%"};im.src=url};
-  const fijo={balcana:"exteriores/1794609678655_Balcana_002.jpg"}[pid]; /* render elegido a mano por proyecto */
+  const fijo={balcana:"exteriores/1794609678655_Balcana_002.jpg",luciana:"amenidades/1794932524307_LOBBY.jpg"}[pid]; /* render elegido a mano por proyecto */
   if(fijo){put(sb.storage.from(BUCKET).getPublicUrl(pid+"/renders/"+fijo).data.publicUrl);return}
   for(const d of ["exteriores","","amenidades","interiores"]){
     const dir=pid+"/renders"+(d?"/"+d:"");
