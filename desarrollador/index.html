@@ -205,11 +205,14 @@ async function init(){
 /* fondo del inicio: primer render del proyecto (Inventario → Renders; exteriores primero) */
 async function fondo(){
   if(!PROYECTO)return;const pid=PROYECTO.id,img=/\.(jpe?g|png|webp)$/i;
+  const put=url=>{const im=new Image();im.onload=()=>{const b=document.querySelector(".bg");b.style.backgroundImage=`url("${url}")`;b.style.backgroundPosition="center 38%"};im.src=url};
+  const fijo={balcana:"exteriores/1794609678655_Balcana_002.jpg"}[pid]; /* render elegido a mano por proyecto */
+  if(fijo){put(sb.storage.from(BUCKET).getPublicUrl(pid+"/renders/"+fijo).data.publicUrl);return}
   for(const d of ["exteriores","","amenidades","interiores"]){
     const dir=pid+"/renders"+(d?"/"+d:"");
     const r=await soft(sb.storage.from(BUCKET).list(dir,{limit:100,sortBy:{column:"name",order:"asc"}}));
     const fl=(Array.isArray(r&&r.data)?r.data:[]).find(x=>x.id&&img.test(x.name)&&!/^planta_/i.test(x.name));
-    if(fl){const url=sb.storage.from(BUCKET).getPublicUrl(dir+"/"+fl.name).data.publicUrl;const im=new Image();im.onload=()=>{document.querySelector(".bg").style.backgroundImage=`url("${url}")`;document.querySelector(".bg").style.backgroundPosition="center"};im.src=url;return}
+    if(fl){const url=sb.storage.from(BUCKET).getPublicUrl(dir+"/"+fl.name).data.publicUrl;put(url);return}
   }
 }
 async function load(){
