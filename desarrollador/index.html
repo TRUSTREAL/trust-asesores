@@ -16,47 +16,60 @@ body{font-family:Poppins,system-ui,sans-serif;background:var(--cream);color:var(
 button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 button{cursor:pointer}
 a{color:var(--green)}
-.topbar{background:var(--green);color:#fff;padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:0;z-index:20}
-.topbar .brand{display:flex;align-items:center;gap:14px;min-width:0}
-.topbar .logo{height:24px;display:block;filter:brightness(0) invert(1)}
-.topbar .proy{font-family:Lora,serif;font-size:17px;border-left:1px solid rgba(255,255,255,.3);padding-left:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nav{display:flex;gap:2px;overflow-x:auto}
-.nav a{color:#fff;opacity:.7;text-decoration:none;font-size:13px;font-weight:500;padding:8px 12px;border-bottom:2px solid transparent;white-space:nowrap}
-.nav a.on{opacity:1;border-bottom-color:var(--gold)}
-.nav a:hover{opacity:1}
-.wrap{max-width:1160px;margin:0 auto;padding:30px 28px 60px}
-h1{font-family:Lora,serif;font-weight:500;font-size:30px;color:var(--green);letter-spacing:-.2px;text-wrap:balance}
-h2{font-family:Lora,serif;font-weight:500;font-size:19px;color:var(--green);margin:0 0 12px}
-.sub{color:var(--dim);margin-top:4px}
-.eyebrow{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--gold-2);font-weight:600;margin-bottom:6px}
-.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:22px}
-/* home */
-.mods{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:26px}
-.mod{background:var(--card);border:1px solid var(--line);padding:26px 26px 22px;text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:6px;position:relative;transition:border-color .15s,transform .15s,box-shadow .15s;min-height:190px}
-.mod:hover{border-color:var(--gold);transform:translateY(-2px);box-shadow:0 10px 26px -18px rgba(23,63,53,.45)}
-.mod:focus-visible,.btn:focus-visible,.chip:focus-visible,.nav a:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-.mod .n{font-size:11px;letter-spacing:1.6px;color:var(--gold-2);font-weight:600}
-.mod h3{font-family:Lora,serif;font-weight:500;font-size:23px;color:var(--green)}
-.mod p{color:var(--dim);font-size:13px;max-width:44ch}
-.mod .stat{margin-top:auto;padding-top:16px;display:flex;align-items:baseline;gap:8px;border-top:1px solid var(--line)}
-.mod .stat b{font-family:Lora,serif;font-weight:500;font-size:26px;color:var(--green);font-variant-numeric:tabular-nums}
-.mod .stat span{color:var(--dim);font-size:12px}
-.mod .go{position:absolute;top:24px;right:24px;color:var(--gold);font-size:18px}
+body.home{background:#0F2A23;color:#fff}
+.bg{display:none;position:fixed;inset:0;z-index:0;background:#0F2A23 url(../menu-bg.jpg) center 62%/cover no-repeat;filter:blur(3px) saturate(.9);transform:scale(1.03)}
+.bg:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,42,35,.3) 0,rgba(15,42,35,.5) 40%,rgba(15,42,35,.8) 100%)}
+body.home .bg{display:block}
+.wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:28px 16px 60px}
+body.home .wrap{padding:40px 28px 60px}
+h1{font-family:Lora,Georgia,serif;font-weight:500;font-size:28px;color:var(--green);line-height:1.15;text-wrap:balance}
+h2{font-family:Lora,Georgia,serif;font-weight:500;font-size:21px;color:var(--green);margin:0 0 12px}
+.sub{color:var(--dim);font-size:13px;margin-top:4px}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-2);font-weight:600;margin-bottom:6px}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.head.main{padding-bottom:18px;border-bottom:3px solid var(--green)}
+.pnav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+.pnav a{font-size:13px;font-weight:500;border-radius:999px;padding:8px 16px;border:1px solid var(--line-2);background:#fff;color:var(--ink);text-decoration:none;white-space:nowrap}
+.pnav a:hover{border-color:var(--green);color:var(--green)}
+.pnav a.on{background:var(--green);border-color:var(--green);color:#fff}
+/* inicio: misma línea que el portal de asesores */
+.hlogo{height:22px;filter:brightness(0) invert(1);opacity:.9;display:block;margin-bottom:22px}
+body.home h1{font-size:40px;line-height:1.05;color:#fff;margin:0 0 8px}body.home h1 em{font-style:italic;opacity:.9}
+body.home .sub{font-size:14px;color:rgba(255,255,255,.72)}
+body.home .eyebrow{font-size:10px;letter-spacing:.2em;color:#E6C98F}
+.glass{background:linear-gradient(135deg,rgba(23,63,53,.55),rgba(23,63,53,.38));border:1px solid rgba(255,255,255,.28);border-top-color:rgba(255,255,255,.45);backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);box-shadow:0 10px 30px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.3)}
+.tools{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:34px}
+.tool{position:relative;display:flex;flex-direction:column;gap:14px;border-radius:22px;padding:22px 22px 20px;text-decoration:none;color:#fff;min-height:168px;transition:transform .2s,background .2s,border-color .2s;overflow:hidden}
+.tool:before{content:"";position:absolute;left:-30%;top:-60%;width:80%;height:120%;background:radial-gradient(closest-side,rgba(255,255,255,.14),transparent);pointer-events:none}
+.tool:hover{transform:translateY(-3px);background:linear-gradient(135deg,rgba(23,63,53,.7),rgba(23,63,53,.5));border-color:rgba(255,255,255,.5)}
+.tool:focus-visible{outline:2px solid #E6C98F;outline-offset:3px}
+.btn:focus-visible,.chip:focus-visible,.pnav a:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.tool .ic{width:44px;height:44px;border-radius:14px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center}
+.tool .ic svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tool h2{font-family:Lora,Georgia,serif;font-weight:500;font-size:19px;color:#fff;margin:0 0 5px}
+.tool p{font-size:12px;line-height:1.5;color:rgba(255,255,255,.8)}
+.tool .stat{margin-top:auto;display:flex;align-items:baseline;gap:8px;padding-top:12px;border-top:1px solid rgba(255,255,255,.22)}
+.tool .stat b{font-family:Lora,Georgia,serif;font-weight:500;font-size:24px;font-variant-numeric:tabular-nums}
+.tool .stat span{font-size:11px;color:rgba(255,255,255,.7)}
+.tool .go{position:absolute;right:18px;top:20px;width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;background:rgba(255,255,255,.1)}
+.tool:hover .go{background:#fff;color:#173F35;border-color:#fff}
+.foot{margin-top:34px;font-size:11px;color:rgba(255,255,255,.5)}
+@media (prefers-reduced-motion:reduce){.tool{transition:none}}
 /* shared */
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:22px}
-.tile{background:var(--card);border:1px solid var(--line);padding:16px 16px 14px;display:flex;flex-direction:column;gap:2px}
-.tile .l{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);font-weight:500}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.tile .l{font-size:12px;color:var(--dim)}
 .tile .v{font-family:Lora,serif;font-size:26px;color:var(--green);font-variant-numeric:tabular-nums;line-height:1.2}
 .tile .s{font-size:12px;color:var(--dim)}
 .tile.hl{background:var(--green);border-color:var(--green)}.tile.hl .l,.tile.hl .s{color:rgba(255,255,255,.72)}.tile.hl .v{color:#fff}
-.card{background:var(--card);border:1px solid var(--line);padding:22px;margin-bottom:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 1px 2px rgba(23,63,53,.06),0 8px 24px rgba(23,63,53,.06);padding:22px;margin-bottom:18px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
 .grid2>.card{margin-bottom:0}
 .grid2{margin-bottom:18px}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{border:1px solid var(--line-2);background:#fff;padding:6px 14px;font-size:13px;font-weight:500;border-radius:99px}
-.chip.on{background:var(--green);border-color:var(--green);color:#fff}
-.btn{border:1px solid var(--line-2);background:#fff;padding:8px 14px;font-weight:500;font-size:13px;border-radius:6px;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.chip.on{background:var(--gold);border-color:var(--gold);color:#fff}
+.btn{border:1px solid var(--line-2);background:#fff;padding:8px 14px;font-weight:500;font-size:13px;border-radius:999px;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
 .btn.primary{background:var(--green);border-color:var(--green);color:#fff}
 .btn.sm{padding:4px 10px;font-size:12px}
 .btn.danger{color:var(--red)}
@@ -72,12 +85,12 @@ tfoot td{font-weight:600;border-top:1px solid var(--line-2);border-bottom:0}
 tr.click{cursor:pointer}tr.click:hover td{background:#FCFBF7}
 .pill{display:inline-block;font-size:11px;font-weight:600;padding:2px 9px;border-radius:99px;background:#F0ECE1;color:var(--gold-2);white-space:nowrap}
 .pill.ok{background:#E3F1EA;color:var(--ok)}.pill.bad{background:#F7E4E1;color:var(--red)}
-.empty{padding:26px;text-align:center;color:var(--dim);border:1px dashed var(--line-2)}
+.empty{padding:26px;text-align:center;color:var(--dim);border:1px dashed var(--line-2);border-radius:14px}
 .note{font-size:12px;color:var(--dim);margin-top:10px}
 /* charts */
 .bars{display:flex;align-items:flex-end;gap:8px;height:190px;padding-top:22px;position:relative}
 .bars .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0;position:relative}
-.bars .bar{width:100%;max-width:46px;background:var(--green);min-height:2px;position:relative}
+.bars .bar{width:100%;max-width:46px;border-radius:6px 6px 0 0;background:var(--green);min-height:2px;position:relative}
 .bars .bar.z{background:var(--line-2)}
 .bars .bar.fut{background:transparent;border:1px dashed var(--line-2)}
 .bars .bv{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:600;color:var(--green);white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -88,17 +101,17 @@ tr.click{cursor:pointer}tr.click:hover td{background:#FCFBF7}
 .legend i{display:inline-block;width:10px;height:10px;background:var(--green);margin-right:6px}
 .legend i.g{background:var(--gold)}.legend i.d{background:transparent;border-top:2px dashed var(--gold);height:0;width:16px;vertical-align:middle}
 .hb{display:grid;grid-template-columns:minmax(90px,150px) 1fr auto;gap:10px;align-items:center;padding:6px 0;font-size:13px}
-.hb .tr{height:10px;background:#F0ECE1}.hb .tr i{display:block;height:100%;background:var(--green)}
+.hb .tr{height:8px;border-radius:4px;background:#F0ECE1;overflow:hidden}.hb .tr i{display:block;height:100%;border-radius:4px;background:var(--green)}
 .hb .tr i.g{background:var(--gold)}
 .hb b{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
-.stack{display:flex;height:18px;background:#F0ECE1;margin:6px 0 10px;overflow:hidden}
+.stack{display:flex;height:16px;border-radius:8px;background:#F0ECE1;margin:6px 0 10px;overflow:hidden}
 .stack i{display:block;height:100%}
 .sv{background:var(--green)}.sa{background:var(--gold)}.sd{background:#DDD6C5}.sb{background:#9A9C99}
 .funnel .hb{grid-template-columns:110px 1fr 150px}
 .funnel .hb .r{text-align:right;white-space:nowrap}
 /* drawer */
 .scrim{position:fixed;inset:0;background:rgba(20,30,27,.45);z-index:40}
-.drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--cream);z-index:41;display:flex;flex-direction:column;box-shadow:-20px 0 50px -30px rgba(0,0,0,.5)}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--cream);border-radius:18px 0 0 18px;overflow:hidden;z-index:41;display:flex;flex-direction:column;box-shadow:-20px 0 50px -30px rgba(0,0,0,.5)}
 .drawer header{padding:20px 24px;background:var(--green);color:#fff;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
 .drawer header h3{font-family:Lora,serif;font-weight:500;font-size:21px}
 .drawer header p{opacity:.75;font-size:12px;margin-top:2px}
@@ -110,8 +123,8 @@ tr.click{cursor:pointer}tr.click:hover td{background:#FCFBF7}
 .kv dt{color:var(--dim)}.kv dd{font-weight:500;word-break:break-word}
 .f{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
 .f label{font-size:12px;color:var(--dim)}
-.f input,.f textarea,.f select,input.in,select.in{border:1px solid var(--line-2);background:#fff;padding:8px 10px;border-radius:6px;width:100%}
-.doc{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border:1px solid var(--line);margin-bottom:6px}
+.f input,.f textarea,.f select,input.in,select.in{border:1px solid var(--line-2);background:#fff;padding:8px 12px;border-radius:10px;width:100%}
+.doc{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:6px}
 .doc a{flex:1;min-width:0;font-weight:500;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .doc small{color:var(--dim);white-space:nowrap}
 .up{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
@@ -119,22 +132,21 @@ tr.click{cursor:pointer}tr.click:hover td{background:#FCFBF7}
 .toast.err{background:var(--red)}
 .gate{min-height:100vh;display:grid;place-items:center;padding:30px;text-align:center}
 .gate h1{margin-bottom:8px}
-.adminbar{background:#FFF7E6;border:1px solid #EBD9B5;color:#6B5330;padding:8px 14px;font-size:12px;margin-bottom:18px}
-.search{border:1px solid var(--line-2);background:#fff;padding:8px 12px;border-radius:6px;min-width:240px}
+.adminbar{background:#FFF7E6;border:1px solid #EBD9B5;border-radius:12px;color:#6B5330;padding:8px 14px;font-size:12px;margin-bottom:18px}
+.search{border:1px solid var(--line-2);background:#fff;padding:9px 16px;border-radius:999px;min-width:240px}
 @media (max-width:820px){
-  .topbar{padding:0 16px;height:auto;flex-direction:column;align-items:flex-start;gap:0;padding-top:10px}
-  .nav{width:100%}
-  .wrap{padding:22px 16px 50px}
-  .mods,.grid2{grid-template-columns:1fr}
-  h1{font-size:25px}
+  .grid2{grid-template-columns:1fr}
   .funnel .hb{grid-template-columns:80px 1fr 120px}
   .kv{grid-template-columns:110px 1fr}
   .hide-m{display:none}
+  .drawer{border-radius:0}
 }
-@media print{.topbar,.nav,.btn,.chips{display:none!important}body{background:#fff}.card,.tile{break-inside:avoid}}
+@media (max-width:560px){body.home .wrap{padding:26px 16px 40px}body.home h1{font-size:28px}.tools{grid-template-columns:1fr;gap:12px}.tool{min-height:0;padding:16px 16px 14px}.tool .go{display:none}.hlogo{margin-bottom:14px}.bg{filter:blur(2px)}.glass{backdrop-filter:blur(10px)}}
+@media print{.pnav,.btn,.chips{display:none!important}body{background:#fff}.card,.tile{break-inside:avoid}}
 </style>
 </head>
 <body>
+<div class="bg" aria-hidden="true"></div>
 <div id="app"><div class="gate"><p class="dim">Cargando…</p></div></div>
 <div id="drawer-root"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -256,10 +268,11 @@ const qs=()=>"?p="+encodeURIComponent(PROY)+(KEY?"&k="+encodeURIComponent(KEY):"
 const leadsURL=()=>PROY==="Tanhia"&&KEY==="tanhia-JenZ37kQoxRQ"?"../leads/tanhia.html?k="+encodeURIComponent(KEY):KEY?"../leads/desarrollador.html"+qs()+"&b=1":"../leads/";
 const route=()=>(location.hash||"#inicio").slice(1);
 function shell(inner){
-  const r=route();const tab=(h,t)=>`<a href="#${h}" class="${r===h?"on":""}">${t}</a>`;
-  return `<div class="topbar"><div class="brand"><a href="#inicio"><img class="logo" src="${LOGO}" alt="TRUST realtor"></a><span class="proy">${esc(PROY)}</span></div>
-    <nav class="nav" aria-label="Módulos">${tab("inicio","Inicio")}<a href="${leadsURL()}">Lead Management</a>${tab("marketing","Marketing")}${tab("ventas","Ventas")}${tab("clientes","Clientes")}</nav></div>
-  <main class="wrap">${ADMIN?`<div class="adminbar"><b>Vista de administrador TRUST.</b> Puedes editar objetivos, contactos y documentos. El desarrollador ve lo mismo en solo lectura (puede subir documentos).</div>`:""}${inner}</main>`;
+  const r=route(),home=!["marketing","ventas","clientes"].includes(r);document.body.classList.toggle("home",home);
+  const adm=ADMIN?`<div class="adminbar"><b>Vista de administrador TRUST.</b> Puedes editar objetivos, contactos y documentos. El desarrollador ve lo mismo en solo lectura (puede subir documentos).</div>`:"";
+  if(home)return `<main class="wrap">${inner}</main>`;
+  const tab=(h,t)=>`<a href="#${h}" class="${r===h?"on":""}"${r===h?' aria-current="page"':""}>${t}</a>`;
+  return `<main class="wrap"><nav class="pnav" aria-label="Módulos"><a href="#inicio">← Portal</a><a href="${leadsURL()}">Lead Management</a>${tab("marketing","Marketing")}${tab("ventas","Ventas")}${tab("clientes","Clientes")}</nav>${adm}${inner}</main>`;
 }
 const yearChips=(k,years)=>`<div class="chips" role="group" aria-label="Periodo">${years.map(y=>`<button class="chip ${S[k]===y?"on":""}" data-y="${k}:${y}">${y||"Todo"}</button>`).join("")}</div>`;
 const yearsOf=arr=>[...new Set(arr.map(d=>String(d||"").slice(0,4)).filter(y=>/^\d{4}$/.test(y)).concat([String(CY)]))].sort().reverse().concat([""]);
@@ -275,20 +288,23 @@ function render(){
 }
 
 /* ----- inicio ----- */
+const ICO={leads:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',mkt:'<path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>',ven:'<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-7"/><path d="M16 7h4v4"/>',cli:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><circle cx="12" cy="13" r="2"/><path d="M8.5 18a3.5 3.5 0 0 1 7 0"/>'};
 function vHome(){
   const c=inv(), M=mktData(""), cl=clientes();
-  const mod=(n,href,t,p,b,s)=>`<a class="mod" href="${href}"><span class="go" aria-hidden="true">→</span><span class="n">${n}</span><h3>${t}</h3><p>${p}</p><div class="stat"><b>${b}</b><span>${s}</span></div></a>`;
+  const mod=(ic,href,t,p,b,s)=>`<a class="tool glass" href="${href}"><div class="ic"><svg viewBox="0 0 24 24" aria-hidden="true">${ICO[ic]}</svg></div><div class="tx"><h2>${t}</h2><p>${p}</p></div><div class="stat"><b>${b}</b><span>${s}</span></div><span class="go" aria-hidden="true">→</span></a>`;
   const dev=PROYECTO&&PROYECTO.desarrollador?PROYECTO.desarrollador:"";
-  return `<div class="eyebrow">Portal del desarrollador${dev?" · "+esc(dev):""}</div>
-  <h1>${esc(PROY)}</h1>
-  <p class="sub">Resultados comerciales del proyecto, actualizados en tiempo real por TRUST realtor.${PROYECTO&&PROYECTO.ubicacion?" "+esc(PROYECTO.ubicacion)+".":""}</p>
-  <div class="mods">
-    ${mod("01",leadsURL(),"Lead Management","Tablero y base completa de prospectos del proyecto: estatus, asesor y seguimiento.",int(LEADS.length),"prospectos registrados")}
-    ${mod("02","#marketing","Marketing","Inversión en marketing, costo por lead y los principales indicadores del embudo.",fmtK(M.inver||Object.values(HIST).reduce((a,b)=>a+(+b||0),0)),"invertidos en marketing")}
-    ${mod("03","#ventas","Ventas","Resultados de venta contra los objetivos y contra el proyecto total, mes a mes.",c.tot?`${c.Vendido} / ${c.vendibles}`:int(VENTAS.length),c.tot?`unidades vendidas · ${pct(c.Vendido,c.vendibles)}`:"ventas registradas")}
-    ${mod("04","#clientes","Clientes","Clientes actuales con su información de cierre, contacto y repositorio de documentos.",int(cl.length),"clientes con expediente")}
+  return `<img class="hlogo" src="${LOGO}" alt="TRUST realtor">
+  <div class="eyebrow">Portal del desarrollador${dev?" · "+esc(dev):""}</div>
+  <h1>Resultados de <em>${esc(PROY)}</em></h1>
+  <p class="sub">Información comercial del proyecto, actualizada en tiempo real por TRUST realtor.</p>
+  ${ADMIN?`<div class="glass" style="border-radius:14px;padding:10px 16px;margin-top:18px;font-size:12px;color:rgba(255,255,255,.85)"><b>Vista de administrador TRUST.</b> Dentro de cada módulo puedes editar objetivos, contactos y documentos.</div>`:""}
+  <div class="tools">
+    ${mod("leads",leadsURL(),"Lead Management","Tablero y base completa de prospectos del proyecto: estatus, asesor y seguimiento.",int(LEADS.length),"prospectos registrados")}
+    ${mod("mkt","#marketing","Marketing","Inversión en marketing, costo por lead y los principales indicadores del embudo.",fmtK(M.inver||Object.values(HIST).reduce((a,b)=>a+(+b||0),0)),"invertidos en marketing")}
+    ${mod("ven","#ventas","Ventas","Resultados de venta contra los objetivos y contra el proyecto total, mes a mes.",c.tot?`${c.Vendido} / ${c.vendibles}`:int(VENTAS.length),c.tot?`unidades vendidas · ${pct(c.Vendido,c.vendibles)}`:"ventas registradas")}
+    ${mod("cli","#clientes","Clientes","Clientes actuales con su información de cierre, contacto y repositorio de documentos.",int(cl.length),"clientes con expediente")}
   </div>
-  <p class="note" style="margin-top:22px">Información confidencial para uso exclusivo del desarrollador. No compartas esta liga.</p>`;
+  <div class="foot">TRUST realtor · información confidencial para uso exclusivo del desarrollador · We are trustworthy</div>`;
 }
 
 /* ----- marketing ----- */
@@ -303,7 +319,7 @@ function vMkt(){
   const hbar=(rows,tot,f2,g)=>rows.length?rows.map(([k,v])=>`<div class="hb"><span>${esc(k)}</span><div class="tr"><i class="${g||""}" style="width:${Math.max(2,v/Math.max(1,rows[0][1])*100)}%"></i></div><b>${f2(v)} <span class="dim" style="font-weight:400">${pct(v,tot)}</span></b></div>`).join(""):`<p class="dim">Sin datos en el periodo.</p>`;
   const fn=(lab,n,std)=>{const p=f.leads?n/f.leads*100:0;const ok=p>=std;return `<div class="hb"><span>${lab}</span><div class="tr"><i style="width:${Math.max(n?2:0,Math.min(100,f.leads?n/f.leads*100*4:0))}%"></i></div><span class="r"><b>${int(n)}</b> · ${f.leads?p.toFixed(1)+"%":"—"} <span class="pill ${f.leads?(ok?"ok":"bad"):""}">meta ${std}%</span></span></div>`};
   const histTot=Object.entries(HIST).filter(([yy])=>!MKT.some(x=>String(x.mes).slice(0,4)===yy)).sort();
-  return `<div class="head"><div><div class="eyebrow">Marketing</div><h1>Inversión y resultados</h1><p class="sub">${y?"Año "+y:"Todo el periodo"} · ${esc(PROY)}</p></div>${yearChips("mktY",years)}</div>
+  return `<div class="head main"><div><div class="eyebrow">${esc(PROY)} · Marketing</div><h1>Inversión y resultados</h1><p class="sub">${y?"Año "+y:"Todo el periodo"}</p></div>${yearChips("mktY",years)}</div>
   <div class="tiles">
     <div class="tile hl"><span class="l">Inversión total</span><span class="v">${fmtK(M.inver)}</span><span class="s">${fmt(M.pauta)} en pauta digital</span></div>
     <div class="tile"><span class="l">Leads</span><span class="v">${int(f.leads)}</span><span class="s">prospectos generados</span></div>
@@ -351,7 +367,7 @@ function vVentas(){
       <div class="f" style="margin:0"><label for="m-meta">Unidades por mes</label><input class="in" id="m-meta" type="number" min="0" step="0.5" style="width:150px" value="${LINK&&LINK.meta_mensual!=null?esc(LINK.meta_mensual):""}"></div>
       <div class="f" style="margin:0"><label for="m-desde">Aplica desde</label><input class="in" id="m-desde" type="month" style="width:170px" value="${esc(ym(LINK&&LINK.meta_desde)||"")}"></div>
       <button class="btn primary" id="m-save">Guardar objetivo</button></div><p class="note">Se compara contra las ventas registradas en Administración → Ventas. Si no pones fecha, cuenta desde el mes de la primera venta.</p></div>`:"";
-  return `<div class="head"><div><div class="eyebrow">Ventas</div><h1>Resultados de venta</h1><p class="sub">${esc(PROY)} · avance del proyecto y ventas contra objetivo</p></div></div>
+  return `<div class="head main"><div><div class="eyebrow">${esc(PROY)} · Ventas</div><h1>Resultados de venta</h1><p class="sub">Avance del proyecto y ventas contra objetivo</p></div></div>
   ${c.tot?`<div class="card"><h2>Proyecto total</h2>
     <div class="tiles" style="margin-bottom:14px">
       <div class="tile hl"><span class="l">Avance de venta</span><span class="v">${pct(c.Vendido,c.vendibles)}</span><span class="s">${c.Vendido} de ${c.vendibles} unidades</span></div>
@@ -400,7 +416,7 @@ function vClientes(){
   CL=clientes();const q=norm(S.q);
   const rows=CL.filter(c=>!q||norm(c.nombre+" "+c.unidad+" "+c.asesor+" "+(c.u?c.u.torre:"")).includes(q));
   const tot=CL.reduce((a,c)=>a+(c.monto||0),0);
-  return `<div class="head"><div><div class="eyebrow">Clientes</div><h1>Clientes del proyecto</h1><p class="sub">${CL.length} clientes · ${fmtK(tot)} en operaciones · ${CL.filter(c=>c.docs.length).length} con documentos</p></div>
+  return `<div class="head main"><div><div class="eyebrow">${esc(PROY)} · Clientes</div><h1>Clientes del proyecto</h1><p class="sub">${CL.length} clientes · ${fmtK(tot)} en operaciones · ${CL.filter(c=>c.docs.length).length} con documentos</p></div>
     <input class="search" id="c-q" type="search" placeholder="Buscar cliente o unidad…" value="${esc(S.q)}" aria-label="Buscar cliente"></div>
   ${!OK.docs||!OK.contactos?`<div class="adminbar">${ADMIN?"Falta correr <b>sql/portal_desarrollador.sql</b> en Supabase para activar contactos y documentos.":"El repositorio de documentos está en configuración."}</div>`:""}
   <div class="card" style="padding:6px 12px"><div class="twrap"><table><thead><tr><th>Cliente</th><th>Unidad</th><th>Cierre</th><th class="num">Precio de cierre</th><th class="hide-m">Asesor</th><th>Contacto</th><th class="num">Docs</th></tr></thead>
