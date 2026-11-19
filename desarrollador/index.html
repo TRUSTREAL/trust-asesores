@@ -221,12 +221,12 @@ async function load(){
     all(()=>sb.from("leads").select("id,fecha,nombre,telefono,canal,asesor,nc,seguimiento,hot,cita,visita,apartado,venta,perdido,futuro").eq("proyecto",PROY).order("fecha",{ascending:false}).order("id")),
     soft(sb.from("marketing_inversion").select("id,mes,plataforma,campana,monto,leads,categoria,pagado_por,notas").eq("proyecto",PROY).order("mes",{ascending:false})),
     soft(sb.from("ventas_reglas").select("hist:reglas->marketing_hist").eq("id",1).maybeSingle()),
-    soft(sb.from("ventas").select("id,fecha,cliente,unidad,monto,asesor,tipo,proyecto").ilike("proyecto",PROY.split(" ")[0].replace(/[%_,()]/g,"")+"%").order("fecha",{ascending:false})),
+    Promise.resolve({data:[]}), /* ventas: la fuente es el inventario (unidades vendidas con su cierre) */
     soft(sb.from("dev_clientes").select("*").eq("proyecto",PROY)),
     soft(sb.from("dev_cliente_docs").select("*").eq("proyecto",PROY).order("created_at",{ascending:false}))
   ]);
   PROYECTO=p.data||null;LEADS=l;MKT=m.data||[];HIST=((h.data&&h.data.hist)||{})[PROY]||{};
-  /* en Administración → Ventas el proyecto a veces se captura abreviado ("Luciana" por "Luciana Providencia") */
+  VENTAS=[];
   const np=norm(PROY);VENTAS=(v.data||[]).filter(x=>(!x.tipo||x.tipo==="Venta")&&(norm(x.proyecto)===np||np.startsWith(norm(x.proyecto)+" ")));
   OK.contactos=!c.error;CONTACTOS=c.data||[];OK.docs=!d.error;DOCS=d.data||[];
   UNITS=[];if(PROYECTO){const u=await soft(sb.from("unidades").select("id,estatus,tipo,torre,nivel,vista,m2tot,recamaras,precio,precio_cierre,fecha_cierre,comprador,asesor_cierre,notas_cierre").eq("proyecto_id",PROYECTO.id));UNITS=u.data||[]}
@@ -248,16 +248,10 @@ function mktData(y){
   const by=(arr,k,val)=>{const o={};arr.forEach(x=>{const kk=x[k]||"Sin especificar";o[kk]=(o[kk]||0)+val(x)});return Object.entries(o).sort((a,b)=>b[1]-a[1])};
   return {g,le,inver,pauta,f,meses,plat:by(g,"plataforma",x=>+x.monto||0),cat:by(g,"categoria",x=>+x.monto||0),canal:by(le,"canal",()=>1)};
 }
-/* operaciones = ventas registradas en Administración + cierres capturados en el inventario (sin duplicar) */
+/* operaciones = unidades marcadas como Vendido en el inventario del proyecto (Admin → Inventario → Ventas) */
 let SALES=[];
 function buildSales(){
-  SALES=VENTAS.map(v=>({cliente:v.cliente||"",unidad:v.unidad||"",fecha:v.fecha,monto:+v.monto||null,asesor:v.asesor||"",u:null}));
-  UNITS.filter(u=>(u.estatus==="Vendido"||u.estatus==="Apartado")&&(u.comprador||(u.estatus==="Vendido"&&u.fecha_cierre))).forEach(u=>{
-    const pc=+u.precio_cierre||0;
-    let c=SALES.find(x=>!x.u&&u.comprador&&x.cliente&&same(x.cliente,u.comprador))||SALES.find(x=>!x.u&&pc&&x.monto===pc&&(!u.fecha_cierre||!x.fecha||ym(x.fecha)===ym(u.fecha_cierre)));
-    if(!c){c={cliente:u.comprador||"",unidad:"",fecha:u.fecha_cierre,monto:pc||null,asesor:u.asesor_cierre||"",u:null};SALES.push(c)}
-    c.u=u;if(!c.cliente)c.cliente=u.comprador||"";if(!c.fecha)c.fecha=u.fecha_cierre;if(!c.monto)c.monto=pc||null;if(!c.asesor)c.asesor=u.asesor_cierre||"";if(!c.unidad)c.unidad=u.tipo||"";
-  });
+  SALES=UNITS.filter(u=>u.estatus==="Vendido").map(u=>({cliente:u.comprador||"",unidad:u.tipo||"",fecha:u.fecha_cierre||null,monto:+u.precio_cierre||null,asesor:u.asesor_cierre||"",u}));
   SALES.sort((a,b)=>String(b.fecha||"").localeCompare(String(a.fecha||"")));
 }
 const ventasY=y=>SALES.filter(v=>v.fecha&&inY(v.fecha,y));
@@ -389,7 +383,7 @@ function vVentas(){
   const admin=ADMIN?`<div class="card" style="background:#FFFCF3"><h2>Objetivo de ventas <span class="pill">solo TRUST</span></h2><div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
       <div class="f" style="margin:0"><label for="m-meta">Unidades por mes</label><input class="in" id="m-meta" type="number" min="0" step="0.5" style="width:150px" value="${LINK&&LINK.meta_mensual!=null?esc(LINK.meta_mensual):""}"></div>
       <div class="f" style="margin:0"><label for="m-desde">Aplica desde</label><input class="in" id="m-desde" type="month" style="width:170px" value="${esc(ym(LINK&&LINK.meta_desde)||"")}"></div>
-      <button class="btn primary" id="m-save">Guardar objetivo</button></div><p class="note">Se compara contra las ventas registradas en Administración → Ventas y los cierres con fecha del inventario. Si no pones fecha, cuenta desde el mes de la primera venta.</p></div>`:"";
+      <button class="btn primary" id="m-save">Guardar objetivo</button></div><p class="note">Se compara contra las unidades vendidas en el inventario del proyecto, por su fecha de cierre. Si no pones fecha, cuenta desde el mes de la primera venta.</p></div>`:"";
   return `<div class="head main"><div><div class="eyebrow">${esc(PROY)} · Ventas</div><h1>Resultados de venta</h1><p class="sub">Avance del proyecto y ventas contra objetivo</p></div></div>
   ${c.tot?`<div class="card"><h2>Proyecto total</h2>
     <div class="tiles" style="margin-bottom:14px">
@@ -412,6 +406,7 @@ function vVentas(){
     <div class="tile"><span class="l">Objetivo anual</span><span class="v">${+mi.anual.toFixed(1)}</span><span class="s">${mi.meta} por mes · avance ${pct(vs.length,mi.anual)}</span></div>`:`<div class="tile"><span class="l">Objetivo</span><span class="v">—</span><span class="s">${ADMIN?"captúralo arriba":"por definir con TRUST"}</span></div>`}
     <div class="tile"><span class="l">Ritmo mensual</span><span class="v">${(()=>{const act=byM.filter((o,i)=>i<hasta&&(!mi||mi.act(i+1)));return act.length?(act.reduce((a,o)=>a+o.n,0)/act.length).toFixed(1):"—"})()}</span><span class="s">ventas por mes${mi?" desde "+mesTxt(mi.desde+"-01"):""}</span></div>
   </div>
+  ${(()=>{const sf=SALES.filter(v=>!v.fecha).length;return sf?`<p class="note" style="margin:-10px 0 16px">${sf} ${sf===1?"unidad vendida no tiene":"unidades vendidas no tienen"} fecha de cierre capturada en el inventario y no ${sf===1?"aparece":"aparecen"} en el desglose mensual.</p>`:""})()}
   <div class="card"><h2>Ventas por mes</h2>
     <div class="bars">${mi?`<div class="obj" style="bottom:${mi.meta/max*100*(168/190)}%"><span>Objetivo ${mi.meta}/mes</span></div>`:""}${byM.map((o,i)=>`<div class="col"><div class="bar ${i>=hasta?"fut":o.n?"":"z"}" style="height:${i>=hasta?4:Math.max(1,o.n/max*100)}%">${o.n?`<span class="bv">${o.n}</span>`:""}</div></div>`).join("")}</div>
     <div class="blab">${MES.map(m=>`<span>${m}</span>`).join("")}</div>
@@ -420,7 +415,7 @@ function vVentas(){
     <tbody>${byM.map((o,i)=>{if(i>=hasta)return "";ac+=o.n;const a=mi&&mi.act(i+1);if(a)acO+=mi.meta;return `<tr><td>${MES_L[i][0].toUpperCase()+MES_L[i].slice(1)}</td><td class="num"><b>${o.n}</b></td><td class="num">${o.m?fmt(o.m):"—"}</td>${mi?`<td class="num dim">${a?mi.meta:"—"}</td><td class="num">${ac}</td><td class="num dim">${acO?+acO.toFixed(1):"—"}</td><td class="num">${acO?`<span class="pill ${ac>=acO?"ok":"bad"}">${pct(ac,acO)}</span>`:"—"}</td>`:`<td class="num">${ac}</td>`}</tr>`}).join("")}</tbody>
     <tfoot><tr><td>Total ${y}</td><td class="num">${vs.length}</td><td class="num">${fmt(monto)}</td>${mi?`<td class="num">${+mi.acum.toFixed(1)}</td><td></td><td></td><td class="num">${pct(vs.length,mi.acum)}</td>`:"<td></td>"}</tr></tfoot></table></div></div>
   <div class="card"><h2>Detalle de ventas ${y}</h2><div class="twrap"><table><thead><tr><th>Mes</th><th>Unidad</th><th>Cliente</th><th>Asesor</th><th class="num">Precio de venta</th></tr></thead>
-    <tbody>${vs.map(v=>`<tr><td>${mesTxt(v.fecha)}</td><td><b>${esc(v.unidad||"—")}</b></td><td>${esc(v.cliente||"—")}</td><td>${esc(v.asesor||"—")}</td><td class="num">${fmt(v.monto)}</td></tr>`).join("")||`<tr><td colspan="5" class="dim">Sin ventas registradas en ${y}.</td></tr>`}</tbody></table></div></div>`;
+    <tbody>${vs.map(v=>`<tr><td>${mesTxt(v.fecha)}</td><td><b>${esc(v.unidad||"—")}</b></td><td>${esc(v.cliente||"—")}</td><td>${esc(v.asesor||"—")}</td><td class="num">${fmt(v.monto)}</td></tr>`).join("")||`<tr><td colspan="5" class="dim">Sin ventas con fecha de cierre en ${y}.</td></tr>`}</tbody></table></div></div>`;
 }
 function bindVentas(){
   const b=$("#m-save");if(!b)return;
@@ -444,7 +439,7 @@ function vClientes(){
   ${!OK.docs||!OK.contactos?`<div class="adminbar">${ADMIN?"Falta correr <b>sql/portal_desarrollador.sql</b> en Supabase para activar contactos y documentos.":"El repositorio de documentos está en configuración."}</div>`:""}
   <div class="card" style="padding:6px 12px"><div class="twrap"><table><thead><tr><th>Cliente</th><th>Unidad</th><th>Cierre</th><th class="num">Precio de cierre</th><th class="hide-m">Asesor</th><th>Contacto</th><th class="num">Docs</th></tr></thead>
   <tbody id="c-body">${rows.map(c=>`<tr class="click" data-c="${esc(c.key)}" tabindex="0"><td><b>${esc(c.nombre)}</b></td><td>${esc(unidadTxt(c))}</td><td>${c.fecha?mesTxt(c.fecha):"—"}</td><td class="num">${fmt(c.monto)}</td><td class="hide-m">${esc(c.asesor||"—")}</td><td>${c.tel?esc(c.tel):`<span class="dim">Sin capturar</span>`}</td><td class="num">${c.docs.length?`<span class="pill ok">${c.docs.length}</span>`:`<span class="dim">0</span>`}</td></tr>`).join("")||`<tr><td colspan="7" class="dim" style="padding:22px">Sin clientes${q?" que coincidan con la búsqueda":" registrados todavía"}.</td></tr>`}</tbody></table></div></div>
-  <p class="note">Clientes con venta registrada y compradores capturados en el inventario del proyecto. Da clic en un cliente para ver su expediente.</p>`;
+  <p class="note">Compradores capturados en el cierre de cada unidad vendida del inventario. Da clic en un cliente para ver su expediente.</p>`;
 }
 function bindClientes(){
   const q=$("#c-q");if(q)q.oninput=()=>{S.q=q.value;const pos=q.selectionStart;$("#app").innerHTML=shell(vClientes());bindClientes();const n=$("#c-q");n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}};
