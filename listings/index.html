@@ -512,9 +512,17 @@ function openEd(l){
   renderDocs();refresh();
   show("ed");
 }
-function subHTML(){return cur.id?`<span class="st ${cur.estatus}">${ESTATUS_LABEL[cur.estatus]||cur.estatus}</span> &nbsp;·&nbsp; ${esc(cur.asesor)} · creado ${fecha(cur.created_at)}`:"Captura la propiedad paso a paso; puedes guardar y seguir después."}
+/* admin: puede asignar el opcionador (asesor dueño del listing) cuando lo captura a nombre de un asesor */
+function opcSel(){const v=cur.asesor||"";const ops=[...new Set(ASESORES.concat(v&&v!=="admin"?[v]:[]))];
+  return `<label for="opc-sel" style="font-weight:600">Opcionador:</label> <select id="opc-sel" style="font:inherit;font-size:13px;padding:4px 8px;border:1px solid var(--line-2,#D8D2C3);border-radius:8px;background:#fff;${!v||v==="admin"?"border-color:#A8342A;color:#A8342A":""}"><option value="admin" ${!v||v==="admin"?"selected":""}>Sin asignar (admin)</option>${ops.map(n=>`<option ${n===v?"selected":""}>${esc(n)}</option>`).join("")}</select>`}
+function subHTML(){
+  if(ROLE==="admin")return (cur.id?`<span class="st ${cur.estatus}">${ESTATUS_LABEL[cur.estatus]||cur.estatus}</span> &nbsp;·&nbsp; `:"")+opcSel()+(cur.id?` &nbsp;·&nbsp; creado ${fecha(cur.created_at)}`:` &nbsp;·&nbsp; elige al asesor dueño de la propiedad; le aparecerá en su portal.`);
+  return cur.id?`<span class="st ${cur.estatus}">${ESTATUS_LABEL[cur.estatus]||cur.estatus}</span> &nbsp;·&nbsp; ${esc(cur.asesor)} · creado ${fecha(cur.created_at)}`:"Captura la propiedad paso a paso; puedes guardar y seguir después."}
 function refresh(){
   $("#ed-sub").innerHTML=subHTML();
+  {const os=$("#opc-sel");if(os)os.onchange=async()=>{const n=os.value,prev=cur.asesor;
+    if(!cur.id){cur.asesor=n;refresh();return}
+    cur.asesor=n;if(await patch({asesor:n}))toast(n==="admin"?"Opcionador sin asignar":"Opcionador: "+n);else{cur.asesor=prev;refresh()}}}
   const track=$("#track"),steps=$("#steps"),nav=$("#nav");
   if(ROLE!=="admin"&&cur.estatus!=="borrador"&&!EDIT_SENT){ // asesor: ya enviado → seguimiento
     steps.innerHTML="";nav.innerHTML="";$$(".pane").forEach(p=>p.classList.remove("on"));$("#ed-actions").innerHTML="";
