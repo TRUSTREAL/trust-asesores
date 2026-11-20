@@ -146,7 +146,7 @@ table .trk{height:8px;background:var(--surface-2);border-radius:4px;overflow:hid
 .segc{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden}
 .segc button{border:0;background:var(--bg);padding:5px 10px;font:inherit;font-size:12px;cursor:pointer;color:var(--muted)}
 .segc button+button{border-left:1px solid var(--line-2)}
-.segc button.on.bad,.segc button.on.pendiente{background:#FBEDEA;color:var(--bad)}.segc button.on.ok{background:#E6F2EC;color:var(--ok)}.segc button.on.info{background:var(--info-bg);color:var(--info)}.segc button.on.mute{background:var(--surface-2);color:var(--muted)}.segc button.on.parcial{background:#FBF3E0;color:var(--gold-2)}.segc button.on.pagada{background:#E6F2EC;color:var(--ok)}
+.segc button.on.bad,.segc button.on.pendiente{background:#FBEDEA;color:var(--bad)}.segc button.on.ok{background:#E6F2EC;color:var(--ok)}.segc button.on.info{background:var(--info-bg);color:var(--info)}.segc button.on.mute{background:var(--surface-2);color:var(--muted)}.segc button.on.parcial{background:#FBF3E0;color:var(--gold-2)}.segc button.on.pagada{background:#E6F2EC;color:var(--ok)}.segc button.on.facturado{background:#E3ECF7;color:#2F5597}.st.facturado{background:#E3ECF7;color:#2F5597}
 tr.dimrow td{opacity:.55}
 tbody tr.subt td,tbody tr.subt:hover td{background:var(--surface-2);font-weight:600;border-bottom:2px solid var(--line-2)}
 tbody tr.sol td,tbody tr.sol:hover td,tbody tr.sol:nth-child(even) td{background:var(--bad-bg)}
@@ -242,7 +242,7 @@ function confChip(L){const c=confDe(L.n,L.v.id);if(!c)return `<span class="dim" 
 let OTROS=[], GASTOS=[], GPAGOS=[], APARTADOS=[], SPAGOS=[], TABLAS_OK={otros:true,gastos:true,gpagos:true,apartados:true,staff:true};
 let P={anio:new Date().getFullYear(),mes:"",trims:[]}; // periodo: Ventas y Empresa por trimestre; el resto por mes
 const useQ=()=>PANE==="empresa"||PANE==="asesores";
-let filt={q:"",un:"",asesor:"",estatus:""}, sort={k:"fecha",dir:"desc"};
+let filt={q:"",un:"",asesor:"",estatus:""}, sort={k:"registro",dir:"desc"}; // por defecto: conforme se fueron registrando (lo más reciente arriba)
 
 /* ---------- carga ---------- */
 async function loadAll(){
@@ -258,7 +258,7 @@ async function loadAll(){
 const comTotal=v=>v.comision_monto!=null?+v.comision_monto:(+v.monto||0)*(+v.comision_pct||0)/100;
 // Cobranza: estatus manual por venta (independiente del pago a asesores)
 const estatusDe=v=>{const cob=typeof cobradoDe==="function"?cobradoDe(v.id):0;if(cob>0)return cob+EPS>=comTotal(v)?"pagada":"parcial";return v.cobro_estatus||"pendiente"};
-const EST_LABEL={pendiente:"Pendiente",parcial:"Pago parcial",pagada:"Pagada"};
+const EST_LABEL={pendiente:"Pendiente",facturado:"Facturado",parcial:"Pago parcial",pagada:"Pagada"}; // facturado = ya se emitió la factura, aún sin cobros
 // Pagos a beneficiarios por venta
 const pagadoDe=(n,vid)=>PAGOS.filter(p=>p.beneficiario===n&&p.venta_id===vid).reduce((a,p)=>a+(+p.monto||0),0);
 // Cobros (lo que nos ha pagado el cliente / desarrollador por cada venta)
@@ -411,8 +411,8 @@ $$(".vseg button").forEach(b=>b.onclick=()=>{if(b.dataset.pane==="finanzas"&&!fi
 function renderVentas(){
   const el=$("#pane-ventas");
   let rows=VENTAS.filter(v=>inPeriodo(v.fecha)&&(!filt.un||v.un===filt.un)&&(!filt.asesor||v.asesor===filt.asesor||v.opcionador===filt.asesor||v.asesor2===filt.asesor||v.opcionador2===filt.asesor)&&(!filt.estatus||estatusDe(v)===filt.estatus)&&(!filt.q||[v.cliente,v.proyecto,v.unidad,v.asesor,v.notas,v.inmueble,v.tipo].join(" ").toLowerCase().includes(filt.q.toLowerCase())));
-  const d=sort.dir==="asc"?1:-1;const val=v=>({fecha:v.fecha,cliente:v.cliente||"",proyecto:v.proyecto||"",asesor:v.asesor||"",tipo:v.tipo||"",inmueble:v.inmueble||"",monto:+v.monto||0,comision:comTotal(v),estatus:estatusDe(v)})[sort.k];
-  rows=[...rows].sort((a,b)=>{const x=val(a),y=val(b);return (typeof x==="number"?x-y:String(x).localeCompare(String(y),"es"))*d});
+  const d=sort.dir==="asc"?1:-1;const val=v=>({fecha:v.fecha,cliente:v.cliente||"",proyecto:v.proyecto||"",asesor:v.asesor||"",tipo:v.tipo||"",inmueble:v.inmueble||"",monto:+v.monto||0,comision:comTotal(v),estatus:estatusDe(v),registro:String(v.created_at||v.fecha||"")})[sort.k];
+  rows=[...rows].sort((a,b)=>{const x=val(a),y=val(b);return (typeof x==="number"?x-y:String(x).localeCompare(String(y),"es"))*d||String(b.created_at||"").localeCompare(String(a.created_at||""))});
   const all=VENTAS.filter(v=>inPeriodo(v.fecha));
   const tot=all.reduce((a,v)=>a+comTotal(v),0),op=all.filter(v=>!esCredito(v)).reduce((a,v)=>a+(+v.monto||0),0);
   const cobradas=all.filter(v=>estatusDe(v)==="pagada"),porCob=all.filter(v=>estatusDe(v)!=="pagada");
@@ -430,13 +430,15 @@ function renderVentas(){
     <select id="f-un"><option value="">Unidad de negocio</option>${UN.map(u=>`<option ${filt.un===u?"selected":""}>${u}</option>`).join("")}</select>
     <select id="f-asesor"><option value="">Asesor</option>${ASESORES.map(a=>`<option ${filt.asesor===a?"selected":""}>${a}</option>`).join("")}</select>
     <select id="f-estatus"><option value="">Estatus de cobro</option>${Object.entries(EST_LABEL).map(([k,v])=>`<option value="${k}" ${filt.estatus===k?"selected":""}>${v}</option>`).join("")}</select>
-    <span class="count">${rows.length} de ${all.length}</span>
+    ${sort.k==="registro"?"":`<button class="btn sm" id="f-reg" title="Volver al orden en que se registraron las operaciones">↺ Orden de registro</button>`}
+    <span class="count">${rows.length} de ${all.length}${sort.k==="registro"?" · por orden de registro":""}</span>
   </div>
   <div class="twrap"><table><thead><tr>${th("fecha","Mes")}${th("cliente","Cliente")}<th title="Unidad de negocio: P = Proyectos · C = Corretaje">UN</th>${th("tipo","Tipo")}${th("inmueble","Inmueble")}${th("proyecto","Proyecto")}<th>Unidad</th>${th("asesor","Asesor")}<th>Opcionador</th>${th("monto","Monto",1)}<th class="num">%</th>${th("comision","Comisión",1)}${th("estatus","Cobranza")}<th></th></tr></thead>
   <tbody>${rows.map(v=>{const e=estatusDe(v);return `<tr data-id="${v.id}"><td class="dim">${fechaM(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${v.autogenerada?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">AG</span>':""}${v.top_realtor?' <span class="un" style="background:var(--gold-2);color:#fff" title="Bono TOP Realtor">TOP</span>':""}</td><td><span class="un ${v.un==="Proyectos"?"P":"C"}" title="${esc(v.un)}">${v.un==="Proyectos"?"P":"C"}</span></td><td><span class="tp ${esCredito(v)?"Cr":esc(v.tipo||"Venta")}">${esc(TIPO_ABR[v.tipo]||v.tipo||"Venta")}</span></td><td class="dim">${esc(v.inmueble||"—")}</td><td>${esc(v.proyecto)}</td><td class="dim">${esc(v.unidad||"")}</td><td>${esc(v.asesor)}${v.asesor2?` <span class="dim">+ ${esc(v.asesor2)}</span>`:""}</td><td class="dim">${esc(v.opcionador||"—")}${v.opcionador2?` + ${esc(v.opcionador2)}`:""}</td><td class="num money">${fmt(v.monto)}</td><td class="num dim">${v.comision_monto!=null?"fijo":(+v.comision_pct||0).toLocaleString("es-MX",{maximumFractionDigits:2})+"%"}</td><td class="num com">${fmt(comTotal(v))}</td><td><button class="st ${e} cobs" data-id="${v.id}" title="Ver / registrar cobros" style="border:0;cursor:pointer;font:inherit">${EST_LABEL[e]}</button></td><td><button class="ico edit" data-id="${v.id}" title="Abrir">✎</button></td></tr>`}).join("")}</tbody></table>
   ${rows.length?"":`<div class="empty"><b>Sin ventas</b>No hay operaciones registradas en ${periodoTxt().toLowerCase()}${filt.q||filt.un||filt.asesor||filt.estatus?" con esos filtros":""}.</div>`}</div>`;
   $("#f-q").oninput=e=>{filt.q=e.target.value;renderVentas();const i=$("#f-q");i.focus();i.setSelectionRange(i.value.length,i.value.length)};
   ["un","asesor","estatus"].forEach(k=>$("#f-"+k).onchange=e=>{filt[k]=e.target.value;renderVentas()});
+  {const fr=el.querySelector("#f-reg");if(fr)fr.onclick=()=>{sort={k:"registro",dir:"desc"};renderVentas()}}
   el.querySelectorAll("th.sortable").forEach(t=>t.onclick=()=>{const k=t.dataset.k;sort=sort.k===k?{k,dir:sort.dir==="asc"?"desc":"asc"}:{k,dir:k==="fecha"||k==="monto"||k==="comision"?"desc":"asc"};renderVentas()});
   el.querySelectorAll(".edit").forEach(b=>b.onclick=()=>openVenta(VENTAS.find(v=>v.id===b.dataset.id)));
   el.querySelectorAll(".cobs").forEach(b=>b.onclick=()=>openCobro(VENTAS.find(v=>v.id===b.dataset.id)));
@@ -611,28 +613,29 @@ let cobSort={k:"fecha",dir:"desc"};
 function renderCobranza(){
   const el=$("#pane-cobranza");
   const all=VENTAS.filter(v=>inPeriodo(v.fecha)).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
-  const pend=all.filter(v=>estatusDe(v)==="pendiente"),parc=all.filter(v=>estatusDe(v)==="parcial"),pag=all.filter(v=>estatusDe(v)==="pagada");
+  const pend=all.filter(v=>estatusDe(v)==="pendiente"),fact=all.filter(v=>estatusDe(v)==="facturado"),parc=all.filter(v=>estatusDe(v)==="parcial"),pag=all.filter(v=>estatusDe(v)==="pagada");
   let rows=cobView==="pag"?pag:all.filter(v=>estatusDe(v)!=="pagada");
-  {const d=cobSort.dir==="asc"?1:-1,ORD={pendiente:0,parcial:1,pagada:2};
+  {const d=cobSort.dir==="asc"?1:-1,ORD={pendiente:0,facturado:1,parcial:2,pagada:3};
    const val=v=>({fecha:String(v.fecha||""),cliente:(v.cliente||"").toLowerCase(),proyecto:(v.proyecto||"").toLowerCase(),asesor:(v.asesor||"").toLowerCase(),comision:comTotal(v),cobrado:cobradoFx(v),pendiente:Math.max(0,comTotal(v)-cobradoFx(v)),estatus:ORD[estatusDe(v)]??9})[cobSort.k];
    rows=rows.slice().sort((a,b)=>{const x=val(a),y=val(b);return (typeof x==="number"?x-y:String(x).localeCompare(String(y)))*d||String(b.fecha).localeCompare(String(a.fecha))});}
   const cth=(k,l,n)=>`<th class="sortable ${cobSort.k===k?"on":""} ${n?"num":""}" data-k="${k}">${l}${cobSort.k===k?(cobSort.dir==="asc"?" ↑":" ↓"):""}</th>`;
   const sum=l=>l.reduce((a,v)=>a+comTotal(v),0), sumCob=l=>l.reduce((a,v)=>a+cobradoFx(v),0);
-  const porCobrar=[...pend,...parc].reduce((a,v)=>a+Math.max(0,comTotal(v)-cobradoFx(v)),0);
+  const porCobrar=[...pend,...fact,...parc].reduce((a,v)=>a+Math.max(0,comTotal(v)-cobradoFx(v)),0);
   const cobP=COBROS.filter(c=>inPeriodo(c.fecha)).reduce((a,c)=>a+(+c.monto||0),0);
   const oAll=OTROS.filter(o=>inPeriodo(o.fecha)),oPend=OTROS.filter(o=>!o.cobrado),oPagP=OTROS.filter(o=>o.cobrado&&inPeriodo(o.fecha_cobro||o.fecha));
-  const seg=v=>`<div class="segc" data-id="${v.id}">${Object.entries(EST_LABEL).map(([k,l])=>`<button class="${k} ${estatusDe(v)===k?"on":""}" data-k="${k}" title="${k==="parcial"?"Registrar un cobro parcial":k==="pagada"?"Marcar como cobrada por completo":"Regresar a pendiente"}">${l}</button>`).join("")}</div>`;
+  const seg=v=>`<div class="segc" data-id="${v.id}">${Object.entries(EST_LABEL).map(([k,l])=>`<button class="${k} ${estatusDe(v)===k?"on":""}" data-k="${k}" title="${k==="parcial"?"Registrar un cobro parcial":k==="pagada"?"Marcar como cobrada por completo":k==="facturado"?"Ya se emitió la factura; falta cobrarla":"Regresar a pendiente"}">${l}</button>`).join("")}</div>`;
   el.innerHTML=`
   <div class="tiles">
-    <div class="tile dark"><span class="l">Por cobrar</span><span class="v">${fmtK(porCobrar+sumM(oPend))}</span><span class="s">${pend.length+parc.length} venta${pend.length+parc.length===1?"":"s"} · ${periodoTxt()}${oPend.length?` + ${oPend.length} otro${oPend.length===1?"":"s"} (${fmtK(sumM(oPend))})`:""}</span></div>
-    <div class="tile"><span class="l">Pendientes</span><span class="v">${pend.length}</span><span class="s">${fmtK(sum(pend))} sin ningún cobro</span></div>
+    <div class="tile dark"><span class="l">Por cobrar</span><span class="v">${fmtK(porCobrar+sumM(oPend))}</span><span class="s">${pend.length+fact.length+parc.length} venta${pend.length+fact.length+parc.length===1?"":"s"} · ${periodoTxt()}${oPend.length?` + ${oPend.length} otro${oPend.length===1?"":"s"} (${fmtK(sumM(oPend))})`:""}</span></div>
+    <div class="tile"><span class="l">Pendientes</span><span class="v">${pend.length}</span><span class="s">${fmtK(sum(pend))} sin facturar ni cobrar</span></div>
+    <div class="tile"><span class="l">Facturadas</span><span class="v">${fact.length}</span><span class="s">${fmtK(sum(fact))} facturado sin cobrar</span></div>
     <div class="tile gold"><span class="l">Pago parcial</span><span class="v">${parc.length}</span><span class="s">${fmtK(sumCob(parc))} de ${fmtK(sum(parc))} cobrado</span></div>
     <div class="tile"><span class="l">Cobradas</span><span class="v">${pag.length}</span><span class="s">${fmtK(sum(pag))}</span></div>
     <div class="tile gold"><span class="l">Otros conceptos</span><span class="v">${fmtK(sumM(oAll))}</span><span class="s">${oAll.length} en ${periodoTxt().toLowerCase()} · ${fmtK(sumM(oAll.filter(o=>o.cobrado)))} cobrado</span></div>
     <div class="tile"><span class="l">Cobrado en el periodo</span><span class="v">${fmtK(cobP+sumM(oPagP))}</span><span class="s">por fecha de cobro · ventas${oPagP.length?" + otros "+fmtK(sumM(oPagP)):""}</span></div>
   </div>
-  <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Cobranza · ${periodoTxt()}</h3><div class="qseg" id="cb-seg"><button data-v="pend" class="${cobView==="pend"?"on":""}">Pendientes · ${pend.length+parc.length}</button><button data-v="pag" class="${cobView==="pag"?"on":""}">Cobradas · ${pag.length}</button></div></div>
-    <p class="hint" style="margin:6px 0 10px">Lo que el desarrollador / cliente nos ha pagado por cada venta. "Pago parcial" registra un cobro con monto (en Cobradas sirve para corregir una venta que en realidad fue parcial); "Pagada" liquida el resto. Independiente del pago a asesores.</p>
+  <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Cobranza · ${periodoTxt()}</h3><div class="qseg" id="cb-seg"><button data-v="pend" class="${cobView==="pend"?"on":""}">Pendientes · ${pend.length+fact.length+parc.length}</button><button data-v="pag" class="${cobView==="pag"?"on":""}">Cobradas · ${pag.length}</button></div></div>
+    <p class="hint" style="margin:6px 0 10px">Lo que el desarrollador / cliente nos ha pagado por cada venta. "Facturado" marca que ya se emitió la factura y falta cobrarla; "Pago parcial" registra un cobro con monto (en Cobradas sirve para corregir una venta que en realidad fue parcial); "Pagada" liquida el resto. Independiente del pago a asesores.</p>
     <div class="twrap" style="border:0"><table><thead><tr>${cth("fecha","Mes")}${cth("cliente","Cliente")}${cth("proyecto","Proyecto")}${cth("asesor","Asesor")}${cth("comision","Comisión",1)}${cth("cobrado","Cobrado",1)}${cth("pendiente","Pendiente",1)}${cth("estatus","Estatus de cobro")}</tr></thead>
     <tbody>${rows.map(v=>{const tot=comTotal(v),cob=cobradoFx(v),pd=Math.max(0,tot-cob),n=cobrosDe(v.id).length;return `<tr class="${estatusDe(v)==="pagada"?"dimrow":""}"><td class="dim">${fechaM(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${esCredito(v)?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(v.proyecto)}${v.unidad?` <span class="dim">· ${esc(v.unidad)}</span>`:""}</td><td>${esc(v.asesor)}</td><td class="num com">${fmt(tot)}</td><td class="num ${cob?"paid":""}">${fmt(cob)}${n?` <button class="ico cobs" data-id="${v.id}" title="Ver cobros">${n}</button>`:""}</td><td class="num money" style="color:${pd>EPS?"var(--bad)":"var(--ok)"}">${fmt(pd)}</td><td>${seg(v)}</td></tr>`}).join("")}</tbody></table>
     ${rows.length?"":`<div class="empty">${cobView==="pag"?`<b>Sin cobradas</b>Todavía no hay ventas cobradas por completo en ${periodoTxt().toLowerCase()}.`:`<b>Todo cobrado</b>No hay ventas por cobrar en ${periodoTxt().toLowerCase()}.`}</div>`}</div></div>
@@ -651,8 +654,8 @@ function renderCobranza(){
       openCobro(v);return}
     if(estatusDe(v)===k)return;
     if(k==="pagada"){const falta=comTotal(v)-cobradoDe(v.id);if(falta>EPS){const r=await sb.from("ventas_cobros").insert({venta_id:v.id,fecha:todayISO(),monto:falta,concepto:"Liquidación"}).select().single();if(r.error){toast("No se guardó: "+r.error.message,true);return}COBROS.push(r.data)}}
-    if(k==="pendiente"&&cobrosDe(v.id).length){if(!confirm("¿Regresar a pendiente? Se borran los cobros registrados de esta venta."))return;const r=await sb.from("ventas_cobros").delete().eq("venta_id",v.id);if(r.error){toast(r.error.message,true);return}COBROS=COBROS.filter(c=>c.venta_id!==v.id)}
-    const r=await sb.from("ventas").update({cobro_estatus:k}).eq("id",id);if(r.error){toast("No se guardó: "+r.error.message,true);return}v.cobro_estatus=k;toast(k==="pagada"?"Marcada como cobrada":"Estatus actualizado");renderCobranza()});
+    if((k==="pendiente"||k==="facturado")&&cobrosDe(v.id).length){if(!confirm(`¿Regresar a ${k==="facturado"?"facturado":"pendiente"}? Se borran los cobros registrados de esta venta.`))return;const r=await sb.from("ventas_cobros").delete().eq("venta_id",v.id);if(r.error){toast(r.error.message,true);return}COBROS=COBROS.filter(c=>c.venta_id!==v.id)}
+    const r=await sb.from("ventas").update({cobro_estatus:k}).eq("id",id);if(r.error){toast("No se guardó: "+r.error.message,true);return}v.cobro_estatus=k;toast(k==="pagada"?"Marcada como cobrada":k==="facturado"?"Marcada como facturada":"Estatus actualizado");renderCobranza()});
 }
 function openCobro(v){
   const tot=comTotal(v),cob=cobradoFx(v),falta=Math.max(0,tot-cob);const root=$("#drawer-root");
@@ -857,7 +860,7 @@ function openOtro(o){
 }
 
 /* ----- gastos (con pagos parciales) ----- */
-let gView="pend";
+let gView="pend",gQ="";
 const gPagosDe=id=>GPAGOS.filter(p=>p.gasto_id===id).sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));
 const gPagadoDe=g=>{const l=gPagosDe(g.id);return l.length?l.reduce((a,p)=>a+(+p.monto||0),0):(g.pagado?(+g.monto||0):0)};
 const gEst=g=>{const pag=gPagadoDe(g),m=+g.monto||0;return pag+EPS>=m&&m>0?"pagado":pag>EPS?"parcial":"pendiente"};
@@ -877,7 +880,11 @@ function renderGastos(){
   const venc=pend.filter(g=>g.vence&&g.vence<hoy);
   const pagP=GASTOS.filter(g=>gEst(g)==="pagado"&&inPeriodo(gFechaPago(g)||g.fecha)).sort((a,b)=>String(gFechaPago(b)||b.fecha).localeCompare(String(gFechaPago(a)||a.fecha)));
   const pagadoP=GPAGOS.filter(p=>inPeriodo(p.fecha)).reduce((a,p)=>a+(+p.monto||0),0)+GASTOS.filter(g=>g.pagado&&!gPagosDe(g.id).length&&inPeriodo(g.fecha_pago||g.fecha)).reduce((a,g)=>a+(+g.monto||0),0);
-  const rows=gView==="pend"?pend:pagP;
+  /* registros: el periodo y el buscador filtran la lista (los KPI de "Por pagar" y "Vencidos" siguen siendo de cualquier fecha) */
+  const gq=gQ.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  const gHit=g=>!gq||[g.concepto,g.proveedor,g.categoria,g.notas,g.metodo,g.monto,fecha(g.fecha)].join(" ").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(gq);
+  const pendP=pend.filter(g=>inPeriodo(g.fecha)),pendL=pendP.filter(gHit),pagL=pagP.filter(gHit);
+  const rows=gView==="pend"?pendL:pagL;const fuera=pend.length-pendP.length;
   const byCat={};gP.forEach(g=>{const k=g.categoria||"Sin categoría";byCat[k]=(byCat[k]||0)+(+g.monto||0)});
   const vP=VENTAS.filter(v=>!esCredito(v)&&inPeriodo(v.fecha));const ingT=vP.reduce((a,v)=>a+trustDe(v),0),otrosP=sumM(OTROS.filter(o=>inPeriodo(o.fecha)));const res=ingT+otrosP-sumM(gP);
   const seg=g=>segG(g.id,[{k:"pendiente",l:"Por pagar",cls:"bad",t:"Regresar a por pagar"},{k:"parcial",l:"Pago parcial",cls:"parcial",t:"Registrar un pago parcial"},{k:"pagado",l:"Pagado",cls:"ok",t:"Liquidar hoy lo que falta"}],gEst(g));
@@ -889,14 +896,15 @@ function renderGastos(){
     <div class="tile"><span class="l">Pagado en el periodo</span><span class="v">${fmtK(pagadoP)}</span><span class="s">por fecha de pago</span></div>
     <div class="tile gold"><span class="l">Resultado aprox.</span><span class="v" style="color:${res<0?"var(--bad)":""}">${fmtK(res)}</span><span class="s">lo que queda en TRUST ${fmtK(ingT)} + otros ${fmtK(otrosP)} − gastos</span></div>
   </div>
-  <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Gastos de la empresa</h3><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="qseg" id="g-seg"><button data-v="pend" class="${gView==="pend"?"on":""}">Por pagar · ${pend.length}</button><button data-v="pag" class="${gView==="pag"?"on":""}">Pagados · ${pagP.length}</button></div><button class="btn sm" id="btn-gpdf" title="PDF con todos los gastos pendientes de pago">⤓ Pagos pendientes PDF</button><button class="btn sm primary" id="btn-gasto">+ Gasto</button></div></div>
-    <p class="hint" style="margin:6px 0 10px">Gastos propios de la empresa (nómina, renta, pauta, software…), no comisiones a asesores. "Pago parcial" registra un abono con monto; "Pagado" liquida lo que falta con fecha de hoy. El número junto a lo pagado abre el detalle de pagos.</p>
+  <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Gastos de la empresa · ${periodoTxt()}</h3><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div class="qseg" id="g-seg"><input type="search" id="g-q" placeholder="Buscar concepto, proveedor, categoría…" value="${esc(gQ)}" aria-label="Buscar gasto" style="min-width:230px;padding:7px 12px;border:1px solid var(--line-2);border-radius:8px;font:inherit;font-size:13px;background:var(--bg);color:inherit"><div class="qseg" id="g-seg"><button data-v="pend" class="${gView==="pend"?"on":""}">Por pagar · ${pendL.length}</button><button data-v="pag" class="${gView==="pag"?"on":""}">Pagados · ${pagL.length}</button></div><button class="btn sm" id="btn-gpdf" title="PDF con todos los gastos pendientes de pago">⤓ Pagos pendientes PDF</button><button class="btn sm primary" id="btn-gasto">+ Gasto</button></div></div>
+    <p class="hint" style="margin:6px 0 10px">Gastos propios de la empresa (nómina, renta, pauta, software…), no comisiones a asesores. "Pago parcial" registra un abono con monto; "Pagado" liquida lo que falta con fecha de hoy. El número junto a lo pagado abre el detalle de pagos.${gView==="pend"&&fuera>0?` <b>Hay ${fuera} gasto${fuera===1?"":"s"} por pagar fuera de ${periodoTxt().toLowerCase()}</b>; cambia el periodo para verlos.`:""}</p>
     ${TABLAS_OK.gastos?`<div class="twrap" style="border:0"><table><thead><tr><th>Fecha</th><th>Vence</th><th>Concepto</th><th>Proveedor</th><th>Categoría</th><th class="num">Monto</th><th class="num">Pagado</th><th class="num">Pendiente</th><th>Estatus</th><th></th></tr></thead>
     <tbody>${rows.map(g=>{const e=gEst(g),pag=gPagadoDe(g),pd=falta(g),n=gPagosDe(g.id).length,vencido=e!=="pagado"&&g.vence&&g.vence<hoy;return `<tr class="${e==="pagado"?"dimrow":""}"><td class="dim">${fecha(g.fecha)}</td><td style="color:${vencido?"var(--bad)":"inherit"};font-weight:${vencido?600:400}">${g.vence?fecha(g.vence):"—"}${vencido?" ⚠":""}</td><td><b>${esc(g.concepto)}</b>${g.notas?`<br><small class="dim">${esc(g.notas)}</small>`:""}</td><td>${esc(g.proveedor||"—")}</td><td class="dim">${esc(g.categoria||"—")}</td><td class="num money">${fmt(g.monto)}</td><td class="num ${pag?"paid":""}">${fmt(pag)}${n?` <button class="ico gpagos" data-id="${g.id}" title="Ver pagos">${n}</button>`:""}</td><td class="num money" style="color:${pd>EPS?"var(--bad)":"var(--ok)"}">${fmt(pd)}</td><td>${seg(g)}${e==="pagado"?`<br><small class="dim">pagado el ${fecha(gFechaPago(g))}${g.metodo?" · "+esc(g.metodo):""}</small>`:""}</td><td><button class="ico edit-gasto" data-id="${g.id}" title="Editar">✎</button></td></tr>`}).join("")}</tbody></table>
-    ${rows.length?"":`<div class="empty">${gView==="pag"?`<b>Sin pagos</b>No hay gastos pagados en ${periodoTxt().toLowerCase()}.`:`<b>Nada por pagar</b>No hay gastos pendientes.`}</div>`}</div>`:faltaTabla("gastos")}</div>
+    ${rows.length?"":`<div class="empty">${gView==="pag"?gq?`<b>Sin resultados</b>Ningún gasto coincide con "${esc(gQ)}" en ${periodoTxt().toLowerCase()}.`:`<b>Sin pagos</b>No hay gastos pagados en ${periodoTxt().toLowerCase()}.`:gq?`<b>Sin resultados</b>Ningún gasto coincide con "${esc(gQ)}" en ${periodoTxt().toLowerCase()}.`:`<b>Nada por pagar</b>No hay gastos pendientes en ${periodoTxt().toLowerCase()}.`}</div>`}</div>`:faltaTabla("gastos")}</div>
   <div class="grid2" style="margin-top:14px"><div class="card"><h3>Por categoría · ${periodoTxt()}</h3><div class="bars">${bars(byCat,sumM(gP))}</div></div>
   <div class="card"><h3>Por mes · ${P.anio}</h3><div class="cols mo">${(()=>{const arr=Array.from({length:12},()=>0);GASTOS.filter(g=>+String(g.fecha).slice(0,4)===+P.anio).forEach(g=>arr[+String(g.fecha).slice(5,7)-1]+=+g.monto||0);const mx=Math.max(...arr,1);const fmtS=v=>v>=1e6?(v/1e6).toFixed(1).replace(/\.0$/,"")+" M":v>=1e3?Math.round(v/1e3)+" k":v?Math.round(v):"–";return arr.map((v,i)=>`<div class="c" title="${MESES_L[i]}: ${fmt(v)}"><small class="${v?"":"dim"}">${fmtS(v)}</small><div style="display:flex;width:100%;align-items:flex-end;height:90px;justify-content:center"><i style="height:${v/mx*100}%;background:var(--gold-2)"></i></div><b>${MESES[i]}</b></div>`).join("")})()}</div></div></div>`;
   el.querySelectorAll("#g-seg button").forEach(b=>b.onclick=()=>{gView=b.dataset.v;renderGastos()});
+  const gqi=el.querySelector("#g-q");if(gqi)gqi.oninput=()=>{gQ=gqi.value;const pos=gqi.selectionStart;renderGastos();const n=$("#g-q");if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}};
   const nb=el.querySelector("#btn-gasto");if(nb)nb.onclick=()=>openGasto(null);
   const pb=el.querySelector("#btn-gpdf");if(pb)pb.onclick=reporteGastosPDF;
   el.querySelectorAll(".edit-gasto").forEach(b=>b.onclick=()=>openGasto(GASTOS.find(g=>g.id===b.dataset.id)));
