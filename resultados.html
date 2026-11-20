@@ -233,7 +233,7 @@ function render(){
   </div>
 
   <section class="card"><div class="chead"><h2>Mis operaciones</h2><span class="note">${perCorto()}</span></div>
-    <div class="twrap"><table><thead><tr><th>Mes</th><th>Cliente</th><th>Proyecto / propiedad</th><th class="hide-m">Rol</th><th>Origen</th><th class="num">Monto</th><th class="num">Mi comisión</th></tr></thead>
+    <div class="twrap"><table><thead><tr><th>Mes</th><th>Cliente</th><th>Proyecto / propiedad</th><th class="hide-m">Rol</th><th>Origen</th><th class="num">Venta</th><th class="num">Mi comisión</th></tr></thead>
     <tbody>${ops.map(v=>`<tr><td class="dim">${MES[mesDe(v.fecha)-1]||""}</td><td><b>${esc(v.cliente||"—")}</b></td><td>${esc(prop(v))}</td><td class="hide-m dim">${esc(rol(v))}</td><td><span class="pill">${esCredito(v)?"Crédito":v.autogenerada?"Autogenerado":"Lead"}</span></td><td class="num">${fmt(v.monto)}</td><td class="num"><b>${fmt(miCom(v))}</b></td></tr>`).join("")||`<tr><td colspan="7" class="dim">Sin operaciones en el periodo.</td></tr>`}</tbody>
     ${ops.length?`<tfoot><tr><td colspan="3">Total · ${ops.length} operaci${ops.length===1?"ón":"ones"}</td><td class="hide-m"></td><td></td><td class="num">${fmt(ops.reduce((a,v)=>a+(+v.monto||0),0))}</td><td class="num">${fmt(com)}</td></tr></tfoot>`:""}</table></div></section>
   </div>`;
