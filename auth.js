@@ -55,7 +55,7 @@
   if(user&&nombres().indexOf(user)<0){user=null;LS.del(KEY)}
 
   function fijar(n){IDENT.forEach(function(k){LS.set(k,n)});}
-  function salir(){LS.del(KEY);LS.del("trust_ver_como");if(!ES_ADMIN)IDENT.forEach(function(k){LS.del(k)});location.href=ES_ADMIN?"/admin/":"/";}
+  function salir(){LS.del(KEY);LS.del("trust_ver_como");if(!ES_ADMIN)LS.del("trust_sin_ping");if(!ES_ADMIN)IDENT.forEach(function(k){LS.del(k)});location.href=ES_ADMIN?"/admin/":"/";}
   window.logout=salir;
 
   if(user){
@@ -70,7 +70,8 @@
     var yo=EQ.filter(function(a){return a.nombre===user})[0]||{};
     window.AUTH={real:real,viendoComo:!!ver,puedeVerComo:puedeVer,nombre:user,rol:ADMINS.indexOf(user)>=0?"admin":"asesor",nombreCompleto:yo.nombre_completo||"",celular:yo.celular||"",correo:yo.correo||"",foto:yo.foto_url||""};
     /* Última sesión en el portal de asesores (se ve en Admin → Asesores). Máximo un registro cada 10 minutos. */
-    if(!ES_ADMIN&&!ver){try{
+    /* No cuenta como sesión del asesor cuando un administrador lo está viendo ("Ver como") ni cuando se entró con el código maestro. */
+    if(!ES_ADMIN&&!ver&&!LS.get("trust_sin_ping")){try{
       var pk="trust_ping_"+user,ult=+(LS.get(pk)||0),ahora=Date.now();
       if(ahora-ult>600000){LS.set(pk,String(ahora));
         fetch(SB_URL+"/rest/v1/asesores?nombre=eq."+encodeURIComponent(user),{method:"PATCH",headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY,"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify({ultima_sesion:new Date().toISOString()})}).catch(function(){});}
@@ -184,7 +185,7 @@
     var g=document.getElementById("pin-gate");if(!g){g=document.createElement("div");g.id="pin-gate";document.body.appendChild(g)}
     g.innerHTML='<div class="box"><div class="eyebrow">TRUST realtor · '+(ES_ADMIN?"Administración":"Asesores")+'</div><h1>¿Quién eres?</h1><p class="sub">Elige tu nombre para entrar'+(ES_ADMIN?" al panel de administración":" al portal")+'.</p>'+
       '<div class="names">'+nombres().map(function(n){return '<button type="button" data-n="'+esc(n)+'">'+esc(n)+'</button>'}).join("")+'</div><div class="foot">Uso interno</div></div>';
-    Array.prototype.forEach.call(g.querySelectorAll(".names button"),function(b){b.onclick=function(){var n=b.getAttribute("data-n");if(!PINS[n]){entrar(n);return}pedirPIN(n)}});
+    Array.prototype.forEach.call(g.querySelectorAll(".names button"),function(b){b.onclick=function(){var n=b.getAttribute("data-n");if(!PINS[n]){LS.del("trust_sin_ping");entrar(n);return}pedirPIN(n)}});
   }
   function pedirPIN(n){
     var g=document.getElementById("pin-gate"),pin="";
@@ -202,11 +203,11 @@
       pin+=k;paint();
       if(pin.length===4){
         var mal=function(){dots.classList.add("err");setTimeout(function(){dots.classList.remove("err");pin="";paint()},450)};
-        if(pin===PINS[n]){off();entrar(n)}
+        if(pin===PINS[n]){off();LS.del("trust_sin_ping");entrar(n)}
         else if(!ES_ADMIN&&window.crypto&&crypto.subtle){   /* código maestro (solo sesiones de asesor, nunca admin) */
           crypto.subtle.digest("SHA-256",new TextEncoder().encode("trust-master:"+pin)).then(function(b){
             var hx=Array.prototype.map.call(new Uint8Array(b),function(x){return("0"+x.toString(16)).slice(-2)}).join("");
-            if(hx==="d1a0780c70916a756a66047c7e02eb66f62f39ced76ad7c4db5752e648da26f3"){off();entrar(n)}else mal()}).catch(mal)}
+            if(hx==="d1a0780c70916a756a66047c7e02eb66f62f39ced76ad7c4db5752e648da26f3"){off();LS.set("trust_sin_ping","1");entrar(n)}else mal()}).catch(mal)}
         else mal()
       }
     };
