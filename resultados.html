@@ -199,7 +199,7 @@ function render(){
     <div class="tile"><span class="l">Mi comisión generada</span><span class="v">${fmtK(com)}</span><span class="s">${fmt(pag)} ya pagado</span></div>
     <div class="tile"><span class="l">Comisión promedio mensual</span><span class="v">${fmtK(com/nM)}</span><span class="s">${fmt(com)} entre ${nM} ${nM===1?"mes":"meses"}</span></div>
     <div class="tile"><span class="l">Por cobrar</span><span class="v" style="color:${pend>0.5?"var(--bad)":"var(--ok)"}">${fmtK(pend)}</span><span class="s">${nPend?`${nPend} operaci${nPend===1?"ón":"ones"} pendiente${nPend===1?"":"s"}`:"todo pagado"}</span></div>
-    <div class="tile"><span class="l">Leads recibidos</span><span class="v">${L.leads}</span><span class="s">${L.leads?pct(L.v,L.leads,1)+" terminó en venta":"sin leads en el periodo"}</span></div>
+    <div class="tile"><span class="l">Leads recibidos</span><span class="v">${L.leads}</span><span class="s">${L.leads?"asignados en el periodo":"sin leads en el periodo"}</span></div>
     <div class="tile"><span class="l">Mis listings</span><span class="v">${activos}</span><span class="s">propiedad${activos===1?"":"es"} activa${activos===1?"":"s"}</span></div>
     <div class="tile"><span class="l">Lugar en el equipo</span><span class="v">${lugar}º <small style="font-size:14px;color:var(--dim)">de ${rkY.length}</small></span><span class="s">por comisión de sus ventas en ${Y}</span></div>
   </section>
