@@ -517,7 +517,7 @@ function openCliente(key){
     <div class="body">
       <div class="sec"><h4>Información de cierre</h4><dl class="kv">
         <dt>Unidad</dt><dd>${esc(unidadTxt(c))}</dd>
-        ${u?`<dt>Superficie</dt><dd>${u.m2tot?(+u.m2tot).toFixed(2)+" m²":"—"}${u.recamaras?" · "+esc(u.recamaras)+" rec.":""}${u.vista?" · vista "+esc(u.vista):""}</dd>`:""}
+        ${u?`<dt>Superficie</dt><dd>${u.m2tot?(+u.m2tot).toFixed(2)+" m²":"—"}${u.recamaras&&!esOfi()?" · "+esc(u.recamaras)+" rec.":""}${u.vista?" · vista "+esc(u.vista):""}</dd>`:""}
         <dt>Fecha de cierre</dt><dd>${u&&u.fecha_cierre?fechaTxt(u.fecha_cierre):c.fecha?mesTxt(c.fecha):"—"}</dd>
         <dt>Precio de cierre</dt><dd>${fmt(c.monto)}</dd>
         ${u&&u.precio?`<dt>Precio de lista</dt><dd>${fmt(u.precio)}${dif!=null?` <span class="pill ${dif>=0?"ok":""}">${(dif*100).toFixed(1)}%</span>`:""}</dd>`:""}
@@ -583,6 +583,7 @@ function openCliente(key){
 const torreEsTipo=v=>/^\s*(tipo|tip\.|modelo|mod\.|prototipo)\b/i.test(String(v||""));
 function uParse(u){const s=String(u.tipo||"").trim();let num=s,tip="";const sp=s.split(/\s*[|·]\s*/);if(sp.length>=2){num=sp[0];tip=sp.slice(1).join(" ")}else{const m=s.match(/^(\S+)\s+(.*)$/);if(m){num=m[1];tip=m[2].replace(/^\d+\s+/,"")}}if(!tip&&torreEsTipo(u.torre))tip=String(u.torre).trim();return {num:num.trim(),tip:tip.trim()}}
 let ED={sel:null,filt:"",disp:false};
+const esOfi=()=>/oficina/i.test((PROYECTO&&PROYECTO.giro)||""); // oficinas: no aplican recámaras ni baños
 const EDST=s=>{s=String(s||"").toLowerCase();return s==="disponible"?"disponible":s==="apartado"?"apartado":s==="vendido"?"vendido":s==="aportante"?"aportante":s==="bloqueado"?"bloqueado":"otro"};
 const EDCOL={disponible:"#2E7D5B",apartado:"#F2C94C",vendido:"#2F5597",aportante:"#E07A2F",bloqueado:"#B8B8B5"};
 const edM=p=>"$"+(p/1e6).toFixed(2)+" M";
@@ -614,9 +615,9 @@ function listaHTML(){
   return `<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
     <div class="chips" role="group" aria-label="Estatus"><button class="chip ${S.invSt===""?"on":""}" data-ist="">Todas <span style="opacity:.7">${UNITS.length}</span></button>${sts.map(e=>`<button class="chip ${S.invSt===e?"on":""}" data-ist="${esc(e)}">${esc(e)} <span style="opacity:.7">${UNITS.filter(u=>u.estatus===e).length}</span></button>`).join("")}</div>
     <input class="search" id="i-q" type="search" placeholder="Buscar unidad, torre, vista…" value="${esc(S.invQ)}" aria-label="Buscar unidad"></div>
-  <div class="card" style="padding:6px 12px"><div class="twrap"><table><thead><tr><th>Estatus</th><th>Unidad</th>${hasT?"<th>Torre</th>":""}<th class="num">Nivel</th>${hasV?"<th>Vista</th>":""}<th>Tipología</th><th class="num">m² int.</th>${hasTerr?'<th class="num">m² terraza</th>':""}<th class="num">m² total</th><th class="num">Precio de lista</th><th class="num">Precio / m²</th></tr></thead>
-  <tbody>${rows.map(u=>{const mi=+u.m2int||0,tt=+u.m2tot||mi+edTerr(u);return `<tr><td>${stPill(u.estatus)}</td><td><b>${esc(u.tipo||"—")}</b></td>${hasT?`<td>${esc(u.torre||"")}</td>`:""}<td class="num">${esc(u.nivel??"")}</td>${hasV?`<td>${esc(u.vista||"")}</td>`:""}<td>${esc(u.recamaras||"—")}</td><td class="num">${mi?mi.toFixed(2):"—"}</td>${hasTerr?`<td class="num">${edTerr(u)?edTerr(u).toFixed(2):"—"}</td>`:""}<td class="num">${tt?tt.toFixed(2):"—"}</td><td class="num"><b>${fmt(+u.precio||null)}</b></td><td class="num dim">${tt&&+u.precio?fmt(u.precio/tt):"—"}</td></tr>`}).join("")||`<tr><td colspan="11" class="dim" style="padding:22px">Sin unidades con ese filtro.</td></tr>`}</tbody>
-  <tfoot><tr><td colspan="${6+(hasT?1:0)+(hasV?1:0)+(hasTerr?1:0)}">${rows.length} unidades${val?" · valor disponible en lista":""}</td><td class="num">${val?fmt(val):""}</td><td></td></tr></tfoot></table></div></div>`;
+  <div class="card" style="padding:6px 12px"><div class="twrap"><table><thead><tr><th>Estatus</th><th>Unidad</th>${hasT?"<th>Torre</th>":""}<th class="num">Nivel</th>${hasV?"<th>Vista</th>":""}${esOfi()?"":"<th>Tipología</th>"}<th class="num">m² int.</th>${hasTerr?'<th class="num">m² terraza</th>':""}<th class="num">m² total</th><th class="num">Precio de lista</th><th class="num">Precio / m²</th></tr></thead>
+  <tbody>${rows.map(u=>{const mi=+u.m2int||0,tt=+u.m2tot||mi+edTerr(u);return `<tr><td>${stPill(u.estatus)}</td><td><b>${esc(u.tipo||"—")}</b></td>${hasT?`<td>${esc(u.torre||"")}</td>`:""}<td class="num">${esc(u.nivel??"")}</td>${hasV?`<td>${esc(u.vista||"")}</td>`:""}${esOfi()?"":`<td>${esc(u.recamaras||"—")}</td>`}<td class="num">${mi?mi.toFixed(2):"—"}</td>${hasTerr?`<td class="num">${edTerr(u)?edTerr(u).toFixed(2):"—"}</td>`:""}<td class="num">${tt?tt.toFixed(2):"—"}</td><td class="num"><b>${fmt(+u.precio||null)}</b></td><td class="num dim">${tt&&+u.precio?fmt(u.precio/tt):"—"}</td></tr>`}).join("")||`<tr><td colspan="11" class="dim" style="padding:22px">Sin unidades con ese filtro.</td></tr>`}</tbody>
+  <tfoot><tr><td colspan="${(esOfi()?5:6)+(hasT?1:0)+(hasV?1:0)+(hasTerr?1:0)}">${rows.length} unidades${val?" · valor disponible en lista":""}</td><td class="num">${val?fmt(val):""}</td><td></td></tr></tfoot></table></div></div>`;
 }
 function edificioHTML(){
   const all=UNITS,isLocal=u=>/comerc|local/i.test(String(u.recamaras||""));
@@ -626,10 +627,10 @@ function edificioHTML(){
   const torreDe=u=>torreReal?String(u.torre||"").trim():"";
   const towers=torreReal?rawT:[""];const levels=edLevels(deps);
   const recW=r=>{const m=/^(\d)R(\+)?(G)?$/i.exec(r);if(/^est/i.test(r))return 0;if(m)return +m[1]*10+(m[2]?1:0)+(m[3]?5:0);if(/local/i.test(r))return 99;return 50};
-  const recs=[...new Set(all.map(edRec).filter(Boolean))].sort((a,b)=>recW(a)-recW(b));
+  const recs=esOfi()?[]:[...new Set(all.map(edRec).filter(Boolean))].sort((a,b)=>recW(a)-recW(b));
   const pass=u=>(!ED.filt||edRec(u)===ED.filt)&&(!ED.disp||EDST(u.estatus)==="disponible");
   const tile=u=>{const st=EDST(u.estatus),{num}=uParse(u);const mute=st!=="disponible"&&st!=="vendido";const terr=edTerr(u),mi=+u.m2int||0;
-    return `<button type="button" class="eu st-${st} ${mute?"mute":""} ${ED.sel===u.id?"sel":""} ${pass(u)?"":"dim"}" data-eu="${esc(u.id)}" aria-label="Unidad ${esc(num)}, ${esc(u.estatus||"")}"><b>${esc(num)}</b>${mute?"":`<span class="t"><em>${esc(edRec(u))}</em>${edRec(u)?"·":""}${terr>0?`${mi.toFixed(0)}+${terr.toFixed(0)}`:mi.toFixed(0)}m²</span><span class="p">${st==="disponible"?edM(+u.precio||0):"Vendido"}</span>`}</button>`};
+    return `<button type="button" class="eu st-${st} ${mute?"mute":""} ${ED.sel===u.id?"sel":""} ${pass(u)?"":"dim"}" data-eu="${esc(u.id)}" aria-label="Unidad ${esc(num)}, ${esc(u.estatus||"")}"><b>${esc(num)}</b>${mute?"":`<span class="t">${esOfi()?"":`<em>${esc(edRec(u))}</em>${edRec(u)?"·":""}`}${terr>0?`${mi.toFixed(0)}+${terr.toFixed(0)}`:mi.toFixed(0)}m²</span><span class="p">${st==="disponible"?edM(+u.precio||0):"Vendido"}</span>`}</button>`};
   const colsOf=tw=>Math.max(1,...levels.map(l=>deps.filter(u=>torreDe(u)===tw&&String(u.nivel).trim()===l).length));
   const cols=towers.map(colsOf);
   let gt="46px";towers.forEach((tw,i)=>{gt+=` minmax(${cols[i]*96}px,${cols[i]}fr)`;if(i<towers.length-1)gt+=" 16px"});
@@ -654,11 +655,11 @@ function edSideHTML(){
   if(!u)return `<div class="edcard"><div class="edempty"><b>Elige una unidad</b>Toca cualquier cuadro del edificio para ver su detalle.</div></div>`;
   const {num,tip}=uParse(u),st=EDST(u.estatus),terr=edTerr(u),mi=+u.m2int||0,tot=(+u.m2tot||0)||mi+terr;
   const stCss=st==="disponible"?"":`style="background:${EDCOL[st]||"#D9D6CE"};color:${st==="apartado"?"#5E4A00":"#fff"}"`;
-  return `<div class="edcard"><div class="bd"><span class="edst" ${stCss}>${esc(u.estatus||"—")}</span><h2>${/local|comerc/i.test(String(u.recamaras||""))?"Local":"Unidad"} ${esc(num)}</h2><div class="sub">${esc(tip||"")}${u.torre&&String(u.torre).trim()&&!torreEsTipo(u.torre)?" · Torre "+esc(u.torre):""}${u.nivel?" · Nivel "+esc(u.nivel):""}${u.vista?" · Vista "+esc(String(u.vista).toLowerCase()):""}</div>
+  return `<div class="edcard"><div class="bd"><span class="edst" ${stCss}>${esc(u.estatus||"—")}</span><h2>${/local|comerc/i.test(String(u.recamaras||""))?"Local":esOfi()?"Oficina":"Unidad"} ${esc(num)}</h2><div class="sub">${esc(tip||"")}${u.torre&&String(u.torre).trim()&&!torreEsTipo(u.torre)?" · Torre "+esc(u.torre):""}${u.nivel?" · Nivel "+esc(u.nivel):""}${u.vista?" · Vista "+esc(String(u.vista).toLowerCase()):""}</div>
     <div class="edprice">${fmt(+u.precio||null)}</div><div class="edpm2">Precio de lista${tot&&+u.precio?" · "+fmt(u.precio/tot)+" / m² total":""}</div>
     ${st==="vendido"&&(+u.precio_cierre||u.fecha_cierre)?`<div class="edspecs" style="grid-template-columns:1fr 1fr"><div><b>${fmt(+u.precio_cierre||null)}</b><span>Precio de cierre</span></div><div><b>${u.fecha_cierre?fechaTxt(u.fecha_cierre):"—"}</b><span>Fecha de cierre</span></div></div>`:""}
     <div class="edspecs"><div><b>${mi?mi.toFixed(2):"—"}</b><span>m² interior</span></div><div><b>${terr.toFixed(2)}</b><span>m² terraza</span></div><div><b>${tot?tot.toFixed(2):"—"}</b><span>m² total</span></div></div>
-    <div class="edspecs"><div><b>${esc(u.recamaras||"—")}</b><span>Tipología</span></div><div><b>${esc(u.banos??"—")}</b><span>Baños</span></div><div><b>${esc(u.parking??"—")}</b><span>Cajones</span></div></div>
+    <div class="edspecs">${esOfi()?"":`<div><b>${esc(u.recamaras||"—")}</b><span>Tipología</span></div><div><b>${esc(u.banos??"—")}</b><span>Baños</span></div>`}<div><b>${esc(u.parking??"—")}</b><span>Cajones</span></div></div>
     </div></div>`;
 }
 function bindInv(){

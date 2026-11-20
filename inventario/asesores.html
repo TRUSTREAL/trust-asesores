@@ -576,6 +576,7 @@ const cotUrl=(p,u)=>{const o={proyecto:p.nombre,giro:p.giro,tipo:/preventa/i.tes
 const nivKey=v=>{const t=String(v??"").trim().toUpperCase();if(t==="PB"||t==="S"||t==="SÓTANO"||t==="SOTANO")return -1;if(t.startsWith("PH"))return 999;const n=parseFloat(t);return isNaN(n)?500:n};
 const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36);
 const isRenta=p=>/renta/i.test(p.giro||"");
+const esOfi=p=>/oficina/i.test((p&&p.giro)||""); // oficinas (Neza, Epicentria…): no aplican recámaras ni baños
 function filtActive(){return !!(filt.estatus||filt.nivel||filt.vista||filt.recamaras||filt.q)}
 function visibleRows(p){
   let rows=p.units.filter(u=>(!VENTAS||u.estatus==="Disponible")&&(!filt.estatus||u.estatus===filt.estatus)&&(!filt.nivel||String(u.nivel??"")===filt.nivel)&&(!filt.vista||u.vista===filt.vista)&&(!filt.recamaras||String(u.recamaras??"")===filt.recamaras)
@@ -646,14 +647,14 @@ function renderMain(){
     <div class="filters">
       <input id="f-q" placeholder="Buscar…" value="${esc(filt.q)}">
       ${VENTAS?"":`<select id="f-estatus" data-k="estatus"><option value="">Estatus</option>${STATUSES.map(s=>`<option value="${s}" ${filt.estatus===s?"selected":""}>${stLabel(s,renta)}</option>`).join("")}</select>`}
-      ${sel("f-vista","vista","Vista")}${sel("f-nivel","nivel","Nivel")}${sel("f-recamaras","recamaras","Recámaras")}
+      ${sel("f-vista","vista","Vista")}${sel("f-nivel","nivel","Nivel")}${esOfi(p)?"":sel("f-recamaras","recamaras","Recámaras")}
       <span class="count">${VENTAS?rows.length+" unidad"+(rows.length===1?"":"es"):rows.length+" de "+n}</span>
     </div>
     <div class="twrap"><table>
-      <thead><tr>${VENTAS?"":th("estatus","Estatus")}${th("tipo","ID")}${th("torre","Torre")}${th("nivel","Nivel",1)}${th("vista","Vista")}${th("recamaras","Rec.",1)}${th("banos","Baños",1)}${th("m2int","m² int.",1)}${th("m2terr","m² terr.",1)}${hasDesc?th("m2desc","m² s/techar",1):""}${th("m2tot","m² total",1)}${th("parking","Cajones",1)}${th("precio",renta?"Renta mensual":"Precio",1)}${th("pm2",renta?"Renta / m²":"Precio / m²",1)}${renta?"":`<th class="num eng">Enganche mín. ${eng}%</th>`}<th></th></tr></thead>
+      <thead><tr>${VENTAS?"":th("estatus","Estatus")}${th("tipo","ID")}${th("torre","Torre")}${th("nivel","Nivel",1)}${th("vista","Vista")}${esOfi(p)?"":th("recamaras","Rec.",1)+th("banos","Baños",1)}${th("m2int","m² int.",1)}${th("m2terr","m² terr.",1)}${hasDesc?th("m2desc","m² s/techar",1):""}${th("m2tot","m² total",1)}${th("parking","Cajones",1)}${th("precio",renta?"Renta mensual":"Precio",1)}${th("pm2",renta?"Renta / m²":"Precio / m²",1)}${renta?"":`<th class="num eng">Enganche mín. ${eng}%</th>`}<th></th></tr></thead>
       <tbody>${rows.map(u=>`<tr data-id="${u.id}">
         ${VENTAS?"":`<td>${READONLY?`<span class="st ${u.estatus}">${stLabel(u.estatus,renta)}</span>`:`<select class="st ${u.estatus}" data-id="${u.id}" aria-label="Estatus">${STATUSES.map(s=>`<option value="${s}" ${u.estatus===s?"selected":""}>${stLabel(s,renta)}</option>`).join("")}</select>`}</td>`}
-        <td class="type">${esc(u.tipo)}</td><td>${esc(u.torre)}</td><td class="num">${esc(u.nivel??"")}</td><td>${esc(u.vista)}</td><td class="num dim">${esc(u.recamaras??"")}</td><td class="num dim">${u.banos??""}</td>
+        <td class="type">${esc(u.tipo)}</td><td>${esc(u.torre)}</td><td class="num">${esc(u.nivel??"")}</td><td>${esc(u.vista)}</td>${esOfi(p)?"":`<td class="num dim">${esc(u.recamaras??"")}</td><td class="num dim">${u.banos??""}</td>`}
         <td class="num dim">${u.m2int?.toFixed(2)??""}</td><td class="num dim">${u.m2terr?u.m2terr.toFixed(2):"–"}</td>${hasDesc?`<td class="num dim">${u.m2desc?(+u.m2desc).toFixed(2):"–"}</td>`:""}<td class="num tot">${u.m2tot?.toFixed(2)??""}</td>
         <td class="num">${u.parking??""}</td>${sold(u)?`<td class="num sold">${renta?"Rentado":"Vendido"}</td><td class="num dim">–</td>${renta?"":`<td class="num eng">–</td>`}`:`<td class="num price">${fmt(u.precio)}</td><td class="num dim">${u.m2tot?fmt(u.precio/u.m2tot):"–"}</td>${renta?"":`<td class="num eng">${fmt(u.precio*eng/100)}</td>`}`}
         <td style="white-space:nowrap"><a class="cot ${u.estatus==="Disponible"?"":"off"}" href="${cotUrl(p,u)}" target="_blank" rel="noopener" title="Cotizar esta unidad">Cotizar</a><a class="cot rr ${u.estatus==="Disponible"?"":"off"}" href="${rentUrl(p,u)}" target="_blank" rel="noopener" title="Análisis de rentabilidad de esta unidad">R</a>${READONLY?"":`<button class="ico edit-u" data-id="${u.id}" title="Editar">✎</button>`}</td></tr>`).join("")}</tbody>
@@ -781,7 +782,7 @@ function listaPDF(p){
   const rows=sort.k?visibleRows(p):[...visibleRows(p)].sort(defSort);   // exactamente lo que se ve en la tabla
   const mixed=rows.some(u=>u.estatus!=="Disponible");
   const filtTxt=filtered?[filt.estatus,filt.vista?"Vista "+filt.vista:"",filt.nivel?"Nivel "+filt.nivel:"",filt.recamaras?filt.recamaras+" rec.":"",filt.q?`"${filt.q}"`:""].filter(Boolean).join(" · "):"";
-  const hasTorre=rows.some(u=>u.torre), hasVista=rows.some(u=>u.vista), hasTerr=rows.some(u=>u.m2terr>0), hasDescP=rows.some(u=>u.m2desc>0), hasPark=rows.some(u=>u.parking!=null), hasRec=rows.some(u=>u.recamaras!=null), hasBan=rows.some(u=>u.banos!=null);
+  const hasTorre=rows.some(u=>u.torre), hasVista=rows.some(u=>u.vista), hasTerr=rows.some(u=>u.m2terr>0), hasDescP=rows.some(u=>u.m2desc>0), hasPark=rows.some(u=>u.parking!=null), hasRec=!esOfi(p)&&rows.some(u=>u.recamaras!=null), hasBan=!esOfi(p)&&rows.some(u=>u.banos!=null);
   const hoy=new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"});
   const n2=v=>v==null||v===""?"—":(+v).toFixed(2);
   const money=v=>"$ "+Math.round(v).toLocaleString("es-MX");
@@ -1117,12 +1118,12 @@ function edificioHTML(p){
   const towers=torreReal?rawT:[""];
   const levels=edLevels(deps);
   const recW=r=>{const m=/^(\d)R(\+)?(G)?$/i.exec(r);if(/^est/i.test(r))return 0;if(m)return +m[1]*10+(m[2]?1:0)+(m[3]?5:0);if(/local/i.test(r))return 99;return 50};
-  const recs=[...new Set(all.map(edRec).filter(Boolean))].sort((a,b)=>recW(a)-recW(b));
+  const recs=esOfi(p)?[]:[...new Set(all.map(edRec).filter(Boolean))].sort((a,b)=>recW(a)-recW(b));
   const pass=u=>(!ED.filt||edRec(u)===ED.filt)&&(!ED.disp||EDST(u.estatus)==="disponible");
   const tile=u=>{const st=EDST(u.estatus),{num}=uParse(u);const mute=st!=="disponible"&&st!=="vendido";
     if(VENTAS&&st!=="disponible")return `<div class="eu hid"><b>${esc(num)}</b></div>`;
     const terr=edTerr(u),mi=+u.m2int||0;
-    return `<button type="button" class="eu st-${st} ${mute?"mute":""} ${ED.sel===u.id?"sel":""} ${pass(u)?"":"dim"}" data-eu="${u.id}"><b>${esc(num)}</b>${mute?"":`<span class="t"><em>${esc(edRec(u))}</em>${edRec(u)?"·":""}${terr>0?`${mi.toFixed(0)}+${terr.toFixed(0)}`:mi.toFixed(0)}m²</span><span class="p">${st==="disponible"?edM(+u.precio||0):"Vendido"}</span>`}</button>`};
+    return `<button type="button" class="eu st-${st} ${mute?"mute":""} ${ED.sel===u.id?"sel":""} ${pass(u)?"":"dim"}" data-eu="${u.id}"><b>${esc(num)}</b>${mute?"":`<span class="t">${esOfi(p)?"":`<em>${esc(edRec(u))}</em>${edRec(u)?"·":""}`}${terr>0?`${mi.toFixed(0)}+${terr.toFixed(0)}`:mi.toFixed(0)}m²</span><span class="p">${st==="disponible"?edM(+u.precio||0):"Vendido"}</span>`}</button>`};
   const colsOf=tw=>Math.max(1,...levels.map(l=>deps.filter(u=>torreDe(u)===tw&&String(u.nivel).trim()===l).length));
   const cols=towers.map(colsOf);
   let gt="46px";towers.forEach((tw,i)=>{gt+=` minmax(${cols[i]*96}px,${cols[i]}fr)`;if(i<towers.length-1)gt+=" 16px"});
@@ -1154,10 +1155,10 @@ function edSideHTML(p){
   return `<div class="edcard">
     ${main?`<div class="ph ${main.kind==="planta"?"plan":""}" data-edlb="0" style="background-image:url('${main.url}')"><span>${main.kind==="planta"?"Planta":"Render"} · ${esc(tip||"")}</span></div>`:`<div class="ph" style="display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;cursor:default">Sin planta ni renders de ${esc(tip||"esta tipología")}</div>`}
     ${gal.length>1?`<div class="thumbs">${gal.map((g,i)=>`<div class="${i===0?"on":""}" data-edth="${i}" style="background-image:url('${g.url}')" title="${g.kind==="planta"?"Planta":"Render"}"></div>`).join("")}</div>`:""}
-    <div class="bd"><span class="edst" ${stCss}>${stLab}</span><h2>${/local|comerc/i.test(String(u.recamaras||""))?"Local":"Depa"} ${esc(num)}</h2><div class="sub">${esc(tip||"")}${u.torre&&String(u.torre).trim()&&!torreEsTipo(u.torre)?" · Torre "+esc(u.torre):""}${u.nivel?" · Nivel "+esc(u.nivel):""}${u.vista?" · Vista "+esc(String(u.vista).toLowerCase()):""}</div>
+    <div class="bd"><span class="edst" ${stCss}>${stLab}</span><h2>${/local|comerc/i.test(String(u.recamaras||""))?"Local":esOfi(p)?"Oficina":"Depa"} ${esc(num)}</h2><div class="sub">${esc(tip||"")}${u.torre&&String(u.torre).trim()&&!torreEsTipo(u.torre)?" · Torre "+esc(u.torre):""}${u.nivel?" · Nivel "+esc(u.nivel):""}${u.vista?" · Vista "+esc(String(u.vista).toLowerCase()):""}</div>
     ${showPrice?`<div class="edprice">${"$"+Math.round(+u.precio||0).toLocaleString("es-MX")}</div><div class="edpm2">${tot?"$"+Math.round((+u.precio||0)/tot).toLocaleString("es-MX")+" / m² total":""}</div>`:""}
     <div class="edspecs"><div><b>${mi.toFixed(2)}</b><span>m² interior</span></div><div><b>${terr.toFixed(2)}</b><span>m² terraza${(+u.m2desc||0)>0?" (techada + descubierta)":""}</span></div><div><b>${tot.toFixed(2)}</b><span>m² total</span></div></div>
-    <div class="edspecs"><div><b>${esc(u.recamaras||"—")}</b><span>Tipología</span></div><div><b>${u.banos??"—"}</b><span>Baños</span></div><div><b>${u.parking??"—"}</b><span>Cajones</span></div></div>
+    <div class="edspecs">${esOfi(p)?"":`<div><b>${esc(u.recamaras||"—")}</b><span>Tipología</span></div><div><b>${u.banos??"—"}</b><span>Baños</span></div>`}<div><b>${u.parking??"—"}</b><span>Cajones</span></div></div>
     <div class="edbtns">${st==="disponible"&&typeof cotUrl==="function"?`<a class="btn primary" href="${cotUrl(p,u)}" target="_blank" rel="noopener">Cotizar esta unidad →</a><a class="btn" href="${rentUrl(p,u)}" target="_blank" rel="noopener" title="Análisis de rentabilidad de esta unidad">Rentabilidad →</a>`:""}${gal.length?`<button class="btn" data-edlb="0" type="button">Ver planta y renders</button>`:""}</div>
     </div></div>`;
 }
@@ -1492,15 +1493,15 @@ function openUnit(u){
     fld("torre","Torre / edificio",u?.torre||"")+
     fld("nivel","Nivel",u?.nivel??"","placeholder='PB, 1, 2… PH'")+
     fld("vista","Vista / orientación",u?.vista||"")+
-    fld("recamaras","Recámaras",u?.recamaras??"","placeholder='1, 2, 1+ (flex)'")+
-    fld("banos","Baños",u?.banos??"","type=number step=0.5 min=0")+
+    (esOfi(p)?"":fld("recamaras","Recámaras",u?.recamaras??"","placeholder='1, 2, 1+ (flex)'")+
+    fld("banos","Baños",u?.banos??"","type=number step=0.5 min=0"))+
     fld("parking","Cajones",u?.parking??"","type=number step=1 min=0")+
     fld("m2int","m² interior",u?.m2int??"","type=number step=0.01 min=0")+
     fld("m2terr","m² terraza",u?.m2terr??"","type=number step=0.01 min=0")+
     fld("m2desc","m² terraza sin techar (opcional)",u?.m2desc??"","type=number step=0.01 min=0")+
     fld("precio",renta?"Renta mensual (MXN)":"Precio de lista (MXN)",u?.precio??"","type=number step=1 min=0 required",true)+
     `<p class="hint">m² total = interior + terraza + terraza sin techar.</p>`,
-    d=>{const v={estatus:d.estatus,tipo:d.tipo.trim(),torre:d.torre.trim(),nivel:String(d.nivel).trim()||null,vista:d.vista.trim(),parking:d.parking===""?null:+d.parking,recamaras:d.recamaras.trim()||null,banos:d.banos===""?null:+d.banos,
+    d=>{const v={estatus:d.estatus,tipo:d.tipo.trim(),torre:d.torre.trim(),nivel:String(d.nivel).trim()||null,vista:d.vista.trim(),parking:d.parking===""?null:+d.parking,recamaras:String(d.recamaras??"").trim()||null,banos:d.banos==null||d.banos===""?null:+d.banos,
         m2int:+d.m2int||0,m2terr:+d.m2terr||0,m2desc:d.m2desc===""?null:+d.m2desc,precio:+d.precio||0};v.m2tot=+(v.m2int+v.m2terr+(v.m2desc||0)).toFixed(2);
       if(u){Object.assign(u,v);db(()=>sb.from("unidades").update(rowU(u,p.id)).eq("id",u.id))}else{const nu={id:newId(),...v};p.units.push(nu);db(()=>sb.from("unidades").insert(rowU(nu,p.id)))}},
     u?()=>{p.units=p.units.filter(x=>x!==u);db(()=>sb.from("unidades").delete().eq("id",u.id))}:null);
