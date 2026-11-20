@@ -146,7 +146,7 @@ table .trk{height:8px;background:var(--surface-2);border-radius:4px;overflow:hid
 .segc{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden}
 .segc button{border:0;background:var(--bg);padding:5px 10px;font:inherit;font-size:12px;cursor:pointer;color:var(--muted)}
 .segc button+button{border-left:1px solid var(--line-2)}
-.segc button.on.bad,.segc button.on.pendiente{background:#FBEDEA;color:var(--bad)}.segc button.on.ok{background:#E6F2EC;color:var(--ok)}.segc button.on.info{background:var(--info-bg);color:var(--info)}.segc button.on.mute{background:var(--surface-2);color:var(--muted)}.segc button.on.parcial{background:#FBF3E0;color:var(--gold-2)}.segc button.on.pagada{background:#E6F2EC;color:var(--ok)}.segc button.on.facturado{background:#E3ECF7;color:#2F5597}.st.facturado{background:#E3ECF7;color:#2F5597}
+.segc button.on.bad,.segc button.on.pendiente{background:#FBEDEA;color:var(--bad)}.segc button.on.ok{background:#E6F2EC;color:var(--ok)}.segc button.on.info{background:var(--info-bg);color:var(--info)}.segc button.on.mute{background:var(--surface-2);color:var(--muted)}.segc button.on.parcial{background:#FBF3E0;color:var(--gold-2)}.segc button.on.pagada{background:#E6F2EC;color:var(--ok)}.fbtn{border:1px solid var(--line-2);background:var(--bg);border-radius:8px;padding:5px 10px;font:inherit;font-size:12px;cursor:pointer;color:var(--muted);white-space:nowrap}.fbtn.on{background:#E3ECF7;border-color:#B9CCE8;color:#2F5597;font-weight:600}
 tr.dimrow td{opacity:.55}
 tbody tr.subt td,tbody tr.subt:hover td{background:var(--surface-2);font-weight:600;border-bottom:2px solid var(--line-2)}
 tbody tr.sol td,tbody tr.sol:hover td,tbody tr.sol:nth-child(even) td{background:var(--bad-bg)}
@@ -257,8 +257,10 @@ async function loadAll(){
 }
 const comTotal=v=>v.comision_monto!=null?+v.comision_monto:(+v.monto||0)*(+v.comision_pct||0)/100;
 // Cobranza: estatus manual por venta (independiente del pago a asesores)
-const estatusDe=v=>{const cob=typeof cobradoDe==="function"?cobradoDe(v.id):0;if(cob>0)return cob+EPS>=comTotal(v)?"pagada":"parcial";return v.cobro_estatus||"pendiente"};
-const EST_LABEL={pendiente:"Pendiente",facturado:"Facturado",parcial:"Pago parcial",pagada:"Pagada"}; // facturado = ya se emitió la factura, aún sin cobros
+const estatusDe=v=>{const cob=typeof cobradoDe==="function"?cobradoDe(v.id):0;if(cob>0)return cob+EPS>=comTotal(v)?"pagada":"parcial";return v.cobro_estatus==="facturado"?"pendiente":(v.cobro_estatus||"pendiente")};
+const EST_LABEL={pendiente:"Pendiente",parcial:"Pago parcial",pagada:"Pagada"};
+// Facturado: control aparte del cobro (una venta puede estar facturada y pendiente, o cobrada y sin facturar)
+const esFact=v=>!!v.facturado||v.cobro_estatus==="facturado";
 // Pagos a beneficiarios por venta
 const pagadoDe=(n,vid)=>PAGOS.filter(p=>p.beneficiario===n&&p.venta_id===vid).reduce((a,p)=>a+(+p.monto||0),0);
 // Cobros (lo que nos ha pagado el cliente / desarrollador por cada venta)
@@ -613,31 +615,31 @@ let cobSort={k:"fecha",dir:"desc"};
 function renderCobranza(){
   const el=$("#pane-cobranza");
   const all=VENTAS.filter(v=>inPeriodo(v.fecha)).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
-  const pend=all.filter(v=>estatusDe(v)==="pendiente"),fact=all.filter(v=>estatusDe(v)==="facturado"),parc=all.filter(v=>estatusDe(v)==="parcial"),pag=all.filter(v=>estatusDe(v)==="pagada");
+  const pend=all.filter(v=>estatusDe(v)==="pendiente"),fact=all.filter(esFact),sinFact=all.filter(v=>!esFact(v)),parc=all.filter(v=>estatusDe(v)==="parcial"),pag=all.filter(v=>estatusDe(v)==="pagada");
   let rows=cobView==="pag"?pag:all.filter(v=>estatusDe(v)!=="pagada");
-  {const d=cobSort.dir==="asc"?1:-1,ORD={pendiente:0,facturado:1,parcial:2,pagada:3};
-   const val=v=>({fecha:String(v.fecha||""),cliente:(v.cliente||"").toLowerCase(),proyecto:(v.proyecto||"").toLowerCase(),asesor:(v.asesor||"").toLowerCase(),comision:comTotal(v),cobrado:cobradoFx(v),pendiente:Math.max(0,comTotal(v)-cobradoFx(v)),estatus:ORD[estatusDe(v)]??9})[cobSort.k];
+  {const d=cobSort.dir==="asc"?1:-1,ORD={pendiente:0,parcial:1,pagada:2};
+   const val=v=>({fecha:String(v.fecha||""),cliente:(v.cliente||"").toLowerCase(),proyecto:(v.proyecto||"").toLowerCase(),asesor:(v.asesor||"").toLowerCase(),comision:comTotal(v),cobrado:cobradoFx(v),pendiente:Math.max(0,comTotal(v)-cobradoFx(v)),estatus:ORD[estatusDe(v)]??9,factura:esFact(v)?1:0})[cobSort.k];
    rows=rows.slice().sort((a,b)=>{const x=val(a),y=val(b);return (typeof x==="number"?x-y:String(x).localeCompare(String(y)))*d||String(b.fecha).localeCompare(String(a.fecha))});}
   const cth=(k,l,n)=>`<th class="sortable ${cobSort.k===k?"on":""} ${n?"num":""}" data-k="${k}">${l}${cobSort.k===k?(cobSort.dir==="asc"?" ↑":" ↓"):""}</th>`;
   const sum=l=>l.reduce((a,v)=>a+comTotal(v),0), sumCob=l=>l.reduce((a,v)=>a+cobradoFx(v),0);
-  const porCobrar=[...pend,...fact,...parc].reduce((a,v)=>a+Math.max(0,comTotal(v)-cobradoFx(v)),0);
+  const porCobrar=[...pend,...parc].reduce((a,v)=>a+Math.max(0,comTotal(v)-cobradoFx(v)),0);
   const cobP=COBROS.filter(c=>inPeriodo(c.fecha)).reduce((a,c)=>a+(+c.monto||0),0);
   const oAll=OTROS.filter(o=>inPeriodo(o.fecha)),oPend=OTROS.filter(o=>!o.cobrado),oPagP=OTROS.filter(o=>o.cobrado&&inPeriodo(o.fecha_cobro||o.fecha));
-  const seg=v=>`<div class="segc" data-id="${v.id}">${Object.entries(EST_LABEL).map(([k,l])=>`<button class="${k} ${estatusDe(v)===k?"on":""}" data-k="${k}" title="${k==="parcial"?"Registrar un cobro parcial":k==="pagada"?"Marcar como cobrada por completo":k==="facturado"?"Ya se emitió la factura; falta cobrarla":"Regresar a pendiente"}">${l}</button>`).join("")}</div>`;
+  const seg=v=>`<div class="segc" data-id="${v.id}">${Object.entries(EST_LABEL).map(([k,l])=>`<button class="${k} ${estatusDe(v)===k?"on":""}" data-k="${k}" title="${k==="parcial"?"Registrar un cobro parcial":k==="pagada"?"Marcar como cobrada por completo":"Regresar a pendiente"}">${l}</button>`).join("")}</div>`;
   el.innerHTML=`
   <div class="tiles">
-    <div class="tile dark"><span class="l">Por cobrar</span><span class="v">${fmtK(porCobrar+sumM(oPend))}</span><span class="s">${pend.length+fact.length+parc.length} venta${pend.length+fact.length+parc.length===1?"":"s"} · ${periodoTxt()}${oPend.length?` + ${oPend.length} otro${oPend.length===1?"":"s"} (${fmtK(sumM(oPend))})`:""}</span></div>
-    <div class="tile"><span class="l">Pendientes</span><span class="v">${pend.length}</span><span class="s">${fmtK(sum(pend))} sin facturar ni cobrar</span></div>
-    <div class="tile"><span class="l">Facturadas</span><span class="v">${fact.length}</span><span class="s">${fmtK(sum(fact))} facturado sin cobrar</span></div>
+    <div class="tile dark"><span class="l">Por cobrar</span><span class="v">${fmtK(porCobrar+sumM(oPend))}</span><span class="s">${pend.length+parc.length} venta${pend.length+parc.length===1?"":"s"} · ${periodoTxt()}${oPend.length?` + ${oPend.length} otro${oPend.length===1?"":"s"} (${fmtK(sumM(oPend))})`:""}</span></div>
+    <div class="tile"><span class="l">Pendientes</span><span class="v">${pend.length}</span><span class="s">${fmtK(sum(pend))} sin ningún cobro</span></div>
+    <div class="tile"><span class="l">Facturadas</span><span class="v">${fact.length} <small style="font-size:13px;color:var(--muted)">de ${all.length}</small></span><span class="s" style="color:${sinFact.length?"var(--bad)":"var(--ok)"}">${sinFact.length?`${sinFact.length} sin facturar · ${fmtK(sum(sinFact))}`:"todo facturado"}</span></div>
     <div class="tile gold"><span class="l">Pago parcial</span><span class="v">${parc.length}</span><span class="s">${fmtK(sumCob(parc))} de ${fmtK(sum(parc))} cobrado</span></div>
     <div class="tile"><span class="l">Cobradas</span><span class="v">${pag.length}</span><span class="s">${fmtK(sum(pag))}</span></div>
     <div class="tile gold"><span class="l">Otros conceptos</span><span class="v">${fmtK(sumM(oAll))}</span><span class="s">${oAll.length} en ${periodoTxt().toLowerCase()} · ${fmtK(sumM(oAll.filter(o=>o.cobrado)))} cobrado</span></div>
     <div class="tile"><span class="l">Cobrado en el periodo</span><span class="v">${fmtK(cobP+sumM(oPagP))}</span><span class="s">por fecha de cobro · ventas${oPagP.length?" + otros "+fmtK(sumM(oPagP)):""}</span></div>
   </div>
-  <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Cobranza · ${periodoTxt()}</h3><div class="qseg" id="cb-seg"><button data-v="pend" class="${cobView==="pend"?"on":""}">Pendientes · ${pend.length+fact.length+parc.length}</button><button data-v="pag" class="${cobView==="pag"?"on":""}">Cobradas · ${pag.length}</button></div></div>
-    <p class="hint" style="margin:6px 0 10px">Lo que el desarrollador / cliente nos ha pagado por cada venta. "Facturado" marca que ya se emitió la factura y falta cobrarla; "Pago parcial" registra un cobro con monto (en Cobradas sirve para corregir una venta que en realidad fue parcial); "Pagada" liquida el resto. Independiente del pago a asesores.</p>
-    <div class="twrap" style="border:0"><table><thead><tr>${cth("fecha","Mes")}${cth("cliente","Cliente")}${cth("proyecto","Proyecto")}${cth("asesor","Asesor")}${cth("comision","Comisión",1)}${cth("cobrado","Cobrado",1)}${cth("pendiente","Pendiente",1)}${cth("estatus","Estatus de cobro")}</tr></thead>
-    <tbody>${rows.map(v=>{const tot=comTotal(v),cob=cobradoFx(v),pd=Math.max(0,tot-cob),n=cobrosDe(v.id).length;return `<tr class="${estatusDe(v)==="pagada"?"dimrow":""}"><td class="dim">${fechaM(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${esCredito(v)?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(v.proyecto)}${v.unidad?` <span class="dim">· ${esc(v.unidad)}</span>`:""}</td><td>${esc(v.asesor)}</td><td class="num com">${fmt(tot)}</td><td class="num ${cob?"paid":""}">${fmt(cob)}${n?` <button class="ico cobs" data-id="${v.id}" title="Ver cobros">${n}</button>`:""}</td><td class="num money" style="color:${pd>EPS?"var(--bad)":"var(--ok)"}">${fmt(pd)}</td><td>${seg(v)}</td></tr>`}).join("")}</tbody></table>
+  <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Cobranza · ${periodoTxt()}</h3><div class="qseg" id="cb-seg"><button data-v="pend" class="${cobView==="pend"?"on":""}">Pendientes · ${pend.length+parc.length}</button><button data-v="pag" class="${cobView==="pag"?"on":""}">Cobradas · ${pag.length}</button></div></div>
+    <p class="hint" style="margin:6px 0 10px">Lo que el desarrollador / cliente nos ha pagado por cada venta. "Pago parcial" registra un cobro con monto (en Cobradas sirve para corregir una venta que en realidad fue parcial); "Pagada" liquida el resto. Independiente del pago a asesores. La columna <b>Factura</b> es un control aparte: márcala cuando ya facturamos, esté cobrada o no.</p>
+    <div class="twrap" style="border:0"><table><thead><tr>${cth("fecha","Mes")}${cth("cliente","Cliente")}${cth("proyecto","Proyecto")}${cth("asesor","Asesor")}${cth("comision","Comisión",1)}${cth("cobrado","Cobrado",1)}${cth("pendiente","Pendiente",1)}${cth("estatus","Estatus de cobro")}${cth("factura","Factura")}</tr></thead>
+    <tbody>${rows.map(v=>{const tot=comTotal(v),cob=cobradoFx(v),pd=Math.max(0,tot-cob),n=cobrosDe(v.id).length;return `<tr class="${estatusDe(v)==="pagada"?"dimrow":""}"><td class="dim">${fechaM(v.fecha)}</td><td><b>${esc(v.cliente)}</b>${esCredito(v)?' <span class="un" style="background:#EFE4D2;color:var(--gold-2)">Crédito</span>':""}</td><td>${esc(v.proyecto)}${v.unidad?` <span class="dim">· ${esc(v.unidad)}</span>`:""}</td><td>${esc(v.asesor)}</td><td class="num com">${fmt(tot)}</td><td class="num ${cob?"paid":""}">${fmt(cob)}${n?` <button class="ico cobs" data-id="${v.id}" title="Ver cobros">${n}</button>`:""}</td><td class="num money" style="color:${pd>EPS?"var(--bad)":"var(--ok)"}">${fmt(pd)}</td><td>${seg(v)}</td><td><button class="fbtn ${esFact(v)?"on":""}" data-id="${v.id}" aria-pressed="${esFact(v)}" title="${esFact(v)?"Ya se facturó. Clic para desmarcar":"Marcar como facturada"}">${esFact(v)?"✓ Facturado":"Sin facturar"}</button></td></tr>`}).join("")}</tbody></table>
     ${rows.length?"":`<div class="empty">${cobView==="pag"?`<b>Sin cobradas</b>Todavía no hay ventas cobradas por completo en ${periodoTxt().toLowerCase()}.`:`<b>Todo cobrado</b>No hay ventas por cobrar en ${periodoTxt().toLowerCase()}.`}</div>`}</div></div>
   ${otrosHTML()}`;
   wireOtros(el);
@@ -654,8 +656,12 @@ function renderCobranza(){
       openCobro(v);return}
     if(estatusDe(v)===k)return;
     if(k==="pagada"){const falta=comTotal(v)-cobradoDe(v.id);if(falta>EPS){const r=await sb.from("ventas_cobros").insert({venta_id:v.id,fecha:todayISO(),monto:falta,concepto:"Liquidación"}).select().single();if(r.error){toast("No se guardó: "+r.error.message,true);return}COBROS.push(r.data)}}
-    if((k==="pendiente"||k==="facturado")&&cobrosDe(v.id).length){if(!confirm(`¿Regresar a ${k==="facturado"?"facturado":"pendiente"}? Se borran los cobros registrados de esta venta.`))return;const r=await sb.from("ventas_cobros").delete().eq("venta_id",v.id);if(r.error){toast(r.error.message,true);return}COBROS=COBROS.filter(c=>c.venta_id!==v.id)}
-    const r=await sb.from("ventas").update({cobro_estatus:k}).eq("id",id);if(r.error){toast("No se guardó: "+r.error.message,true);return}v.cobro_estatus=k;toast(k==="pagada"?"Marcada como cobrada":k==="facturado"?"Marcada como facturada":"Estatus actualizado");renderCobranza()});
+    if(k==="pendiente"&&cobrosDe(v.id).length){if(!confirm("¿Regresar a pendiente? Se borran los cobros registrados de esta venta."))return;const r=await sb.from("ventas_cobros").delete().eq("venta_id",v.id);if(r.error){toast(r.error.message,true);return}COBROS=COBROS.filter(c=>c.venta_id!==v.id)}
+    const r=await sb.from("ventas").update({cobro_estatus:k}).eq("id",id);if(r.error){toast("No se guardó: "+r.error.message,true);return}v.cobro_estatus=k;toast(k==="pagada"?"Marcada como cobrada":"Estatus actualizado");renderCobranza()});
+  el.querySelectorAll(".fbtn").forEach(b=>b.onclick=async()=>{const v=VENTAS.find(x=>x.id===b.dataset.id);const nv=!esFact(v);
+    const upd={facturado:nv};if(v.cobro_estatus==="facturado")upd.cobro_estatus="pendiente";
+    const r=await sb.from("ventas").update(upd).eq("id",v.id);if(r.error){toast(/facturado/.test(r.error.message)?"Falta correr sql/ventas_facturado.sql en Supabase":"No se guardó: "+r.error.message,true);return}
+    Object.assign(v,upd);toast(nv?"Marcada como facturada":"Marcada sin facturar");renderCobranza()});
 }
 function openCobro(v){
   const tot=comTotal(v),cob=cobradoFx(v),falta=Math.max(0,tot-cob);const root=$("#drawer-root");
