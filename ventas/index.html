@@ -426,6 +426,8 @@ function renderVentas(){
     <div class="tile gold"><span class="l">Ingresos</span><span class="v">${fmt(tot)}</span><span class="s">${op?(tot/op*100).toFixed(2)+"% promedio":""}</span></div>
     <div class="tile"><span class="l">Cobradas</span><span class="v">${cobradas.length}</span><span class="s">${fmtK(cobradas.reduce((a,v)=>a+comTotal(v),0))}</span></div>
     <div class="tile"><span class="l">Por cobrar</span><span class="v">${porCob.length}</span><span class="s">${fmtK(porCob.reduce((a,v)=>a+comTotal(v),0))}</span></div>
+    ${(()=>{const ag=all.filter(v=>v.autogenerada),ld=all.length-ag.length,p=n=>all.length?Math.round(n/all.length*100):0;const mAg=ag.reduce((a,v)=>a+comTotal(v),0),mLd=tot-mAg;
+      return `<div class="tile" title="Origen de las operaciones del periodo: las marcadas como autogeneradas (AG) contra las que vienen de un lead de la empresa"><span class="l">Origen · lead vs autogenerado</span><span class="v">${all.length?p(ld)+"% · "+(100-p(ld))+"%":"—"}</span><div style="display:flex;height:6px;border-radius:3px;overflow:hidden;background:var(--line-2);margin:4px 0"><i style="width:${p(ld)}%;background:var(--green,#173F35)"></i><i style="width:${all.length?100-p(ld):0}%;background:var(--gold-2,#B8956A)"></i></div><span class="s">${ld} de lead (${fmtK(mLd)}) · ${ag.length} autogenerada${ag.length===1?"":"s"} (${fmtK(mAg)})</span></div>`})()}
   </div>
   <div class="filters">
     <input type="text" id="f-q" placeholder="Buscar cliente, proyecto, unidad…" value="${esc(filt.q)}">
