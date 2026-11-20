@@ -102,8 +102,8 @@ const pct=(a,b,d=0)=>b?(a/b*100).toFixed(d)+"%":"—";
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const HOY=new Date(),Y=HOY.getFullYear(),CM=HOY.getMonth()+1,CQ=Math.ceil(CM/3);
 const STD={Citas:10,Visitas:5,Apartados:2,Ventas:1};
-const A=window.AUTH||{};const ES_ADMIN=A.rol==="admin";
-let ME=A.nombre||"";try{if(ES_ADMIN){const s=sessionStorage.getItem("res_ver");if(s)ME=s}}catch(e){}
+const A=window.AUTH||{};const ES_ADMIN=!!A.puedeVerComo;   /* administrador: puede cambiar de asesor (mecanismo "Ver como" de auth.js, aplica a todo el portal) */
+let ME=A.nombre||"";
 let P="anio";try{const s=localStorage.getItem("misres_per");if(["anio","q","mes"].includes(s))P=s}catch(e){}
 let VENTAS=[],PAGOS=[],LEADS=[],HOT=[],LISTINGS=[],REGLAS={},EQ=[];
 
@@ -187,7 +187,7 @@ function render(){
   const prop=v=>[v.proyecto||v.inmueble||"",v.unidad||""].filter(Boolean).join(" · ")||"—";
 
   $("#app").innerHTML=`<div style="display:flex;flex-direction:column;gap:18px">
-  ${ES_ADMIN?`<div class="adm"><b>Vista de administrador.</b> Estás viendo los resultados de <select id="ver">${[...new Set(EQ.filter(a=>a.activo!==false).map(a=>a.nombre).concat([ME]))].sort((a,b)=>a.localeCompare(b,"es")).map(n=>`<option ${n===ME?"selected":""}>${esc(n)}</option>`).join("")}</select> tal como los ve en su portal.</div>`:""}
+  ${ES_ADMIN?`<div class="adm"><b>Vista de administrador.</b> Estás viendo los resultados de <select id="ver">${[...new Set(EQ.filter(a=>a.activo!==false).map(a=>a.nombre).concat([ME]))].sort((a,b)=>a.localeCompare(b,"es")).map(n=>`<option ${n===ME?"selected":""}>${esc(n)}</option>`).join("")}</select> tal como los ve en su portal. El cambio aplica a todos los módulos.</div>`:""}
   <header class="top">
     <div class="who"><div class="av" aria-hidden="true" ${fi?`style="background-image:url('${esc(fi.src)}');background-position:${fi.pos}"`:""}>${fi?"":esc(ini)}</div>
       <div><div class="eyebrow">Mis resultados</div><h1>${esc(ME)}, así va tu ${Y}</h1><p class="sub">${perTxt()}</p></div></div>
@@ -245,7 +245,7 @@ function render(){
   <p class="pie">TRUST realtor · Mis resultados de ${esc(ME)} · ${perTxt()} · generado el ${HOY.toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"})} · información confidencial</p>
   </div>`;
   document.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{P=b.dataset.p;try{localStorage.setItem("misres_per",P)}catch(e){}render()});
-  const ver=$("#ver");if(ver)ver.onchange=()=>{ME=ver.value;try{sessionStorage.setItem("res_ver",ME)}catch(e){}$("#app").innerHTML=`<p class="dim">Cargando…</p>`;load()};
+  const ver=$("#ver");if(ver)ver.onchange=()=>{if(window.TRUST_VER_COMO)window.TRUST_VER_COMO(ver.value)};
 }
 document.getElementById("btn-pdf").onclick=()=>{const t=document.title;document.title=`Mis resultados ${ME} ${perCorto()}`.replace(/\s+/g," ");window.print();setTimeout(()=>{document.title=t},800)};
 load();

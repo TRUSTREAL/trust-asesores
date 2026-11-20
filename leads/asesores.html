@@ -868,7 +868,7 @@ const cadAgotada=l=>enCadencia(l)&&(l.intentos_llamada||0)>=CAD.intentos_llamada
 const diaLocal=v=>{if(!v)return "";const s=String(v);if(s.length<=10)return s;const d=new Date(s);return isNaN(d)?s.slice(0,10):new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)};
 function diasSinCad(l){ if(!enCadencia(l)||cadAgotada(l)||l.perdido||l.futuro) return null; const ref=diaLocal(l.ultimo_intento)||diaLocal(l.created_at)||l.fecha; if(!ref) return null; return Math.max(0,Math.round((new Date(todayISO())-new Date(ref))/86400000)); }
 const sinMover=l=>{const d=diasSinCad(l);return d!=null&&d>=1};
-function caddHTML(l){ const d=diasSinCad(l); if(d==null) return ""; if(d===0) return (l.intentos_llamada||l.intentos_mensaje)?`<span class="cadd hoy" title="Ya registraste un intento hoy">✓ hoy</span>`:""; return `<span class="cadd" title="${d} día${d===1?"":"s"} sin registrar llamada ni mensaje${l.ultimo_intento?"":" (nunca se ha intentado)"}">${d} d sin mover</span>`; }
+function caddHTML(l){ const d=diasSinCad(l); if(d==null) return ""; if(d===0) return (l.intentos_llamada||l.intentos_mensaje)?`<span class="cadd hoy" title="Ya registraste un intento hoy">✓ hoy</span>`:""; return `<span class="cadd" title="${d} día${d===1?"":"s"} sin registrar llamada ni mensaje${l.ultimo_intento?"":" (nunca se ha intentado)"}">${d}D</span>`; }
 function cadHTML(l){
   const act=enCadencia(l), ro=typeof READONLY!=="undefined"&&READONLY;
   const b=(k,ico,title)=>{const max=CAD[k],n=Math.min(l[k]||0,max),full=n>=max;
@@ -1685,7 +1685,7 @@ function renderAse(){
   const sinEst=base.filter(l=>estatusDe(l)==="sin").length;
   document.getElementById("aSin").textContent=sinEst;
   document.getElementById("aSinBox").classList.toggle("warn", sinEst>0);
-  {const mv=base.filter(sinMover),mx=mv.reduce((a,l)=>Math.max(a,diasSinCad(l)),0);document.getElementById("aMov").innerHTML=mv.length+(mv.length?` <small style="font-family:Montserrat;font-size:11px">hasta ${mx} d</small>`:"");document.getElementById("aMovBox").classList.toggle("mov",mv.length>0);}
+  {const mv=base.filter(sinMover),mx=mv.reduce((a,l)=>Math.max(a,diasSinCad(l)),0);document.getElementById("aMov").innerHTML=mv.length+(mv.length?` <small style="font-family:Montserrat;font-size:11px">hasta ${mx}D</small>`:"");document.getElementById("aMovBox").classList.toggle("mov",mv.length>0);}
   const nCad=base.filter(cadAgotada).length; document.getElementById("aCad").textContent=nCad; document.getElementById("aCadBox").classList.toggle("warn", nCad>0);
   const p=count(rows,"proyecto"), c=count(rows,"canal");
   document.getElementById("aTotal").textContent=base.length;

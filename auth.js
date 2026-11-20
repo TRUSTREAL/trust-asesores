@@ -55,15 +55,22 @@
   if(user&&nombres().indexOf(user)<0){user=null;LS.del(KEY)}
 
   function fijar(n){IDENT.forEach(function(k){LS.set(k,n)});}
-  function salir(){LS.del(KEY);if(!ES_ADMIN)IDENT.forEach(function(k){LS.del(k)});location.href=ES_ADMIN?"/admin/":"/";}
+  function salir(){LS.del(KEY);LS.del("trust_ver_como");if(!ES_ADMIN)IDENT.forEach(function(k){LS.del(k)});location.href=ES_ADMIN?"/admin/":"/";}
   window.logout=salir;
 
   if(user){
+    /* ---- "Ver como": un administrador, dentro del portal de asesores, puede abrir el portal de cualquier asesor (todos los módulos) ---- */
+    var VK="trust_ver_como",real=user,puedeVer=!ES_ADMIN&&ADMINS.indexOf(real)>=0;
+    var ver=puedeVer?LS.get(VK):null;
+    if(ver&&(ver===real||ASESORES.indexOf(ver)<0))ver=null;
+    if(!ver)LS.del(VK);
+    if(ver)user=ver;   /* de aquí en adelante "user" es el asesor que se está viendo; "real" es quien inició sesión */
+    window.TRUST_VER_COMO=function(n){if(!puedeVer)return;if(!n||n===real){LS.del(VK);fijar(real)}else{LS.set(VK,n);fijar(n)}location.reload()};
     if(!ES_ADMIN)fijar(user);
     var yo=EQ.filter(function(a){return a.nombre===user})[0]||{};
-    window.AUTH={nombre:user,rol:ADMINS.indexOf(user)>=0?"admin":"asesor",nombreCompleto:yo.nombre_completo||"",celular:yo.celular||"",correo:yo.correo||"",foto:yo.foto_url||""};
+    window.AUTH={real:real,viendoComo:!!ver,puedeVerComo:puedeVer,nombre:user,rol:ADMINS.indexOf(user)>=0?"admin":"asesor",nombreCompleto:yo.nombre_completo||"",celular:yo.celular||"",correo:yo.correo||"",foto:yo.foto_url||""};
     /* Última sesión en el portal de asesores (se ve en Admin → Asesores). Máximo un registro cada 10 minutos. */
-    if(!ES_ADMIN){try{
+    if(!ES_ADMIN&&!ver){try{
       var pk="trust_ping_"+user,ult=+(LS.get(pk)||0),ahora=Date.now();
       if(ahora-ult>600000){LS.set(pk,String(ahora));
         fetch(SB_URL+"/rest/v1/asesores?nombre=eq."+encodeURIComponent(user),{method:"PATCH",headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY,"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify({ultima_sesion:new Date().toISOString()})}).catch(function(){});}
@@ -80,16 +87,17 @@
       var fi=fotoInfo(a.foto_url),ini=esc(user.charAt(0).toUpperCase());
       var av=function(c){return a.foto_url?'<span class="'+c+'" style="background-image:url(\''+esc(fi.src)+'\');background-position:'+fi.pos+'"></span>':'<span class="'+c+'">'+ini+'</span>'};
       var abierto=chip.className.indexOf("open")>=0;
-      chip.innerHTML='<button type="button" class="auth-btn" aria-haspopup="true">'+av("av")+'<span class="nm">'+esc(user)+'</span><span class="cv"></span></button>'+
+      chip.innerHTML='<button type="button" class="auth-btn" aria-haspopup="true">'+av("av")+'<span class="nm">'+esc(user)+(ver?' <i class="vt">viendo</i>':'')+'</span><span class="cv"></span></button>'+
         '<div class="auth-menu" role="menu">'+av("av big")+
           '<div class="mn">'+esc(a.nombre_completo||user)+'</div>'+
           '<div class="mr">'+(ES_ADMIN?"Administración · TRUST":(a.admin?"Asesor · Administrador":"Asesor TRUST"))+'</div>'+
           (a.celular?'<div class="mc">'+esc(a.celular)+'</div>':'')+
+          (puedeVer?'<label class="vc"><span>Ver el portal de</span><select class="auth-ver" aria-label="Ver el portal de otro asesor">'+ASESORES.map(function(n){return '<option value="'+esc(n)+'"'+(n===user?' selected':'')+'>'+esc(n===real?n+' (yo)':n)+'</option>'}).join('')+'</select></label>':'')+
           '<button type="button" class="auth-salir">Cerrar sesión</button></div>';
       if(abierto)chip.className+=" open";
     }
     /* Trae el equipo vigente; si a esta persona le quitaron el acceso, se cierra su sesión. */
-    refrescar(function(){if(nombres().indexOf(user)<0){salir();return}pintarChip()});
+    refrescar(function(){if(nombres().indexOf(real)<0){salir();return}if(ver&&ASESORES.indexOf(ver)<0){window.TRUST_VER_COMO("");return}pintarChip()});
     document.addEventListener("DOMContentLoaded",function(){
       var st=document.createElement("style");
       st.textContent="#btn-switch,#btn-cambiar,#tabSwitch,.auth-hide{display:none!important}"+
@@ -112,7 +120,12 @@
         ".auth-out.fixed{position:fixed;right:14px;top:12px;z-index:9999}"+
         ".user-chip.auth-host>.asesor-label,.user-chip.auth-host>.asesor-select,.user-chip.auth-host>.user-avatar{display:none!important}"+
         "@media (max-width:520px){.auth-out .nm{max-width:90px;overflow:hidden;text-overflow:ellipsis}}"+
-        "@media print{.auth-out{display:none!important}}";
+        ".auth-out .vc{display:block;margin-top:12px;padding-top:12px;border-top:1px solid #EFEAE0;text-align:left}.auth-out .vc span{display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#9C7A4E;font-weight:600;margin-bottom:5px}"+
+        ".auth-out .auth-ver{width:100%;border:1px solid #D9D2C3;border-radius:10px;padding:8px 10px;font:inherit;font-size:13px;background:#fff;color:#1E241F}"+
+        ".auth-out .vt{font-style:normal;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;background:#B8956A;color:#fff;border-radius:999px;padding:1px 7px;margin-left:4px}"+
+        ".auth-ver-bar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:99980;display:flex;align-items:center;gap:10px;max-width:calc(100vw - 24px);background:#173F35;color:#fff;border-radius:999px;padding:8px 8px 8px 16px;font-family:Poppins,Montserrat,system-ui,sans-serif;font-size:13px;box-shadow:0 12px 30px rgba(23,63,53,.35)}"+
+        ".auth-ver-bar b{font-weight:600}.auth-ver-bar button{border:0;background:#fff;color:#173F35;border-radius:999px;padding:6px 12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}"+
+        "@media print{.auth-out,.auth-ver-bar{display:none!important}}";
       document.head.appendChild(st);
       chip=document.createElement("div");chip.className="auth-out";
       /* dónde va: barra superior del módulo; si la página no tiene, queda fijo arriba a la derecha */
@@ -120,6 +133,9 @@
       if(host){if(host.className.indexOf("user-chip")>=0)host.className+=" auth-host";host.appendChild(chip)}
       else{chip.className+=" fixed";document.body.appendChild(chip)}
       pintarChip();
+      if(ver){var vb=document.createElement("div");vb.className="auth-ver-bar";vb.innerHTML='<span>Estás viendo el portal de <b>'+esc(ver)+'</b></span><button type="button">Volver a mi vista</button>';
+        vb.querySelector("button").onclick=function(){window.TRUST_VER_COMO("")};document.body.appendChild(vb)}
+      chip.addEventListener("change",function(e){var t=e.target;if(t&&String(t.className).indexOf("auth-ver")>=0)window.TRUST_VER_COMO(t.value)});
       chip.addEventListener("click",function(e){
         var t=e.target;
         if(t.className&&String(t.className).indexOf("auth-salir")>=0){salir();return}
