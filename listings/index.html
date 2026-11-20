@@ -447,7 +447,11 @@ $("#btn-cambiar").onclick=()=>{ME="";localStorage.removeItem("lst_me");init()};
 const LONA_TXT={nosol:"Lona no solicitada",sol:"Lona solicitada",nocol:"Lona no colocada",col:"Lona colocada",noperm:"Sin lona · propietario"};
 function lonaEstado(l){
   if(l.lona_no_permitida)return "noperm";
-  if(docsOf(l.id,"video_lona").length)return "col";
+  if(l.lona_colocada===true)return "col"; // etapa puesta a mano por admin
+  const ev=docsOf(l.id,"video_lona");
+  // admin regresó la etapa a mano: la evidencia anterior ya no cuenta; una evidencia nueva sí la marca colocada
+  if(l.lona_colocada===false){const t0=Date.parse(l.lona_etapa_en||"")||0,tDoc=d=>+((String(d.path||"").split("/").pop().match(/^(\d{12,})_/)||[])[1]||0)||Date.parse(d.created_at||"")||0;if(t0&&ev.some(d=>tDoc(d)>t0))return "col"}
+  else if(ev.length)return "col";
   if(l.lona_entregada)return "nocol";
   if(l.lona_solicitada)return "sol";
   return "nosol";
@@ -678,7 +682,7 @@ function renderAlta(){
     ${ck(3,s3,"Disponibilidad","Disponible = sale en el catálogo de Brokerage para todos los asesores. No disponible = se va a la píldora “No disponibles” (vendida, rentada o retirada).",s3?(l.estatus==="activo"?`<span class="st activo">Disponible</span><button class="btn" id="act-pausar">Marcar no disponible</button>`:`<span class="st ${l.estatus}">No disponible</span><button class="btn primary" id="act-reactivar">Marcar disponible</button>`):`<button class="btn primary" id="act-activar" ${s1&&s2?"":"disabled"} title="${s1&&s2?"":"Primero la liga y la ficha"}">Publicar como disponible ✓</button>`)}
     </div>
     <div class="sect">${fichaFotosHTML(l)}</div>
-    <div class="sect"><h3>Lona</h3><p class="hint" style="margin:0 0 8px">Toda propiedad debe llevar lona. Se marca como colocada cuando se sube la foto o video de evidencia.</p><div class="actions" style="margin-top:0">${lonaChip(l,"det")}${l.lona_no_permitida?`<span class="hint">${l.lona_motivo?esc(l.lona_motivo):"Motivo no registrado"}</span><button class="btn" id="lona_re">Reactivar lona</button>`:`${!l.lona_solicitada?`<button class="btn" id="lona_sol">Marcar solicitada</button>`:""}${l.lona_solicitada&&!l.lona_entregada?`<button class="btn" id="lona_ok">Marcar lona entregada</button>`:""}<button class="btn" id="lona_np">El propietario no la permite</button>`}</div>
+    <div class="sect"><h3>Lona</h3><p class="hint" style="margin:0 0 8px">Toda propiedad debe llevar lona. Se marca como colocada cuando se sube la foto o video de evidencia, o puedes cambiar la etapa a mano aquí.</p><div class="actions" style="margin-top:0">${lonaChip(l,"det")}<label for="lona_etapa" class="hint" style="margin-left:6px">Cambiar etapa:</label><select id="lona_etapa" style="font:inherit;font-size:13px;padding:6px 10px;border:1px solid var(--line-2);border-radius:8px;background:#fff">${[["nosol","No solicitada"],["sol","Solicitada"],["nocol","Entregada · no colocada"],["col","Colocada"],["noperm","Sin lona (propietario no la permite)"]].map(([k,t])=>`<option value="${k}" ${lonaEstado(l)===k?"selected":""}>${t}</option>`).join("")}</select>${l.lona_no_permitida?`<span class="hint">${l.lona_motivo?esc(l.lona_motivo):"Motivo no registrado"}</span>`:""}</div>
       <label class="dz" data-kind="video_lona" style="margin-top:10px">⇪ Video de colocación de lona<input type="file" accept="video/*,image/*"></label><div class="doclist" id="docs-video_lona"></div></div>`;
   b.innerHTML=h;
   const on=(id,fn)=>{const x=$("#"+id);if(x)x.onclick=fn};
@@ -687,10 +691,13 @@ function renderAlta(){
   on("act-activar",async()=>{if(await patch({estatus:"activo"}))toast("Publicada: ya sale en el catálogo de Brokerage")});
   on("act-pausar",async()=>{if(confirm("¿Marcar como no disponible? Deja de salir en el catálogo de los asesores y pasa a “No disponibles”.")&&await patch({estatus:"pausado"}))toast("Marcada como no disponible")});
   on("act-reactivar",async()=>{if(await patch({estatus:"activo"}))toast("Disponible de nuevo en el catálogo")});
-  on("lona_ok",async()=>{if(await patch({lona_entregada:true}))toast("Lona entregada")});
-  on("lona_sol",async()=>{if(await patch({lona_solicitada:true}))toast("Lona marcada como solicitada")});
-  on("lona_np",async()=>{const m=prompt("¿Por qué no se puede colocar? (por ejemplo: el propietario no lo permite, condominio, reglamento)","El propietario no la permite");if(m===null)return;if(await patch({lona_no_permitida:true,lona_motivo:m.trim()||"El propietario no la permite"}))toast("Marcada sin lona")});
-  on("lona_re",async()=>{if(await patch({lona_no_permitida:false,lona_motivo:null}))toast("Lona reactivada")});
+  {const ls=$("#lona_etapa");if(ls)ls.onchange=async()=>{const k=ls.value;let upd;
+    if(k==="noperm"){const m=prompt("¿Por qué no se puede colocar? (por ejemplo: el propietario no lo permite, condominio, reglamento)",l.lona_motivo||"El propietario no la permite");if(m===null){ls.value=lonaEstado(l);return}upd={lona_no_permitida:true,lona_motivo:m.trim()||"El propietario no la permite"}}
+    else upd={lona_no_permitida:false,lona_motivo:null,lona_solicitada:k!=="nosol",lona_entregada:k==="nocol"||k==="col",lona_colocada:k==="col",lona_etapa_en:new Date().toISOString()};
+    let r=await sb.from("listings").update(upd).eq("id",cur.id).select().single();
+    if(r.error&&/lona_colocada|lona_etapa_en/.test(r.error.message)){toast("Falta correr sql/listings_lona_etapa.sql en Supabase",true);ls.value=lonaEstado(l);return}
+    if(r.error){toast("No se guardó: "+r.error.message,true);ls.value=lonaEstado(l);return}
+    cur={...r.data,estatus:NORM[r.data.estatus]||r.data.estatus};const i=LISTINGS.findIndex(x=>x.id===cur.id);if(i>=0)LISTINGS[i]=cur;refresh();toast("Lona: "+LONA_TXT[lonaEstado(cur)].replace(/^Lona /,""))}}
   renderDocList("video_lona");
 }
 function fichaFotosHTML(l){
