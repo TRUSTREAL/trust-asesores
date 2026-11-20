@@ -129,7 +129,10 @@ td.m{color:var(--trust-gray)}
 .kpi.apa{border-color:var(--st-apa)}.kpi.apa b{color:#B8901A}
 .kpi.kpibtn.sel{border-width:2px;background:#F6F3EC}
 .kpi.seg{border-color:var(--st-seg)}.kpi.seg b{color:var(--st-seg)}
-.kpis.k8a{grid-template-columns:repeat(9,1fr);gap:10px}
+.kpis.k8a{grid-template-columns:repeat(5,1fr);gap:10px}
+.cadd{display:inline-flex;align-items:center;gap:3px;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:700;line-height:1.2;white-space:nowrap;background:#A8342A;color:#fff}
+.cadd.hoy{background:#E3F1EA;color:#2E7D5B;font-weight:600}
+.kpi.mov b{color:#A8342A}.kpi.mov{border-color:#E3B4AE;background:#FCF1EF}
 .kpis.k8a .kpi{padding:14px 12px}.kpis.k8a .kpi b{font-size:28px}.kpis.k8a .kpi b small{font-size:11px!important}.kpis.k8a .kpi span{font-size:11px}
 .kpi.gold{border-color:var(--trust-accent)}
 .kpi.gold b{color:var(--trust-accent)}
@@ -665,13 +668,14 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
       <select id="aProyF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Proyecto: todos</option></select>
       <select id="aCanalF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Canal: todos</option></select>
       <select id="aTipoF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Tipo: todos</option><option>Directo</option><option>Broker</option></select>
-      <select id="aEstF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Estatus: todos</option><option value="activo">Activos (sin perdidos ni futuros)</option><option value="cad">Cadencia agotada (3 llamadas + 7 mensajes)</option><option value="sin">Sin estatus</option><option value="nc">No contestó</option><option value="seguimiento">Seguimiento</option><option value="hot">Hot Lead</option><option value="cita">Cita realizada</option><option value="visita">Visita</option><option value="apartado">Apartado</option><option value="venta">Venta</option><option value="futuro">Futuro</option><option value="perdido">Perdido</option></select>
+      <select id="aEstF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Estatus: todos</option><option value="activo">Activos (sin perdidos ni futuros)</option><option value="sinmov">NC sin mover (sin intento hoy)</option><option value="cad">Cadencia agotada (3 llamadas + 7 mensajes)</option><option value="sin">Sin estatus</option><option value="nc">No contestó</option><option value="seguimiento">Seguimiento</option><option value="hot">Hot Lead</option><option value="cita">Cita realizada</option><option value="visita">Visita</option><option value="apartado">Apartado</option><option value="venta">Venta</option><option value="futuro">Futuro</option><option value="perdido">Perdido</option></select>
       <button class="btn2 clear" id="aClear" onclick="clearAseF()">Quitar filtros</button>
     </div>
     <div class="kpis k8a">
       <div class="kpi dark"><b id="aTotal">0</b><span>leads recibidos</span></div>
       <div class="kpi kpibtn" id="aActBox" onclick="kpiFilt('activo')" title="Leads del periodo que no se han perdido ni pasado a futuro"><b id="aAct">0</b><span>activos</span></div>
       <div class="kpi kpibtn" id="aNcBox" onclick="kpiFilt('nc')" title="Ver solo los que no contestaron"><b id="aNc">0</b><span>no contestó</span></div>
+      <div class="kpi kpibtn" id="aMovBox" onclick="kpiFilt('sinmov')" title="Leads en NC o sin estatus a los que no les has registrado llamada ni mensaje hoy. Clic para verlos, del más abandonado al más reciente."><b id="aMov">0</b><span>NC sin mover</span></div>
       <div class="kpi kpibtn" id="aSegBox" onclick="kpiFilt('seguimiento')" title="Ver solo los leads en seguimiento"><b id="aSeg">0</b><span>seguimiento</span></div>
       <div class="kpi kpibtn" id="aHotBox" onclick="kpiFilt('hot')" title="Ver solo los hot leads"><b id="aHot">0</b><span>hot leads</span></div>
       <div class="kpi kpibtn" id="aApaBox" onclick="kpiFilt('apartado')" title="Ver solo los apartados"><b id="aApa">0</b><span>apartados</span></div>
@@ -841,11 +845,16 @@ const ESTATUS=["nc","hot","cita","visita","apartado","venta","seguimiento","perd
 const CAD={intentos_llamada:3,intentos_mensaje:7};
 const enCadencia=l=>["nc","sin"].includes(estatusDe(l));
 const cadAgotada=l=>enCadencia(l)&&(l.intentos_llamada||0)>=CAD.intentos_llamada&&(l.intentos_mensaje||0)>=CAD.intentos_mensaje;
+/* Días sin mover la cadencia: lead en NC o sin estatus (con cadencia pendiente) sin llamada ni mensaje registrados. Cuenta desde el último intento, o desde el registro si nunca se ha intentado. */
+const diaLocal=v=>{if(!v)return "";const s=String(v);if(s.length<=10)return s;const d=new Date(s);return isNaN(d)?s.slice(0,10):new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)};
+function diasSinCad(l){ if(!enCadencia(l)||cadAgotada(l)||l.perdido||l.futuro) return null; const ref=diaLocal(l.ultimo_intento)||diaLocal(l.created_at)||l.fecha; if(!ref) return null; return Math.max(0,Math.round((new Date(todayISO())-new Date(ref))/86400000)); }
+const sinMover=l=>{const d=diasSinCad(l);return d!=null&&d>=1};
+function caddHTML(l){ const d=diasSinCad(l); if(d==null) return ""; if(d===0) return (l.intentos_llamada||l.intentos_mensaje)?`<span class="cadd hoy" title="Ya registraste un intento hoy">✓ hoy</span>`:""; return `<span class="cadd" title="${d} día${d===1?"":"s"} sin registrar llamada ni mensaje${l.ultimo_intento?"":" (nunca se ha intentado)"}">${d} d sin mover</span>`; }
 function cadHTML(l){
   const act=enCadencia(l), ro=typeof READONLY!=="undefined"&&READONLY;
   const b=(k,ico,title)=>{const max=CAD[k],n=Math.min(l[k]||0,max),full=n>=max;
     return `<button type="button" class="cad ${act?"":"off"} ${full&&act?"full":""}" title="${title}: ${n} de ${max}${act?" · clic suma · shift+clic resta":" · contacto logrado"}" ${ro?"disabled":""} onclick="cadClick(event,${JSON.stringify(l.id)},'${k}')"><span class="i">${ico}</span><span class="d">${"●".repeat(n)}${"○".repeat(max-n)}</span></button>`};
-  return `<span class="cadg">${b("intentos_llamada","📞","Llamadas")}${b("intentos_mensaje","💬","Mensajes")}</span>`;
+  return `<span class="cadg">${b("intentos_llamada","📞","Llamadas")}${b("intentos_mensaje","💬","Mensajes")}${caddHTML(l)}</span>`;
 }
 async function cadClick(ev,id,k){
   ev.stopPropagation();
@@ -1639,18 +1648,20 @@ function renderAse(){
   const q=(document.getElementById("aQ")?.value||"").trim().toLowerCase();
   const fp=document.getElementById("aProyF").value, fc=document.getElementById("aCanalF").value, ft=document.getElementById("aTipoF").value, fe=document.getElementById("aEstF").value;
   const base=all.filter(l=> l.asesor===aseCur && (!q || (l.nombre||"").toLowerCase().includes(q) || (l.telefono||"").toLowerCase().includes(q)) && (!fp||l.proyecto===fp) && canalMatch(l,fc) && (!ft||tipoDe(l)===ft));
-  const rows=base.filter(l=> (!fe || (fe==="activo" ? !["perdido","futuro"].includes(estatusDe(l)) : fe==="cad" ? cadAgotada(l) : estatusDe(l)===fe)) && (!aFlags.size || [...aFlags].some(k=>!!l[k])));
+  const rows=base.filter(l=> (!fe || (fe==="activo" ? !["perdido","futuro"].includes(estatusDe(l)) : fe==="cad" ? cadAgotada(l) : fe==="sinmov" ? sinMover(l) : estatusDe(l)===fe)) && (!aFlags.size || [...aFlags].some(k=>!!l[k])));
+  if(fe==="sinmov") rows.sort((x,y)=>diasSinCad(y)-diasSinCad(x));
   renderAFlags(base);
   document.getElementById("aClear").classList.toggle("on", !!(q||fp||fc||ft||fe||aFlags.size));
   const sinEst=base.filter(l=>estatusDe(l)==="sin").length;
   document.getElementById("aSin").textContent=sinEst;
   document.getElementById("aSinBox").classList.toggle("warn", sinEst>0);
+  {const mv=base.filter(sinMover),mx=mv.reduce((a,l)=>Math.max(a,diasSinCad(l)),0);document.getElementById("aMov").innerHTML=mv.length+(mv.length?` <small style="font-family:Montserrat;font-size:11px">hasta ${mx} d</small>`:"");document.getElementById("aMovBox").classList.toggle("mov",mv.length>0);}
   const nCad=base.filter(cadAgotada).length; document.getElementById("aCad").textContent=nCad; document.getElementById("aCadBox").classList.toggle("warn", nCad>0);
   const p=count(rows,"proyecto"), c=count(rows,"canal");
   document.getElementById("aTotal").textContent=base.length;
   const nPerd=base.filter(l=>estatusDe(l)==="perdido").length; document.getElementById("aShare").innerHTML=`${nPerd} <small style="font-family:Montserrat;font-size:13px">${pct(nPerd,base.length)}</small>`; document.getElementById("aPerdBox").classList.toggle("lost", nPerd>0);
   const sm=v=>` <small style="font-family:Montserrat;font-size:13px">${v}</small>`;
-  [["activo","aActBox"],["perdido","aPerdBox"],["futuro","aFutBox"],["nc","aNcBox"],["seguimiento","aSegBox"],["hot","aHotBox"],["sin","aSinBox"],["cad","aCadBox"],["apartado","aApaBox"]].forEach(([k,id])=>document.getElementById(id).classList.toggle("sel", fe===k));
+  [["activo","aActBox"],["perdido","aPerdBox"],["futuro","aFutBox"],["nc","aNcBox"],["seguimiento","aSegBox"],["hot","aHotBox"],["sin","aSinBox"],["sinmov","aMovBox"],["cad","aCadBox"],["apartado","aApaBox"]].forEach(([k,id])=>document.getElementById(id).classList.toggle("sel", fe===k));
   const nAct=base.filter(l=>!["perdido","futuro"].includes(estatusDe(l))).length;
   const nFut=base.filter(l=>estatusDe(l)==="futuro").length; document.getElementById("aFut").innerHTML=nFut+sm(pct(nFut,base.length)); document.getElementById("aFutBox").classList.toggle("fut", nFut>0); document.getElementById("aAct").innerHTML=nAct+sm(pct(nAct,base.length));
   const nNc=base.filter(l=>estatusDe(l)==="nc").length; document.getElementById("aNc").innerHTML=nNc+sm(pct(nNc,base.length));
