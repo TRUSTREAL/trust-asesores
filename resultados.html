@@ -140,11 +140,12 @@ async function load(){
     render();
   }catch(e){$("#app").innerHTML=`<div class="empty">No se pudieron leer tus resultados: ${esc(e.message||e)}</div>`}
 }
+/* comisión generada por un asesor en total: todas sus partidas en la dispersión de cada venta (vendedor, opcionador, autogenerada, TOP Realtor), sin las de Staff */
+const comDe=(n,f)=>VENTAS.filter(v=>f(v.fecha)).reduce((a,v)=>{const t=comTotal(v);return a+(v.dispersion||[]).filter(p=>p.nombre===n&&p.rol!=="Staff").reduce((x,p)=>x+partAmt(p,t),0)},0);
+/* ranking del equipo por comisión generada: asesores activos (sin administradores), más quien esté viendo */
 function ranking(f){
-  const names=new Set(EQ.filter(a=>a.activo!==false).map(a=>a.nombre));
-  VENTAS.forEach(v=>{if(!esCredito(v)&&f(v.fecha)){[v.asesor,v.asesor2].forEach(n=>{if(n&&!/^(ex|otro)$/i.test(n))names.add(n)})}});
-  names.add(ME);
-  return [...names].map(n=>({n,c:cierresDe(n,f)})).filter(r=>r.c>0||r.n===ME||EQ.some(a=>a.nombre===r.n&&a.activo!==false&&!a.admin)).sort((a,b)=>b.c-a.c||(a.n===ME?-1:b.n===ME?1:0));
+  const names=new Set(EQ.filter(a=>a.activo!==false&&!a.admin).map(a=>a.nombre));names.add(ME);
+  return [...names].map(n=>({n,c:comDe(n,f)})).sort((a,b)=>b.c-a.c||(a.n===ME?-1:b.n===ME?1:0));
 }
 function fotoInfo(url){const m=/#o=([vhs])&p=(\d+)/.exec(url||""),o=m?m[1]:"s",p=m?+m[2]:50;return {src:(url||"").split("#")[0],pos:o==="v"?"50% "+p+"%":o==="h"?p+"% 50%":"50% 50%"}}
 
@@ -158,7 +159,7 @@ function render(){
   const soloOpc=ops.length-cier.length;
   const le=LEADS.filter(l=>inP(l.fecha)),L={leads:le.length,c:le.filter(l=>l.cita||l.apartado||l.venta).length,vi:le.filter(l=>l.visita).length,ap:le.filter(l=>l.apartado||l.venta).length,v:le.filter(l=>l.venta).length};
   const nM=nMeses();
-  const rkY=ranking(f=>anioDe(f)===Y), lugar=1+rkY.filter(r=>r.c>cierresDe(ME,f=>anioDe(f)===Y)).length;
+  const rkY=ranking(f=>anioDe(f)===Y), miY=comDe(ME,f=>anioDe(f)===Y),lugar=1+rkY.filter(r=>r.c>miY+0.5).length;
   const activos=LISTINGS.filter(l=>l.estatus==="activo").length;
   const yo=EQ.find(a=>a.nombre===ME)||{},fi=yo.foto_url?fotoInfo(yo.foto_url):null;
   const ini=ME.split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase();
@@ -174,7 +175,7 @@ function render(){
   // hot leads
   const hot=HOT.slice().sort((a,b)=>(+b.monto||0)-(+a.monto||0)),hotTot=hot.reduce((a,h)=>a+(+h.monto||0),0);
   // TOP Realtor del trimestre
-  const rkQ=ranking(f=>anioDe(f)===Y&&Math.ceil(mesDe(f)/3)===CQ),miQ=cierresDe(ME,f=>anioDe(f)===Y&&Math.ceil(mesDe(f)/3)===CQ),maxQ=Math.max(...rkQ.map(r=>r.c),1);
+  const rkQ=ranking(f=>anioDe(f)===Y&&Math.ceil(mesDe(f)/3)===CQ),miQ=comDe(ME,f=>anioDe(f)===Y&&Math.ceil(mesDe(f)/3)===CQ),maxQ=Math.max(...rkQ.map(r=>r.c),1);
   const posQ=rkQ.findIndex(r=>r.n===ME);let verQ=rkQ.slice(0,6);if(posQ>=6)verQ=rkQ.slice(0,5).concat([rkQ[posQ]]);
   const lider=rkQ[0]?rkQ[0].c:0,falta=lider-miQ;
   const rol=v=>{const r=[...new Set(misPartes(v).map(p=>String(p.rol||"").replace(/\s*\(compartida\)/,"")))];return r.length?r.join(" + "):esVendDe(v,ME)?"Vendedor":"—"};
@@ -195,7 +196,7 @@ function render(){
     <div class="tile"><span class="l">Por cobrar</span><span class="v" style="color:${pend>0.5?"var(--bad)":"var(--ok)"}">${fmtK(pend)}</span><span class="s">${nPend?`${nPend} operaci${nPend===1?"ón":"ones"} pendiente${nPend===1?"":"s"}`:"todo pagado"}</span></div>
     <div class="tile"><span class="l">Leads recibidos</span><span class="v">${L.leads}</span><span class="s">${L.leads?pct(L.v,L.leads,1)+" terminó en venta":"sin leads en el periodo"}</span></div>
     <div class="tile"><span class="l">Mis listings</span><span class="v">${activos}</span><span class="s">propiedad${activos===1?"":"es"} activa${activos===1?"":"s"}</span></div>
-    <div class="tile"><span class="l">Lugar en el equipo</span><span class="v">${lugar}º <small style="font-size:14px;color:var(--dim)">de ${rkY.length}</small></span><span class="s">por cierres en ${Y}</span></div>
+    <div class="tile"><span class="l">Lugar en el equipo</span><span class="v">${lugar}º <small style="font-size:14px;color:var(--dim)">de ${rkY.length}</small></span><span class="s">por comisión generada en ${Y}</span></div>
   </section>
 
   <div class="grid2">
@@ -227,9 +228,9 @@ function render(){
       <tbody>${hot.map(h=>`<tr><td><b>${esc(h.cliente||"—")}</b></td><td>${esc(h.proyecto||"—")}</td><td class="num">${+h.monto?fmtK(h.monto):"—"}</td></tr>`).join("")}</tbody>
       <tfoot><tr><td colspan="2">${hot.length} hot lead${hot.length===1?"":"s"} pendiente${hot.length===1?"":"s"}</td><td class="num">${fmtK(hotTot)}</td></tr></tfoot></table></div>`:`<div class="empty">No tienes hot leads pendientes. Regístralos en <a href="hotleads/asesores.html">Mis hot leads</a>.</div>`}</section>
 
-    <section class="card"><div class="chead"><h2>TOP Realtor · Q${CQ}</h2><span class="note">cierres del trimestre</span></div>
-      <div>${verQ.map(r=>{const i=rkQ.indexOf(r),me=r.n===ME;return `<div class="rk ${me?"me":""}"><span class="n">${1+rkQ.filter(x=>x.c>r.c).length}</span><div><div style="margin-bottom:4px">${me?"<b>Tú</b>":"Asesor "+String.fromCharCode(65+(i>posQ&&posQ>=0?i-1:i))}</div><div class="tr"><i style="width:${r.c/maxQ*100}%"></i></div></div><b>${r.c} ${r.c===1?"cierre":"cierres"}</b></div>`}).join("")}</div>
-      <p class="note">${!lider?"Nadie tiene cierres todavía este trimestre.":falta<=0?"Vas en <b>primer lugar</b> del trimestre.":`Te falta${falta===1?"":"n"} <b>${falta} cierre${falta===1?"":"s"}</b> para alcanzar el primer lugar del trimestre.`}</p></section>
+    <section class="card"><div class="chead"><h2>TOP Realtor · Q${CQ}</h2><span class="note">comisión generada en el trimestre</span></div>
+      <div>${verQ.map(r=>{const i=rkQ.indexOf(r),me=r.n===ME;return `<div class="rk ${me?"me":""}"><span class="n">${1+rkQ.filter(x=>x.c>r.c+0.5).length}</span><div><div style="margin-bottom:4px">${me?"<b>Tú</b>":"Asesor "+String.fromCharCode(65+(i>posQ&&posQ>=0?i-1:i))}</div><div class="tr"><i style="width:${r.c/maxQ*100}%"></i></div></div><b>${me?fmt(r.c):""}</b></div>`}).join("")}</div>
+      <p class="note">${lider<=0.5?"Nadie ha generado comisión todavía este trimestre.":falta<=0.5?"Vas en <b>primer lugar</b> del trimestre.":`Te faltan <b>${fmt(falta)}</b> de comisión para alcanzar el primer lugar del trimestre.`} El lugar se define por la comisión total que genera cada asesor (como vendedor, opcionador y autogenerada).</p></section>
   </div>
 
   <section class="card"><div class="chead"><h2>Mis operaciones</h2><span class="note">${perCorto()}</span></div>
