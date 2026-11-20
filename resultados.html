@@ -38,6 +38,7 @@ button:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(
 .tile .l{font-size:12px;color:var(--dim)}
 .tile .v{font-family:var(--serif);font-size:27px;color:var(--green);font-variant-numeric:tabular-nums;line-height:1.2}
 .tile .s{font-size:12px;color:var(--dim)}
+.tile.duo{flex-direction:row;gap:0;padding:14px 0}.tile.duo>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;padding:0 14px}.tile.duo>div+div{border-left:1px solid var(--line)}.tile.duo .v{font-size:21px;line-height:1.5}
 .tile.hl{background:var(--green);border-color:var(--green)}.tile.hl .l,.tile.hl .s{color:rgba(255,255,255,.75)}.tile.hl .v{color:#fff}
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 1px 2px rgba(23,63,53,.06),0 8px 24px rgba(23,63,53,.06);padding:22px;min-width:0;display:flex;flex-direction:column;gap:14px}
 .chead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
@@ -153,6 +154,7 @@ function render(){
   const ops=VENTAS.filter(v=>inP(v.fecha)&&(miCom(v)>0||esVendDe(v,ME))).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))||String(b.created_at||"").localeCompare(String(a.created_at||"")));
   const cier=ops.filter(v=>esVendDe(v,ME)&&!esCredito(v));
   const monto=cier.reduce((a,v)=>a+(+v.monto||0),0), com=ops.reduce((a,v)=>a+miCom(v),0);
+  const ing=cier.reduce((a,v)=>a+comTotal(v)/(v.asesor2?2:1),0); // comisión completa de sus ventas (ingreso de la operación)
   const pag=ops.reduce((a,v)=>a+Math.min(miCom(v),pagadoDe(v.id)),0), pend=Math.max(0,com-pag);
   const nPend=ops.filter(v=>miCom(v)-pagadoDe(v.id)>0.5).length;
   const rentas=cier.filter(v=>/renta/i.test(v.tipo||"")).length;
@@ -190,7 +192,7 @@ function render(){
   </header>
   <section class="tiles" aria-label="Resumen">
     <div class="tile hl"><span class="l">Cierres</span><span class="v">${cier.length}</span><span class="s">${cier.length-rentas} venta${cier.length-rentas===1?"":"s"} · ${rentas} renta${rentas===1?"":"s"}${soloOpc?` · +${soloOpc} como opcionador`:""}</span></div>
-    <div class="tile"><span class="l">Ventas</span><span class="v">${fmtK(monto)}</span><span class="s">${cier.length?fmtK(monto/cier.length)+" ticket promedio":"sin cierres en el periodo"}</span></div>
+    <div class="tile duo"><div><span class="l">Ventas</span><span class="v">${fmtK(monto)}</span><span class="s">${cier.length?fmtK(monto/cier.length)+" ticket prom.":"sin cierres"}</span></div><div><span class="l">Ingreso</span><span class="v">${fmtK(ing)}</span><span class="s">${monto?(ing/monto*100).toFixed(1)+"% de las ventas":"comisión de las ventas"}</span></div></div>
     <div class="tile"><span class="l">Mi comisión generada</span><span class="v">${fmtK(com)}</span><span class="s">${fmt(pag)} ya pagado</span></div>
     <div class="tile"><span class="l">Comisión promedio mensual</span><span class="v">${fmtK(com/nM)}</span><span class="s">${fmt(com)} entre ${nM} ${nM===1?"mes":"meses"}</span></div>
     <div class="tile"><span class="l">Por cobrar</span><span class="v" style="color:${pend>0.5?"var(--bad)":"var(--ok)"}">${fmtK(pend)}</span><span class="s">${nPend?`${nPend} operaci${nPend===1?"ón":"ones"} pendiente${nPend===1?"":"s"}`:"todo pagado"}</span></div>
