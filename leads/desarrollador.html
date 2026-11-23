@@ -1094,7 +1094,7 @@ async function save(){
   }
   const btn=document.getElementById("save"); btn.disabled=true;
   try{
-    await insert({fecha, nombre: nombre||"Sin nombre", telefono, canal, marketplace, proyecto, asesor, tipo:sel.tipo, nc:true});
+    await insert({fecha, nombre: nombre||"Sin nombre", telefono, canal, marketplace, proyecto, asesor, tipo:sel.tipo, nc:true, asignado_en:new Date().toISOString()});
     toast(`Registrado · ${nombre||"Sin nombre"} → ${asesor}`);
     resetForm(); render();
   }catch(e){ toast("No se guardó: "+e.message, true); }

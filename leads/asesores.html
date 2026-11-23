@@ -1126,7 +1126,10 @@ async function save(){
   }
   const btn=document.getElementById("save"); btn.disabled=true;
   try{
-    await insert({fecha, nombre: nombre||"Sin nombre", telefono, canal, marketplace, proyecto, asesor, tipo:sel.tipo, nc:true});
+    const _yo=(window.AUTH&&(window.AUTH.nombre||""))||"";
+    const _f={fecha, nombre: nombre||"Sin nombre", telefono, canal, marketplace, proyecto, asesor, tipo:sel.tipo, nc:true};
+    if(asesor!==_yo) _f.asignado_en=new Date().toISOString();   /* asignado a otro asesor: arranca el reloj de 30 min */
+    await insert(_f);
     toast(`Registrado · ${nombre||"Sin nombre"} → ${asesor}`);
     resetForm(); render();
   }catch(e){ toast("No se guardó: "+e.message, true); }
