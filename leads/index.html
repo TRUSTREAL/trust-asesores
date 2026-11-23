@@ -450,6 +450,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
 </style>
 
 <script src="/auth.js"></script>
+<script src="/citas/citas.js"></script>
 </head>
 <body>
 
@@ -875,6 +876,11 @@ async function cadClick(ev,id,k){
 }
 async function toggleFlag(id, k, force){
   const l=leads.find(x=>String(x.id)===String(id)); if(!l) return; id=l.id;
+  /* Nuevo sistema de Lead Management: sin registro no hay cita. Cita y Visita ya no se prenden a mano: abren el registro de la cita (queda en Mis citas como realizada) y el lead se actualiza solo al guardarla. */
+  if((k==="cita"||k==="visita") && window.CITAS && !(typeof READONLY!=="undefined"&&READONLY)){
+    CITAS.registrar({asesor:l.asesor, lead:l, visita:k==="visita", admin:true, onSaved:(c,lp)=>{ if(lp) Object.assign(l,lp); render(); }});
+    return;
+  }
   const f={}; ESTATUS.forEach(e=> f[e]=false);
   if(k==="sin"){ if(estatusDe(l)==="nc"&&!PRIORIDAD.some(x=>x!=="nc"&&l[x])) return; f.nc=true; f.razon_perdido=null; f.visita_fecha=null; f.visita_lugar=null; try{ await patch(id,f); render(); }catch(e){ toast("No se guardó: "+e.message,true); } return; }
   if(force && l[k] && estatusDe(l)===k) return;   // ya está ahí
