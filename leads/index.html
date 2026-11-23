@@ -451,6 +451,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
 
 <script src="/auth.js"></script>
 <script src="/citas/citas.js"></script>
+<script src="/leads/reloj.js"></script>
 </head>
 <body>
 
@@ -468,6 +469,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
 
   <!-- ====== REGISTRO ====== -->
   <section class="view on" id="reg">
+    <div id="relojBox"></div>
     <div class="capture">
       <div class="card">
         <h1 style="margin-bottom:20px">Nuevo lead</h1>
@@ -806,7 +808,8 @@ function setSync(t, local){
   s.classList.toggle("local", local);
 }
 function waUrl(l){ const t=(l.telefono||"").replace(/\D/g,""); return t?`https://wa.me/${t.length===10?"52"+t:t}`:""; }
-function waIcon(l){ const u=waUrl(l); return u?`<a class="wa" href="${u}" target="_blank" rel="noopener" title="Abrir WhatsApp" draggable="false" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 3C7 3 3 6.6 3 11c0 2 .8 3.8 2.2 5.2L4.3 20l4-1.1c1.1.5 2.4.8 3.7.8 5 0 9-3.6 9-8S17 3 12 3z"/></svg></a>`:""; }
+function waIcon(l){ return waIcon0(l)+(window.RELOJ?RELOJ.badge(l):""); }
+function waIcon0(l){ const u=waUrl(l); return u?`<a class="wa" href="${u}" target="_blank" rel="noopener" title="Abrir WhatsApp" draggable="false" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 3C7 3 3 6.6 3 11c0 2 .8 3.8 2.2 5.2L4.3 20l4-1.1c1.1.5 2.4.8 3.7.8 5 0 9-3.6 9-8S17 3 12 3z"/></svg></a>`:""; }
 let NOTAS=[]; const LSN="trust_lead_notas";
 async function loadNotas(){ if(sb){ const r=await sb.from("lead_notas").select("*").order("fecha",{ascending:false}); if(!r.error) NOTAS=r.data||[]; } else NOTAS=JSON.parse(localStorage.getItem(LSN)||"[]"); }
 const notasDe=id=>NOTAS.filter(n=>String(n.lead_id)===String(id)).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
@@ -1049,7 +1052,10 @@ function editLead(id){
     if(dups.length){ const o=dups[0]; const ok=await ask(`Ese teléfono ya está en otro lead: ${o.nombre} · ${fmtLong(o.fecha)} · ${o.proyecto} · ${o.asesor}. ¿Guardar de todos modos?`, "Guardar"); if(!ok) return; }
     const f={ nombre: g("eNombre").value.trim()||"Sin nombre", telefono: g("eTel").value.trim(), fecha: g("eFecha").value||l.fecha, tipo: g("eTipo").value,
       canal, marketplace, asesor: g("eAsesor").value, proyecto, monto: numOf(g("eMonto").value), enganche: numOf(g("eEng").value) };
-    try{ await patch(id, f); close(); render(); toast("Lead actualizado"); }catch(e){ toast("No se guardó: "+e.message, true); }
+    /* cambiar el asesor desde aquí es una reasignación: reloj nuevo para quien lo recibe y queda el registro de quién lo tenía */
+    const cambioAse=f.asesor&&l.asesor&&f.asesor!==l.asesor, antes=l.asesor, asigAntes=l.asignado_en;
+    if(cambioAse) Object.assign(f,{asignado_en:new Date().toISOString(), primer_contacto_en:null, primer_contacto_canal:null, asesor_original:l.asesor_original||antes});
+    try{ await patch(id, f); if(cambioAse) logReasig(id, antes, f.asesor, asigAntes, "Cambio manual de asesor"); close(); render(); toast("Lead actualizado"); }catch(e){ toast("No se guardó: "+e.message, true); }
   };
   document.addEventListener("keydown",key,true);
   m.classList.add("on"); g("eNombre").focus();
@@ -1100,12 +1106,44 @@ async function save(){
   }
   const btn=document.getElementById("save"); btn.disabled=true;
   try{
-    await insert({fecha, nombre: nombre||"Sin nombre", telefono, canal, marketplace, proyecto, asesor, tipo:sel.tipo, nc:true});
+    await insert({fecha, nombre: nombre||"Sin nombre", telefono, canal, marketplace, proyecto, asesor, tipo:sel.tipo, nc:true, asignado_en:new Date().toISOString()});
     toast(`Registrado · ${nombre||"Sin nombre"} → ${asesor}`);
     resetForm(); render();
   }catch(e){ toast("No se guardó: "+e.message, true); }
   btn.disabled=false;
 }
+/* ---------- Fase 2 · contacto y reloj (admin) ---------- */
+const QUIEN=()=>(window.AUTH&&(window.AUTH.real||window.AUTH.nombre))||"Admin";
+function logReasig(leadId, de, a, asignadoEn, motivo){
+  if(!sb) return Promise.resolve();
+  return sb.from("lead_reasignaciones").insert({lead_id:leadId, de_asesor:de, a_asesor:a, asignado_en:asignadoEn||null, minutos_habiles:asignadoEn?RELOJ.minHabiles(asignadoEn):null, motivo, por:QUIEN()}).then(r=>{ if(r.error) toast("El lead se reasignó, pero no se guardó el registro: "+r.error.message, true); });
+}
+function renderReloj(){
+  const box=document.getElementById("relojBox"); if(!box||!window.RELOJ) return;
+  const pend=leads.filter(RELOJ.pendiente).sort((a,b)=>RELOJ.estado(b).min-RELOJ.estado(a).min);
+  if(!pend.length){ box.innerHTML=""; return; }
+  const nv=pend.filter(RELOJ.vencido).length;
+  const ops=n=>ASESORES.filter(a=>a!=="Otro"&&a!==n).map(a=>`<option>${esc(a)}</option>`).join("");
+  box.innerHTML=`<div class="card" style="margin-bottom:18px;${nv?"border-color:#E3B4AE":""}">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h1 style="margin:0">Asignados sin contacto <span class="tag" style="${nv?"background:#A8342A;color:#fff":""}">${pend.length}${nv?" · "+nv+" vencido"+(nv===1?"":"s"):""}</span></h1>
+      <span class="hint" style="margin:0">Plazo: ${RELOJ.PLAZO} minutos hábiles (lunes a viernes, 9:00 a 18:00) desde la asignación.</span></div>
+    <div style="overflow-x:auto"><table><tr><th>Asignado</th><th>Lead</th><th>Proyecto</th><th>Asesor</th><th>Sin contacto</th><th>Reasignar a</th></tr>
+    ${pend.map(l=>{const e=RELOJ.estado(l),d=new Date(l.asignado_en);return `<tr><td class="m" style="white-space:nowrap">${d.toLocaleDateString("es-MX",{day:"numeric",month:"short"})} · ${d.toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"})}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span><div class="m">${esc(l.telefono||"")}</div></td><td>${esc(l.proyecto)}</td><td><b>${esc(l.asesor)}</b>${l.asesor_original&&l.asesor_original!==l.asesor?`<div class="m">antes: ${esc(l.asesor_original)}</div>`:""}</td><td>${RELOJ.badge(l)}</td>
+      <td style="white-space:nowrap"><select class="sbtn" id="rs-${esc(l.id)}" aria-label="Reasignar a"><option value="">Elegir asesor…</option>${ops(l.asesor)}</select> <button class="btn" style="padding:7px 12px" onclick="relojReasignar(${JSON.stringify(l.id)})">Reasignar</button></td></tr>`}).join("")}</table></div>
+    <p class="hint" style="margin:10px 0 0">Al reasignar, el lead pasa al nuevo asesor con reloj nuevo. Al asesor anterior le sigue contando como lead recibido.</p></div>`;
+}
+async function relojReasignar(id){
+  const l=leads.find(x=>String(x.id)===String(id)); if(!l) return;
+  const a=(document.getElementById("rs-"+l.id)||{}).value; if(!a){ toast("Elige a qué asesor se reasigna", true); return; }
+  const e=RELOJ.estado(l), de=l.asesor, asig=l.asignado_en;
+  if(!await ask(`¿Reasignar a ${l.nombre} de ${de} a ${a}? Lleva ${e?RELOJ.dur(e.min):"—"} hábiles sin contacto. A ${de} le sigue contando como lead recibido.`, "Reasignar")) return;
+  try{
+    await patch(l.id,{asesor:a, asignado_en:new Date().toISOString(), primer_contacto_en:null, primer_contacto_canal:null, asesor_original:l.asesor_original||de});
+    await logReasig(l.id, de, a, asig, e&&e.vencido?"Sin contacto en plazo":"Reasignación de administración");
+    render(); toast(`Reasignado · ${l.nombre} → ${a}`);
+  }catch(err){ toast(/asignado_en|asesor_original|primer_contacto/.test(err.message)?"Falta correr sql/leads_reloj.sql en Supabase":"No se reasignó: "+err.message, true); }
+}
+setInterval(()=>{ try{ if(document.getElementById("reg").classList.contains("on")) renderReloj(); }catch(e){} }, 30000);
 async function del(id){
   const l = leads.find(x=>x.id===id); if(!l) return;
   if(!await ask(`¿Borrar el lead de ${l.nombre}? Esta acción no se puede deshacer.`, "Borrar")) return;
@@ -1113,7 +1151,7 @@ async function del(id){
 }
 
 /* ===== Render ===== */
-function render(){ fillProySel(); renderRecent(); renderBoard(); renderAse(); renderProy(); renderBase(); if(LEAD_OPEN) drawLead(); }
+function render(){ renderReloj(); fillProySel(); renderRecent(); renderBoard(); renderAse(); renderProy(); renderBase(); if(LEAD_OPEN) drawLead(); }
 function fillProySel(){
   const extra=[...new Set(leads.map(l=>l.proyecto))].filter(x=> !PROYECTOS.includes(x)).sort();
   document.getElementById("proySel").innerHTML=`<option value="">Por Proyecto</option>`+PROYECTOS.filter(a=>a!=="Otro").concat(extra).map(a=>`<option>${esc(a)}</option>`).join("");
@@ -1563,7 +1601,8 @@ function reasignSel(l){
 async function reasignar(id, asesor, el){
   const l=leads.find(x=>x.id===id); if(!l || asesor===l.asesor) return;
   if(!await ask(`¿Reasignar el lead de ${l.nombre} de ${l.asesor} a ${asesor}?`, "Reasignar")){ if(el) el.value=l.asesor; return; }
-  try{ await patch(id,{asesor}); render(); toast(`Reasignado a ${asesor}`); }catch(e){ toast("No se guardó: "+e.message, true); }
+  const de=l.asesor, asig=l.asignado_en;
+  try{ await patch(id,{asesor, asignado_en:new Date().toISOString(), primer_contacto_en:null, primer_contacto_canal:null, asesor_original:l.asesor_original||de}); logReasig(id, de, asesor, asig, "Cambio manual de asesor"); render(); toast(`Reasignado a ${asesor}`); }catch(e){ toast("No se guardó: "+e.message, true); }
 }
 /* ===== Tarjeta del lead + bitácora ===== */
 let LEAD_OPEN=null;

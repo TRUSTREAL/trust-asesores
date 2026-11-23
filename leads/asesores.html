@@ -129,7 +129,7 @@ td.m{color:var(--trust-gray)}
 .kpi.apa{border-color:var(--st-apa)}.kpi.apa b{color:#B8901A}
 .kpi.kpibtn.sel{border-width:2px;background:#F6F3EC}
 .kpi.seg{border-color:var(--st-seg)}.kpi.seg b{color:var(--st-seg)}
-.kpis.k8a{grid-template-columns:repeat(5,1fr);gap:10px}
+.kpis.k8a{grid-template-columns:repeat(6,1fr);gap:10px}
 .cadd{display:inline-flex;align-items:center;gap:3px;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:700;line-height:1.2;white-space:nowrap;background:#A8342A;color:#fff}
 .cadd.hoy{background:#E3F1EA;color:#2E7D5B;font-weight:600}
 .kpi.mov b{color:#A8342A}.kpi.mov{border-color:#E3B4AE;background:#FCF1EF}
@@ -150,7 +150,7 @@ td.m{color:var(--trust-gray)}
 .kpi.sel b{color:var(--trust-green)}
 .flag.m{color:var(--trust-accent);border-color:var(--trust-accent);font-weight:700}
 .flag.m:hover{background:var(--trust-accent);color:#fff}
-#aSinBox{display:none}
+.kpi.mov2 b{color:#A8342A}.kpi.mov2{border-color:#E3B4AE;background:#FCF1EF}
 .afl{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 16px;align-items:center}
 .afl .flag{border-radius:999px;cursor:pointer;background:rgba(23,63,53,.18);border-color:rgba(23,63,53,.45);color:var(--trust-green,#173F35)}.afl .flag:hover{background:rgba(23,63,53,.28)}.afl .flag small{opacity:.7;font-weight:500;margin-left:3px}
 .afl .lnk{font-size:11px;color:var(--trust-gray);background:none;border:0;cursor:pointer;text-decoration:underline}
@@ -465,6 +465,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
 
 <script src="/auth.js"></script>
 <script src="/citas/citas.js"></script>
+<script src="/leads/reloj.js"></script>
 </head>
 <body>
 
@@ -691,7 +692,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
       <select id="aProyF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Proyecto: todos</option></select>
       <select id="aCanalF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Canal: todos</option></select>
       <select id="aTipoF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Tipo: todos</option><option>Directo</option><option>Broker</option></select>
-      <select id="aEstF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Estatus: todos</option><option value="activo">Activos (sin perdidos ni futuros)</option><option value="sinmov">NC sin mover (sin intento hoy)</option><option value="cad">Cadencia agotada (3 llamadas + 7 mensajes)</option><option value="sin">Sin estatus</option><option value="nc">No contestó</option><option value="seguimiento">Seguimiento</option><option value="hot">Hot Lead</option><option value="cita">Cita realizada</option><option value="visita">Visita</option><option value="apartado">Apartado</option><option value="venta">Venta</option><option value="futuro">Futuro</option><option value="perdido">Perdido</option></select>
+      <select id="aEstF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Estatus: todos</option><option value="activo">Activos (sin perdidos ni futuros)</option><option value="sincont">Sin contactar (reloj de 30 min)</option><option value="sinmov">NC sin mover (sin intento hoy)</option><option value="cad">Cadencia agotada (3 llamadas + 7 mensajes)</option><option value="sin">Sin estatus</option><option value="nc">No contestó</option><option value="seguimiento">Seguimiento</option><option value="hot">Hot Lead</option><option value="cita">Cita realizada</option><option value="visita">Visita</option><option value="apartado">Apartado</option><option value="venta">Venta</option><option value="futuro">Futuro</option><option value="perdido">Perdido</option></select>
       <button class="btn2 clear" id="aClear" onclick="clearAseF()">Quitar filtros</button>
     </div>
     <div class="kpis k8a">
@@ -702,7 +703,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
       <div class="kpi kpibtn" id="aSegBox" onclick="kpiFilt('seguimiento')" title="Ver solo los leads en seguimiento"><b id="aSeg">0</b><span>seguimiento</span></div>
       <div class="kpi kpibtn" id="aHotBox" onclick="kpiFilt('hot')" title="Ver solo los hot leads"><b id="aHot">0</b><span>hot leads</span></div>
       <div class="kpi kpibtn" id="aApaBox" onclick="kpiFilt('apartado')" title="Ver solo los apartados"><b id="aApa">0</b><span>apartados</span></div>
-      <div class="kpi kpibtn" id="aSinBox" onclick="kpiFilt('sin')" title="Ver solo los leads sin estatus"><b id="aSin">0</b><span>sin estatus</span></div>
+      <div class="kpi kpibtn" id="aSinBox" onclick="kpiFilt('sincont')" title="Leads asignados que todavía no contactas. Tienes 30 minutos hábiles (9:00 a 18:00) desde la asignación: toca Llamar o WhatsApp."><b id="aSin">0</b><span>sin contactar</span></div>
       <div class="kpi kpibtn" id="aCadBox" onclick="kpiFilt('cad')" title="En NC o sin estatus y ya con 3 llamadas y 7 mensajes sin contacto"><b id="aCad">0</b><span>cadencia agotada</span></div>
       <div class="kpi kpibtn" id="aFutBox" onclick="kpiFilt('futuro')" title="Leads que no es el momento; se retoman después"><b id="aFut">0</b><span>futuros</span></div>
       <div class="kpi kpibtn" id="aPerdBox" onclick="kpiFilt('perdido')" title="Ver solo los leads perdidos"><b id="aShare">0</b><span>perdidos</span></div>
@@ -825,7 +826,7 @@ function setSync(t, local){
   s.classList.toggle("local", local);
 }
 function waUrl(l){ const t=(l.telefono||"").replace(/\D/g,""); return t?`https://wa.me/${t.length===10?"52"+t:t}`:""; }
-function waIcon(l){ const u=waUrl(l); return u?`<a class="wa" href="${u}" target="_blank" rel="noopener" title="Abrir WhatsApp" draggable="false" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 3C7 3 3 6.6 3 11c0 2 .8 3.8 2.2 5.2L4.3 20l4-1.1c1.1.5 2.4.8 3.7.8 5 0 9-3.6 9-8S17 3 12 3z"/></svg></a>`:""; }
+function waIcon(l){ if(window.RELOJ) return RELOJ.botones(l); const u=waUrl(l); return u?`<a class="wa" href="${u}" target="_blank" rel="noopener" title="Abrir WhatsApp" draggable="false" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 3C7 3 3 6.6 3 11c0 2 .8 3.8 2.2 5.2L4.3 20l4-1.1c1.1.5 2.4.8 3.7.8 5 0 9-3.6 9-8S17 3 12 3z"/></svg></a>`:""; }
 let NOTAS=[]; const LSN="trust_lead_notas";
 async function loadNotas(){ if(sb){ const r=await sb.from("lead_notas").select("*").order("fecha",{ascending:false}); if(!r.error) NOTAS=r.data||[]; } else NOTAS=JSON.parse(localStorage.getItem(LSN)||"[]"); }
 const notasDe=id=>NOTAS.filter(n=>String(n.lead_id)===String(id)).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
@@ -1531,11 +1532,6 @@ function repAsesor(name, a, b, lbl){
       <div class="repbox"><h2>Por proyecto</h2>${repBars(count(rows,"proyecto"))}</div>
       <div class="repbox"><h2>Por canal</h2>${repBars(count(rows,"canal"))}</div>
     </div>
-    <div class="repbox"><h2>Pendientes del periodo</h2>
-      ${pend.length? `<table><tr><th>Fecha</th><th>Nombre</th><th>Teléfono</th><th>Proyecto</th><th>Canal</th><th>Estado</th></tr>`+
-        pend.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span>${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}</td><td class="m" style="white-space:nowrap">${esc(l.telefono||"—")}${waIcon(l)}</td><td>${esc(l.proyecto)}</td><td>${esc(canalTxt(l))}</td><td>${estado(l)}</td></tr>`).join("")+`</table>`
-        : `<p class="empty" style="padding:6px 0">Sin pendientes: todos los leads del periodo tienen cierre.</p>`}
-    </div>
     <div class="repfoot">Generado el ${fmtLong(todayISO())} · Lead Management TRUST</div>
   </div>`;
 }
@@ -1639,12 +1635,14 @@ function renderKanban(rows){
       <div class="mt">${esc(l.proyecto)} · ${esc(canalTxt(l))} · ${fmt(l.fecha)}</div>
       ${l.perdido&&l.razon_perdido?`<div class="rz">${esc(l.razon_perdido)}</div>`:(l.apartado||l.venta)&&l.monto?`<div class="mo">${money(l.monto)}${l.enganche?` · eng. ${money(l.enganche)}`:""}</div>`:lastNota(l)}
     </div>`;
-  box.innerHTML=(sinN?`<p class="hint" style="margin:0 0 8px">${sinN} lead${sinN===1?"":"s"} sin estatus no aparece${sinN===1?"":"n"} aquí; márcales un estatus desde la Lista.</p>`:"")+`<div class="kan">${KAN_COLS.map(([k,lab,c])=>`<div class="col ${k==="futuro"||k==="perdido"?"off":""}" data-k="${k}" style="--c:${c}"><div class="ch"><span>${lab}</span><b>${by[k].length}</b></div><div class="cb">${by[k].length?by[k].map(card).join(""):`<div class="empty">—</div>`}</div></div>`).join("")}</div>`;
+  box.innerHTML=`<div class="kan">${KAN_COLS.map(([k,lab,c])=>`<div class="col ${k==="futuro"||k==="perdido"?"off":""}" data-k="${k}" style="--c:${c}"><div class="ch"><span>${lab}</span><b>${by[k].length}</b></div><div class="cb">${by[k].length?by[k].map(card).join(""):`<div class="empty">—</div>`}</div></div>`).join("")}</div>`;
   let dragId=null;
   box.querySelectorAll(".kc").forEach(c=>{ c.ondragstart=e=>{ dragId=c.dataset.id; c.classList.add("drag"); e.dataTransfer.effectAllowed="move"; e.dataTransfer.setData("text/plain",dragId); }; c.ondragend=()=>c.classList.remove("drag"); });
   box.querySelectorAll(".col").forEach(col=>{ col.ondragover=e=>{ e.preventDefault(); col.classList.add("over"); }; col.ondragleave=()=>col.classList.remove("over");
     col.ondrop=e=>{ e.preventDefault(); col.classList.remove("over"); const id=dragId||e.dataTransfer.getData("text/plain"); dragId=null; if(id) toggleFlag(id, col.dataset.k, true); }; });
 }
+/* el reloj de contacto corre: se repinta cada 30 s mientras haya leads sin contactar */
+setInterval(()=>{ try{ if(window.RELOJ && aseCur && leads.some(l=>l.asesor===aseCur&&RELOJ.pendiente(l)) && !document.querySelector(".modal.on,.ctm-scrim") && !(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))) renderAse(); }catch(e){} }, 30000);
 function kpiFilt(k){ const e=document.getElementById("aEstF"); e.value= e.value===k ? "" : k; asePage=0; renderAse(); }
 function clearAseF(){ aFlags.clear(); document.getElementById("aQ").value=""; document.getElementById("aProyF").value=""; document.getElementById("aCanalF").value=""; document.getElementById("aTipoF").value=""; document.getElementById("aEstF").value=""; asePage=0; renderAse(); }
 function openAse(name, from){ aseCur=name; aseBack=from; asePage=0; fillAseF(); clearAseF(); document.getElementById("aseName").textContent=name; go("ase"); renderAse(); window.scrollTo(0,0); }
@@ -1684,20 +1682,21 @@ function renderAse(){
   const q=(document.getElementById("aQ")?.value||"").trim().toLowerCase();
   const fp=document.getElementById("aProyF").value, fc=document.getElementById("aCanalF").value, ft=document.getElementById("aTipoF").value, fe=document.getElementById("aEstF").value;
   const base=all.filter(l=> l.asesor===aseCur && (!q || (l.nombre||"").toLowerCase().includes(q) || (l.telefono||"").toLowerCase().includes(q)) && (!fp||l.proyecto===fp) && canalMatch(l,fc) && (!ft||tipoDe(l)===ft));
-  const rows=base.filter(l=> (!fe || (fe==="activo" ? !["perdido","futuro"].includes(estatusDe(l)) : fe==="cad" ? cadAgotada(l) : fe==="sinmov" ? sinMover(l) : estatusDe(l)===fe)) && (!aFlags.size || [...aFlags].some(k=>!!l[k])));
+  const rows=base.filter(l=> (!fe || (fe==="activo" ? !["perdido","futuro"].includes(estatusDe(l)) : fe==="cad" ? cadAgotada(l) : fe==="sinmov" ? sinMover(l) : fe==="sincont" ? RELOJ.pendiente(l) : estatusDe(l)===fe)) && (!aFlags.size || [...aFlags].some(k=>!!l[k])));
   if(fe==="sinmov") rows.sort((x,y)=>diasSinCad(y)-diasSinCad(x));
+  if(fe==="sincont") rows.sort((x,y)=>RELOJ.estado(y).min-RELOJ.estado(x).min);
   renderAFlags(base);
   document.getElementById("aClear").classList.toggle("on", !!(q||fp||fc||ft||fe||aFlags.size));
-  const sinEst=base.filter(l=>estatusDe(l)==="sin").length;
-  document.getElementById("aSin").textContent=sinEst;
-  document.getElementById("aSinBox").classList.toggle("warn", sinEst>0);
+  {const sc=base.filter(RELOJ.pendiente),nv=sc.filter(RELOJ.vencido).length;
+   document.getElementById("aSin").innerHTML=sc.length+(nv?` <small style="font-family:Montserrat;font-size:11px">${nv} vencido${nv===1?"":"s"}</small>`:"");
+   document.getElementById("aSinBox").classList.toggle("mov2", nv>0); document.getElementById("aSinBox").classList.toggle("warn", sc.length>0&&!nv);}
   {const mv=base.filter(sinMover),mx=mv.reduce((a,l)=>Math.max(a,diasSinCad(l)),0);document.getElementById("aMov").innerHTML=mv.length+(mv.length?` <small style="font-family:Montserrat;font-size:11px">hasta ${mx}D</small>`:"");document.getElementById("aMovBox").classList.toggle("mov",mv.length>0);}
   const nCad=base.filter(cadAgotada).length; document.getElementById("aCad").textContent=nCad; document.getElementById("aCadBox").classList.toggle("warn", nCad>0);
   const p=count(rows,"proyecto"), c=count(rows,"canal");
   document.getElementById("aTotal").textContent=base.length;
   const nPerd=base.filter(l=>estatusDe(l)==="perdido").length; document.getElementById("aShare").innerHTML=`${nPerd} <small style="font-family:Montserrat;font-size:13px">${pct(nPerd,base.length)}</small>`; document.getElementById("aPerdBox").classList.toggle("lost", nPerd>0);
   const sm=v=>` <small style="font-family:Montserrat;font-size:13px">${v}</small>`;
-  [["activo","aActBox"],["perdido","aPerdBox"],["futuro","aFutBox"],["nc","aNcBox"],["seguimiento","aSegBox"],["hot","aHotBox"],["sin","aSinBox"],["sinmov","aMovBox"],["cad","aCadBox"],["apartado","aApaBox"]].forEach(([k,id])=>document.getElementById(id).classList.toggle("sel", fe===k));
+  [["activo","aActBox"],["perdido","aPerdBox"],["futuro","aFutBox"],["nc","aNcBox"],["seguimiento","aSegBox"],["hot","aHotBox"],["sincont","aSinBox"],["sinmov","aMovBox"],["cad","aCadBox"],["apartado","aApaBox"]].forEach(([k,id])=>document.getElementById(id).classList.toggle("sel", fe===k));
   const nAct=base.filter(l=>!["perdido","futuro"].includes(estatusDe(l))).length;
   const nFut=base.filter(l=>estatusDe(l)==="futuro").length; document.getElementById("aFut").innerHTML=nFut+sm(pct(nFut,base.length)); document.getElementById("aFutBox").classList.toggle("fut", nFut>0); document.getElementById("aAct").innerHTML=nAct+sm(pct(nAct,base.length));
   const nNc=base.filter(l=>estatusDe(l)==="nc").length; document.getElementById("aNc").innerHTML=nNc+sm(pct(nNc,base.length));
