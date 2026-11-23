@@ -33,8 +33,9 @@
   var pendiente=function(l){var e=estado(l);return !!e&&!e.contactado};
   var vencido=function(l){var e=estado(l);return !!e&&!e.contactado&&e.vencido};
   function dur(m){if(m<60)return m+" min";var h=Math.floor(m/60),r=m%60;if(h<9)return h+" h"+(r?" "+r+" min":"");var d=Math.floor(h/9);return d+" d háb."}
-  function badge(l){
+  function badge(l,corto){
     var e=estado(l);if(!e)return "";
+    if(corto){if(e.contactado)return "";return e.vencido?'<span class="rlj bad" title="Vencido: '+dur(e.min)+' hábiles sin contacto">Vencido</span>':'<span class="rlj '+(e.restan<=10?"warn":"run")+'" title="Minutos hábiles que te quedan para contactarlo">'+e.restan+' min</span>'}
     if(e.contactado)return '<span class="rlj ok" title="Primer contacto por '+esc(e.canal||"contacto")+' a los '+dur(e.min)+' hábiles de asignado'+(e.vencido?" (fuera del plazo de "+PLAZO+" min)":"")+'">✓ '+dur(e.min)+'</span>';
     if(e.vencido)return '<span class="rlj bad" title="Asignado hace '+dur(e.min)+' hábiles sin contacto. El plazo es de '+PLAZO+' minutos.">Vencido · '+dur(e.min)+'</span>';
     return '<span class="rlj '+(e.restan<=10?"warn":"run")+'" title="Tienes '+PLAZO+' minutos hábiles desde la asignación para contactarlo">⏱ quedan '+e.restan+' min</span>';
@@ -42,12 +43,12 @@
   function telLimpio(t){var d=String(t||"").replace(/[^\d+]/g,"");return d}
   function waNum(t){var d=String(t||"").replace(/\D/g,"");return d?(d.length===10?"52"+d:d):""}
   /* botones Llamar y WhatsApp: abren el teléfono o WhatsApp y registran el primer contacto */
-  function botones(l){
+  function botones(l,corto){
     if(!l||!l.telefono)return "";
     var id=JSON.stringify(l.id).replace(/"/g,"&quot;"),w=waNum(l.telefono);
-    return '<span class="rljb"><a class="rlb call" href="tel:'+esc(telLimpio(l.telefono))+'" draggable="false" title="Llamar a '+esc(l.nombre||"")+'" onclick="RELOJ.contacto(event,'+id+',\'llamada\')"><svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Llamar</a>'+
-      (w?'<a class="rlb wa2" href="https://wa.me/'+w+'" target="_blank" rel="noopener" draggable="false" title="Escribir por WhatsApp" onclick="RELOJ.contacto(event,'+id+',\'whatsapp\')"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path fill="currentColor" d="M12 3C7 3 3 6.6 3 11c0 2 .8 3.8 2.2 5.2L4.3 20l4-1.1c1.1.5 2.4.8 3.7.8 5 0 9-3.6 9-8S17 3 12 3z"/></svg>WhatsApp</a>':'')+
-      '</span>'+badge(l);
+    return '<span class="rljb"><a class="rlb call" href="tel:'+esc(telLimpio(l.telefono))+'" draggable="false" title="Llamar a '+esc(l.nombre||"")+'" aria-label="Llamar a '+esc(l.nombre||"")+'" onclick="RELOJ.contacto(event,'+id+',\'llamada\')"><svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></a>'+
+      (w?'<a class="rlb wa2" href="https://wa.me/'+w+'" target="_blank" rel="noopener" draggable="false" title="Escribir por WhatsApp" aria-label="Escribir por WhatsApp a '+esc(l.nombre||"")+'" onclick="RELOJ.contacto(event,'+id+',\'whatsapp\')"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path fill="currentColor" d="M12 3C7 3 3 6.6 3 11c0 2 .8 3.8 2.2 5.2L4.3 20l4-1.1c1.1.5 2.4.8 3.7.8 5 0 9-3.6 9-8S17 3 12 3z"/></svg></a>':'')+
+      '</span>'+(corto==="solo"?"":badge(l,corto));
   }
   /* registra el primer contacto (solo el primero; los siguientes toques no lo cambian). No interrumpe la llamada ni el chat. */
   function contacto(ev,id,canal){
@@ -65,8 +66,8 @@
   function css(){
     var st=document.createElement("style");
     st.textContent=
-      ".rljb{display:inline-flex;gap:4px;margin-left:6px;vertical-align:middle}"+
-      ".rlb{display:inline-flex;align-items:center;gap:4px;border:1px solid #D9D2C3;background:#fff;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:600;text-decoration:none;line-height:1.3;white-space:nowrap}"+
+      ".rljb{display:inline-flex;gap:4px;margin-left:6px;vertical-align:middle;flex:none}"+
+      ".rlb{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border:1px solid #D9D2C3;background:#fff;border-radius:50%;text-decoration:none;flex:none}.rlb svg{width:14px;height:14px}"+
       ".rlb.call{color:#173F35}.rlb.call:hover{background:#173F35;color:#fff;border-color:#173F35}"+
       ".rlb.wa2{color:#128C4B}.rlb.wa2:hover{background:#25D366;color:#fff;border-color:#25D366}"+
       ".rlj{display:inline-block;margin-left:6px;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:700;line-height:1.2;white-space:nowrap;vertical-align:middle}"+

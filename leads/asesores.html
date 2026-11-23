@@ -222,7 +222,8 @@ td.m{color:var(--trust-gray)}
 .kan .ch{display:flex;justify-content:space-between;align-items:center;margin:0 2px 8px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--c)}
 .kan .ch b{background:#fff;border-radius:999px;padding:1px 8px;font-size:12px;color:var(--ink)}
 .kan .kc{background:#fff;border:1px solid #E5E5E6;border-radius:10px;padding:9px 10px;margin-bottom:8px;cursor:grab;font-size:13px;box-shadow:0 1px 2px rgba(0,0,0,.04);height:84px;display:flex;flex-direction:column;justify-content:flex-start;overflow:hidden}
-.kan .kc .nm span.lnm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kan .kc .nm span.lnm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1 1 auto;min-width:48px}
+.kan .kc .rljb{margin-left:0;gap:3px}.kan .kc .rlb{width:22px;height:22px}.kan .kc .rlb svg{width:12px;height:12px}.kan .kc .rlj{margin-left:0;padding:2px 6px;font-size:10px}
 .kan .kc .mt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kan .kc .mo,.kan .kc .rz,.kan .kc .lastn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kan .kc .rz{margin-top:3px}
@@ -827,7 +828,7 @@ function setSync(t, local){
   s.classList.toggle("local", local);
 }
 function waUrl(l){ const t=(l.telefono||"").replace(/\D/g,""); return t?`https://wa.me/${t.length===10?"52"+t:t}`:""; }
-function waIcon(l){ if(window.RELOJ) return RELOJ.botones(l); const u=waUrl(l); return u?`<a class="wa" href="${u}" target="_blank" rel="noopener" title="Abrir WhatsApp" draggable="false" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 3C7 3 3 6.6 3 11c0 2 .8 3.8 2.2 5.2L4.3 20l4-1.1c1.1.5 2.4.8 3.7.8 5 0 9-3.6 9-8S17 3 12 3z"/></svg></a>`:""; }
+function waIcon(l,corto){ if(window.RELOJ) return RELOJ.botones(l,corto); const u=waUrl(l); return u?`<a class="wa" href="${u}" target="_blank" rel="noopener" title="Abrir WhatsApp" draggable="false" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 3C7 3 3 6.6 3 11c0 2 .8 3.8 2.2 5.2L4.3 20l4-1.1c1.1.5 2.4.8 3.7.8 5 0 9-3.6 9-8S17 3 12 3z"/></svg></a>`:""; }
 let NOTAS=[]; const LSN="trust_lead_notas";
 async function loadNotas(){ if(sb){ const r=await sb.from("lead_notas").select("*").order("fecha",{ascending:false}); if(!r.error) NOTAS=r.data||[]; } else NOTAS=JSON.parse(localStorage.getItem(LSN)||"[]"); }
 const notasDe=id=>NOTAS.filter(n=>String(n.lead_id)===String(id)).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
@@ -1632,8 +1633,8 @@ function renderKanban(rows){
   const by={}; KAN_COLS.forEach(([k])=>by[k]=[]); rows.forEach(l=>{ const k=estatusDe(l); if(by[k]) by[k].push(l); });
   const sinN=rows.filter(l=>estatusDe(l)==="sin").length;
   const card=l=>`<div class="kc" draggable="true" data-id="${esc(l.id)}">
-      <div class="nm"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}</span><span style="display:inline-flex;align-items:center;gap:2px;flex:none">${waIcon(l)}${diasDe(l)}</span></div>
-      <div class="mt">${esc(l.proyecto)} · ${esc(canalTxt(l))} · ${fmt(l.fecha)}</div>
+      <div class="nm"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}</span><span style="display:inline-flex;align-items:center;gap:3px;flex:none">${waIcon(l,"solo")}${diasDe(l)}</span></div>
+      <div class="mt">${window.RELOJ?RELOJ.badge(l,true)+" ":""}${esc(l.proyecto)} · ${esc(canalTxt(l))} · ${fmt(l.fecha)}</div>
       ${l.perdido&&l.razon_perdido?`<div class="rz">${esc(l.razon_perdido)}</div>`:(l.apartado||l.venta)&&l.monto?`<div class="mo">${money(l.monto)}${l.enganche?` · eng. ${money(l.enganche)}`:""}</div>`:lastNota(l)}
     </div>`;
   box.innerHTML=`<div class="kan">${KAN_COLS.map(([k,lab,c])=>`<div class="col ${k==="futuro"||k==="perdido"?"off":""}" data-k="${k}" style="--c:${c}"><div class="ch"><span>${lab}</span><b>${by[k].length}</b></div><div class="cb">${by[k].length?by[k].map(card).join(""):`<div class="empty">—</div>`}</div></div>`).join("")}</div>`;
