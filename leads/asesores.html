@@ -695,6 +695,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
       <select id="aEstF" class="sbtn" onchange="asePage=0;renderAse()"><option value="">Estatus: todos</option><option value="activo">Activos (sin perdidos ni futuros)</option><option value="sincont">Sin contactar (reloj de 30 min)</option><option value="sinmov">NC sin mover (sin intento hoy)</option><option value="cad">Cadencia agotada (3 llamadas + 7 mensajes)</option><option value="sin">Sin estatus</option><option value="nc">No contestó</option><option value="seguimiento">Seguimiento</option><option value="hot">Hot Lead</option><option value="cita">Cita realizada</option><option value="visita">Visita</option><option value="apartado">Apartado</option><option value="venta">Venta</option><option value="futuro">Futuro</option><option value="perdido">Perdido</option></select>
       <button class="btn2 clear" id="aClear" onclick="clearAseF()">Quitar filtros</button>
     </div>
+    <div id="aDevBox" hidden style="background:#FCF1EF;border:1px solid #E3B4AE;color:#7A261E;border-radius:12px;padding:10px 14px;font-size:13px;margin-bottom:12px"></div>
     <div class="kpis k8a">
       <div class="kpi dark"><b id="aTotal">0</b><span>leads recibidos</span></div>
       <div class="kpi kpibtn" id="aActBox" onclick="kpiFilt('activo')" title="Leads del periodo que no se han perdido ni pasado a futuro"><b id="aAct">0</b><span>activos</span></div>
@@ -703,7 +704,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
       <div class="kpi kpibtn" id="aSegBox" onclick="kpiFilt('seguimiento')" title="Ver solo los leads en seguimiento"><b id="aSeg">0</b><span>seguimiento</span></div>
       <div class="kpi kpibtn" id="aHotBox" onclick="kpiFilt('hot')" title="Ver solo los hot leads"><b id="aHot">0</b><span>hot leads</span></div>
       <div class="kpi kpibtn" id="aApaBox" onclick="kpiFilt('apartado')" title="Ver solo los apartados"><b id="aApa">0</b><span>apartados</span></div>
-      <div class="kpi kpibtn" id="aSinBox" onclick="kpiFilt('sincont')" title="Leads asignados que todavía no contactas. Tienes 30 minutos hábiles (9:00 a 18:00) desde la asignación: toca Llamar o WhatsApp."><b id="aSin">0</b><span>sin contactar</span></div>
+      <div class="kpi kpibtn" id="aSinBox" onclick="kpiFilt('sincont')" title="Leads asignados que todavía no contactas. Tienes 30 minutos hábiles (9:00 a 18:00) desde la asignación: toca Llamar o WhatsApp. Si se vence el plazo, el lead regresa a administración."><b id="aSin">0</b><span>sin contactar</span></div>
       <div class="kpi kpibtn" id="aCadBox" onclick="kpiFilt('cad')" title="En NC o sin estatus y ya con 3 llamadas y 7 mensajes sin contacto"><b id="aCad">0</b><span>cadencia agotada</span></div>
       <div class="kpi kpibtn" id="aFutBox" onclick="kpiFilt('futuro')" title="Leads que no es el momento; se retoman después"><b id="aFut">0</b><span>futuros</span></div>
       <div class="kpi kpibtn" id="aPerdBox" onclick="kpiFilt('perdido')" title="Ver solo los leads perdidos"><b id="aShare">0</b><span>perdidos</span></div>
@@ -1678,7 +1679,10 @@ function hotList(id, src){
 function renderAse(){
   if(!aseCur) return;
   const [a,b]=rangeA();
-  const all=leads.filter(l=> l.fecha>=a && l.fecha<=b);
+  /* Fase 2: un lead que no se contactó en 30 minutos hábiles regresa a administración (Berna lo reasigna). Sale de la lista del asesor. */
+  const devueltos=leads.filter(l=> l.asesor===aseCur && window.RELOJ && RELOJ.vencido(l));
+  {const nb=document.getElementById("aDevBox"); if(nb){ nb.hidden=!devueltos.length; if(devueltos.length) nb.innerHTML=`<b>${devueltos.length} lead${devueltos.length===1?"":"s"} regres${devueltos.length===1?"ó":"aron"} a administración</b> porque no ${devueltos.length===1?"lo":"los"} contactaste en ${RELOJ.PLAZO} minutos hábiles: ${devueltos.slice(0,6).map(l=>esc(l.nombre)).join(", ")}${devueltos.length>6?"…":""}. Berna ${devueltos.length===1?"lo":"los"} va a reasignar.`; }}
+  const all=leads.filter(l=> l.fecha>=a && l.fecha<=b && !(window.RELOJ && RELOJ.vencido(l)));
   const q=(document.getElementById("aQ")?.value||"").trim().toLowerCase();
   const fp=document.getElementById("aProyF").value, fc=document.getElementById("aCanalF").value, ft=document.getElementById("aTipoF").value, fe=document.getElementById("aEstF").value;
   const base=all.filter(l=> l.asesor===aseCur && (!q || (l.nombre||"").toLowerCase().includes(q) || (l.telefono||"").toLowerCase().includes(q)) && (!fp||l.proyecto===fp) && canalMatch(l,fc) && (!ft||tipoDe(l)===ft));
@@ -1688,8 +1692,9 @@ function renderAse(){
   renderAFlags(base);
   document.getElementById("aClear").classList.toggle("on", !!(q||fp||fc||ft||fe||aFlags.size));
   {const sc=base.filter(RELOJ.pendiente),nv=sc.filter(RELOJ.vencido).length;
-   document.getElementById("aSin").innerHTML=sc.length+(nv?` <small style="font-family:Montserrat;font-size:11px">${nv} vencido${nv===1?"":"s"}</small>`:"");
-   document.getElementById("aSinBox").classList.toggle("mov2", nv>0); document.getElementById("aSinBox").classList.toggle("warn", sc.length>0&&!nv);}
+   const urg=sc.length?Math.min(...sc.map(l=>RELOJ.estado(l).restan)):0;
+   document.getElementById("aSin").innerHTML=sc.length+(sc.length?` <small style="font-family:Montserrat;font-size:11px">quedan ${urg} min</small>`:"");
+   document.getElementById("aSinBox").classList.toggle("mov2", sc.length>0&&urg<=10); document.getElementById("aSinBox").classList.toggle("warn", sc.length>0&&urg>10);}
   {const mv=base.filter(sinMover),mx=mv.reduce((a,l)=>Math.max(a,diasSinCad(l)),0);document.getElementById("aMov").innerHTML=mv.length+(mv.length?` <small style="font-family:Montserrat;font-size:11px">hasta ${mx}D</small>`:"");document.getElementById("aMovBox").classList.toggle("mov",mv.length>0);}
   const nCad=base.filter(cadAgotada).length; document.getElementById("aCad").textContent=nCad; document.getElementById("aCadBox").classList.toggle("warn", nCad>0);
   const p=count(rows,"proyecto"), c=count(rows,"canal");

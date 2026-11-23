@@ -1122,15 +1122,19 @@ function renderReloj(){
   const box=document.getElementById("relojBox"); if(!box||!window.RELOJ) return;
   const pend=leads.filter(RELOJ.pendiente).sort((a,b)=>RELOJ.estado(b).min-RELOJ.estado(a).min);
   if(!pend.length){ box.innerHTML=""; return; }
-  const nv=pend.filter(RELOJ.vencido).length;
-  const ops=n=>ASESORES.filter(a=>a!=="Otro"&&a!==n).map(a=>`<option>${esc(a)}</option>`).join("");
-  box.innerHTML=`<div class="card" style="margin-bottom:18px;${nv?"border-color:#E3B4AE":""}">
-    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h1 style="margin:0">Asignados sin contacto <span class="tag" style="${nv?"background:#A8342A;color:#fff":""}">${pend.length}${nv?" · "+nv+" vencido"+(nv===1?"":"s"):""}</span></h1>
-      <span class="hint" style="margin:0">Plazo: ${RELOJ.PLAZO} minutos hábiles (lunes a viernes, 9:00 a 18:00) desde la asignación.</span></div>
-    <div style="overflow-x:auto"><table><tr><th>Asignado</th><th>Lead</th><th>Proyecto</th><th>Asesor</th><th>Sin contacto</th><th>Reasignar a</th></tr>
-    ${pend.map(l=>{const e=RELOJ.estado(l),d=new Date(l.asignado_en);return `<tr><td class="m" style="white-space:nowrap">${d.toLocaleDateString("es-MX",{day:"numeric",month:"short"})} · ${d.toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"})}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span><div class="m">${esc(l.telefono||"")}</div></td><td>${esc(l.proyecto)}</td><td><b>${esc(l.asesor)}</b>${l.asesor_original&&l.asesor_original!==l.asesor?`<div class="m">antes: ${esc(l.asesor_original)}</div>`:""}</td><td>${RELOJ.badge(l)}</td>
-      <td style="white-space:nowrap"><select class="sbtn" id="rs-${esc(l.id)}" aria-label="Reasignar a"><option value="">Elegir asesor…</option>${ops(l.asesor)}</select> <button class="btn" style="padding:7px 12px" onclick="relojReasignar(${JSON.stringify(l.id)})">Reasignar</button></td></tr>`}).join("")}</table></div>
-    <p class="hint" style="margin:10px 0 0">Al reasignar, el lead pasa al nuevo asesor con reloj nuevo. Al asesor anterior le sigue contando como lead recibido.</p></div>`;
+  const dev=pend.filter(RELOJ.vencido), run=pend.filter(l=>!RELOJ.vencido(l));
+  const ops=n=>ASESORES.filter(a=>a!=="Otro"&&a!==n).map(a=>`<option>${esc(a)}</option>`).join("")+`<option value="${esc(n)}">${esc(n)} (devolvérselo, reloj nuevo)</option>`;
+  const fila=(l,re)=>{const d=new Date(l.asignado_en);return `<tr><td class="m" style="white-space:nowrap">${d.toLocaleDateString("es-MX",{day:"numeric",month:"short"})} · ${d.toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"})}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span><div class="m">${esc(l.telefono||"")}</div></td><td>${esc(l.proyecto)}</td><td><b>${esc(l.asesor)}</b>${l.asesor_original&&l.asesor_original!==l.asesor?`<div class="m">antes: ${esc(l.asesor_original)}</div>`:""}</td><td>${RELOJ.badge(l)}</td>
+      ${re?`<td style="white-space:nowrap"><select class="sbtn" id="rs-${esc(l.id)}" aria-label="Reasignar a"><option value="">Elegir asesor…</option>${ops(l.asesor)}</select> <button class="btn" style="padding:7px 12px" onclick="relojReasignar(${JSON.stringify(l.id)})">Reasignar</button></td>`:""}</tr>`};
+  box.innerHTML=(dev.length?`<div class="card" style="margin-bottom:18px;border-color:#E3B4AE">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h1 style="margin:0">Regresaron por falta de contacto <span class="tag" style="background:#A8342A;color:#fff">${dev.length}</span></h1>
+      <span class="hint" style="margin:0">Pasaron ${RELOJ.PLAZO} minutos hábiles sin que el asesor los contactara. Ya no los ve en Mis leads.</span></div>
+    <div style="overflow-x:auto"><table><tr><th>Asignado</th><th>Lead</th><th>Proyecto</th><th>Lo tenía</th><th>Sin contacto</th><th>Reasignar a</th></tr>${dev.map(l=>fila(l,true)).join("")}</table></div>
+    <p class="hint" style="margin:10px 0 0">Al reasignar, el lead pasa al nuevo asesor con reloj nuevo. Al asesor anterior le sigue contando como lead recibido.</p></div>`:"")+
+   (run.length?`<div class="card" style="margin-bottom:18px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h1 style="margin:0">Asignados sin contacto <span class="tag">${run.length}</span></h1>
+      <span class="hint" style="margin:0">Todavía en plazo: ${RELOJ.PLAZO} minutos hábiles (lunes a viernes, 9:00 a 18:00) desde la asignación.</span></div>
+    <div style="overflow-x:auto"><table><tr><th>Asignado</th><th>Lead</th><th>Proyecto</th><th>Asesor</th><th>Reloj</th></tr>${run.map(l=>fila(l,false)).join("")}</table></div></div>`:"");
 }
 async function relojReasignar(id){
   const l=leads.find(x=>String(x.id)===String(id)); if(!l) return;
