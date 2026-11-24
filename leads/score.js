@@ -69,7 +69,7 @@
     if(typeof el==="string")el=document.getElementById(el);if(!el)return;
     if(!asesor||FALLA||!LISTO[asesor]){el.hidden=true;return}
     var r=de(asesor);el.hidden=false;
-    el.innerHTML='<div class="scr '+r.nivel+'"><div class="scn"><b>'+r.score+'</b></div><div class="sct"><span class="scl">Score de actividad</span></div></div>';
+    el.innerHTML='<div class="scr '+r.nivel+'"><div class="scn"><b>'+r.score+'</b><i>/100</i></div><div class="sct"><span class="scl">Score de actividad · '+TXT[r.nivel]+'</span></div></div>';
   }
   /* tabla de todos (administración) */
   function tabla(el,asesores){
