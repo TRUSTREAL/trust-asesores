@@ -56,9 +56,10 @@
     try{
       var ro=typeof READONLY!=="undefined"&&READONLY;if(ro)return;
       var l=(window.leads||(typeof leads!=="undefined"?leads:[])).filter(function(x){return String(x.id)===String(id)})[0];
-      if(!l||!l.asignado_en||l.primer_contacto_en)return;
       /* en "Ver como" (un administrador viendo el portal del asesor) no se registra contacto a nombre del asesor */
       if(window.AUTH&&window.AUTH.viendoComo)return;
+      if(l&&window.SCORE)SCORE.log(l.id,canal,l.asesor);   /* Fase 6 · score de actividad */
+      if(!l||!l.asignado_en||l.primer_contacto_en)return;
       var f={primer_contacto_en:new Date().toISOString(),primer_contacto_canal:canal};
       Promise.resolve(patch(l.id,f)).then(function(){if(typeof render==="function")render()}).catch(function(e){if(typeof toast==="function")toast("No se registró el contacto: "+(e.message||e),true)});
     }catch(e){}

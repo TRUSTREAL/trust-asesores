@@ -249,6 +249,7 @@
         if(file)Object.assign(row,await subirEvidencia(file,asesor));
         var r=await sb().from("citas").insert(row).select().single();if(r.error)throw r.error;
         var cita=r.data,lp=null;
+        if(!o.admin&&cita.lead_id!=null&&window.SCORE)SCORE.log(cita.lead_id,"cita",cita.asesor);   /* Fase 6 · score de actividad */
         if(cita.estatus==="realizada"){var pid=await recalcPrimera(cita);cita.es_primera=pid===cita.id;lp=await prenderLead(cita)}
         m.cerrar();toast(cita.estatus==="realizada"?"Cita registrada"+(cita.es_primera?" · primera con este cliente":""):"Cita programada");
         if(o.onSaved)o.onSaved(cita,lp);

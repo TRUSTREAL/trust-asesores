@@ -469,6 +469,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
 <script src="/auth.js"></script>
 <script src="/citas/citas.js"></script>
 <script src="/leads/reloj.js"></script>
+<script src="/leads/score.js"></script>
 </head>
 <body>
 
@@ -699,6 +700,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
       <button class="btn2 clear" id="aClear" onclick="clearAseF()">Quitar filtros</button>
     </div>
     <div id="aDevBox" hidden style="background:#FCF1EF;border:1px solid #E3B4AE;color:#7A261E;border-radius:12px;padding:10px 14px;font-size:13px;margin-bottom:12px"></div>
+    <div id="scoreBox" hidden></div>
     <div class="kpis k8a">
       <div class="kpi dark"><b id="aTotal">0</b><span>leads recibidos</span></div>
       <div class="kpi kpibtn" id="aActBox" onclick="kpiFilt('activo')" title="Leads del periodo que no se han perdido ni pasado a futuro"><b id="aAct">0</b><span>activos</span></div>
@@ -862,6 +864,8 @@ async function patch(id, fields){
     if (error) throw new Error(error.message);
   }
   const l=leads.find(x=>x.id===id); Object.assign(l, fields);
+  /* Fase 6 · score de actividad: cambio de estatus o intento de contacto registrado */
+  if(window.SCORE&&l){ const ks=Object.keys(fields); if(ks.includes("intentos_llamada")&&fields.ultimo_intento) SCORE.log(l.id,"llamada",l.asesor); else if(ks.includes("intentos_mensaje")&&fields.ultimo_intento) SCORE.log(l.id,"whatsapp",l.asesor); else if(ks.some(k=>ESTATUS.includes(k)&&k!=="razon_perdido")) SCORE.log(l.id,"estatus",l.asesor); }
   if (fields.fecha) leads.sort((a,b)=> (b.fecha+(b.created_at||"")).localeCompare(a.fecha+(a.created_at||"")));
   if (!sb) localStorage.setItem(LS, JSON.stringify(leads));
 }
@@ -1142,6 +1146,7 @@ async function del(id){
 }
 
 /* ===== Render ===== */
+if(window.SCORE) SCORE.alCambiar(()=>{ if(typeof aseCur!=="undefined"&&aseCur) SCORE.pintar("scoreBox",aseCur); });
 function render(){ fillProySel(); renderRecent(); renderBoard(); renderAse(); renderProy(); renderBase(); if(LEAD_OPEN) drawLead(); }
 function fillProySel(){
   const extra=[...new Set(leads.map(l=>l.proyecto))].filter(x=> !PROYECTOS.includes(x)).sort();
@@ -1613,6 +1618,7 @@ async function addNota(){
   const row={lead_id:l.id, autor:AUTOR(), texto, fecha:new Date().toISOString()};
   if(sb){ const r=await sb.from("lead_notas").insert(row).select().single(); if(r.error){ toast("No se guardó: "+r.error.message,true); return; } NOTAS.unshift(r.data); }
   else { NOTAS.unshift({id:"n"+Date.now(),...row}); localStorage.setItem(LSN,JSON.stringify(NOTAS)); }
+  if(window.SCORE) SCORE.log(l.id,"comentario",l.asesor);
   ta.value=""; drawLead(); render(); toast("Comentario guardado");
 }
 async function delNota(id){
@@ -1682,8 +1688,10 @@ function hotList(id, src){
   el.innerHTML=`<table><tr><th>Fecha</th><th>Días</th><th>Nombre</th><th>Teléfono</th><th>Canal</th><th>Proyecto</th><th>Estatus</th></tr>`+
     hl.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td>${diasDe(l)}</td><td class="n"><span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span>${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}${l.visita&&(l.visita_fecha||l.visita_lugar)?`<div class="vis">Visita ${l.visita_fecha?fmt(l.visita_fecha):""}${l.visita_lugar?" · "+esc(l.visita_lugar):""}</div>`:""}${lastNota(l)}</td><td class="m" style="white-space:nowrap">${esc(l.telefono||"—")}${waIcon(l)}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td><div class="flags">${fl(l,"cita","Cita","c")}${fl(l,"visita","Visita","vi")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"futuro","Fut.","f")}${fl(l,"perdido","Perd.","p")}</div></td></tr>`).join("")+`</table>`;
 }
+let _scAse=null;
 function renderAse(){
   if(!aseCur) return;
+  if(window.SCORE){ if(_scAse!==aseCur){ _scAse=aseCur; SCORE.cargar(aseCur); } SCORE.pintar("scoreBox",aseCur); }
   const [a,b]=rangeA();
   /* Fase 2: un lead que no se contactó en 30 minutos hábiles regresa a administración (Berna lo reasigna). Sale de la lista del asesor. */
   const devueltos=leads.filter(l=> l.asesor===aseCur && window.RELOJ && RELOJ.vencido(l));
