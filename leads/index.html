@@ -687,7 +687,6 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
       <div class="kpi kpibtn" id="aHotBox" onclick="kpiFilt('hot')" title="Ver solo los hot leads"><b id="aHot">0</b><span>hot leads</span></div>
       <div class="kpi kpibtn" id="aApaBox" onclick="kpiFilt('apartado')" title="Ver solo los apartados"><b id="aApa">0</b><span>apartados</span></div>
       <div class="kpi kpibtn" id="aSinBox" onclick="kpiFilt('sin')" title="Ver solo los leads sin estatus"><b id="aSin">0</b><span>sin estatus</span></div>
-      <div class="kpi kpibtn" id="aCadBox" onclick="kpiFilt('cad')" title="En NC o sin estatus y ya con 3 llamadas y 7 mensajes sin contacto"><b id="aCad">0</b><span>cadencia agotada</span></div>
       <div class="kpi kpibtn" id="aFutBox" onclick="kpiFilt('futuro')" title="Leads que no es el momento; se retoman después"><b id="aFut">0</b><span>futuros</span></div>
       <div class="kpi kpibtn" id="aPerdBox" onclick="kpiFilt('perdido')" title="Ver solo los leads perdidos"><b id="aShare">0</b><span>perdidos</span></div>
     </div>
@@ -1717,12 +1716,11 @@ function renderAse(){
   document.getElementById("aSin").textContent=sinEst;
   document.getElementById("aSinBox").classList.toggle("warn", sinEst>0);
   {const mv=base.filter(sinMover),mx=mv.reduce((a,l)=>Math.max(a,diasSinCad(l)),0);document.getElementById("aMov").innerHTML=mv.length+(mv.length?` <small style="font-family:Montserrat;font-size:11px">hasta ${mx}D</small>`:"");document.getElementById("aMovBox").classList.toggle("mov",mv.length>0);}
-  const nCad=base.filter(cadAgotada).length; document.getElementById("aCad").textContent=nCad; document.getElementById("aCadBox").classList.toggle("warn", nCad>0);
   const p=count(rows,"proyecto"), c=count(rows,"canal");
   document.getElementById("aTotal").textContent=base.length;
   const nPerd=base.filter(l=>estatusDe(l)==="perdido").length; document.getElementById("aShare").innerHTML=`${nPerd} <small style="font-family:Montserrat;font-size:13px">${pct(nPerd,base.length)}</small>`; document.getElementById("aPerdBox").classList.toggle("lost", nPerd>0);
   const sm=v=>` <small style="font-family:Montserrat;font-size:13px">${v}</small>`;
-  [["activo","aActBox"],["perdido","aPerdBox"],["futuro","aFutBox"],["nc","aNcBox"],["seguimiento","aSegBox"],["hot","aHotBox"],["sin","aSinBox"],["sinmov","aMovBox"],["cad","aCadBox"],["apartado","aApaBox"]].forEach(([k,id])=>document.getElementById(id).classList.toggle("sel", fe===k));
+  [["activo","aActBox"],["perdido","aPerdBox"],["futuro","aFutBox"],["nc","aNcBox"],["seguimiento","aSegBox"],["hot","aHotBox"],["sin","aSinBox"],["sinmov","aMovBox"],["apartado","aApaBox"]].forEach(([k,id])=>document.getElementById(id).classList.toggle("sel", fe===k));
   const nAct=base.filter(l=>!["perdido","futuro"].includes(estatusDe(l))).length;
   const nFut=base.filter(l=>estatusDe(l)==="futuro").length; document.getElementById("aFut").innerHTML=nFut+sm(pct(nFut,base.length)); document.getElementById("aFutBox").classList.toggle("fut", nFut>0); document.getElementById("aAct").innerHTML=nAct+sm(pct(nAct,base.length));
   const nNc=base.filter(l=>estatusDe(l)==="nc").length; document.getElementById("aNc").innerHTML=nNc+sm(pct(nNc,base.length));
