@@ -1691,7 +1691,7 @@ function hotList(id, src){
 let _scAse=null;
 function renderAse(){
   if(!aseCur) return;
-  if(window.SCORE){ if(_scAse!==aseCur){ _scAse=aseCur; SCORE.cargar(aseCur); } SCORE.pintar("scoreBox",aseCur); }
+  if(window.SCORE){ if(_scAse!==aseCur){ _scAse=aseCur; SCORE.cargar(); } SCORE.pintar("scoreBox",aseCur); }
   const [a,b]=rangeA();
   /* Fase 2: un lead que no se contactó en 30 minutos hábiles regresa a administración (Berna lo reasigna). Sale de la lista del asesor. */
   const devueltos=leads.filter(l=> l.asesor===aseCur && window.RELOJ && RELOJ.vencido(l));

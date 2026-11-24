@@ -64,21 +64,25 @@
     return {score:s,pares:n,hoy:h,nivel:s>=ALTO?"alto":s>=BAJO?"medio":"bajo"};
   }
   var TXT={alto:"Alto",medio:"Medio",bajo:"Bajo"};
+  /* equipo del ranking: asesores activos, sin administradores */
+  function equipo(){return (window.TRUST_EQUIPO||[]).filter(function(a){return a.activo!==false&&!a.admin}).map(function(a){return a.nombre})}
+  /* lugar en el ranking de actividad (los empates comparten lugar); null si no es parte del equipo */
+  function lugar(asesor){var eq=equipo();if(eq.indexOf(asesor)<0||!LISTO["*"])return null;var mio=de(asesor).pares;return {lugar:1+eq.filter(function(a){return de(a).pares>mio}).length,de:eq.length}}
   /* tarjeta del asesor (Mis leads) */
   function pintar(el,asesor){
     if(typeof el==="string")el=document.getElementById(el);if(!el)return;
-    if(!asesor||FALLA||!LISTO[asesor]){el.hidden=true;return}
-    var r=de(asesor);el.hidden=false;
-    el.innerHTML='<div class="scr '+r.nivel+'"><div class="scn"><b>'+r.score+'</b><i>/100</i></div><div class="sct"><span class="scl">Score de actividad · '+TXT[r.nivel]+'</span></div></div>';
+    if(!asesor||FALLA||!(LISTO[asesor]||LISTO["*"])){el.hidden=true;return}
+    var r=de(asesor),lg=lugar(asesor);el.hidden=false;
+    el.innerHTML='<div class="scr '+r.nivel+'"><div class="scn"><b>'+r.score+'</b><i>/100</i></div><div class="sct"><span class="scl">Score de actividad · '+TXT[r.nivel]+'</span>'+(lg?'<span class="sch">Lugar <b>'+lg.lugar+'</b> de '+lg.de+' en el equipo</span>':'')+'</div></div>';
   }
   /* tabla de todos (administración) */
   function tabla(el,asesores){
     if(typeof el==="string")el=document.getElementById(el);if(!el)return;
     if(FALLA||!LISTO["*"]){el.innerHTML="";return}
-    var ns=(asesores||[]).slice();Object.keys(PARES).forEach(function(a){if(ns.indexOf(a)<0)ns.push(a)});
-    var rs=ns.map(function(a){var r=de(a);r.a=a;return r}).sort(function(x,y){return y.score-x.score||y.hoy-x.hoy||x.a.localeCompare(y.a)});
-    el.innerHTML='<div class="card scadm"><div class="lhead"><div><h2>Score de actividad</h2><p class="sub">Leads movidos por día en los últimos '+DIAS+' días, sobre una meta de '+META+'. Informativo: no mide resultados.</p></div></div>'+
-      '<div class="scg">'+rs.map(function(r){return '<div class="sci '+r.nivel+'"><b>'+r.score+'</b><span class="scan">'+esc(r.a)+'</span><span class="sch">Hoy: '+r.hoy+'</span><span class="scb"><span style="width:'+r.score+'%"></span></span></div>'}).join("")+'</div></div>';
+    var ns=equipo();if(!ns.length)ns=(asesores||[]).slice();Object.keys(PARES).forEach(function(a){if(ns.indexOf(a)<0&&de(a).pares>0)ns.push(a)});
+    var rs=ns.map(function(a){var r=de(a);r.a=a;return r}).sort(function(x,y){return y.pares-x.pares||y.hoy-x.hoy||x.a.localeCompare(y.a)});rs.forEach(function(r){r.lg=1+rs.filter(function(o){return o.pares>r.pares}).length});
+    el.innerHTML='<div class="card scadm"><div class="lhead"><div><h2>Ranking de actividad</h2><p class="sub">Leads movidos por día en los últimos '+DIAS+' días, sobre una meta de '+META+'. Informativo: no mide resultados.</p></div></div>'+
+      '<div class="scg">'+rs.map(function(r){return '<div class="sci '+r.nivel+'"><b>'+r.score+'</b><span class="scan">'+r.lg+'º · '+esc(r.a)+'</span><span class="sch">Hoy: '+r.hoy+'</span><span class="scb"><span style="width:'+r.score+'%"></span></span></div>'}).join("")+'</div></div>';
   }
   function css(){
     var st=document.createElement("style");
