@@ -341,7 +341,7 @@ const V=[
   +fld("conclusion","Conclusión del asesor",{req:1,area:4,c:"c12",ph:"En dos o tres líneas: cómo compite el inmueble y qué recomiendas."})+"</div></section>"
   +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" data-act="ver">Ver cómo queda</button><button class="btn primary" type="button" data-act="pdf">⤓ Generar PDF</button></div>',
 
-()=>'<section class="card"><h2>Vista del PDF</h2><p class="sub">Así salen las cuatro hojas. Para descargarlo usa el botón “⤓ PDF” y en el diálogo elige “Guardar como PDF”.</p></section><div id="pdf"></div>'
+()=>'<section class="card"><h2>Vista del PDF</h2><p class="sub">Así salen las cuatro hojas. El botón “⤓ PDF” descarga el archivo listo para enviar.</p></section><div id="pdf"></div>'
 ];
 function compCard(c,i){
   const ci=(k,l,o={})=>{const id="c"+i+"_"+k,v=k==="precio"&&c[k]!==""?mx(c[k]):c[k];
@@ -442,8 +442,8 @@ function hojas(C){
   const d=S.d,f=pd(d.fecha),vg=f?new Date(f.getFullYear(),f.getMonth(),f.getDate()+S.rules.vig):null,q=quien(asesorDoc());
   const salida=n(d.salida)||C.eq,rt=n(d.renta),ini=q.nombre.split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase(),fi=fotoInfo(q.foto);
   const dir=direccion(),depto=d.tipo==="Departamento",nc=S.comps.filter((c,i)=>C.R[i].ok&&c.dato==="Cierre").length;
-  const av=q.foto?'<div class="nf-as-f" style="background-image:url(\''+esc(fi.src)+"');background-position:"+fi.pos+'"></div>':'<div class="nf-as-f">'+esc(ini)+"</div>";
-  const head='<div class="nf-head"><div class="nf-logo">'+LOGO+'</div><div class="nf-as"><div><div class="nf-as-n">'+esc(q.nombre)+'</div><div class="nf-as-s">Tu asesor TRUST'+(q.tel?" · "+esc(q.tel):"")+"</div></div>"+av+"</div></div>";
+  const av=q.foto?'<div class="nf-as-f" style="background-image:url(\''+(FD[fi.src]||esc(fi.src))+"');background-position:"+fi.pos+'"></div>':'<div class="nf-as-f">'+esc(ini)+"</div>";
+  const head='<div class="nf-head"><div class="nf-logo">'+LOGO.replace(/currentColor/g,"#FFFFFF")+'</div><div class="nf-as"><div><div class="nf-as-n">'+esc(q.nombre)+'</div><div class="nf-as-s">Tu asesor TRUST'+(q.tel?" · "+esc(q.tel):"")+"</div></div>"+av+"</div></div>";
   const foot='<div class="nf-foot">TRUST INMOBILIARIA · GUADALAJARA, JALISCO · MÉXICO · Opinión comercial de valor, no es un avalúo · Vigente hasta el '+fl(vg)+"</div>";
   const band=(pill,h2,sub)=>'<div class="nf-band">'+head+'<div class="nf-tt"><span class="nf-pill">'+pill+"</span><h2>"+h2+'</h2><div class="nf-sub">'+sub+"</div></div></div>";
   const cell=(k,v,dd,t)=>"<div"+(t?' class="t"':"")+'><div class="nf-k">'+k+'</div><div class="nf-v">'+v+"</div>"+(dd?'<div class="nf-d">'+dd+"</div>":"")+"</div>";
@@ -498,12 +498,43 @@ function fit(){document.querySelectorAll("#pdf .sheet").forEach(s=>{s.style.widt
 window.addEventListener("resize",fit);
 async function vistaPdf(C){const el=$("#pdf");if(!el)return;if(!el.innerHTML)el.innerHTML='<div class="empty">Armando la vista…</div>';await Promise.all([bake(),prepararMapas(C)]);if(!$("#pdf")||S.step!==5)return;$("#pdf").innerHTML=hojas(C);fit()}
 
-async function pdf(inline){
+const FD={};
+async function fotoAsesor(){const src=fotoInfo(quien(asesorDoc()).foto).src;if(!src||FD[src])return;
+  try{const b=await (await fetch(src,{mode:"cors"})).blob();FD[src]=await new Promise((r,x)=>{const f=new FileReader();f.onload=()=>r(f.result);f.onerror=x;f.readAsDataURL(b)})}catch(e){}}
+const js=src=>new Promise(r=>{const e=document.createElement("script");e.src=src;e.onload=()=>r(true);e.onerror=()=>r(false);document.head.appendChild(e)});
+async function libs(){
+  if(!window.html2canvas)await js("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
+  if(!window.jspdf)await js("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+  return !!(window.html2canvas&&window.jspdf);
+}
+let GENERANDO=false;
+/* El PDF se arma aquí mismo como archivo (cada hoja se dibuja a imagen tamaño carta) y se descarga.
+   Antes se usaba la impresión del navegador y Safari cortaba cada hoja en dos al meter sus márgenes y encabezados. */
+async function pdf(){
   const C=calc();if(!S.d.solicitante.trim()){toast("Falta el nombre del solicitante (paso 1)",true);return}if(!S.d.calle.trim()){toast("Falta el domicilio del inmueble (paso 2)",true);return}
   if(!C.listo){toast(C.A.filter(a=>a[0]==="e")[0][1],true);if(S.step!==4)go(4);return}
-  const w=inline?window:window.open("","_blank");if(!w){toast("Permite las ventanas emergentes para generar el PDF",true);return}
-  if(!inline)w.document.write('<p style="font:14px Poppins,sans-serif;padding:24px;color:#173F35">Generando la opinión de valor…</p>');
-  await guardar(true);await Promise.all([bake(),prepararMapas(C)]);
+  if(GENERANDO)return;GENERANDO=true;const bt=$("#btn-pdf"),txt=bt.textContent;bt.textContent="Generando…";bt.disabled=true;
+  let host=null;
+  try{
+    await guardar(true);await Promise.all([bake(),prepararMapas(C),fotoAsesor()]);
+    if(!(await libs())){pdfImprimir(C);return}
+    host=document.createElement("div");host.style.cssText="position:fixed;left:-12000px;top:0;width:816px;pointer-events:none";host.innerHTML=hojas(C);document.body.appendChild(host);
+    host.querySelectorAll(".sheet").forEach(x=>{x.style.cssText="width:816px;height:1056px;margin:0;border-radius:0;box-shadow:none;overflow:hidden"});
+    if(document.fonts&&document.fonts.ready)await document.fonts.ready;
+    const doc=new window.jspdf.jsPDF({unit:"pt",format:"letter",compress:true}),pgs=host.querySelectorAll(".pg");
+    for(let i=0;i<pgs.length;i++){
+      bt.textContent="Hoja "+(i+1)+" de "+pgs.length+"…";
+      const cv=await html2canvas(pgs[i],{scale:2,useCORS:true,backgroundColor:"#EEF2EC",logging:false,width:816,height:1056,windowWidth:816,windowHeight:1056});
+      if(i)doc.addPage("letter","portrait");doc.addImage(cv.toDataURL("image/jpeg",.9),"JPEG",0,0,612,792,undefined,"FAST");
+    }
+    const limpio=t=>String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^A-Za-z0-9 ]+/g,"").trim().replace(/\s+/g,"-");
+    doc.save("TRUST-Opinion-de-valor-"+limpio(S.d.solicitante)+"-"+limpio(S.d.calle)+".pdf");toast("PDF descargado");
+  }catch(e){console.warn(e);toast("No se pudo armar el PDF: "+(e&&e.message||e),true)}
+  finally{if(host)host.remove();GENERANDO=false;bt.textContent=txt;bt.disabled=false}
+}
+/* Respaldo: si no cargan las librerías del PDF, se abre la versión para imprimir. */
+function pdfImprimir(C){
+  const w=window.open("","_blank")||window;
   const html='<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=816"><title>Opinión de valor · '+esc(S.d.solicitante)+" · "+esc(S.d.calle)+"</title>"
     +'<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap">'
     +"<style>"+$("#pdfcss").textContent
@@ -648,7 +679,7 @@ window.addEventListener("beforeunload",e=>{if(DIRTY&&(S.d.solicitante||S.d.calle
 go(0);
 (async()=>{const u=new URLSearchParams(location.search),id=u.get("doc");if(!id||!sb)return;
   const r=await sb.from("documentos").select("*").eq("id",id).maybeSingle();if(!r.data){toast("No encontré esa opinión",true);return}
-  cargar(r.data);history.replaceState(null,"",location.pathname);go(u.get("pdf")?5:0);if(u.get("pdf"))setTimeout(()=>pdf(true),500)})();
+  cargar(r.data);history.replaceState(null,"",location.pathname);go(u.get("pdf")?5:0);if(u.get("pdf"))setTimeout(()=>pdf(),500)})();
 </script>
 </body>
 </html>
