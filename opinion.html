@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FAF8F2">
+<title>Opinión de valor | TRUST</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Poppins:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{
+  --green:#173F35; --green-2:#1F5446; --bg:#FAF8F2; --surface:#FFFFFF; --surface-2:#EFEAE0; --line:#D9D2C3; --line-2:#BFB5A0;
+  --text:#1E241F; --muted:#585C57; --faint:#8A8D88; --sage:#E9EEEA;
+  --ok:#2E7D5B; --ok-bg:#E1F1E8; --warn:#8A5A12; --warn-bg:#FBF0D6; --bad:#A8342A; --bad-bg:#F8E1DE;
+  --shadow:0 1px 2px rgba(23,63,53,.06),0 8px 24px rgba(23,63,53,.06);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Poppins,"Segoe UI",system-ui,sans-serif;font-size:14px;line-height:1.45}
+.wrap{max-width:900px;margin:0 auto;padding:20px 16px calc(96px + env(safe-area-inset-bottom,0px))}
+h1,h2,h3{font-family:Lora,Georgia,serif;font-weight:500;margin:0}
+button,select,input,textarea{font:inherit;color:inherit}button{cursor:pointer}
+:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.home-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 14px;background:var(--surface)}
+.home-link:hover{color:var(--green);border-color:var(--green)}
+header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.brand .logo{width:118px;display:block;margin-bottom:12px;color:var(--green);line-height:0}.brand .logo svg{width:100%;height:auto;display:block}
+.brand h1{font-size:30px;line-height:1.1}.brand p{margin:4px 0 0;color:var(--muted)}
+.topright{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:9px 16px;font-weight:500;font-size:13px;color:var(--text);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{border-color:var(--green);color:var(--green)}
+.btn.primary{background:var(--green);border-color:var(--green);color:#fff}.btn.primary:hover{background:var(--green-2);color:#fff}
+.btn.danger{border-color:var(--bad);color:var(--bad)}.btn.sm{padding:5px 11px;font-size:12px}.btn[disabled]{opacity:.4;cursor:default}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px 20px;box-shadow:var(--shadow);margin-bottom:14px}
+.card h2{font-size:19px;color:var(--green);margin-bottom:4px}
+.card h3{font-family:Poppins,sans-serif;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 0 10px}
+.card>p.sub{margin:0 0 14px;color:var(--muted);font-size:13px}
+.steps{display:flex;gap:6px;overflow-x:auto;padding:2px 0 12px;position:sticky;top:0;background:var(--bg);z-index:5}
+.steps button{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 13px;font-size:13px;font-weight:500;color:var(--muted);white-space:nowrap}
+.steps button i{font-style:normal;font-weight:600;margin-right:5px}
+.steps button.on{background:var(--green);border-color:var(--green);color:#fff}
+.fg{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;align-content:start}
+.f{display:flex;flex-direction:column;justify-content:flex-end;gap:4px;min-width:0}
+.f label,.f .lab{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.f input,.f select,.f textarea{border:1px solid var(--line-2);border-radius:10px;padding:9px 11px;background:var(--bg);width:100%;min-height:40px}
+.f textarea{resize:vertical}.f small{font-size:11px;color:var(--muted)}
+.c12{grid-column:span 12}.c8{grid-column:span 8}.c6{grid-column:span 6}.c4{grid-column:span 4}.c3{grid-column:span 3}
+.req{color:var(--bad)}.tag{display:inline-block;font-size:9.5px;font-weight:600;letter-spacing:.04em;background:var(--sage);color:var(--green);border-radius:6px;padding:1px 6px;margin-left:4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line-2);background:var(--bg);border-radius:999px;padding:6px 12px;font-size:13px}
+.chip.on{background:var(--green);border-color:var(--green);color:#fff}
+.out{background:var(--sage);border-radius:10px;padding:9px 12px;font-size:13px;color:var(--green)}.out b{font-weight:600}
+.mapbox{height:260px;border-radius:14px;border:1px solid var(--line);overflow:hidden;background:var(--sage);z-index:0}
+.comp{border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;background:var(--surface);box-shadow:var(--shadow)}
+.comp-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}.comp-h strong{color:var(--green)}
+.numc{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;font-size:12px;font-weight:600;margin-right:8px}
+.calcline{margin-top:12px;font-variant-numeric:tabular-nums}.calcline .big{font-weight:600;font-size:15px}
+.pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:600}.pill.c{background:var(--ok-bg);color:var(--ok)}.pill.o{background:var(--sage);color:var(--green)}
+.hero{background:var(--green);color:#fff;border-radius:18px;padding:20px;margin-bottom:14px}
+.hero small{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.75}
+.hero .v{font-family:Lora,serif;font-size:38px;font-weight:500;line-height:1.1;margin:4px 0 2px;font-variant-numeric:tabular-nums}
+.hero .m{font-size:13px;opacity:.85}
+.range{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px}
+.range div{background:rgba(255,255,255,.1);border-radius:12px;padding:10px}.range div.mid{background:#fff;color:var(--green)}
+.range span{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;opacity:.8}.range b{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.alerts{display:grid;gap:6px;margin:0;padding:0;list-style:none}.alerts li{border-radius:10px;padding:8px 12px;font-size:13px}
+.alerts .w{background:var(--warn-bg);color:var(--warn)}.alerts .e{background:var(--bad-bg);color:var(--bad)}.alerts .k{background:var(--ok-bg);color:var(--ok)}.alerts .i{background:var(--sage);color:var(--green)}
+.twrap{overflow:auto;border:1px solid var(--line);border-radius:14px}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th{background:#EFEAE0;color:#4F534E;text-align:left;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;padding:9px 10px;white-space:nowrap}
+td{padding:8px 10px;border-top:1px solid var(--line);white-space:nowrap}td.r,th.r{text-align:right}td a{color:var(--green);font-weight:500}
+.note{font-size:12px;color:var(--muted)}
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));z-index:6}
+.nav div{max-width:900px;margin:0 auto;display:flex;justify-content:space-between;gap:10px}
+.scrim{position:fixed;inset:0;background:rgba(23,63,53,.35);z-index:20}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--surface);z-index:21;box-shadow:var(--shadow);display:flex;flex-direction:column}
+.drawer header{display:flex;justify-content:space-between;align-items:center;padding:16px 22px;border-bottom:1px solid var(--line)}
+.drawer .body{padding:16px 22px;overflow:auto;flex:1}
+.ico{border:0;background:transparent;color:var(--faint);font-size:15px;padding:2px 6px;border-radius:6px}
+.esc{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.esc b{display:block;font-weight:600}.esc small{color:var(--muted);font-size:12px}
+.empty{color:var(--muted);padding:22px;text-align:center;border:1px dashed var(--line-2);border-radius:14px}
+.toast{position:fixed;left:50%;bottom:86px;transform:translateX(-50%) translateY(20px);background:var(--green);color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:99}
+.toast.show{opacity:1;transform:translateX(-50%)}.toast.err{background:var(--bad)}
+.ovpin{display:grid;place-items:center;border-radius:50%;font:600 11px Poppins,sans-serif;box-sizing:border-box}
+.ovpin.s{background:#173F35;border:3px solid #fff;box-shadow:0 0 0 6px #BFD0C5}.ovpin.s:after{content:"";width:7px;height:7px;border-radius:50%;background:#fff}
+.ovpin.c{background:#fff;border:2px solid #173F35;color:#173F35}
+@media (max-width:760px){.range b{font-size:12.5px}.range div{padding:9px 7px}.c8,.c6{grid-column:span 12}.c4,.c3{grid-column:span 6}.brand h1{font-size:24px}.hero .v{font-size:30px}}
+</style>
+<style id="pdfcss">
+/* PDF: mismo sistema de documentos que la cotización del portal (.nf-*): verde TRUST, fondo verde pálido, Lora + Poppins, sin dorado */
+.sheet{margin:0 auto 16px;overflow:hidden;border-radius:6px;box-shadow:0 4px 18px rgba(0,0,0,.08)}
+.pg{--p:#173F35;--prgb:23,63,53;--f:#EEF2EC;--a:#5E7A70;--ink2:rgba(45,34,28,.86);--mut:rgba(60,46,38,.62);
+  width:816px;height:1056px;transform-origin:0 0;position:relative;overflow:hidden;background:var(--f);color:var(--p);font-family:Poppins,'Segoe UI',sans-serif;font-size:10px;line-height:1.4;-webkit-font-smoothing:antialiased}
+.pg i{font-family:Lora,Georgia,serif;font-style:italic;font-weight:400}
+.nf-head{position:relative;z-index:3;display:flex;justify-content:space-between;align-items:center;padding:38px 56px 0;color:#fff}
+.nf-logo{width:92px;line-height:0}.nf-logo svg{width:100%;height:auto;display:block}
+.nf-as{display:flex;align-items:center;gap:10px;text-align:right}
+.nf-as-n{font-family:Lora,Georgia,serif;font-size:14px;line-height:1.25}
+.nf-as-s{font-size:8.5px;color:rgba(255,255,255,.92);margin-top:2px}
+.nf-as-f{width:42px;height:42px;border-radius:50%;border:1.5px solid #fff;flex:none;display:grid;place-items:center;font-size:13px;font-weight:600;background:#2A5A4D center/cover no-repeat}
+.nf-pill{display:inline-block;background:#fff;color:var(--p);border-radius:999px;padding:5px 13px;font-size:8px;font-weight:600;letter-spacing:.2em;text-transform:uppercase}
+.nf-k{font-size:7.5px;font-weight:600;letter-spacing:.2em;text-transform:uppercase}
+.nf-foot{position:absolute;left:56px;right:56px;bottom:26px;text-align:center;font-size:7px;color:var(--mut);letter-spacing:.01em}
+.nf-cta{display:block;width:460px;margin:0 auto;background:var(--p);color:#fff;border-radius:999px;text-align:center;padding:13px 20px;font-size:12.5px}
+.nf-cta b{font-family:Lora,Georgia,serif;font-weight:500;font-size:17px;margin-left:6px}
+/* hoja 1 */
+.p1 .nf-top{position:absolute;left:0;right:0;top:0;height:700px;background:var(--p)}
+.p1 .nf-img{position:absolute;left:0;right:0;top:0;height:560px;background-size:cover;background-position:center}
+.p1 .nf-grad{position:absolute;inset:0;background:linear-gradient(180deg,rgba(var(--prgb),.30) 0%,rgba(var(--prgb),.10) 22%,rgba(var(--prgb),.55) 46%,rgba(var(--prgb),.94) 66%,var(--p) 80%)}
+.p1 .nf-body{position:relative;z-index:2;padding:0 56px;color:#fff}
+.p1 .nf-hero{margin-top:198px;height:150px}
+.p1 h1{font-family:Lora,Georgia,serif;font-weight:400;font-size:39px;line-height:1.12;margin:12px 0 8px;letter-spacing:-.005em;color:#fff}
+.nf-sub{font-size:12px}
+.nf-price{display:flex;justify-content:space-between;align-items:flex-start;gap:30px;margin-top:50px;height:112px}
+.nf-big{font-family:Lora,Georgia,serif;font-size:50px;line-height:1.08;letter-spacing:-.01em;margin-top:4px}
+.nf-big-s{font-size:8.5px;color:rgba(255,255,255,.88);margin-top:4px;max-width:360px}
+.nf-desc{width:298px;flex:none;margin-top:4px}
+.nf-desc .nf-k{margin-bottom:7px}
+.nf-r{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:4.5px 0;border-bottom:1px solid rgba(255,255,255,.22);font-size:9.5px}
+.nf-r:last-child{border-bottom:0}
+.nf-r b{font-family:Lora,Georgia,serif;font-weight:400;font-size:13.5px;white-space:nowrap}
+.nf-card{position:relative;z-index:2;margin:32px 56px 0;background:#fff;border-radius:18px;box-shadow:0 22px 44px -26px rgba(40,20,10,.5);padding:8px 8px 0;color:var(--p)}
+.nf-steps{display:flex}
+.nf-step{flex:1;padding:20px 18px;min-width:0}
+.nf-step.on{background:var(--p);color:#fff;border-radius:12px}
+.nf-step .nf-v{font-family:Lora,Georgia,serif;font-size:28px;line-height:1.2;margin-top:3px;white-space:nowrap}
+.nf-step .nf-d{font-size:8.5px;color:var(--mut);margin-top:10px}
+.nf-step.on .nf-d{color:rgba(255,255,255,.9)}
+.nf-unit{display:flex;padding:16px 12px 18px;border-top:1px solid rgba(var(--prgb),.12);margin-top:8px}
+.nf-unit>div{flex:1;padding:0 12px;border-left:1px solid rgba(var(--prgb),.16);min-width:0}
+.nf-unit .nf-k{font-size:6.8px;color:var(--mut)}
+.nf-unit .nf-v{font-family:Lora,Georgia,serif;font-size:15px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p1 .nf-cta{position:absolute;left:0;right:0;bottom:74px;z-index:2}
+.p1 .nf-nota{position:absolute;left:56px;right:56px;bottom:136px;text-align:center;font-size:9px;color:var(--mut)}
+/* hojas 2 a 4 */
+.nf-band{position:relative;height:240px;background:var(--p);color:#fff;overflow:hidden}
+.nf-tt{position:relative;z-index:2;padding:16px 56px 0}
+.nf-band h2{font-family:Lora,Georgia,serif;font-weight:400;font-size:31px;line-height:1.15;margin:8px 0 4px;color:#fff}
+.nf-band .nf-sub{font-size:10px}
+.nf-sum{position:relative;z-index:2;margin:-38px 56px 0;background:#fff;border-radius:16px;display:flex;overflow:hidden;box-shadow:0 18px 36px -24px rgba(40,20,10,.5)}
+.nf-sum>div{flex:1;padding:15px 16px;border-left:1px solid rgba(var(--prgb),.14);min-width:0}
+.nf-sum>div:first-child{border-left:0}
+.nf-sum>div.t{background:var(--p);color:#fff;border-left:0}
+.nf-sum .nf-k{font-size:7px}
+.nf-sum .nf-v{font-family:Lora,Georgia,serif;font-weight:600;font-size:22px;line-height:1.25;margin-top:3px;white-space:nowrap}
+.nf-sum .nf-d{font-size:7.8px;color:var(--mut);margin-top:6px}
+.nf-sum>div.t .nf-d{color:rgba(255,255,255,.9)}
+.nf-main{padding:8px 56px 0}
+.nf-eb{font-size:7.2px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;margin:22px 0 9px;display:flex;align-items:center;gap:10px}
+.nf-eb:after{content:'';flex:1;height:1px;background:rgba(var(--prgb),.25)}
+.nf-tr{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;min-height:23px;padding:3px 8px;font-size:9.5px;border-bottom:1px solid rgba(var(--prgb),.10);color:var(--ink2)}
+.nf-tr:nth-child(odd){background:rgba(255,255,255,.45)}
+.nf-tr b{font-weight:600;color:var(--p)}
+.nf-tr .r{text-align:right}
+.nf-tr.h{background:none;border-bottom:1.5px solid var(--p);font-size:6.6px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
+.nf-tr.c{grid-template-columns:16px 1fr 1.15fr 1.15fr .85fr .45fr 1.05fr .85fr .6fr 1fr}
+.nf-cols{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+.nf-wc{background:#fff;border-radius:16px;padding:15px 18px;color:var(--ink2)}
+.nf-wc .nf-k{color:var(--p);margin-bottom:6px}
+.nf-wc .nf-v{font-family:Lora,Georgia,serif;font-size:21px;font-weight:600;color:var(--p)}
+.nf-wc ol{margin:0;padding-left:16px}.nf-wc li{margin-bottom:3px}
+.nf-map{border-radius:16px;background:rgba(var(--prgb),.10);display:grid;place-items:center;text-align:center;color:var(--mut);font-size:9px;padding:10px}
+.nf-map.m{padding:0;overflow:hidden;display:block;background-size:cover;background-position:center;min-height:240px}
+.nf-quote{font-family:Lora,Georgia,serif;font-size:14.5px;line-height:1.5;margin:26px 0 0}
+.nf-sig{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:22px}
+.nf-sig .nf-as-f{border-color:var(--p);background-color:#fff}
+.nf-sig .nf-as-s{color:var(--mut)}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/auth.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><div class="logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 70"> <g transform="translate(-238, -273)"> <rect x="405.2" y="273.3" fill="currentColor" width="13.8" height="20"/> <rect x="364.3" y="273.3" fill="currentColor" width="13.8" height="20"/> <path fill="currentColor" d="M401.6,320.5c-2.4,2.5-5.7,3.8-9.9,3.8c-4.2,0-7.6-1.3-9.9-3.9c-2.1-2.2-3.2-5.4-3.5-9.6h-13.8c0.3,8.4,2.7,14.8,7.2,19.2c4.8,4.7,11.5,7,19.9,7c4.2,0,8-0.6,11.4-1.7c3.4-1.2,6.3-2.9,8.7-5.3c2.4-2.4,4.2-5.3,5.5-8.8c1.1-3,1.7-6.5,1.9-10.3h-13.8C404.9,315.1,403.7,318.3,401.6,320.5"/> <polygon fill="currentColor" points="257.1,286 238,286 238,273.3 290,273.3 290,286 270.9,286 270.9,336 257.1,336"/> <path fill="currentColor" d="M328.3,303.8c3.4,0,6-0.8,7.8-2.4c1.8-1.6,2.7-3.8,2.7-6.5v-0.2c0-3-1-5.2-2.9-6.7c-1.9-1.5-4.6-2.2-8-2.2h-13.7v18H328.3z M300.6,273.3h28.7c7.9,0,14,2.1,18.3,6.4c3.6,3.6,5.4,8.4,5.4,14.3v0.2c0,5.1-1.2,9.2-3.7,12.4c-2.5,3.2-5.7,5.5-9.7,7l15.3,22.4h-16.1L325.2,316H325h-10.7V336h-13.8V273.3z"/> <path fill="currentColor" d="M455.5,336.9c-4.8,0-9.5-0.8-14.1-2.5c-4.6-1.6-8.8-4.2-12.5-7.6l8.2-9.8c2.9,2.3,5.8,4.2,8.8,5.6c3,1.4,6.3,2.1,9.9,2.1c2.9,0,5.1-0.5,6.7-1.6c1.6-1,2.4-2.5,2.4-4.3v-0.2c0-0.9-0.2-1.7-0.5-2.4c-0.3-0.7-1-1.3-1.9-1.9c-0.9-0.6-2.2-1.2-3.9-1.8c-1.6-0.6-3.8-1.2-6.4-1.9c-3.2-0.8-6-1.6-8.6-2.6c-2.6-1-4.8-2.1-6.6-3.5c-1.8-1.4-3.2-3.2-4.2-5.2c-1-2.1-1.5-4.7-1.5-7.8v-0.2c0-2.9,0.5-5.4,1.6-7.7c1.1-2.3,2.6-4.3,4.5-6c1.9-1.7,4.2-3,6.9-3.9c2.7-0.9,5.6-1.3,8.9-1.3c4.6,0,8.8,0.7,12.7,2.1c3.9,1.4,7.4,3.3,10.6,5.9l-7.2,10.4c-2.8-1.9-5.6-3.4-8.2-4.5c-2.7-1.1-5.4-1.7-8.1-1.7c-2.7,0-4.7,0.5-6,1.6c-1.3,1-2,2.3-2,3.9v0.2c0,1,0.2,1.9,0.6,2.6c0.4,0.7,1.1,1.4,2.1,2c1,0.6,2.4,1.2,4.2,1.7c1.8,0.5,4,1.2,6.7,1.9c3.2,0.8,6,1.8,8.5,2.8c2.5,1,4.6,2.3,6.3,3.8c1.7,1.5,3,3.2,3.9,5.2c0.9,2,1.3,4.3,1.3,7.1v0.2c0,3.1-0.6,5.9-1.7,8.3c-1.1,2.4-2.7,4.4-4.7,6.1c-2,1.6-4.4,2.9-7.2,3.8C462,336.5,458.9,336.9,455.5,336.9"/> <polygon fill="currentColor" points="505,286 485.9,286 485.9,273.3 537.9,273.3 537.9,286 518.8,286 518.8,336 505,336"/> <path fill="currentColor" d="M362,301.9c0.4,0,0.6-0.1,0.8-0.3c0.2-0.2,0.3-0.4,0.3-0.7v0c0-0.3-0.1-0.6-0.3-0.7c-0.2-0.2-0.5-0.2-0.9-0.2h-1.5v1.9H362z M359,298.6h3.1c0.9,0,1.5,0.2,2,0.7c0.4,0.4,0.6,0.9,0.6,1.5v0c0,0.5-0.1,1-0.4,1.3c-0.3,0.3-0.6,0.6-1,0.8l1.6,2.4h-1.7l-1.4-2.2h0h-1.1v2.2H359V298.6z"/> <polygon fill="currentColor" points="369.8,298.6 374.9,298.6 374.9,299.9 371.3,299.9 371.3,301.3 374.4,301.3 374.4,302.6 371.3,302.6 371.3,304 374.9,304 374.9,305.3 369.8,305.3"/> <path fill="currentColor" d="M384,302.5l-0.9-2.2l-0.9,2.2H384z M382.4,298.6h1.4l2.9,6.8h-1.6l-0.6-1.5h-2.8l-0.6,1.5h-1.5L382.4,298.6z"/> <polygon fill="currentColor" points="391.6,298.6 393,298.6 393,304 396.4,304 396.4,305.3 391.6,305.3"/> <polygon fill="currentColor" points="402.9,300 400.9,300 400.9,298.6 406.5,298.6 406.5,300 404.4,300 404.4,305.3 402.9,305.3"/> <path fill="currentColor" d="M414.7,304.1c0.3,0,0.6-0.1,0.8-0.2c0.3-0.1,0.5-0.3,0.6-0.5c0.2-0.2,0.3-0.4,0.4-0.7c0.1-0.3,0.1-0.5,0.1-0.8v0c0-0.3-0.1-0.6-0.1-0.8c-0.1-0.3-0.2-0.5-0.4-0.7c-0.2-0.2-0.4-0.3-0.6-0.5c-0.3-0.1-0.5-0.2-0.8-0.2c-0.3,0-0.6,0.1-0.8,0.2c-0.2,0.1-0.5,0.3-0.6,0.5c-0.2,0.2-0.3,0.4-0.4,0.7c-0.1,0.3-0.1,0.5-0.1,0.8v0c0,0.3,0,0.6,0.1,0.8c0.1,0.3,0.2,0.5,0.4,0.7c0.2,0.2,0.4,0.3,0.6,0.5C414.2,304,414.4,304.1,414.7,304.1 M414.7,305.5c-0.5,0-1-0.1-1.4-0.3c-0.4-0.2-0.8-0.4-1.1-0.7c-0.3-0.3-0.6-0.7-0.7-1.1c-0.2-0.4-0.3-0.9-0.3-1.4v0c0-0.5,0.1-0.9,0.3-1.4c0.2-0.4,0.4-0.8,0.7-1.1c0.3-0.3,0.7-0.6,1.1-0.8c0.4-0.2,0.9-0.3,1.4-0.3c0.5,0,1,0.1,1.4,0.3c0.4,0.2,0.8,0.4,1.1,0.7c0.3,0.3,0.6,0.7,0.7,1.1c0.2,0.4,0.3,0.9,0.3,1.4v0c0,0.5-0.1,0.9-0.3,1.4c-0.2,0.4-0.4,0.8-0.7,1.1c-0.3,0.3-0.7,0.6-1.1,0.8C415.7,305.4,415.2,305.5,414.7,305.5"/> <path fill="currentColor" d="M426.5,301.9c0.4,0,0.6-0.1,0.8-0.3c0.2-0.2,0.3-0.4,0.3-0.7v0c0-0.3-0.1-0.6-0.3-0.7c-0.2-0.2-0.5-0.2-0.9-0.2H425v1.9H426.5z M423.5,298.6h3.1c0.9,0,1.5,0.2,2,0.7c0.4,0.4,0.6,0.9,0.6,1.5v0c0,0.5-0.1,1-0.4,1.3c-0.3,0.3-0.6,0.6-1,0.8l1.6,2.4h-1.7l-1.4-2.2h0H425v2.2h-1.5V298.6z"/> </g> </svg></div><h1>Opinión de valor</h1><p id="sub">Estima el valor de un inmueble con comparables y entrégalo en PDF</p></div>
+    <div class="topright"><a class="home-link" href="./herramientas.html">← Herramientas</a><button class="btn" id="btn-list">Mis opiniones</button><button class="btn" id="btn-save">Guardar</button><button class="btn primary" id="btn-pdf">⤓ PDF</button></div>
+  </header>
+  <nav class="steps" id="steps" aria-label="Pasos"></nav>
+  <main id="main"></main>
+</div>
+<div class="nav"><div><button class="btn" id="prev" type="button">Atrás</button><button class="btn primary" id="next" type="button">Siguiente</button></div></div>
+<div id="drawer-root"></div>
+<div class="toast" id="toast"></div>
+<script>
+const SUPABASE_URL="https://xshhjvdmkuqesdlvczbb.supabase.co";
+const SUPABASE_KEY="sb_publishable_5erZfpELyuncW1nrReTaZw_BQj0bc-P";
+const ROLE="asesor"; // asesor | admin
+const KEY="trust_asesor_herr", BUCKET="documentos";
+const LOGO=document.querySelector(".brand .logo").innerHTML;
+let sb=null; try{ sb=(window.SBC||window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY)); }catch(e){}
+const $=s=>document.querySelector(s);
+let tt;function toast(m,err){const t=$("#toast");t.textContent=m;t.classList.toggle("err",!!err);t.classList.add("show");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("show"),err?3800:2200)}
+const LS={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}}};
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const n=v=>{const x=parseFloat(String(v??"").replace(/[^0-9.\-]/g,""));return isFinite(x)?x:0};
+const mx=v=>"$ "+Math.round(+v||0).toLocaleString("es-MX");
+const pct=v=>(v>0?"+":v<0?"−":"")+Math.abs(Math.round(v*10)/10)+"%";
+const todayISO=()=>{const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)};
+const pd=s=>{const[a,b,c]=String(s||"").slice(0,10).split("-").map(Number);return a?new Date(a,b-1,c):null};
+const fd=d=>d?String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear():"";
+const MES=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const fl=x=>x?x.getDate()+" de "+MES[x.getMonth()]+" de "+x.getFullYear():"";
+const lines=t=>String(t||"").split("\n").map(x=>x.trim()).filter(Boolean);
+const uuid=()=>(crypto.randomUUID?crypto.randomUUID():"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==="x"?r:(r&3|8)).toString(16)}));
+const pubUrl=p=>SUPABASE_URL+"/storage/v1/object/public/"+BUCKET+"/"+p;
+function fotoInfo(url){const m=/#o=([vhs])&p=(\d+)/.exec(url||"");const o=m?m[1]:"s",p=m?+m[2]:50;return{src:(url||"").split("#")[0],pos:o==="v"?"50% "+p+"%":o==="h"?p+"% 50%":"50% 50%"}}
+function quien(nombre){const e=(window.TRUST_EQUIPO||[]).filter(x=>x.nombre===nombre)[0]||{};return{nombre:e.nombre_completo||nombre||"TRUST realtor",tel:e.celular||"",foto:e.foto_url||""}}
+const yo=()=>(window.AUTH&&window.AUTH.nombre)||LS.get(KEY)||"";
+
+function cientos(x){
+  if(x===100)return"cien";
+  const c=["","ciento","doscientos","trescientos","cuatrocientos","quinientos","seiscientos","setecientos","ochocientos","novecientos"];
+  const e=["","un","dos","tres","cuatro","cinco","seis","siete","ocho","nueve","diez","once","doce","trece","catorce","quince","dieciséis","diecisiete","dieciocho","diecinueve","veinte","veintiún","veintidós","veintitrés","veinticuatro","veinticinco","veintiséis","veintisiete","veintiocho","veintinueve"];
+  const dz=["","","","treinta","cuarenta","cincuenta","sesenta","setenta","ochenta","noventa"];
+  const d=x%100,t=d<30?e[d]:dz[Math.floor(d/10)]+(d%10?" y "+e[d%10]:"");
+  return (c[Math.floor(x/100)]+" "+t).trim();
+}
+function letra(v){
+  v=Math.round(v);if(!v)return"";
+  const M=Math.floor(v/1e6),K=Math.floor(v%1e6/1000),R=v%1000,p=[];
+  if(M)p.push(M===1?"un millón":cientos(M)+" millones");
+  if(K)p.push(K===1?"mil":cientos(K)+" mil");
+  if(R)p.push(cientos(R));
+  return (p.join(" ")+(M&&!K&&!R?" de":"")+" pesos 00/100 M.N.").toUpperCase();
+}
+
+/* ---------- catálogos y estado ---------- */
+const STEPS=["Solicitud","Inmueble","Zona","Comparables","Resultado","Vista PDF"];
+const AJ=[["ubi","Ubicación"],["sup","Superficie"],["edad","Edad y conservación"],["niv","Nivel y vista"],["amen","Amenidades y estacionamiento"]];
+const AJO=[[-10,"Muy superior (−10%)"],[-5,"Superior (−5%)"],[0,"Similar (0%)"],[5,"Inferior (+5%)"],[10,"Muy inferior (+10%)"]];
+const AMEN=["Seguridad 24/7","Alberca","Gimnasio","Roof garden","Salón de eventos","Coworking","Pet friendly","Elevador"];
+const SERV=["Agua potable","Drenaje","Luz","Alumbrado público","Pavimento"];
+const ENT=["Avenida principal","Comercios caminables","Parques","Escuelas","Transporte público","Zona en desarrollo"];
+const FUENTES=["Venta TRUST","EasyBroker","Inmuebles24","Lamudi","Vivanuncios","Propiedades.com","Otra inmobiliaria","Desarrollador","Otra"];
+const MONEY=["esperado","mant","predial","salida","renta"];
+/* Reglas de cálculo. Se guardan con cada opinión para que un cambio futuro no altere las ya emitidas. */
+const RULES={terr:50,neg:5,bajo:10,alto:5,peso:2,vig:90};
+const GDL=[20.6736,-103.3927];
+const compNuevo=()=>({dato:"Oferta activa",fuente:"Inmuebles24",liga:"",fecha:todayISO(),zona:"",precio:"",m2:"",recs:"",banos:"",cajones:"",edad:"",dias:"",lat:null,lng:null,aj:{ubi:0,sup:0,edad:0,niv:0,amen:0},nota:""});
+const nuevo=()=>({step:0,foto:"",rules:{...RULES},
+  d:{solicitante:"",cel:"",correo:"",propietario:"",proposito:"Vender",fecha:todayISO(),esperado:"",plazo:"3 a 6 meses",motivo:"",
+     tipo:"Departamento",calle:"",interior:"",colonia:"",cp:"",municipio:"Guadalajara",edificio:"",lat:null,lng:null,
+     mInt:"",mTer:"",mTerreno:"",recs:"",banos:"",medios:"",cajones:"",cajonTipo:"Independiente",bodega:"No",nivel:"",niveles:"",vista:"Calle",
+     anio:"",remod:"",conserv:"Bueno",acabados:"Buenos",amen:[],mant:"",predial:"",situacion:"Habitado",amueblado:"No",
+     escriturado:"Sí",condominio:"Sí",gravamen:"No",adeudos:"No",serv:SERV.slice(),entorno:[],pos:"",neg:"",
+     salida:"",tiempo:"3 a 6 meses",renta:"",conclusion:""},
+  comps:[compNuevo(),compNuevo(),compNuevo()]});
+let S=nuevo(), DOC_ID=null, DOC_ASESOR="", DIRTY=false, FOTO_DATA=null, BAKED=null, PICK=-1;
+const asesorDoc=()=>DOC_ASESOR||yo();
+
+/* ---------- cálculo ---------- */
+function sup(){const d=S.d;return d.tipo==="Departamento"?n(d.mInt)+n(d.mTer)*S.rules.terr/100:n(d.mInt)}
+function cc(c){
+  const ok=n(c.precio)>0&&n(c.m2)>0,pm=ok?n(c.precio)/n(c.m2):0;
+  const neg=c.dato==="Cierre"?0:S.rules.neg;
+  const aj=AJ.reduce((s,[k])=>s+n(c.aj[k]),0),ajT=Math.max(-20,Math.min(20,aj));
+  return{ok,pm,neg,aj,ajT,hom:pm*(1-neg/100)*(1+ajT/100),w:c.dato==="Cierre"?S.rules.peso:1};
+}
+function calc(){
+  const R=S.comps.map(cc),V=R.filter(r=>r.ok),sp=sup();
+  const W=V.reduce((s,r)=>s+r.w,0),unit=W?V.reduce((s,r)=>s+r.hom*r.w,0)/W:0;
+  const mkt=V.length?V.reduce((s,r)=>s+r.pm,0)/V.length:0;
+  const r1=v=>Math.round(v/1000)*1000,eq=r1(unit*sp),lo=r1(eq*(1-S.rules.bajo/100)),hi=r1(eq*(1+S.rules.alto/100));
+  const A=[],f0=pd(S.d.fecha)||new Date();
+  if(!sp)A.push(["e","Falta la superficie del inmueble (paso 2)."]);
+  if(V.length<3)A.push(["e","Faltan comparables: llevas "+V.length+" de 3 mínimos."]);
+  else if(V.length<6)A.push(["i","Tienes "+V.length+" comparables. Con 6 la muestra es más sólida."]);
+  if(V.length&&!S.comps.some((c,i)=>R[i].ok&&c.dato==="Cierre"))A.push(["w","Todos los comparables son ofertas. Agrega al menos un cierre real."]);
+  S.comps.forEach((c,i)=>{const r=R[i];if(!r.ok)return;const t=pd(c.fecha);
+    if(t&&(f0-t)/864e5>183)A.push(["w","Comparable "+(i+1)+": el dato tiene más de 6 meses."]);
+    if(sp&&Math.abs(n(c.m2)-sp)/sp>.2)A.push(["w","Comparable "+(i+1)+": su superficie difiere más de 20% del inmueble."]);
+    if(Math.abs(r.aj)>20)A.push(["e","Comparable "+(i+1)+": el ajuste pedido ("+pct(r.aj)+") rebasa el tope de ±20%. Cámbialo por otro comparable."]);
+    else if(Math.abs(r.aj)>=15)A.push(["w","Comparable "+(i+1)+": ajuste total de "+pct(r.aj)+". Revisa si de verdad es comparable."]);});
+  if(V.length>1){const h=V.map(r=>r.hom),dd=(Math.max(...h)-Math.min(...h))/Math.min(...h)*100;
+    if(dd>15)A.push(["w","Los valores homologados se dispersan "+Math.round(dd)+"%. Revisa ajustes o cambia el comparable más lejano."]);}
+  if(!A.some(a=>a[0]!=="i"))A.push(["k","La muestra pasa todos los candados."]);
+  return{R,V,sp,unit,mkt,eq,lo,hi,A,listo:sp>0&&V.length>=3&&!A.some(a=>a[0]==="e")};
+}
+const direccion=()=>{const d=S.d;return [d.calle,d.interior&&"Int. "+d.interior,d.colonia,d.cp,d.municipio&&d.municipio!=="Otro"?d.municipio+", Jal.":""].filter(Boolean).join(", ")};
+
+/* ---------- campos ---------- */
+function fld(k,l,o={}){
+  const raw=S.d[k]??"",v=MONEY.includes(k)&&raw!==""?mx(raw):raw,id="f_"+k;
+  const lab='<label for="'+id+'">'+l+(o.req?' <b class="req" title="Obligatorio">*</b>':"")+(o.int?' <span class="tag">Interno</span>':"")+"</label>";
+  let c;
+  if(o.opts)c='<select id="'+id+'" data-k="'+k+'">'+o.opts.map(x=>"<option"+(x==raw?" selected":"")+">"+x+"</option>").join("")+"</select>";
+  else if(o.area)c='<textarea id="'+id+'" data-k="'+k+'" rows="'+o.area+'" placeholder="'+esc(o.ph||"")+'">'+esc(v)+"</textarea>";
+  else c='<input id="'+id+'" data-k="'+k+'" type="'+(o.t||"text")+'"'+(o.num||MONEY.includes(k)?' inputmode="decimal"':"")+' value="'+esc(v)+'" placeholder="'+esc(o.ph||(MONEY.includes(k)?"$":""))+'">';
+  return'<div class="f '+(o.c||"c6")+'">'+lab+c+(o.help?"<small>"+o.help+"</small>":"")+"</div>";
+}
+function chips(k,l,list){
+  return'<div class="f c12"><span class="lab">'+l+'</span><div class="chips">'+list.map(x=>'<button type="button" class="chip'+(S.d[k].includes(x)?" on":"")+'" data-chip="'+k+'" data-v="'+esc(x)+'" aria-pressed="'+S.d[k].includes(x)+'">'+x+"</button>").join("")+"</div></div>";
+}
+const N={num:1},SN=["Sí","No"];
+
+/* ---------- vistas ---------- */
+const V=[
+()=>{const q=quien(asesorDoc());return'<section class="card"><h2>Solicitud</h2><p class="sub">Quién la pide y para qué. Lo marcado como interno se guarda pero no sale en el PDF.</p><div class="fg">'
+  +fld("solicitante","Solicitante",{req:1,ph:"Nombre del cliente"})+fld("propietario","Propietario",{help:"Solo si es distinto al solicitante"})
+  +fld("cel","Celular",{t:"tel",int:1})+fld("correo","Correo",{t:"email",int:1})
+  +fld("proposito","Propósito",{req:1,opts:["Vender","Comprar","Rentar","Referencia patrimonial"]})+fld("fecha","Fecha",{t:"date"})
+  +'<div class="f c12"><span class="lab">Elabora</span><div class="out"><b>'+esc(q.nombre)+"</b>"+(q.tel?" · "+esc(q.tel):"")+". Sale con tu foto en cada hoja"+(q.foto?".":" (aún no tienes foto en Admin → Asesores; saldrán tus iniciales).")+"</div></div>"
+  +'</div><h3>Lo que averiguaste en la visita</h3><div class="fg">'
+  +fld("esperado","Precio que espera el propietario",{int:1})+fld("plazo","Plazo en que quiere vender",{int:1,opts:["Menos de 3 meses","3 a 6 meses","Sin prisa"]})
+  +fld("motivo","Motivo de venta",{int:1,c:"c12",ph:"Cambio de ciudad, liquidez, herencia…"})+"</div></section>"},
+
+()=>'<section class="card"><h2>El inmueble</h2><p class="sub">Con estos datos se arma la ficha del PDF y la superficie sobre la que se calcula el valor.</p><div class="fg">'
+  +fld("tipo","Tipo",{req:1,opts:["Departamento","Casa","Casa en coto"]})+fld("edificio","Condominio o torre")
+  +fld("calle","Calle y número",{req:1,c:"c8"})+fld("interior","Interior",{c:"c4"})+fld("colonia","Colonia",{req:1,c:"c4"})+fld("cp","CP",{c:"c4",num:1})+fld("municipio","Municipio",{c:"c4",opts:["Guadalajara","Zapopan","Tlaquepaque","Tlajomulco","Tonalá","Otro"]})
+  +'<div class="f c12"><span class="lab">Ubicación en el mapa</span><div id="map-s" class="mapbox"></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px"><button class="btn sm" type="button" data-act="geo">Buscar la dirección en el mapa</button><small id="geo-out">'+(S.d.lat?"Pin colocado. Toca el mapa para moverlo.":"Toca el mapa para colocar el pin del inmueble.")+"</small></div></div>"
+  +'</div><h3>Superficies</h3><div class="fg">'
+  +fld("mInt",S.d.tipo==="Departamento"?"m² interiores":"m² de construcción",{...N,req:1,c:"c4"})+fld("mTer","m² terraza o balcón",{...N,c:"c4"})+fld("mTerreno","m² de terreno",{...N,c:"c4",help:"Casas"})
+  +'<div class="f c12"><div class="out" id="supOut"></div></div></div><h3>Distribución</h3><div class="fg">'
+  +fld("recs","Recámaras",{...N,req:1,c:"c4"})+fld("banos","Baños completos",{...N,req:1,c:"c4"})+fld("medios","Medios baños",{...N,c:"c4"})
+  +fld("cajones","Cajones",{...N,req:1,c:"c4"})+fld("cajonTipo","Tipo de cajón",{c:"c4",opts:["Independiente","En batería","Compartido"]})+fld("bodega","Bodega",{c:"c4",opts:SN})
+  +fld("nivel","Nivel",{...N,c:"c4"})+fld("niveles","Niveles de la torre",{...N,c:"c4"})+fld("vista","Vista",{c:"c4",opts:["Calle","Interior","Ciudad","Parque","Panorámica"]})
+  +'</div><h3>Edad y estado</h3><div class="fg">'
+  +fld("anio","Año de construcción",{...N,req:1,c:"c3"})+fld("remod","Año de remodelación",{...N,c:"c3"})
+  +fld("conserv","Conservación",{req:1,c:"c3",opts:["Nuevo","Excelente","Bueno","Regular","A remodelar"]})+fld("acabados","Acabados",{c:"c3",opts:["De lujo","Buenos","Estándar","Económicos"]})
+  +chips("amen","Amenidades",AMEN)
+  +fld("mant","Mantenimiento mensual",{c:"c3"})+fld("predial","Predial anual",{c:"c3"})+fld("situacion","Situación",{c:"c3",opts:["Habitado","Rentado","Vacío"]})+fld("amueblado","Amueblado",{c:"c3",opts:SN})
+  +'</div><h3>Situación legal declarada por el propietario</h3><div class="fg">'
+  +fld("escriturado","Escriturado",{int:1,c:"c3",opts:SN})+fld("condominio","Régimen de condominio",{int:1,c:"c3",opts:SN})+fld("gravamen","Hipoteca o gravamen",{int:1,c:"c3",opts:SN})+fld("adeudos","Adeudos",{int:1,c:"c3",opts:SN})
+  +'</div><h3>Foto de portada</h3><div class="f"><label for="foto">Fachada o la mejor foto del inmueble</label><input id="foto" type="file" accept="image/*"><small id="fotoOut">'+(S.foto||FOTO_DATA?"Foto cargada. Elige otra para cambiarla.":"Sale de fondo en la primera hoja del PDF.")+"</small></div></section>",
+
+()=>'<section class="card"><h2>Zona y aspectos relevantes</h2><p class="sub">Marca lo que aplica. Los aspectos van uno por renglón: mínimo tres a favor y dos en contra.</p><div class="fg">'
+  +chips("serv","Servicios e infraestructura",SERV)+chips("entorno","Entorno",ENT)
+  +fld("pos","Aspectos a favor",{req:1,area:5,c:"c6"})+fld("neg","Aspectos en contra",{req:1,area:5,c:"c6"})
+  +'<div class="f c12"><div><button class="btn sm" type="button" data-act="sugerir">Sugerir a partir de lo capturado</button></div></div></div></section>',
+
+()=>'<section class="card"><h2>Comparables</h2><p class="sub">De 3 a 6. Di si cada uno es mejor, similar o peor que el inmueble; el portal hace la cuenta. A las ofertas se les descuenta '+S.rules.neg+'% de negociación; a los cierres no, y pesan el doble.</p><div class="out" id="sum4"></div>'
+  +'<h3>Ubícalos en el mapa (opcional)</h3><div class="chips" id="pickers" style="margin-bottom:8px"></div><div id="map-c" class="mapbox"></div><small class="note" id="pick-out">Elige un comparable y toca el mapa para colocar su pin. Salen numerados en el PDF.</small></section>'
+  +S.comps.map(compCard).join("")
+  +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" data-act="add"'+(S.comps.length>=6?" disabled":"")+'>+ Agregar comparable</button><button class="btn" type="button" data-act="banco"'+(S.comps.length>=6?" disabled":"")+">Traer de otras opiniones</button></div>",
+
+()=>'<div id="res"></div><section class="card"><h2>Tu recomendación</h2><div class="fg">'
+  +fld("salida","Precio de salida recomendado",{help:"Si lo dejas vacío se usa el valor equilibrado"})+fld("tiempo","Tiempo estimado de venta",{opts:["1 a 3 meses","3 a 6 meses","Más de 6 meses"]})
+  +fld("renta","Renta mensual estimada",{help:"Opcional. Muestra el rendimiento bruto"})+'<div class="f c6"><span class="lab">Rendimiento bruto anual</span><div class="out" id="rend"></div></div>'
+  +fld("conclusion","Conclusión del asesor",{req:1,area:4,c:"c12",ph:"En dos o tres líneas: cómo compite el inmueble y qué recomiendas."})+"</div></section>"
+  +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" type="button" data-act="ver">Ver cómo queda</button><button class="btn primary" type="button" data-act="pdf">⤓ Generar PDF</button></div>',
+
+()=>'<section class="card"><h2>Vista del PDF</h2><p class="sub">Así salen las cuatro hojas. Para descargarlo usa el botón “⤓ PDF” y en el diálogo elige “Guardar como PDF”.</p></section><div id="pdf"></div>'
+];
+function compCard(c,i){
+  const ci=(k,l,o={})=>{const id="c"+i+"_"+k,v=k==="precio"&&c[k]!==""?mx(c[k]):c[k];
+    if(o.opts)return'<div class="f '+(o.c||"c6")+'"><label for="'+id+'">'+l+'</label><select id="'+id+'" data-c="'+i+'" data-ck="'+k+'">'+o.opts.map(x=>"<option"+(x==c[k]?" selected":"")+">"+x+"</option>").join("")+"</select></div>";
+    return'<div class="f '+(o.c||"c6")+'"><label for="'+id+'">'+l+'</label><input id="'+id+'" data-c="'+i+'" data-ck="'+k+'" type="'+(o.t||"text")+'"'+(o.num?' inputmode="decimal"':"")+' value="'+esc(v??"")+'" placeholder="'+esc(o.ph||"")+'"></div>'};
+  return'<section class="comp"><div class="comp-h"><strong><span class="numc">'+(i+1)+'</span>Comparable</strong><button class="btn sm" type="button" data-act="del" data-i="'+i+'">Quitar</button></div><div class="fg">'
+   +ci("dato","Tipo de precio",{opts:["Cierre","Oferta activa"]})+ci("fuente","Fuente de consulta",{opts:FUENTES})
+   +ci("liga","Liga de consulta (anuncio o ficha)",{t:"url",c:"c12",ph:"https://"})
+   +ci("zona","Colonia o edificio")+ci("fecha","Fecha del dato",{t:"date"})+ci("precio","Precio",{num:1,ph:"$"})+ci("m2","m²",{num:1})
+   +ci("recs","Recámaras",{num:1,c:"c4"})+ci("banos","Baños",{num:1,c:"c4"})+ci("cajones","Cajones",{num:1,c:"c4"})+ci("edad","Edad (años)",{num:1,c:"c4"})+ci("dias","Días publicado",{num:1,c:"c4"})
+   +'</div><h3 style="font-family:Poppins,sans-serif;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:14px 0 8px">Contra el inmueble, este comparable es…</h3><div class="fg">'
+   +AJ.map(([k,l])=>'<div class="f c6"><label for="c'+i+"_aj_"+k+'">'+l+'</label><select id="c'+i+"_aj_"+k+'" data-c="'+i+'" data-aj="'+k+'">'+AJO.map(([v,t])=>'<option value="'+v+'"'+(v==c.aj[k]?" selected":"")+">"+t+"</option>").join("")+"</select></div>").join("")
+   +'</div><div class="out calcline" id="co'+i+'"></div></section>';
+}
+
+/* ---------- mapas (Leaflet + OpenStreetMap) ---------- */
+const icon=(cls,txt,sz)=>L.divIcon({className:"",html:'<div class="ovpin '+cls+'" style="width:'+sz+"px;height:"+sz+'px">'+(txt||"")+"</div>",iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]});
+const tiles=m=>L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,crossOrigin:true,attribution:"© OpenStreetMap"}).addTo(m);
+let MS=null,MC=null,MKS=null,MKC=[];
+function mapaSujeto(){
+  const el=$("#map-s");if(!el)return;if(!window.L){el.innerHTML='<div class="empty" style="border:0">No cargó el mapa. Revisa tu conexión.</div>';return}
+  const d=S.d,c=d.lat?[d.lat,d.lng]:GDL;MS=L.map(el).setView(c,d.lat?17:12);tiles(MS);MKS=null;
+  const pon=(la,ln)=>{d.lat=+la.toFixed(6);d.lng=+ln.toFixed(6);DIRTY=true;if(MKS)MKS.setLatLng([la,ln]);else MKS=L.marker([la,ln],{icon:icon("s","",22)}).addTo(MS);const o=$("#geo-out");if(o)o.textContent="Pin colocado. Toca el mapa para moverlo."};
+  if(d.lat)pon(d.lat,d.lng);MS.on("click",e=>pon(e.latlng.lat,e.latlng.lng));MS._pon=pon;
+}
+async function geocodificar(){
+  const d=S.d,o=$("#geo-out");if(!d.calle){toast("Captura primero calle y número",true);return}if(!MS)return;
+  o.textContent="Buscando…";
+  try{const q=[d.calle,d.colonia,d.municipio!=="Otro"?d.municipio:"","Jalisco","México"].filter(Boolean).join(", ");
+    const r=await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=mx&q="+encodeURIComponent(q));const j=await r.json();
+    if(!j.length){o.textContent="No encontré la dirección. Acerca el mapa y toca donde está el inmueble.";return}
+    MS.setView([+j[0].lat,+j[0].lon],17);MS._pon(+j[0].lat,+j[0].lon);o.textContent="Pin colocado por dirección. Revisa que esté bien y muévelo si hace falta."}
+  catch(e){o.textContent="No se pudo buscar. Toca el mapa para colocar el pin."}
+}
+function mapaComps(){
+  const el=$("#map-c");if(!el)return;if(!window.L){el.innerHTML='<div class="empty" style="border:0">No cargó el mapa. Revisa tu conexión.</div>';return}
+  const d=S.d,pts=S.comps.filter(c=>c.lat).map(c=>[c.lat,c.lng]);if(d.lat)pts.push([d.lat,d.lng]);
+  MC=L.map(el);tiles(MC);pts.length>1?MC.fitBounds(pts,{padding:[30,30],maxZoom:16}):MC.setView(pts[0]||GDL,pts.length?15:12);
+  if(d.lat)L.marker([d.lat,d.lng],{icon:icon("s","",22),interactive:false}).addTo(MC);
+  MKC=S.comps.map((c,i)=>c.lat?L.marker([c.lat,c.lng],{icon:icon("c",i+1,22),interactive:false}).addTo(MC):null);
+  MC.on("click",e=>{if(PICK<0||!S.comps[PICK]){toast("Elige primero qué comparable vas a ubicar");return}const c=S.comps[PICK];c.lat=+e.latlng.lat.toFixed(6);c.lng=+e.latlng.lng.toFixed(6);DIRTY=true;
+    if(MKC[PICK])MKC[PICK].setLatLng(e.latlng);else MKC[PICK]=L.marker(e.latlng,{icon:icon("c",PICK+1,22),interactive:false}).addTo(MC);pickers()});
+  pickers();
+}
+function pickers(){const p=$("#pickers");if(!p)return;if(PICK>=S.comps.length)PICK=-1;
+  p.innerHTML=S.comps.map((c,i)=>'<button type="button" class="chip'+(i===PICK?" on":"")+'" data-pick="'+i+'">'+(i+1)+(c.zona?" · "+esc(c.zona):"")+(c.lat?" ✓":"")+"</button>").join("");
+  const o=$("#pick-out");if(o)o.textContent=PICK>=0?"Toca el mapa donde está el comparable "+(PICK+1)+".":"Elige un comparable y toca el mapa para colocar su pin. Salen numerados en el PDF."}
+/* Mapa estático para el PDF: se arma una imagen con las teselas de OpenStreetMap y los pines dibujados encima.
+   Va como imagen (sin scripts ni transparencias) para que imprima igual en cualquier visor. */
+const MAPC={};
+function mapaImg(w,h,pts,sujeto){
+  if(!pts.length)return Promise.resolve(null);
+  const key=JSON.stringify([w,h,pts,sujeto]);if(MAPC[key])return Promise.resolve(MAPC[key]);
+  const W=w*2,H=h*2,pad=70,px=(la,ln,z)=>{const sc=256*Math.pow(2,z),sn=Math.sin(la*Math.PI/180);return[(ln+180)/360*sc,(.5-Math.log((1+sn)/(1-sn))/(4*Math.PI))*sc]};
+  let z=17;for(;z>3;z--){const q=pts.map(p=>px(p[0],p[1],z)),xs=q.map(a=>a[0]),ys=q.map(a=>a[1]);if(Math.max(...xs)-Math.min(...xs)<=W-2*pad&&Math.max(...ys)-Math.min(...ys)<=H-2*pad)break}
+  const q=pts.map(p=>px(p[0],p[1],z)),xs=q.map(a=>a[0]),ys=q.map(a=>a[1]),left=Math.round((Math.max(...xs)+Math.min(...xs))/2-W/2),top=Math.round((Math.max(...ys)+Math.min(...ys))/2-H/2);
+  const c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");x.fillStyle="#DCE5DE";x.fillRect(0,0,W,H);
+  const jobs=[],max=Math.pow(2,z);let ok=0;
+  for(let tx=Math.floor(left/256);tx<=Math.floor((left+W)/256);tx++)for(let ty=Math.floor(top/256);ty<=Math.floor((top+H)/256);ty++){if(ty<0||ty>=max)continue;
+    jobs.push(new Promise(r=>{const im=new Image();im.crossOrigin="anonymous";const t=setTimeout(r,6000);im.onload=()=>{clearTimeout(t);x.drawImage(im,tx*256-left,ty*256-top);ok++;r()};im.onerror=()=>{clearTimeout(t);r()};
+      im.src="https://"+"abc"[(tx+ty)%3]+".tile.openstreetmap.org/"+z+"/"+((tx%max+max)%max)+"/"+ty+".png"}))}
+  return Promise.all(jobs).then(()=>{if(!ok)return null;
+    x.fillStyle="rgba(23,63,53,.06)";x.fillRect(0,0,W,H);x.textAlign="center";x.textBaseline="middle";
+    pts.forEach((p,i)=>{const[a,b]=px(p[0],p[1],z),cx=a-left,cy=b-top;
+      if(sujeto&&i===0){x.beginPath();x.arc(cx,cy,34,0,7);x.fillStyle="rgba(23,63,53,.22)";x.fill();x.beginPath();x.arc(cx,cy,20,0,7);x.fillStyle="#173F35";x.fill();x.lineWidth=6;x.strokeStyle="#fff";x.stroke();x.beginPath();x.arc(cx,cy,6,0,7);x.fillStyle="#fff";x.fill()}
+      else{x.beginPath();x.arc(cx,cy,19,0,7);x.fillStyle="#fff";x.fill();x.lineWidth=4;x.strokeStyle="#173F35";x.stroke();x.fillStyle="#173F35";x.font="600 20px Poppins,Arial,sans-serif";x.fillText(String(p[2]),cx,cy+1)}});
+    x.font="14px Poppins,Arial,sans-serif";x.textAlign="right";const t="© OpenStreetMap";x.fillStyle="rgba(255,255,255,.8)";x.fillRect(W-x.measureText(t).width-16,H-26,x.measureText(t).width+16,26);x.fillStyle="#3C4A44";x.fillText(t,W-8,H-12);
+    try{return MAPC[key]=c.toDataURL("image/jpeg",.86)}catch(e){return null}});
+}
+let MAPAS={s:null,all:null};
+async function prepararMapas(C){const M=datosMapa(C);const s=M.s?[M.s]:[];
+  const r=await Promise.all([M.s?mapaImg(340,300,s,true):null,M.c.length?mapaImg(704,170,s.concat(M.c),!!M.s):null]);MAPAS={s:r[0],all:r[1]}}
+const datosMapa=C=>({s:S.d.lat?[S.d.lat,S.d.lng]:null,c:S.comps.map((c,i)=>C.R[i].ok&&c.lat?[c.lat,c.lng,i+1]:null).filter(Boolean)});
+
+/* ---------- foto de portada ---------- */
+function leerImagen(file,max){return new Promise((res,rej)=>{const r=new FileReader();r.onerror=rej;r.onload=()=>{const im=new Image();im.onerror=rej;im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext("2d").drawImage(im,0,0,c.width,c.height);res(c.toDataURL("image/jpeg",.85))};im.src=r.result};r.readAsDataURL(file)})}
+async function ponerFoto(file){
+  const o=$("#fotoOut");try{FOTO_DATA=await leerImagen(file,1600);BAKED=null;DIRTY=true;if(o)o.textContent="Subiendo foto…";
+    if(sb){const path="opiniones/"+uuid()+".jpg",blob=await (await fetch(FOTO_DATA)).blob();const up=await sb.storage.from(BUCKET).upload(path,blob,{contentType:"image/jpeg",upsert:true});
+      if(up.error){if(o)o.textContent="La foto no se pudo subir ("+up.error.message+"). Sale en este PDF, pero no quedará guardada.";return}S.foto=path}
+    if(o)o.textContent="Foto cargada. Elige otra para cambiarla."}
+  catch(e){if(o)o.textContent="No pude leer esa imagen. Prueba con otra (JPG o PNG)."}
+}
+/* Foto + degradado se funden en una sola imagen sin transparencias: los degradados semitransparentes salen rosas o negros en varios visores de PDF (iPhone, Vista Previa). */
+function bake(){
+  const src=FOTO_DATA||(S.foto?pubUrl(S.foto):"");if(!src)return Promise.resolve(BAKED=null);if(BAKED&&BAKED.src===src)return Promise.resolve(BAKED);
+  return new Promise(res=>{const im=new Image();im.crossOrigin="anonymous";
+    im.onload=()=>{try{const W=1632,H=1400,ih=1120,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
+      x.fillStyle="#173F35";x.fillRect(0,0,W,H);const k=Math.max(W/im.width,ih/im.height),w=im.width*k,h=im.height*k;
+      x.save();x.beginPath();x.rect(0,0,W,ih);x.clip();x.drawImage(im,(W-w)/2,(ih-h)/2,w,h);x.restore();
+      const g=x.createLinearGradient(0,0,0,H);[[0,.30],[.22,.10],[.46,.55],[.66,.94],[.80,1],[1,1]].forEach(([q,a])=>g.addColorStop(q,"rgba(23,63,53,"+a+")"));
+      x.fillStyle=g;x.fillRect(0,0,W,H);BAKED={src,data:c.toDataURL("image/jpeg",.84)}}catch(e){BAKED=null}res(BAKED)};
+    im.onerror=()=>res(BAKED=null);im.src=src});
+}
+
+/* ---------- hojas del PDF ---------- */
+function hojas(C){
+  const d=S.d,f=pd(d.fecha),vg=f?new Date(f.getFullYear(),f.getMonth(),f.getDate()+S.rules.vig):null,q=quien(asesorDoc());
+  const salida=n(d.salida)||C.eq,rt=n(d.renta),ini=q.nombre.split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase(),fi=fotoInfo(q.foto);
+  const dir=direccion(),depto=d.tipo==="Departamento",nc=S.comps.filter((c,i)=>C.R[i].ok&&c.dato==="Cierre").length;
+  const av=q.foto?'<div class="nf-as-f" style="background-image:url(\''+esc(fi.src)+"');background-position:"+fi.pos+'"></div>':'<div class="nf-as-f">'+esc(ini)+"</div>";
+  const head='<div class="nf-head"><div class="nf-logo">'+LOGO+'</div><div class="nf-as"><div><div class="nf-as-n">'+esc(q.nombre)+'</div><div class="nf-as-s">Tu asesor TRUST'+(q.tel?" · "+esc(q.tel):"")+"</div></div>"+av+"</div></div>";
+  const foot='<div class="nf-foot">TRUST INMOBILIARIA · GUADALAJARA, JALISCO · MÉXICO · Opinión comercial de valor, no es un avalúo · Vigente hasta el '+fl(vg)+"</div>";
+  const band=(pill,h2,sub)=>'<div class="nf-band">'+head+'<div class="nf-tt"><span class="nf-pill">'+pill+"</span><h2>"+h2+'</h2><div class="nf-sub">'+sub+"</div></div></div>";
+  const cell=(k,v,dd,t)=>"<div"+(t?' class="t"':"")+'><div class="nf-k">'+k+'</div><div class="nf-v">'+v+"</div>"+(dd?'<div class="nf-d">'+dd+"</div>":"")+"</div>";
+  const tr=(a,b)=>b!==""&&b!=null&&b!==0?'<div class="nf-tr"><span>'+a+"</span><b>"+esc(b)+"</b></div>":"";
+  const banos=n(d.banos)+(n(d.medios)?" + "+n(d.medios)+" medio":"");
+  const m2=x=>x.toLocaleString("es-MX")+" m²";
+
+  const p1='<div class="pg p1"><div class="nf-top"'+(BAKED?' style="background:#173F35 url('+BAKED.data+') 0 0/100% 100% no-repeat"':"")+"></div>"+head
+    +'<div class="nf-body"><div class="nf-hero"><span class="nf-pill">'+esc(d.tipo)+" · "+esc(d.proposito)+'</span><h1>Opinión <i>de valor</i></h1><div class="nf-sub">'+esc(dir)+"</div>"
+    +'<div class="nf-sub" style="font-size:9.5px;margin-top:8px;opacity:.9">Preparada por '+esc(q.nombre)+(d.solicitante&&d.solicitante!==q.nombre?" · Para: "+esc(d.solicitante):"")+(d.propietario&&d.propietario!==d.solicitante?" · Propietario: "+esc(d.propietario):"")+" · "+fl(f)+"</div></div>"
+    +'<div class="nf-price"><div><div class="nf-k">Valor equilibrado</div><div class="nf-big">'+mx(C.eq)+'</div><div class="nf-big-s">'+letra(C.eq)+"</div></div>"
+    +'<div class="nf-desc"><div class="nf-k">De dónde sale</div><div class="nf-r"><span>Valor por m² homologado</span><b>'+mx(C.unit)+'</b></div><div class="nf-r"><span>Superficie de cálculo</span><b>'+m2(C.sp)+'</b></div><div class="nf-r"><span>Comparables analizados</span><b>'+C.V.length+'</b></div><div class="nf-r"><span>Promedio de mercado por m²</span><b>'+mx(C.mkt)+"</b></div></div></div></div>"
+    +'<div class="nf-card"><div class="nf-steps"><div class="nf-step"><div class="nf-k">Bien comprado</div><div class="nf-v">'+mx(C.lo)+'</div><div class="nf-d">Precio atractivo para quien compra</div></div>'
+    +'<div class="nf-step on"><div class="nf-k">Equilibrado</div><div class="nf-v">'+mx(C.eq)+'</div><div class="nf-d">Valor justo de mercado hoy</div></div>'
+    +'<div class="nf-step"><div class="nf-k">Bien vendido</div><div class="nf-v">'+mx(C.hi)+'</div><div class="nf-d">Buen cierre para quien vende</div></div></div>'
+    +'<div class="nf-unit">'+[["Superficie",(depto&&n(d.mTer)?n(d.mInt)+" + "+n(d.mTer):n(d.mInt))+" m²"],["Recámaras",n(d.recs)],["Baños",banos],["Cajones",n(d.cajones)],["Construcción",d.anio||"—"],["Estado",d.conserv]].map(x=>'<div><div class="nf-k">'+x[0]+'</div><div class="nf-v">'+esc(x[1])+"</div></div>").join("")+"</div></div>"
+    +'<div class="nf-nota">El sustento de este valor está en las hojas siguientes: tu inmueble, los comparables de mercado y nuestra conclusión.</div>'
+    +'<div class="nf-cta">Precio de salida recomendado<b>'+mx(salida)+"</b></div>"+foot+"</div>";
+
+  const filas=[tr("Tipo",d.tipo),tr("Condominio o torre",d.edificio),tr(depto?"m² interiores":"m² de construcción",n(d.mInt)),depto?tr("m² de terraza o balcón",n(d.mTer)):tr("m² de terreno",n(d.mTerreno)),depto&&n(d.nivel)?tr("Nivel",n(d.nivel)+(n(d.niveles)?" de "+n(d.niveles):"")):"",tr("Vista",d.vista),tr("Bodega",d.bodega),
+    tr("Acabados",d.acabados),tr("Remodelación",d.remod),tr("Mantenimiento mensual",n(d.mant)?mx(d.mant):""),tr("Predial anual",n(d.predial)?mx(d.predial):""),tr("Situación",d.situacion),tr("Amueblado",d.amueblado)].filter(Boolean);
+  const mitad=Math.ceil(filas.length/2);
+  const p2='<div class="pg">'+band("El inmueble","Así es <i>tu propiedad</i>",esc(dir))
+    +'<div class="nf-sum">'+cell("Superficie de cálculo",m2(C.sp),depto&&n(d.mTer)?n(d.mInt)+" interiores + "+S.rules.terr+"% de terraza":"Construcción",1)+cell("Recámaras",n(d.recs))+cell("Baños",banos)+cell("Cajones",n(d.cajones),d.cajonTipo)+cell("Construcción",d.anio||"—",d.conserv)+"</div>"
+    +'<div class="nf-main"><div class="nf-eb">Ficha</div><div class="nf-cols">'+(MAPAS.s?"<div>"+filas.join("")+'</div><div class="nf-map m" style="background-image:url('+MAPAS.s+')"></div>':"<div>"+filas.slice(0,mitad).join("")+"</div><div>"+filas.slice(mitad).join("")+"</div>")+"</div>"
+    +'<div class="nf-cols" style="margin-top:14px"><div><div class="nf-eb">Amenidades</div><div style="color:var(--ink2)">'+(d.amen.length?esc(d.amen.join(" · ")):"Sin amenidades")+'</div></div><div><div class="nf-eb">Servicios y entorno</div><div style="color:var(--ink2)">'+esc(d.serv.concat(d.entorno).join(" · "))+"</div></div></div>"
+    +'<div class="nf-eb">Aspectos relevantes</div><div class="nf-cols"><div class="nf-wc"><div class="nf-k">A favor</div><ol>'+lines(d.pos).map(x=>"<li>"+esc(x)+"</li>").join("")+'</ol></div><div class="nf-wc"><div class="nf-k">En contra</div><ol>'+lines(d.neg).map(x=>"<li>"+esc(x)+"</li>").join("")+"</ol></div></div></div>"+foot+"</div>";
+
+  const p3='<div class="pg">'+band("Investigación de mercado","Lo que dice <i>el mercado</i>",C.V.length+" propiedades comparables, ajustadas a las características de tu inmueble")
+    +'<div class="nf-sum">'+cell("Valor unitario homologado",mx(C.unit)+" /m²","Promedio ya ajustado a tu inmueble",1)+cell("Promedio de mercado",mx(C.mkt)+" /m²","Sin ajustes")+cell("Comparables",C.V.length,nc+" cierre"+(nc===1?"":"s")+" · "+(C.V.length-nc)+" oferta"+(C.V.length-nc===1?"":"s"))+"</div>"
+    +'<div class="nf-main">'+(MAPAS.all?'<div class="nf-map m" style="height:170px;margin-top:22px;background-image:url('+MAPAS.all+')"></div>':"")
+    +'<div class="nf-eb">Comparables</div><div><div class="nf-tr h c"><span>#</span><span>Tipo de precio</span><span>Fuente</span><span>Zona</span><span>Fecha</span><span class="r">m²</span><span class="r">Precio</span><span class="r">$/m²</span><span class="r">Ajuste</span><span class="r">Homologado</span></div>'
+    +S.comps.map((c,i)=>{const r=C.R[i];return r.ok?'<div class="nf-tr c"><span>'+(i+1)+"</span><span>"+esc(c.dato)+"</span><span>"+esc(c.fuente)+"</span><span>"+esc(c.zona)+"</span><span>"+fd(pd(c.fecha))+'</span><span class="r">'+n(c.m2)+'</span><span class="r">'+mx(c.precio)+'</span><span class="r">'+mx(r.pm)+'</span><span class="r">'+pct(((1-r.neg/100)*(1+r.ajT/100)-1)*100)+'</span><b class="r">'+mx(r.hom)+"</b></div>":""}).join("")+"</div>"
+    +'<div class="nf-eb">Cómo se calculó</div><div class="nf-wc"><ol><li>Se obtiene el precio por m² de cada comparable.</li><li>A los precios de oferta se les descuenta '+S.rules.neg+"% por negociación. A los cierres reales no.</li><li>Cada comparable se ajusta por sus diferencias contra tu inmueble en ubicación, superficie, edad y conservación, nivel y vista, amenidades y estacionamiento.</li><li>El valor unitario es el promedio de los precios ajustados"+(S.rules.peso>1?"; un cierre real pesa "+S.rules.peso+" veces lo que una oferta":"")+".</li><li>El valor equilibrado es el valor unitario por la superficie de cálculo, redondeado a miles.</li></ol></div></div>"+foot+"</div>";
+
+  const p4='<div class="pg">'+band("Conclusión","Nuestra <i>recomendación</i>",esc(dir))
+    +'<div class="nf-sum">'+cell("Bien comprado",mx(C.lo),"Precio atractivo para quien compra")+cell("Equilibrado",mx(C.eq),"Valor justo de mercado hoy",1)+cell("Bien vendido",mx(C.hi),"Buen cierre para quien vende")+"</div>"
+    +'<div class="nf-main"><p class="nf-quote">'+esc(d.conclusion)+"</p>"
+    +'<div class="nf-cols" style="margin-top:22px"><div class="nf-wc"><div class="nf-k">Precio de salida recomendado</div><div class="nf-v">'+mx(salida)+'</div></div><div class="nf-wc"><div class="nf-k">Tiempo estimado de venta</div><div class="nf-v">'+esc(d.tiempo)+"</div>"+(rt&&C.eq?'<div style="font-size:8.5px;margin-top:4px">Renta estimada '+mx(rt)+" al mes: "+(rt*12/C.eq*100).toFixed(1)+"% bruto anual</div>":"")+"</div></div>"
+    +'<div class="nf-eb">Premisas</div><ol style="margin:0;padding-left:16px;font-size:8.8px;color:var(--ink2);line-height:1.55">'
+    +"<li>Este documento es una opinión comercial de valor. No es un avalúo y no sustituye al que emite un perito valuador para créditos, trámites notariales, fiscales o judiciales.</li>"
+    +"<li>TRUST es una agencia de comercialización inmobiliaria y puede tener interés en comercializar el inmueble. El análisis se elaboró con criterios objetivos de mercado.</li>"
+    +"<li>No se verificó la propiedad legal, gravámenes, reservas de dominio ni linderos. La situación legal y las superficies son las declaradas por el propietario.</li>"
+    +"<li>No se descartaron ni sobreestimaron datos importantes.</li>"
+    +"<li>Los comparables provienen de cierres registrados por TRUST y de ofertas publicadas en portales inmobiliarios; en la tabla se distingue cada caso.</li>"
+    +"<li>Es un instrumento de negociación y decisión para una operación de compraventa, no un certificado de valor de uso abierto.</li>"
+    +"<li>Vigencia de "+S.rules.vig+" días: hasta el "+fl(vg)+".</li></ol>"
+    +'<div class="nf-sig">'+av+'<div><div class="nf-as-n">'+esc(q.nombre)+'</div><div class="nf-as-s">TRUST realtor'+(q.tel?" · "+esc(q.tel):"")+"</div></div></div></div>"+foot+"</div>";
+  return[p1,p2,p3,p4].map(p=>'<div class="sheet">'+p+"</div>").join("");
+}
+function fit(){document.querySelectorAll("#pdf .sheet").forEach(s=>{s.style.width="";const w=Math.min(816,s.parentElement.clientWidth),k=w/816;s.style.width=w+"px";s.style.height=1056*k+"px";s.firstChild.style.transform="scale("+k+")"})}
+window.addEventListener("resize",fit);
+async function vistaPdf(C){const el=$("#pdf");if(!el)return;if(!el.innerHTML)el.innerHTML='<div class="empty">Armando la vista…</div>';await Promise.all([bake(),prepararMapas(C)]);if(!$("#pdf")||S.step!==5)return;$("#pdf").innerHTML=hojas(C);fit()}
+
+async function pdf(inline){
+  const C=calc();if(!S.d.solicitante.trim()){toast("Falta el nombre del solicitante (paso 1)",true);return}if(!S.d.calle.trim()){toast("Falta el domicilio del inmueble (paso 2)",true);return}
+  if(!C.listo){toast(C.A.filter(a=>a[0]==="e")[0][1],true);if(S.step!==4)go(4);return}
+  const w=inline?window:window.open("","_blank");if(!w){toast("Permite las ventanas emergentes para generar el PDF",true);return}
+  if(!inline)w.document.write('<p style="font:14px Poppins,sans-serif;padding:24px;color:#173F35">Generando la opinión de valor…</p>');
+  await guardar(true);await Promise.all([bake(),prepararMapas(C)]);
+  const html='<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=816"><title>Opinión de valor · '+esc(S.d.solicitante)+" · "+esc(S.d.calle)+"</title>"
+    +'<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap">'
+    +"<style>"+$("#pdfcss").textContent
+    +"@page{size:letter;margin:0}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}html,body{margin:0;background:#D8DDD8}.sheet{width:816px;height:1056px;margin:0 auto 18px;border-radius:0}.pg{transform:none}"
+    +"@media print{html,body{background:#fff}.sheet,.sheet *{box-shadow:none!important;text-shadow:none!important;filter:none!important}.sheet{width:8.5in;height:10.99in;margin:0;page-break-after:always;break-after:page;page-break-inside:avoid}.sheet:last-child{page-break-after:auto;break-after:auto}}</style></head><body>"
+    +hojas(C)
+    +"<script>var hecho=false;function ir(){if(hecho)return;hecho=true;setTimeout(function(){window.print()},350)}"
+    +"window.addEventListener('load',function(){var f=document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve();f.then(ir,ir)});setTimeout(ir,5000);<\/script></body></html>";
+  w.document.open();w.document.write(html);w.document.close();
+}
+
+/* ---------- guardar / abrir (tabla documentos, tipo opinion_valor) ---------- */
+async function guardar(silencio){
+  if(!sb){if(!silencio)toast("Sin conexión",true);return null}
+  const ase=asesorDoc();if(!ase){if(!silencio)toast("Entra desde Mis herramientas para identificarte",true);return null}
+  if(!S.d.solicitante.trim()&&!S.d.calle.trim()){if(!silencio)toast("Captura al menos el solicitante o el domicilio",true);return null}
+  const C=calc(),d=S.d;
+  const datos={...d,comps:S.comps,foto:S.foto,rules:S.rules,domicilio:direccion(),precio:C.eq||null,vigencia:S.rules.vig,valor:{eq:C.eq,lo:C.lo,hi:C.hi,unit:Math.round(C.unit),sup:C.sp,n:C.V.length}};
+  const row={tipo:"opinion_valor",asesor:ase,titulo:d.solicitante.trim()||d.propietario.trim()||"Sin cliente",datos,updated_at:new Date().toISOString()};
+  const r=DOC_ID?await sb.from("documentos").update(row).eq("id",DOC_ID).select("id").single():await sb.from("documentos").insert({...row,estatus:"borrador"}).select("id").single();
+  if(r.error){toast("No se guardó: "+r.error.message,true);return null}
+  DOC_ID=r.data.id;DOC_ASESOR=ase;DIRTY=false;if(!silencio)toast("Opinión guardada");return DOC_ID;
+}
+function cargar(row){
+  const x=row.datos||{},b=nuevo();Object.keys(b.d).forEach(k=>{if(x[k]!==undefined&&x[k]!==null)b.d[k]=x[k]});b.d.lat=x.lat||null;b.d.lng=x.lng||null;
+  b.comps=(x.comps||[]).map(c=>({...compNuevo(),...c,aj:{...compNuevo().aj,...(c.aj||{})}}));if(!b.comps.length)b.comps=[compNuevo(),compNuevo(),compNuevo()];
+  b.foto=x.foto||"";b.rules={...RULES,...(x.rules||{})};S=b;DOC_ID=row.id;DOC_ASESOR=row.asesor;DIRTY=false;FOTO_DATA=null;BAKED=null;PICK=-1;
+}
+async function abrirLista(){
+  if(!sb){toast("Sin conexión",true);return}
+  let q=sb.from("documentos").select("id,titulo,asesor,estatus,updated_at,created_at,datos").eq("tipo","opinion_valor").order("updated_at",{ascending:false});if(ROLE!=="admin")q=q.eq("asesor",yo());
+  const r=await q;if(r.error){toast(r.error.message,true);return}const list=r.data||[],root=$("#drawer-root");
+  root.innerHTML='<div class="scrim" id="scrim"></div><div class="drawer" role="dialog"><header><h3 style="font-size:18px">'+(ROLE==="admin"?"Opiniones del equipo":"Mis opiniones")+'</h3><button class="ico" id="d-close" aria-label="Cerrar">✕</button></header><div class="body"><button class="btn primary" id="d-new" style="margin-bottom:12px">+ Nueva opinión</button>'
+    +(list.length?list.map(x=>{const v=(x.datos||{}).valor||{};return'<div class="esc"><div><b>'+esc(x.titulo||"Sin cliente")+"</b><small>"+esc((x.datos||{}).domicilio||"")+"<br>"+(ROLE==="admin"?esc(x.asesor)+" · ":"")+new Date(x.updated_at||x.created_at).toLocaleDateString("es-MX")+(v.eq?" · "+mx(v.eq):"")+'</small></div><span style="display:flex;gap:6px"><button class="btn sm" data-open="'+x.id+'">Abrir</button><button class="btn sm danger" data-del="'+x.id+'" aria-label="Eliminar">✕</button></span></div>'}).join(""):'<div class="empty">Todavía no hay opiniones guardadas.</div>')+"</div></div>";
+  const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;
+  $("#d-new").onclick=()=>{S=nuevo();DOC_ID=null;DOC_ASESOR="";FOTO_DATA=null;BAKED=null;DIRTY=false;close();go(0)};
+  root.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{cargar(list.find(x=>x.id===b.dataset.open));close();go(0);toast("Opinión cargada")});
+  root.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{if(!confirm("¿Eliminar esta opinión de valor? No se puede recuperar."))return;const x=await sb.from("documentos").delete().eq("id",b.dataset.del);if(x.error){toast(x.error.message,true);return}if(DOC_ID===b.dataset.del){DOC_ID=null;DOC_ASESOR=""}abrirLista()});
+}
+/* Banco de comparables: los que el equipo ya capturó en otras opiniones. */
+async function abrirBanco(){
+  if(!sb){toast("Sin conexión",true);return}
+  const r=await sb.from("documentos").select("id,asesor,datos").eq("tipo","opinion_valor").order("updated_at",{ascending:false}).limit(200);if(r.error){toast(r.error.message,true);return}
+  const vistos={},todos=[];(r.data||[]).forEach(x=>{if(x.id===DOC_ID)return;((x.datos||{}).comps||[]).forEach(c=>{if(!(n(c.precio)>0&&n(c.m2)>0))return;const k=[c.zona,c.precio,c.m2,c.fecha].join("|");if(vistos[k])return;vistos[k]=1;todos.push({c,asesor:x.asesor})})});
+  const root=$("#drawer-root"),pinta=q=>{const l=todos.filter(t=>!q||String(t.c.zona||"").toLowerCase().includes(q.toLowerCase()));
+    $("#b-list").innerHTML=l.length?l.slice(0,60).map(t=>{const c=t.c;return'<div class="esc"><div><b>'+esc(c.zona||"Sin zona")+" · "+mx(c.precio)+"</b><small>"+esc(c.dato)+" · "+esc(c.fuente)+" · "+n(c.m2)+" m² · "+mx(n(c.precio)/n(c.m2))+"/m² · "+fd(pd(c.fecha))+" · capturó "+esc(t.asesor)+'</small></div><button class="btn sm" data-add="'+todos.indexOf(t)+'">Agregar</button></div>'}).join(""):'<div class="empty">'+(todos.length?"Nada coincide con esa zona.":"Aún no hay comparables de otras opiniones.")+"</div>";
+    $("#b-list").querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{if(S.comps.length>=6){toast("Máximo 6 comparables",true);return}const src=todos[+b.dataset.add].c;
+      const vacio=S.comps.findIndex(c=>!n(c.precio)&&!n(c.m2)&&!c.zona);const nuevoC={...compNuevo(),...src,aj:{ubi:0,sup:0,edad:0,niv:0,amen:0},nota:""};
+      if(vacio>=0)S.comps[vacio]=nuevoC;else S.comps.push(nuevoC);DIRTY=true;root.innerHTML="";go(3);toast("Comparable agregado. Revisa la fecha y los ajustes.")})};
+  root.innerHTML='<div class="scrim" id="scrim"></div><div class="drawer" role="dialog"><header><h3 style="font-size:18px">Comparables del equipo</h3><button class="ico" id="d-close" aria-label="Cerrar">✕</button></header><div class="body"><div class="f" style="margin-bottom:12px"><label for="b-q">Filtrar por colonia o edificio</label><input id="b-q" placeholder="Ej. Arcos Vallarta" value="'+esc(S.d.colonia||"")+'"></div><div id="b-list"></div></div></div>';
+  const close=()=>root.innerHTML="";$("#scrim").onclick=close;$("#d-close").onclick=close;$("#b-q").oninput=e=>pinta(e.target.value);pinta(S.d.colonia||"");
+}
+
+/* ---------- refrescos parciales ---------- */
+function refresh(){
+  const C=calc(),s=S.step;
+  if(s===1){const d=S.d,t=d.tipo==="Departamento",o=$("#supOut");if(o)o.innerHTML="Superficie de cálculo: <b>"+C.sp.toLocaleString("es-MX")+" m²</b>"+(t?" = "+n(d.mInt)+" interiores + "+S.rules.terr+"% de "+n(d.mTer)+" de terraza.":" (construcción).")}
+  if(s===3){
+    S.comps.forEach((c,i)=>{const r=C.R[i],e=$("#co"+i);if(!e)return;
+      e.innerHTML=r.ok?'<span class="pill '+(c.dato==="Cierre"?"c":"o")+'">'+c.dato+"</span> "+mx(r.pm)+"/m² · negociación "+pct(-r.neg)+" · ajustes "+pct(r.ajT)+(r.aj!==r.ajT?" (tope)":"")+'<br>Homologado: <span class="big">'+mx(r.hom)+"/m²</span>"+(r.w>1?" · pesa ×"+r.w:""):"Captura precio y m² para calcular."});
+    const o=$("#sum4");if(o)o.innerHTML=C.V.length?"Valor unitario homologado: <b>"+mx(C.unit)+"/m²</b> con "+C.V.length+" comparable"+(C.V.length===1?"":"s")+(C.sp?". Valor equilibrado: <b>"+mx(C.eq)+"</b>.":". Falta la superficie del inmueble."):"Aún no hay comparables completos."}
+  if(s===4){
+    const d=S.d,esp=n(d.esperado),dif=esp&&C.eq?(esp/C.eq-1)*100:0;
+    $("#res").innerHTML='<section class="hero"><small>Valor equilibrado</small><div class="v">'+mx(C.eq)+'</div><div class="m">'+mx(C.unit)+"/m² × "+C.sp.toLocaleString("es-MX")+" m² · promedio de mercado sin homologar "+mx(C.mkt)+"/m²</div>"
+      +'<div class="range"><div><span>Bien comprado</span><b>'+mx(C.lo)+'</b></div><div class="mid"><span>Equilibrado</span><b>'+mx(C.eq)+"</b></div><div><span>Bien vendido</span><b>"+mx(C.hi)+"</b></div></div></section>"
+      +'<section class="card"><h2>Candados</h2><ul class="alerts">'+C.A.map(a=>'<li class="'+a[0]+'">'+a[1]+"</li>").join("")
+      +(esp&&C.eq?'<li class="i"><span class="tag" style="margin:0 6px 0 0">Interno</span>El propietario espera '+mx(esp)+": "+pct(dif)+" contra el equilibrado.</li>":"")+"</ul></section>"
+      +'<section class="card"><h2>Comparables</h2><div class="twrap"><table><thead><tr><th>#</th><th>Tipo de precio</th><th>Zona</th><th>Fuente</th><th class="r">m²</th><th class="r">Precio</th><th class="r">$/m²</th><th class="r">Ajuste</th><th class="r">Homologado</th></tr></thead><tbody>'
+      +S.comps.map((c,i)=>{const r=C.R[i];return r.ok?"<tr><td>"+(i+1)+"</td><td>"+esc(c.dato)+"</td><td>"+esc(c.zona)+"</td><td>"+(/^https?:\/\//.test(c.liga||"")?'<a href="'+esc(c.liga)+'" target="_blank" rel="noopener">'+esc(c.fuente)+"</a>":esc(c.fuente))+'</td><td class="r">'+n(c.m2)+'</td><td class="r">'+mx(c.precio)+'</td><td class="r">'+mx(r.pm)+'</td><td class="r">'+pct(((1-r.neg/100)*(1+r.ajT/100)-1)*100)+'</td><td class="r"><b>'+mx(r.hom)+"</b></td></tr>":""}).join("")
+      +'</tbody></table></div><p class="note" style="margin:10px 0 0">Bien comprado = equilibrado −'+S.rules.bajo+"%. Bien vendido = equilibrado +"+S.rules.alto+"%.</p></section>";
+    const rt=n(d.renta),o=$("#rend");if(o)o.textContent=rt&&C.eq?(rt*12/C.eq*100).toFixed(1)+"% sobre el valor equilibrado":"Captura la renta para verlo";}
+  if(s===5)vistaPdf(C);
+}
+
+/* ---------- navegación y eventos ---------- */
+function go(i){
+  const antes=S.step;S.step=Math.max(0,Math.min(STEPS.length-1,i));
+  if(DIRTY&&antes!==S.step)guardar(true);
+  $("#sub").textContent=(asesorDoc()?asesorDoc()+" · ":"")+(DOC_ID?(S.d.solicitante||"Sin cliente"):"Nueva opinión de valor");
+  $("#steps").innerHTML=STEPS.map((t,j)=>'<button type="button" data-go="'+j+'" class="'+(j===S.step?"on":"")+'"'+(j===S.step?' aria-current="step"':"")+">"+(j<5?"<i>"+(j+1)+"</i>":"")+t+"</button>").join("");
+  $("#main").innerHTML=V[S.step]();
+  $("#prev").disabled=S.step===0;$("#next").textContent=S.step===4?"Ver cómo queda":"Siguiente";$("#next").style.visibility=S.step===5?"hidden":"visible";
+  if(S.step===1)mapaSujeto();if(S.step===3)mapaComps();
+  refresh();const b=$("#steps .on");if(b&&b.scrollIntoView)b.scrollIntoView({block:"nearest",inline:"center"});
+}
+function sugerir(){
+  const d=S.d,P=[],Ng=[];
+  if(d.entorno.includes("Avenida principal"))P.push("Buena ubicación sobre avenida principal");
+  if(d.entorno.includes("Comercios caminables"))P.push("Comercios y servicios en distancias caminables");
+  if(d.entorno.includes("Zona en desarrollo"))P.push("Zona con potencial de plusvalía");
+  if(d.entorno.includes("Parques"))P.push("Parques y áreas verdes cercanas");
+  if(d.entorno.includes("Escuelas"))P.push("Escuelas cercanas");
+  if(["Nuevo","Excelente"].includes(d.conserv))P.push("Estado de conservación "+d.conserv.toLowerCase());
+  if(d.amen.includes("Seguridad 24/7"))P.push("Seguridad 24/7");
+  if(d.cajonTipo==="Compartido")Ng.push("Estacionamiento compartido con vecinos");
+  if(d.cajones!==""&&n(d.cajones)===0)Ng.push("No cuenta con estacionamiento");
+  if(!d.amen.includes("Seguridad 24/7"))Ng.push("No cuenta con seguridad 24/7");
+  if(d.tipo==="Departamento"&&!d.amen.filter(x=>x!=="Elevador"&&x!=="Seguridad 24/7").length)Ng.push("No cuenta con amenidades");
+  if(n(d.recs)===1)Ng.push("Cuenta con una sola recámara");
+  if(d.tipo==="Departamento"&&n(d.nivel)>1&&!d.amen.includes("Elevador"))Ng.push("No cuenta con elevador");
+  if(d.conserv==="A remodelar")Ng.push("Requiere remodelación");
+  const merge=(k,arr)=>{const cur=lines(d[k]);arr.forEach(x=>{if(!cur.some(c=>c.toLowerCase().slice(0,18)===x.toLowerCase().slice(0,18)))cur.push(x)});d[k]=cur.join("\n")};
+  merge("pos",P);merge("neg",Ng);DIRTY=true;go(2);
+}
+document.addEventListener("input",e=>{
+  const t=e.target;
+  if(t.dataset.k){const k=t.dataset.k;S.d[k]=MONEY.includes(k)?(t.value.trim()===""?"":n(t.value)):t.value}
+  else if(t.dataset.ck){const k=t.dataset.ck;S.comps[+t.dataset.c][k]=k==="precio"?(t.value.trim()===""?"":n(t.value)):t.value}
+  else if(t.dataset.aj)S.comps[+t.dataset.c].aj[t.dataset.aj]=+t.value;
+  else return;
+  DIRTY=true;refresh();
+});
+document.addEventListener("change",e=>{
+  const t=e.target;
+  if(t.id==="foto"&&t.files[0]){ponerFoto(t.files[0]);return}
+  if(t.dataset.k&&MONEY.includes(t.dataset.k)&&S.d[t.dataset.k]!=="")t.value=mx(S.d[t.dataset.k]);
+  if(t.dataset.ck==="precio"&&S.comps[+t.dataset.c].precio!=="")t.value=mx(S.comps[+t.dataset.c].precio);
+  if(t.dataset.k==="tipo")go(1);
+  if(t.dataset.ck==="zona")pickers();
+});
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button");if(!t)return;
+  if(t.dataset.go){go(+t.dataset.go);return window.scrollTo(0,0)}
+  if(t.id==="prev"){go(S.step-1);return window.scrollTo(0,0)}
+  if(t.id==="next"){go(S.step+1);return window.scrollTo(0,0)}
+  if(t.id==="btn-save")return guardar();
+  if(t.id==="btn-pdf")return pdf();
+  if(t.id==="btn-list")return abrirLista();
+  if(t.dataset.pick){PICK=PICK===+t.dataset.pick?-1:+t.dataset.pick;return pickers()}
+  if(t.dataset.chip){const a=S.d[t.dataset.chip],v=t.dataset.v,i=a.indexOf(v);i<0?a.push(v):a.splice(i,1);t.classList.toggle("on");t.setAttribute("aria-pressed",i<0);DIRTY=true;return refresh()}
+  const a=t.dataset.act;
+  if(a==="add"){S.comps.push(compNuevo());DIRTY=true;go(3)}
+  if(a==="del"){if(S.comps.length<=1){toast("Deja al menos un comparable",true);return}S.comps.splice(+t.dataset.i,1);PICK=-1;DIRTY=true;go(3)}
+  if(a==="banco")abrirBanco();
+  if(a==="geo")geocodificar();
+  if(a==="sugerir")sugerir();
+  if(a==="ver"){go(5);window.scrollTo(0,0)}
+  if(a==="pdf")pdf();
+});
+window.addEventListener("beforeunload",e=>{if(DIRTY&&(S.d.solicitante||S.d.calle)){e.preventDefault();e.returnValue=""}});
+
+go(0);
+(async()=>{const u=new URLSearchParams(location.search),id=u.get("doc");if(!id||!sb)return;
+  const r=await sb.from("documentos").select("*").eq("id",id).maybeSingle();if(!r.data){toast("No encontré esa opinión",true);return}
+  cargar(r.data);history.replaceState(null,"",location.pathname);go(u.get("pdf")?5:0);if(u.get("pdf"))setTimeout(()=>pdf(true),500)})();
+</script>
+</body>
+</html>

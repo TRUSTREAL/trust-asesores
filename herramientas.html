@@ -148,7 +148,7 @@ const TOOLS=[
   {k:"politicas",n:"Políticas",d:"Políticas oficiales de TRUST: comisiones por supuesto, bono de autogeneración y TOP Realtor.",ok:true,href:"politicas.html",nodoc:true,ic:'<path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7z"/><path d="M9 11h6M9 14h4"/>'},
   {k:"aut_renta",n:"Autorización de renta",d:"Autorización del propietario para comercializar su inmueble en renta.",ok:false,ic:'<path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7z"/><path d="M8 12h8"/>'},
   {k:"carta_comision",n:"Carta de comisión",d:"Blinda la comisión de TRUST cuando traemos al comprador: con otra inmobiliaria o con el propietario.",ok:true,ic:'<path d="M3 6h18v12H3z"/><path d="M3 7l9 6 9-6"/>'},
-  {k:"opinion_valor",n:"Opinión de valor",d:"Estimación de valor del inmueble con comparables para el propietario.",ok:false,ic:'<path d="M3 20h18"/><path d="M6 16l4-5 3 3 5-7"/>'}
+  {k:"opinion_valor",n:"Opinión de valor",d:"Estima el valor de un inmueble con comparables de mercado y entrégalo al propietario en PDF.",ok:true,href:"opinion.html",ic:'<path d="M3 20h18"/><path d="M6 16l4-5 3 3 5-7"/>'}
 ];
 const TOOL=k=>TOOLS.find(t=>t.k===k)||{n:k};
 const EST={borrador:"Borrador",enviada:"Enviada",aceptada:"Aceptada",rechazada:"Rechazada",vencida:"Vencida"};
@@ -165,6 +165,7 @@ async function load(){
 }
 function autoDoc(){const p=new URLSearchParams(location.search);const id=p.get("doc");if(!id)return;history.replaceState(null,"",location.pathname);const d=DOCS.find(x=>x.id===id);if(!d){toast("No encontré ese documento",true);return}const pdf=p.get("pdf")==="1";
   if(d.tipo==="rentabilidad"){location.href="rentabilidad.html?doc="+d.id+(pdf?"&pdf=1":"");return}
+  if(d.tipo==="opinion_valor"){location.href="opinion.html?doc="+d.id+(pdf?"&pdf=1":"");return}
   const ab=()=>d.tipo==="aut_venta"?openAutorizacion(d):d.tipo==="carta_comision"?openCarta(d):openOferta(d);
   const pd=()=>{window.PDF_INLINE=true;d.tipo==="aut_venta"?autorizacionPDF(d):d.tipo==="carta_comision"?cartaPDF(d):ofertaPDF(d)};
   pdf?pd():ab()}
@@ -200,7 +201,7 @@ function render(){
   const nb=$("#btn-new");if(nb)nb.onclick=()=>openOferta(null,"oferta_compra");const nr=$("#btn-new-r");if(nr)nr.onclick=()=>openOferta(null,"oferta_renta");
   $("#f-q").oninput=e=>{filt.q=e.target.value;render();const i=$("#f-q");i.focus();i.setSelectionRange(i.value.length,i.value.length)};
   ["tipo","est","ase"].forEach(k=>{const el=$("#f-"+k);if(el)el.onchange=e=>{filt[k]=e.target.value;render()}});
-  const abrir=d=>d.tipo==="rentabilidad"?(location.href="rentabilidad.html?doc="+d.id):d.tipo==="aut_venta"?openAutorizacion(d):d.tipo==="carta_comision"?openCarta(d):openOferta(d);const pdfDe=d=>d.tipo==="rentabilidad"?(location.href="rentabilidad.html?doc="+d.id+"&pdf=1"):d.tipo==="aut_venta"?autorizacionPDF(d):d.tipo==="carta_comision"?cartaPDF(d):ofertaPDF(d);
+  const abrir=d=>d.tipo==="rentabilidad"?(location.href="rentabilidad.html?doc="+d.id):d.tipo==="opinion_valor"?(location.href="opinion.html?doc="+d.id):d.tipo==="aut_venta"?openAutorizacion(d):d.tipo==="carta_comision"?openCarta(d):openOferta(d);const pdfDe=d=>d.tipo==="rentabilidad"?(location.href="rentabilidad.html?doc="+d.id+"&pdf=1"):d.tipo==="opinion_valor"?(location.href="opinion.html?doc="+d.id+"&pdf=1"):d.tipo==="aut_venta"?autorizacionPDF(d):d.tipo==="carta_comision"?cartaPDF(d):ofertaPDF(d);
   m.querySelectorAll(".edit").forEach(b=>b.onclick=()=>abrir(DOCS.find(d=>d.id===b.dataset.id)));
   m.querySelectorAll(".pdf").forEach(b=>b.onclick=()=>pdfDe(DOCS.find(d=>d.id===b.dataset.id)));
   m.querySelectorAll("select[data-est]").forEach(s=>s.onchange=async()=>{const d=DOCS.find(x=>x.id===s.dataset.est);const r=await sb.from("documentos").update({estatus:s.value,updated_at:new Date().toISOString()}).eq("id",d.id);if(r.error){toast("No se guardó: "+r.error.message,true);return}d.estatus=s.value;s.className="st "+s.value;toast("Estatus: "+EST[s.value])});
