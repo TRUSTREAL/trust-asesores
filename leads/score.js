@@ -73,7 +73,7 @@
     if(typeof el==="string")el=document.getElementById(el);if(!el)return;
     if(!asesor||FALLA||!(LISTO[asesor]||LISTO["*"])){el.hidden=true;return}
     var r=de(asesor),lg=lugar(asesor);el.hidden=false;
-    el.innerHTML='<div class="scr '+r.nivel+'"><div class="scn"><b>'+r.score+'</b><i>/100</i></div><div class="sct"><span class="scl">Score de actividad · '+TXT[r.nivel]+'</span>'+(lg?'<span class="sch">Lugar <b>'+lg.lugar+'</b> de '+lg.de+' en el equipo</span>':'')+'</div></div>';
+    el.innerHTML='<div class="scr '+r.nivel+'"><div class="scn"><b>'+r.score+'</b><i>/100</i></div><div class="sct"><span class="scl">Score de actividad · '+TXT[r.nivel]+'</span>'+'<span class="sch">Hoy llevas <b>'+r.hoy+'</b> lead'+(r.hoy===1?"":"s")+' movido'+(r.hoy===1?"":"s")+(lg?' · Lugar <b>'+lg.lugar+'</b> de '+lg.de+' en el equipo':'')+'</span>'+'</div></div>';
   }
   /* tabla de todos (administración) */
   function tabla(el,asesores){
