@@ -31,8 +31,7 @@
   function log(leadId,tipo,asesor){
     try{
       if(leadId==null||!puedeGuardar(asesor))return;
-      var yo=window.AUTH.nombre,k=leadId+"|"+dia();
-      (PARES[yo]=PARES[yo]||{})[k]=1;avisar();
+      var yo=window.AUTH.nombre;   /* no se refleja al momento: el número solo cambia al volver a abrir el portal */
       Promise.resolve(sb().from("lead_acciones").insert({asesor:yo,lead_id:leadId,tipo:tipo})).then(function(r){if(r&&r.error)FALLA=true}).catch(function(){FALLA=true});
     }catch(e){}
   }
@@ -70,10 +69,7 @@
     if(typeof el==="string")el=document.getElementById(el);if(!el)return;
     if(!asesor||FALLA||!LISTO[asesor]){el.hidden=true;return}
     var r=de(asesor);el.hidden=false;
-    el.innerHTML='<div class="scr '+r.nivel+'" title="Leads distintos que moviste cada día en los últimos '+DIAS+' días ('+r.pares+' de '+META+'). Cuenta: Llamar, WhatsApp, cambio de estatus, comentario o registro de cita. Máximo un punto por lead por día. Es informativo: no afecta tus leads.">'+
-      '<div class="scn"><b>'+r.score+'</b><i>/100</i></div>'+
-      '<div class="sct"><span class="scl">Score de actividad · '+TXT[r.nivel]+'</span><span class="sch">Hoy llevas <b>'+r.hoy+'</b> lead'+(r.hoy===1?"":"s")+' movido'+(r.hoy===1?"":"s")+'</span>'+
-      '<span class="scb"><span style="width:'+r.score+'%"></span></span></div></div>';
+    el.innerHTML='<div class="scr '+r.nivel+'"><div class="scn"><b>'+r.score+'</b></div><div class="sct"><span class="scl">Score de actividad</span></div></div>';
   }
   /* tabla de todos (administración) */
   function tabla(el,asesores){
