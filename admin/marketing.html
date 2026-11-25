@@ -56,6 +56,7 @@ tbody tr.subt td{background:var(--surface-2);font-weight:600;border-bottom:2px s
 .st{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
 .st.na{background:var(--surface-2);color:var(--muted)}.st.dev{background:var(--info-bg);color:var(--info)}.st.re{background:#F6EEDC;color:var(--gold-2)}
 .ico{border:0;background:transparent;color:var(--faint);font-size:15px;padding:2px 6px;border-radius:6px}.ico:hover{color:var(--green);background:var(--surface-2)}
+input.inl{width:110px;text-align:right;border:1px solid transparent;background:transparent;border-radius:6px;padding:4px 6px;font:inherit;color:inherit;font-variant-numeric:tabular-nums}input.inl.sm{width:64px}tr.rowed:hover input.inl{border-color:var(--line-2);background:#fff}input.inl:focus{border-color:var(--green);background:#fff;outline:0}
 tr.rowed{cursor:pointer}tr.rowed:hover td{background:var(--surface-2)}tr.rowed .ico{color:var(--green)}
 .empty{color:var(--muted);padding:26px;text-align:center;border:1px dashed var(--line-2);border-radius:14px}.empty b{display:block;color:var(--text);margin-bottom:4px}
 .bars .bar{display:grid;grid-template-columns:minmax(90px,1fr) minmax(60px,1.4fr) auto;gap:10px;align-items:center;padding:5px 0;font-size:13px}
@@ -209,6 +210,14 @@ function render(){
   $("#period-bar").style.display=filt.proy?"":"none";
   if(!filt.proy){el.innerHTML="";return}
   el.innerHTML=resumenHTML()+(VISTA==="gastos"?gastosHTML():VISTA==="comisiones"?comisionesHTML():pagosHTML());
+  el.querySelectorAll("input.inl").forEach(i=>{i.onclick=e=>e.stopPropagation();i.onfocus=()=>i.select();i.onkeydown=e=>{if(e.key==="Enter")i.blur();if(e.key==="Escape"){i.value=i.defaultValue;i.blur()}};
+    i.onchange=async()=>{const x=INV.find(y=>String(y.id)===i.closest("tr").dataset.inv);if(!x)return;const k=i.dataset.f;let v=num(i.value);
+      if(k==="monto"&&(v==null||v<0)){toast("Monto no válido",true);i.value=i.defaultValue;return}
+      if(k==="leads"){if(i.value.trim()==="")v=null;else if(v==null||v<0){toast("Número de leads no válido",true);i.value=i.defaultValue;return}else v=Math.round(v)}
+      if(v===(x[k]==null?null:+x[k])){i.value=i.defaultValue;return}
+      const r=await sb.from("marketing_inversion").update({[k]:v}).eq("id",x.id).select().single();
+      if(r.error){toast("No se guardó: "+r.error.message,true);i.value=i.defaultValue;return}
+      INV[INV.findIndex(y=>y.id===x.id)]=r.data;render();toast(k==="monto"?"Monto actualizado":"Leads actualizados")}});
   el.querySelectorAll("tr.rowed").forEach(tr=>tr.onclick=()=>{const d=tr.dataset;if(window.getSelection&&String(getSelection()))return;
     if(d.inv){const x=INV.find(y=>String(y.id)===d.inv);if(x)openInv(x)}else if(d.com){const x=COMS.find(y=>String(y.id)===d.com);if(x)openCom(x)}else if(d.pago){const x=PAGOS.find(y=>String(y.id)===d.pago);if(x)openPago(x)}});
   const bc=$("#btn-com2");if(bc)bc.onclick=()=>openCom(null,{proyecto:filt.proy||""});
@@ -263,7 +272,7 @@ function gastosHTML(){
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0">Gastos · ${periodoTxt()}${filt.proy?" · "+esc(filt.proy):""}</h3><span style="display:flex;gap:8px;align-items:center"><span class="hint">${rows.length} de ${yr.length}</span><button class="btn sm" id="btn-new2">+ Gasto</button></span></div>
     ${TABLA_OK?`${CAT_OK?"":`<div class="empty" style="margin-bottom:10px"><b>Falta la columna de categoría</b>Corre <code>marketing_categoria.sql</code> en Supabase → SQL Editor y recarga. Mientras, todo se muestra como “Pauta digital”.</div>`}<div class="twrap"><table><thead><tr><th>Mes</th><th>Proyecto</th><th>Categoría</th><th>Plataforma / proveedor</th><th>Concepto</th><th class="num">Monto</th><th>Pagó</th><th>Reembolso</th><th class="num">Leads</th><th class="num">CPL</th><th></th></tr></thead>
-    <tbody>${rows.map(x=>`<tr class="rowed" data-inv="${x.id}" title="Clic para editar"><td class="dim">${fechaM(x.mes)}</td><td><b>${esc(x.proyecto)}</b></td><td>${esc(catDe(x))}</td><td class="dim">${esc(x.plataforma||"—")}</td><td class="dim">${esc(x.campana||"")}${x.notas?`<br><small>${esc(x.notas)}</small>`:""}</td><td class="num money">${fmt(x.monto)}</td><td>${x.pagado_por==="TRUST"?"TRUST":esc(x.pagado_por||"Desarrollador")}</td><td>${seg(x)}</td><td class="num">${x.leads??"—"}</td><td class="num dim">${cpl(+x.monto||0,+x.leads||0)}</td><td><button class="ico edit" data-id="${x.id}" title="Editar">✎</button></td></tr>`).join("")}
+    <tbody>${rows.map(x=>`<tr class="rowed" data-inv="${x.id}" title="Clic para editar"><td class="dim">${fechaM(x.mes)}</td><td><b>${esc(x.proyecto)}</b></td><td>${esc(catDe(x))}</td><td class="dim">${esc(x.plataforma||"—")}</td><td class="dim">${esc(x.campana||"")}${x.notas?`<br><small>${esc(x.notas)}</small>`:""}</td><td class="num money"><input class="inl" data-f="monto" inputmode="decimal" value="${fmt(x.monto)}" aria-label="Monto" title="Escribe el monto y presiona Enter"></td><td>${x.pagado_por==="TRUST"?"TRUST":esc(x.pagado_por||"Desarrollador")}</td><td>${seg(x)}</td><td class="num">${catDe(x)==="Pauta digital"?`<input class="inl sm" data-f="leads" inputmode="numeric" value="${x.leads??""}" placeholder="—" aria-label="Leads recibidos" title="Escribe los leads y presiona Enter">`:"—"}</td><td class="num dim">${cpl(+x.monto||0,+x.leads||0)}</td><td><button class="ico edit" data-id="${x.id}" title="Editar">✎</button></td></tr>`).join("")}
     ${rows.length?`<tr class="subt"><td colspan="5">Total</td><td class="num">${fmt(S(rows))}</td><td colspan="2"></td><td class="num">${L(rows).toLocaleString("es-MX")}</td><td class="num">${cpl(S(rows.filter(x=>+x.leads>0)),L(rows))}</td><td></td></tr>`:""}</tbody></table>
     ${rows.length?"":`<div class="empty"><b>Sin gastos</b>Registra el primero con “+ Gasto”.</div>`}</div>`:`<div class="empty"><b>Falta activar el módulo</b>Corre <code>marketing.sql</code> en Supabase → SQL Editor y recarga.</div>`}
   </div>
