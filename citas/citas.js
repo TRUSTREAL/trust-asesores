@@ -56,18 +56,20 @@
   async function prenderLead(c){
     if(c.lead_id==null)return null;
     var p={cita:true,nc:false,seguimiento:false};
-    if(c.es_visita){p.visita=true;p.visita_fecha=String(c.fecha).slice(0,10);p.visita_lugar=c.lugar||c.proyecto||null}
+    /* una cita programada también mueve el lead a Cita; Visita solo se prende cuando la cita ya se realizó */
+    if(c.es_visita&&c.estatus==="realizada"){p.visita=true;p.visita_fecha=String(c.fecha).slice(0,10);p.visita_lugar=c.lugar||c.proyecto||null}
     var r=await sb().from("leads").update(p).eq("id",c.lead_id);if(r.error)throw r.error;
     return p;
   }
   /* al anular: si el lead se queda sin ninguna cita válida, pierde el estatus de cita (y de visita) */
   async function apagarLeadSiAplica(c){
     if(c.lead_id==null)return null;
-    var rest=(await delCliente(c)).filter(function(x){return valida(x)&&x.id!==c.id});
+    var otras=(await delCliente(c)).filter(function(x){return x.id!==c.id&&!x.anulada});
+    var rest=otras.filter(valida),vivas=otras.filter(function(x){return valida(x)||x.estatus==="programada"});
     var p={};
-    if(!rest.length){p.cita=false;p.visita=false;p.visita_fecha=null;p.visita_lugar=null}
-    else if(!rest.some(function(x){return x.es_visita})){p.visita=false;p.visita_fecha=null;p.visita_lugar=null}
-    else return null;
+    if(!vivas.length)p.cita=false;                                                    /* ni realizadas ni programadas: pierde Cita */
+    if(!rest.some(function(x){return x.es_visita})){p.visita=false;p.visita_fecha=null;p.visita_lugar=null}
+    if(c.estatus==="programada"){delete p.visita;delete p.visita_fecha;delete p.visita_lugar;if(p.cita===undefined)return null}                      /* borrar una programada no toca la visita si quedan otras citas */
     if(p.cita===false){
       var l=await sb().from("leads").select("hot,apartado,venta,perdido,futuro,seguimiento").eq("id",c.lead_id).maybeSingle();
       var d=l.data||{};if(!(d.hot||d.apartado||d.venta||d.perdido||d.futuro||d.seguimiento))p.nc=true;
@@ -101,6 +103,7 @@
   async function borrarProgramada(c){
     if(c.estatus!=="programada")throw new Error("Solo se pueden borrar citas programadas");
     var r=await sb().from("citas").delete().eq("id",c.id);if(r.error)throw r.error;
+    try{return await apagarLeadSiAplica(c)}catch(e){return null}
   }
 
   /* ---------- formulario ---------- */
@@ -206,7 +209,7 @@
       $("#ct-lugar-t").textContent=st.modalidad==="video"?"Plataforma (Zoom, Meet, WhatsApp…)":"Lugar";
       $("#ct-lugar").placeholder=st.modalidad==="video"?"Zoom, Google Meet, videollamada de WhatsApp…":"Showroom, oficina TRUST, café…";
       $("#ct-ok").textContent=st.realizada?"Guardar cita realizada":"Guardar cita programada";
-      $("#ct-info").innerHTML=st.realizada?"Se registra a más tardar <b>"+PLAZO_H+" horas</b> después de ocurrida y necesita evidencia."+((o.lead||st.origen==="lead")?" Al guardarla, el lead pasa solo a <b>Cita realizada</b>.":""):"Queda como programada. Cuando ocurra, márcala como <b>realizada</b> desde Mis citas y sube la evidencia (tienes "+PLAZO_H+" horas).";
+      $("#ct-info").innerHTML=st.realizada?"Se registra a más tardar <b>"+PLAZO_H+" horas</b> después de ocurrida y necesita evidencia."+((o.lead||st.origen==="lead")?" Al guardarla, el lead pasa solo a <b>Cita realizada</b>.":""):((o.lead||st.origen==="lead")?"El lead pasa a <b>Cita</b>. ":"")+"Queda como programada. Cuando ocurra, márcala como <b>realizada</b> desde Mis citas y sube la evidencia (tienes "+PLAZO_H+" horas).";
     }
     Array.prototype.forEach.call(m.el.querySelectorAll("[data-re]"),function(b){b.onclick=function(){st.realizada=b.dataset.re==="1";pinta()}});
     Array.prototype.forEach.call(m.el.querySelectorAll("[data-mo]"),function(b){b.onclick=function(){st.modalidad=b.dataset.mo;pinta()}});
@@ -246,11 +249,16 @@
       }
       var b=$("#ct-ok");b.disabled=true;b.textContent="Guardando…";
       try{
+        if(row.lead_id!=null){   /* evita registrar dos veces la misma cita */
+          var du=await sb().from("citas").select("id,estatus").eq("lead_id",row.lead_id).eq("fecha",row.fecha).eq("hora",row.hora).eq("anulada",false);
+          if(!du.error&&(du.data||[]).length){b.disabled=false;pinta();err("Este lead ya tiene una cita registrada ese día a esa hora. Revísala en Mis citas.");return}
+        }
         if(file)Object.assign(row,await subirEvidencia(file,asesor));
         var r=await sb().from("citas").insert(row).select().single();if(r.error)throw r.error;
         var cita=r.data,lp=null;
         if(!o.admin&&cita.lead_id!=null&&window.SCORE)SCORE.log(cita.lead_id,"cita",cita.asesor);   /* Fase 6 · score de actividad */
-        if(cita.estatus==="realizada"){var pid=await recalcPrimera(cita);cita.es_primera=pid===cita.id;lp=await prenderLead(cita)}
+        if(cita.estatus==="realizada"){var pid=await recalcPrimera(cita);cita.es_primera=pid===cita.id}
+        lp=await prenderLead(cita);
         m.cerrar();toast(cita.estatus==="realizada"?"Cita registrada"+(cita.es_primera?" · primera con este cliente":""):"Cita programada");
         if(o.onSaved)o.onSaved(cita,lp);
       }catch(e){
