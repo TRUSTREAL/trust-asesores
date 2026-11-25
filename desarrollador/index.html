@@ -302,9 +302,12 @@ function mktData(y){
   const S_=a=>a.reduce((s,x)=>s+(+x.monto||0),0);
   const inver=S_(g), pauta=S_(g.filter(x=>!x.categoria||x.categoria==="Pauta digital"));
   const f={leads:le.length,cita:le.filter(esCita).length,visita:le.filter(l=>l.visita).length,apartado:le.filter(l=>l.apartado||l.venta).length,venta:le.filter(l=>l.venta).length,hot:le.filter(l=>l.hot).length};
-  const meses={};const add=k=>meses[k]=meses[k]||{inv:0,leads:0,cita:0,visita:0,venta:0};
-  g.forEach(x=>{add(ym(x.mes)).inv+=+x.monto||0});
-  le.forEach(l=>{const o=add(ym(l.fecha));o.leads++;if(esCita(l))o.cita++;if(l.visita)o.visita++;if(l.venta)o.venta++});
+  const meses={};const add=k=>meses[k]=meses[k]||{inv:0,leads:0,reg:0,cap:0,cita:0,visita:0,venta:0};
+  g.forEach(x=>{const o=add(ym(x.mes));o.inv+=+x.monto||0;o.cap+=+x.leads||0});   /* cap = leads capturados en los gastos de pauta (Admin Proyectos) */
+  le.forEach(l=>{const o=add(ym(l.fecha));o.reg++;if(esCita(l))o.cita++;if(l.visita)o.visita++;if(l.venta)o.venta++});
+  /* leads del mes: los capturados en la pauta o los registrados uno por uno en Lead Management, el mayor (los meses anteriores al registro solo tienen los de la pauta) */
+  Object.values(meses).forEach(o=>o.leads=Math.max(o.reg,o.cap));
+  f.reg=f.leads;f.leads=Object.values(meses).reduce((a,o)=>a+o.leads,0);
   const by=(arr,k,val)=>{const o={};arr.forEach(x=>{const kk=x[k]||"Sin especificar";o[kk]=(o[kk]||0)+val(x)});return Object.entries(o).sort((a,b)=>b[1]-a[1])};
   return {g,le,inver,pauta,f,meses,plat:by(g,"plataforma",x=>+x.monto||0),cat:by(g,"categoria",x=>+x.monto||0),canal:by(le,"canal",()=>1)};
 }
@@ -390,20 +393,20 @@ function vHome(){
 function vMkt(){
   const y=S.mktY, M=mktData(y), f=M.f;
   const years=yearsOf(MKT.map(x=>x.mes).concat(LEADS.map(l=>l.fecha)));
-  const cpl=M.le.length?M.pauta/M.le.length:null;
+  const cpl=f.leads?M.pauta/f.leads:null;
   const keys=Object.keys(M.meses).sort();
   const months=y?Array.from({length:12},(_,i)=>y+"-"+String(i+1).padStart(2,"0")).filter(k=>+y<CY||+k.slice(5)<=CM||M.meses[k]):keys.slice(-18);
   const maxI=Math.max(1,...months.map(k=>(M.meses[k]||{}).inv||0)), maxL=Math.max(1,...months.map(k=>(M.meses[k]||{}).leads||0));
   const barChart=(get,max,f2,cls)=>`<div class="bars">${months.map(k=>{const v=get(M.meses[k]||{})||0;return `<div class="col"><div class="bar ${v?"":"z"}" style="height:${Math.max(1,v/max*100)}%;${cls||""}">${v?`<span class="bv">${f2(v)}</span>`:""}</div></div>`}).join("")}</div><div class="blab">${months.map(k=>`<span>${MES[+k.slice(5)-1]}${y?"":" "+k.slice(2,4)}</span>`).join("")}</div>`;
   const hbar=(rows,tot,f2,g)=>rows.length?rows.map(([k,v])=>`<div class="hb"><span>${esc(k)}</span><div class="tr"><i class="${g||""}" style="width:${Math.max(2,v/Math.max(1,rows[0][1])*100)}%"></i></div><b>${f2(v)} <span class="dim" style="font-weight:400">${pct(v,tot)}</span></b></div>`).join(""):`<p class="dim">Sin datos en el periodo.</p>`;
-  const fn=(lab,n,std)=>{const p=f.leads?n/f.leads*100:0;const ok=p>=std;return `<div class="hb"><span>${lab}</span><div class="tr"><i style="width:${Math.max(n?2:0,Math.min(100,f.leads?n/f.leads*100*4:0))}%"></i></div><span class="r"><b>${int(n)}</b> · ${f.leads?p.toFixed(1)+"%":"—"} <span class="pill ${f.leads?(ok?"ok":"bad"):""}">meta ${std}%</span></span></div>`};
+  const fn=(lab,n,std)=>{const p=f.reg?n/f.reg*100:0;const ok=p>=std;return `<div class="hb"><span>${lab}</span><div class="tr"><i style="width:${Math.max(n?2:0,Math.min(100,f.reg?n/f.reg*100*4:0))}%"></i></div><span class="r"><b>${int(n)}</b> · ${f.reg?p.toFixed(1)+"%":"—"} <span class="pill ${f.reg?(ok?"ok":"bad"):""}">meta ${std}%</span></span></div>`};
   const histTot=Object.entries(HIST).filter(([yy])=>!MKT.some(x=>String(x.mes).slice(0,4)===yy)).sort();
   return `<div class="head main"><div><div class="eyebrow">${esc(PROY)} · Marketing</div><h1>Inversión y resultados</h1><p class="sub">${y?"Año "+y:"Todo el periodo"}</p></div>${yearChips("mktY",years)}</div>
   <div class="tiles">
     <div class="tile hl"><span class="l">Inversión total</span><span class="v">${fmtK(M.inver)}</span><span class="s">${fmt(M.pauta)} en pauta digital</span></div>
     <div class="tile"><span class="l">Leads</span><span class="v">${int(f.leads)}</span><span class="s">prospectos generados</span></div>
     <div class="tile"><span class="l">Costo por lead</span><span class="v">${cpl==null||!M.pauta?"—":fmt(cpl)}</span><span class="s">pauta ÷ leads</span></div>
-    <div class="tile"><span class="l">Citas</span><span class="v">${int(f.cita)}</span><span class="s">${f.cita&&M.inver?fmt(M.inver/f.cita)+" por cita":pct(f.cita,f.leads,1)+" de los leads"}</span></div>
+    <div class="tile"><span class="l">Citas</span><span class="v">${int(f.cita)}</span><span class="s">${f.cita&&M.inver?fmt(M.inver/f.cita)+" por cita":pct(f.cita,f.reg,1)+" de los leads"}</span></div>
     <div class="tile"><span class="l">Ventas</span><span class="v">${int(f.venta)}</span><span class="s">${f.venta&&M.inver?fmt(M.inver/f.venta)+" por venta":"desde la base de leads"}</span></div>
   </div>
   <div class="grid2">
@@ -412,10 +415,10 @@ function vMkt(){
   </div>
   <div class="grid2">
     <div class="card funnel"><h2>Embudo comercial</h2>
-      <div class="hb"><span>Leads</span><div class="tr"><i style="width:100%"></i></div><span class="r"><b>${int(f.leads)}</b> · 100%</span></div>
+      <div class="hb"><span>Leads</span><div class="tr"><i style="width:100%"></i></div><span class="r"><b>${int(f.reg)}</b> · 100%</span></div>
       ${fn("Citas",f.cita,STD.cita)}${fn("Visitas",f.visita,STD.visita)}${fn("Apartados",f.apartado,STD.apartado)}${fn("Ventas",f.venta,STD.venta)}
-      <p class="note">Porcentajes sobre el total de leads del periodo, contra el estándar TRUST. Las barras están amplificadas ×4 para que se aprecien.</p></div>
-    <div class="card"><h2>Leads por canal</h2>${hbar(M.canal.slice(0,9),f.leads,int,"g")}</div>
+      <p class="note">Porcentajes sobre los ${int(f.reg)} leads con seguimiento individual en el periodo, contra el estándar TRUST. Las barras están amplificadas ×4 para que se aprecien.</p></div>
+    <div class="card"><h2>Leads por canal</h2>${hbar(M.canal.slice(0,9),f.reg,int,"g")}</div>
   </div>
   <div class="grid2">
     <div class="card"><h2>Inversión por plataforma</h2>${hbar(M.plat.slice(0,8),M.inver,fmtK)}</div>
