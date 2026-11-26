@@ -472,6 +472,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
 <script src="/citas/citas.js"></script>
 <script src="/leads/reloj.js"></script>
 <script src="/leads/score.js"></script>
+<script src="/leads/push.js"></script>
 </head>
 <body>
 
@@ -702,6 +703,7 @@ th{letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
       <button class="btn2 clear" id="aClear" onclick="clearAseF()">Quitar filtros</button>
     </div>
     <div id="aDevBox" hidden style="background:#FCF1EF;border:1px solid #E3B4AE;color:#7A261E;border-radius:12px;padding:10px 14px;font-size:13px;margin-bottom:12px"></div>
+    <div id="pushBox" hidden></div>
     <div id="scoreBox" hidden></div>
     <div class="kpis k8a">
       <div class="kpi dark"><b id="aTotal">0</b><span>leads recibidos</span></div>
@@ -1695,9 +1697,10 @@ function hotList(id, src){
   el.innerHTML=`<table><tr><th>Fecha</th><th>Días</th><th>Nombre</th><th>Teléfono</th><th>Canal</th><th>Proyecto</th><th>Estatus</th></tr>`+
     hl.map(l=>`<tr><td class="m">${fmt(l.fecha)}</td><td>${diasDe(l)}</td><td class="n">${fuego(l)}<span class="lnm" onclick="openLead('${esc(l.id)}')">${esc(l.nombre)}</span>${tipoDe(l)==="Broker"?' <span class="tag">broker</span>':''}${l.perdido&&l.razon_perdido?`<div class="razon">${esc(l.razon_perdido)}</div>`:""}${l.visita&&(l.visita_fecha||l.visita_lugar)?`<div class="vis">Visita ${l.visita_fecha?fmt(l.visita_fecha):""}${l.visita_lugar?" · "+esc(l.visita_lugar):""}</div>`:""}${lastNota(l)}</td><td class="m" style="white-space:nowrap">${esc(l.telefono||"—")}${waIcon(l)}</td><td>${esc(canalTxt(l))}</td><td>${esc(l.proyecto)}</td><td><div class="flags">${fl(l,"cita","Cita","c")}${fl(l,"visita","Visita","vi")}${fl(l,"apartado","Apart.","a")}${fl(l,"venta","Venta","v")}${fl(l,"futuro","Fut.","f")}${fl(l,"perdido","Perd.","p")}</div></td></tr>`).join("")+`</table>`;
 }
-let _scAse=null;
+let _scAse=null, _pushOk=false;
 function renderAse(){
   if(!aseCur) return;
+  if(window.PUSH&&!_pushOk){ _pushOk=true; PUSH.montar("pushBox"); }
   if(window.SCORE){ if(_scAse!==aseCur){ _scAse=aseCur; SCORE.cargar(); } SCORE.pintar("scoreBox",aseCur); }
   const [a,b]=rangeA();
   /* Fase 2: un lead que no se contactó en 30 minutos hábiles regresa a administración (Berna lo reasigna). Sale de la lista del asesor. */
