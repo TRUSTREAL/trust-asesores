@@ -793,7 +793,7 @@ function loadBrk(force){
     try{
       const {data,error}=await sb.from("listings").select("*").eq("estatus","activo").order("created_at",{ascending:false});
       if(error)throw error;
-      BRK.all=data||[];
+      BRK.all=(data||[]).filter(l=>l.apartado!==true); // apartadas no se muestran como disponibles
       const ids=BRK.all.map(l=>l.id);
       BRK.docs={};
       if(ids.length){const r=await sb.from("listing_docs").select("*").in("listing_id",ids).eq("tipo","foto_h").order("orden");(r.data||[]).forEach(d=>{(BRK.docs[d.listing_id]=BRK.docs[d.listing_id]||[]).push(d)})}

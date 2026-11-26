@@ -59,6 +59,8 @@ a.btn{text-decoration:none}
 .st.ficha{background:#EFE4D2;color:var(--gold-2)}
 .st.activo{background:var(--ok-bg);color:var(--ok)}
 .st.pausado{background:var(--surface-2);color:var(--muted)}
+.st.apartado{background:#EFE4D2;color:var(--gold-2)}
+.ccard.apart .ph .tp{background:var(--gold-2);color:#fff}
 .st.cerrado{background:var(--bad-bg);color:var(--bad)}
 
 /* list */
@@ -501,7 +503,8 @@ $("#names").addEventListener("click",e=>{const b=e.target.closest("button");if(!
 $("#btn-cambiar").onclick=()=>{ME="";localStorage.removeItem("lst_me");init()};
 
 /* ---------- list ---------- */
-const catalogo=()=>ALL.filter(l=>l.estatus==="activo");
+const catalogo=()=>ALL.filter(l=>l.estatus==="activo"&&l.apartado!==true);
+const apartadas=()=>ALL.filter(l=>l.estatus==="activo"&&l.apartado===true);
 const noDisp=()=>ALL.filter(l=>["pausado","cerrado"].includes(l.estatus));
 function avHTML(n,cls){const a=ASE[n]||{};const u=a.foto_url||"";if(!u)return `<span class="av ${cls||""}">${esc((n||"?").charAt(0))}</span>`;const m=/#o=([vhs])&p=(\d+)/.exec(u),o=m?m[1]:"s",pp=m?+m[2]:50;const pos=o==="v"?"50% "+pp+"%":o==="h"?pp+"% 50%":"50% 50%";return `<span class="av ${cls||""}" style="background-image:url('${esc(u.split("#")[0])}');background-position:${pos}"></span>`}
 function specsLine(l){const s=[];if(l.recamaras)s.push(`<span>${l.recamaras} <i>rec</i></span>`);if(l.banos)s.push(`<span>${l.banos}${l.medios_banos?"½":""} <i>baños</i></span>`);if(l.estacionamientos)s.push(`<span>${l.estacionamientos} <i>est</i></span>`);if(l.m2_construccion)s.push(`<span>${Math.round(l.m2_construccion)} <i>m²</i></span>`);return s.join("")}
@@ -526,17 +529,17 @@ function renderList(){
 }
 function renderCat(){
   $("#tiles").innerHTML="";$("#f-est").style.display="none";$("#f-ord").style.display="";
-  const base=filt.disp==="no"?noDisp():catalogo();
-  $("#dispills").innerHTML=`<button class="${filt.disp==="si"?"on":""}" data-d="si">Disponibles <b>${catalogo().length}</b></button><button class="${filt.disp==="no"?"on":""}" data-d="no">No disponibles <b>${noDisp().length}</b></button>`;$("#dispills").style.display="";
+  const base=filt.disp==="no"?noDisp():filt.disp==="ap"?apartadas():catalogo();
+  $("#dispills").innerHTML=`<button class="${filt.disp==="si"?"on":""}" data-d="si">Disponibles <b>${catalogo().length}</b></button><button class="${filt.disp==="ap"?"on":""}" data-d="ap">Apartadas <b>${apartadas().length}</b></button><button class="${filt.disp==="no"?"on":""}" data-d="no">No disponibles <b>${noDisp().length}</b></button>`;$("#dispills").style.display="";
   const rows=ordena(base.filter(l=>(!filt.tipo||l.tipo===filt.tipo)&&(!filt.q||[l.titulo,l.direccion,l.asesor,l.descripcion].join(" ").toLowerCase().includes(filt.q.toLowerCase()))));
   $("#count").textContent=`${rows.length} de ${base.length}`;
-  $("#list").innerHTML=rows.length?rows.map(l=>{const c=cover(l),n=docsOf(l.id,"foto_h").length;return `<div class="ccard ${l.estatus!=="activo"?"nodisp":""}" data-id="${l.id}">
-    <div class="ph" style="${c?`background-image:url('${c}')`:""}"><span class="tp">${l.estatus!=="activo"?"No disponible":esc(l.tipo)}</span>${l.asesor===ME?`<span class="mine">Mía</span>`:""}${n?`<span class="n">${n} fotos</span>`:""}</div>
+  $("#list").innerHTML=rows.length?rows.map(l=>{const c=cover(l),n=docsOf(l.id,"foto_h").length;return `<div class="ccard ${l.estatus!=="activo"?"nodisp":l.apartado===true?"apart":""}" data-id="${l.id}">
+    <div class="ph" style="${c?`background-image:url('${c}')`:""}"><span class="tp">${l.estatus!=="activo"?"No disponible":l.apartado===true?"Apartada":esc(l.tipo)}</span>${l.asesor===ME?`<span class="mine">Mía</span>`:""}${n?`<span class="n">${n} fotos</span>`:""}</div>
     <div class="bd"><div class="pr">${fmt(l.precio)}${l.tipo==="Renta"?" <small>/ mes</small>":""}</div><h3>${esc(l.titulo||"Sin título")}</h3><div class="adr">${esc(l.direccion||"")}</div>
     <div class="sp">${specsLine(l)||"<span><i>Sin datos de m²/recámaras</i></span>"}</div>
     ${l.comision_pct!=null&&l.comision_pct!==""?`<div class="com"><b>Comisión ${l.comision_pct}%</b>${l.comparte_pct!=null&&l.comparte_pct!==""?` · se comparte ${l.comparte_pct}%`:""}${l.exclusiva===true?" · exclusiva":""}</div>`:`<div class="com off">Comisión sin capturar</div>`}
     <div class="who">${avHTML(l.asesor)}<span>${esc(l.asesor)}</span></div></div></div>`}).join("")
-  :(filt.disp==="no"?`<div class="empty" style="grid-column:1/-1"><b>No hay propiedades no disponibles</b>Aquí se van las que TRUST marca como vendidas, rentadas o retiradas.</div>`:`<div class="empty" style="grid-column:1/-1"><b>Todavía no hay propiedades disponibles en el catálogo</b>Conforme TRUST dé de alta los listings, aparecerán aquí para todo el equipo.</div>`);
+  :(filt.disp==="ap"?`<div class="empty" style="grid-column:1/-1"><b>No hay propiedades apartadas</b>Aquí se muestran las que TRUST tiene en apartado.</div>`:filt.disp==="no"?`<div class="empty" style="grid-column:1/-1"><b>No hay propiedades no disponibles</b>Aquí se van las que TRUST marca como vendidas, rentadas o retiradas.</div>`:`<div class="empty" style="grid-column:1/-1"><b>Todavía no hay propiedades disponibles en el catálogo</b>Conforme TRUST dé de alta los listings, aparecerán aquí para todo el equipo.</div>`);
 }
 $("#dispills").addEventListener("click",e=>{const b=e.target.closest("button[data-d]");if(!b)return;filt.disp=b.dataset.d;renderList()});
 /* ---------- detalle (catálogo) ---------- */

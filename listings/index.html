@@ -58,6 +58,8 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:1
 .st.ficha{background:#EFE4D2;color:var(--gold-2)}
 .st.activo{background:var(--ok-bg);color:var(--ok)}
 .st.pausado{background:var(--surface-2);color:var(--muted)}
+.st.apartado{background:#EFE4D2;color:var(--gold-2)}
+.disp.ap.on{color:var(--gold-2);border-color:#E3D2B5}.disp.ap.on i{background:var(--gold)}
 .st.cerrado{background:var(--bad-bg);color:var(--bad)}
 
 /* list */
@@ -399,7 +401,10 @@ const CARACT=["Balcón","Cisterna","Elevador","Garaje","Jardín","Patio","Roof g
 const AMEN=["Alberca","Área de juegos infantiles","Cancha de tenis","Cancha de pádel","Cine","Gimnasio","Jacuzzi","Salón de usos múltiples"];
 const STAGES=[["borrador","En captura"],["nuevo","Por dar de alta"],["activo","Disponible"]];
 const NORM={documentacion:"borrador",verificacion:"nuevo",ficha:"nuevo"};
-const ESTATUS_LABEL={borrador:"En captura",nuevo:"Nuevo · por dar de alta",activo:"Disponible",pausado:"No disponible",cerrado:"No disponible"};
+const ESTATUS_LABEL={borrador:"En captura",nuevo:"Nuevo · por dar de alta",activo:"Disponible",pausado:"No disponible",cerrado:"No disponible",apartado:"Apartada"};
+const esAp=l=>l.estatus==="activo"&&l.apartado===true;
+const estK=l=>esAp(l)?"apartado":l.estatus;
+const estL=l=>ESTATUS_LABEL[estK(l)]||l.estatus;
 const CONTACTO={tel:"33 3376 5616",mail:"bb@trustreal.mx",web:"www.trustreal.mx"};
 
 let sb=null; try{ sb=(window.SBC||window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY)); }catch(e){}
@@ -461,15 +466,15 @@ const lonaChip=(l,cls)=>{const e=lonaEstado(l);return `<span class="lona-chip ${
 function renderList(){
   const sel=$("#f-est");if(sel.options.length<=1){Object.entries(ESTATUS_LABEL).forEach(([k,v])=>{const o=document.createElement("option");o.value=k;o.textContent=v;sel.appendChild(o)})}
   if(ROLE==="admin"){
-    const c=k=>k==="nodisp"?LISTINGS.filter(l=>["pausado","cerrado"].includes(l.estatus)).length:LISTINGS.filter(l=>l.estatus===k).length;
-    $("#tiles").innerHTML=[["nuevo","Nuevos por dar de alta"],["activo","Disponibles"],["nodisp","No disponibles"],["borrador","En captura (asesor)"],["","Todos"]].map(([k,l])=>`<div class="tile ${filt.est===k?"sel":""}" data-k="${k}"><span class="l">${l}</span><span class="v">${k?c(k):LISTINGS.length}</span></div>`).join("");
+    const c=k=>k==="nodisp"?LISTINGS.filter(l=>["pausado","cerrado"].includes(l.estatus)).length:LISTINGS.filter(l=>estK(l)===k).length;
+    $("#tiles").innerHTML=[["nuevo","Nuevos por dar de alta"],["activo","Disponibles"],["apartado","Apartadas"],["nodisp","No disponibles"],["borrador","En captura (asesor)"],["","Todos"]].map(([k,l])=>`<div class="tile ${filt.est===k?"sel":""}" data-k="${k}"><span class="l">${l}</span><span class="v">${k?c(k):LISTINGS.length}</span></div>`).join("");
   } else $("#tiles").innerHTML="";
-  const rows=LISTINGS.filter(l=>(!filt.i24||(["activo","pausado","cerrado"].includes(l.estatus)&&(filt.i24==="si"?!!l.en_inmuebles24:!l.en_inmuebles24)))&&(!filt.lona||(lonaAplica(l)&&lonaEstado(l)===filt.lona))&&(!filt.tipo||l.tipo===filt.tipo)&&(!filt.est||(filt.est==="nodisp"?["pausado","cerrado"].includes(l.estatus):l.estatus===filt.est))&&(!filt.q||[l.titulo,l.direccion,l.asesor].join(" ").toLowerCase().includes(filt.q.toLowerCase())));
+  const rows=LISTINGS.filter(l=>(!filt.i24||(["activo","pausado","cerrado"].includes(l.estatus)&&(filt.i24==="si"?!!l.en_inmuebles24:!l.en_inmuebles24)))&&(!filt.lona||(lonaAplica(l)&&lonaEstado(l)===filt.lona))&&(!filt.tipo||l.tipo===filt.tipo)&&(!filt.est||(filt.est==="nodisp"?["pausado","cerrado"].includes(l.estatus):estK(l)===filt.est))&&(!filt.q||[l.titulo,l.direccion,l.asesor].join(" ").toLowerCase().includes(filt.q.toLowerCase())));
   $("#count").textContent=`${rows.length} de ${LISTINGS.length}`;
   $("#list").innerHTML=rows.length?rows.map(l=>{const c=cover(l);return `<div class="lcard" data-id="${l.id}">
-    <div class="ph" style="${c?`background-image:url('${c}')`:""}"><span class="st ${l.estatus}">${ESTATUS_LABEL[l.estatus]||l.estatus}</span>${l.correccion_en&&l.estatus==="nuevo"?`<span class="corr" style="position:absolute;left:12px;bottom:12px">✎ Corregida</span>`:""}<span class="tp">${esc(l.tipo)}</span>${ROLE==="admin"&&lonaAplica(l)?lonaChip(l):""}</div>
+    <div class="ph" style="${c?`background-image:url('${c}')`:""}"><span class="st ${estK(l)}">${estL(l)}</span>${l.correccion_en&&l.estatus==="nuevo"?`<span class="corr" style="position:absolute;left:12px;bottom:12px">✎ Corregida</span>`:""}<span class="tp">${esc(l.tipo)}</span>${ROLE==="admin"&&lonaAplica(l)?lonaChip(l):""}</div>
     <div class="bd"><h3>${esc(l.titulo||"Sin título")}</h3><div class="adr">${esc(l.direccion||"Sin dirección")}</div><div class="pr">${fmt(l.precio)}${l.tipo==="Renta"?" <small style='font-size:12px;color:var(--muted)'>/ mes</small>":""}</div>
-    ${stagesHTML(l)}<div class="meta"><span>${ROLE==="admin"?esc(l.asesor):""}</span><span>${docsOf(l.id,"foto_h").length} fotos · ${fecha(l.created_at)}</span></div>${ROLE==="admin"&&["activo","pausado","cerrado"].includes(l.estatus)?`<div class="dispr"><button type="button" class="disp ${l.estatus==="activo"?"on":""}" data-disp title="Cambiar disponibilidad"><i></i>${l.estatus==="activo"?"Disponible":"No disponible"}</button><button type="button" class="disp ${l.en_inmuebles24?"on":""}" data-i24 title="Indica si la propiedad está dada de alta en Inmuebles24"><i></i>Inmuebles24</button></div>`:""}</div></div>`}).join("")
+    ${stagesHTML(l)}<div class="meta"><span>${ROLE==="admin"?esc(l.asesor):""}</span><span>${docsOf(l.id,"foto_h").length} fotos · ${fecha(l.created_at)}</span></div>${ROLE==="admin"&&["activo","pausado","cerrado"].includes(l.estatus)?`<div class="dispr"><button type="button" class="disp ${l.estatus==="activo"&&!esAp(l)?"on":""}" data-disp title="Cambiar disponibilidad"><i></i>${l.estatus==="activo"?"Disponible":"No disponible"}</button>${l.estatus==="activo"?`<button type="button" class="disp ap ${esAp(l)?"on":""}" data-apt title="Poner o quitar de apartado"><i></i>Apartado</button>`:""}<button type="button" class="disp ${l.en_inmuebles24?"on":""}" data-i24 title="Indica si la propiedad está dada de alta en Inmuebles24"><i></i>Inmuebles24</button></div>`:""}</div></div>`}).join("")
   :`<div class="empty" style="grid-column:1/-1"><b>Sin listings</b>${ROLE==="admin"?"Todavía no hay propiedades capturadas.":"Captura tu primera propiedad con “+ Nuevo listing”."}</div>`;
 }
 function stageIdx(l){return Math.max(0,STAGES.findIndex(s=>s[0]===l.estatus))}
@@ -485,12 +490,23 @@ $("#list").addEventListener("click",async e=>{
   if(i24){e.stopPropagation();const l=LISTINGS.find(x=>x.id===i24.closest(".lcard").dataset.id);const nv=!l.en_inmuebles24;
     const r=await sb.from("listings").update({en_inmuebles24:nv}).eq("id",l.id);
     if(r.error){toast("No se pudo guardar: "+r.error.message+" (¿corriste el SQL de Inmuebles24?)",true);return}l.en_inmuebles24=nv;toast(nv?"Marcada en Inmuebles24":"Quitada de Inmuebles24");renderList();return}
+  const ap=e.target.closest("[data-apt]");
+  if(ap){e.stopPropagation();const l=LISTINGS.find(x=>x.id===ap.closest(".lcard").dataset.id);await setApartado(l,!esAp(l));return}
   const q=e.target.closest("[data-disp]");
-  if(q){e.stopPropagation();const l=LISTINGS.find(x=>x.id===q.closest(".lcard").dataset.id);const on=l.estatus==="activo";
+  if(q){e.stopPropagation();const l=LISTINGS.find(x=>x.id===q.closest(".lcard").dataset.id);
+    if(esAp(l)){await setApartado(l,false);return} // apartada → vuelve a disponible
+    const on=l.estatus==="activo";
     if(on&&!confirm("¿Marcar “"+(l.titulo||"")+"” como no disponible?"))return;
-    const r=await sb.from("listings").update(on?{estatus:"pausado"}:{estatus:"activo"}).eq("id",l.id);
-    if(r.error){toast("No se pudo cambiar: "+r.error.message,true);return}l.estatus=on?"pausado":"activo";toast(on?"No disponible":"Disponible");renderList();return}
+    const upd=on?{estatus:"pausado"}:{estatus:"activo"};if(on&&l.apartado)upd.apartado=false;
+    const r=await sb.from("listings").update(upd).eq("id",l.id);
+    if(r.error){toast("No se pudo cambiar: "+r.error.message,true);return}Object.assign(l,upd);toast(on?"No disponible":"Disponible");renderList();return}
   const c=e.target.closest(".lcard");if(c)openEd(LISTINGS.find(l=>l.id===c.dataset.id))});
+async function setApartado(l,nv){
+  const upd={apartado:nv,apartado_en:nv?new Date().toISOString():null};
+  const r=await sb.from("listings").update(upd).eq("id",l.id);
+  if(r.error){toast(/apartado/.test(r.error.message)?"Falta correr sql/listings_apartado.sql en Supabase":"No se pudo cambiar: "+r.error.message,true);return false}
+  Object.assign(l,upd);if(cur&&cur.id===l.id)Object.assign(cur,upd);toast(nv?"Apartada: ya no sale en Disponibles":"Disponible de nuevo");
+  renderList();if(cur&&cur.id===l.id&&$("#view-list").style.display==="none")refresh();return true}
 $("#btn-new").onclick=()=>openEd(null);
 $("#btn-back").onclick=()=>{load();show("list")};
 
@@ -520,8 +536,8 @@ function openEd(l){
 function opcSel(){const v=cur.asesor||"";const ops=[...new Set(ASESORES.concat(v&&v!=="admin"?[v]:[]))];
   return `<label for="opc-sel" style="font-weight:600">Opcionador:</label> <select id="opc-sel" style="font:inherit;font-size:13px;padding:4px 8px;border:1px solid var(--line-2,#D8D2C3);border-radius:8px;background:#fff;${!v||v==="admin"?"border-color:#A8342A;color:#A8342A":""}"><option value="admin" ${!v||v==="admin"?"selected":""}>Sin asignar (admin)</option>${ops.map(n=>`<option ${n===v?"selected":""}>${esc(n)}</option>`).join("")}</select>`}
 function subHTML(){
-  if(ROLE==="admin")return (cur.id?`<span class="st ${cur.estatus}">${ESTATUS_LABEL[cur.estatus]||cur.estatus}</span> &nbsp;·&nbsp; `:"")+opcSel()+(cur.id?` &nbsp;·&nbsp; creado ${fecha(cur.created_at)}`:` &nbsp;·&nbsp; elige al asesor dueño de la propiedad; le aparecerá en su portal.`);
-  return cur.id?`<span class="st ${cur.estatus}">${ESTATUS_LABEL[cur.estatus]||cur.estatus}</span> &nbsp;·&nbsp; ${esc(cur.asesor)} · creado ${fecha(cur.created_at)}`:"Captura la propiedad paso a paso; puedes guardar y seguir después."}
+  if(ROLE==="admin")return (cur.id?`<span class="st ${estK(cur)}">${estL(cur)}</span> &nbsp;·&nbsp; `:"")+opcSel()+(cur.id?` &nbsp;·&nbsp; creado ${fecha(cur.created_at)}`:` &nbsp;·&nbsp; elige al asesor dueño de la propiedad; le aparecerá en su portal.`);
+  return cur.id?`<span class="st ${estK(cur)}">${estL(cur)}</span> &nbsp;·&nbsp; ${esc(cur.asesor)} · creado ${fecha(cur.created_at)}`:"Captura la propiedad paso a paso; puedes guardar y seguir después."}
 function refresh(){
   $("#ed-sub").innerHTML=subHTML();
   {const os=$("#opc-sel");if(os)os.onchange=async()=>{const n=os.value,prev=cur.asesor;
@@ -679,7 +695,7 @@ function renderAlta(){
     <div class="check">
     ${ck(1,s1,"Cargar en Easy Broker","Pega la liga del anuncio ya publicado.",`<input id="eb_url" value="${esc(l.easybroker_url||"")}" placeholder="https://www.easybroker.com/…"><button class="btn primary" id="eb_save">Guardar liga</button>${s1?`<a class="btn" href="${esc(l.easybroker_url)}" target="_blank" rel="noopener">Abrir ↗</a>`:""}`)}
     ${ck(2,s2,"Ficha técnica","Se genera desde aquí con la portada e interior elegidas abajo. Puedes regenerarla las veces que quieras.",`<button class="btn gold" id="act-ficha">⤓ Ficha PDF</button>${s2?`<span class="hint">Generada ✓</span>`:""}`)}
-    ${ck(3,s3,"Disponibilidad","Disponible = sale en el catálogo de Brokerage para todos los asesores. No disponible = se va a la píldora “No disponibles” (vendida, rentada o retirada).",s3?(l.estatus==="activo"?`<span class="st activo">Disponible</span><button class="btn" id="act-pausar">Marcar no disponible</button>`:`<span class="st ${l.estatus}">No disponible</span><button class="btn primary" id="act-reactivar">Marcar disponible</button>`):`<button class="btn primary" id="act-activar" ${s1&&s2?"":"disabled"} title="${s1&&s2?"":"Primero la liga y la ficha"}">Publicar como disponible ✓</button>`)}
+    ${ck(3,s3,"Disponibilidad","Disponible = sale en el catálogo de Brokerage para todos los asesores. Apartada = sigue activa pero deja de salir en Disponibles y en Brokerage. No disponible = se va a la píldora “No disponibles” (vendida, rentada o retirada).",s3?(l.estatus==="activo"?`<span class="st ${estK(l)}">${estL(l)}</span><button class="btn" id="act-apartar">${esAp(l)?"Quitar apartado":"Poner en apartado"}</button><button class="btn" id="act-pausar">Marcar no disponible</button>`:`<span class="st ${l.estatus}">No disponible</span><button class="btn primary" id="act-reactivar">Marcar disponible</button>`):`<button class="btn primary" id="act-activar" ${s1&&s2?"":"disabled"} title="${s1&&s2?"":"Primero la liga y la ficha"}">Publicar como disponible ✓</button>`)}
     </div>
     <div class="sect">${fichaFotosHTML(l)}</div>
     <div class="sect"><h3>Lona</h3><p class="hint" style="margin:0 0 8px">Toda propiedad debe llevar lona. Se marca como colocada cuando se sube la foto o video de evidencia, o puedes cambiar la etapa a mano aquí.</p><div class="actions" style="margin-top:0">${lonaChip(l,"det")}<label for="lona_etapa" class="hint" style="margin-left:6px">Cambiar etapa:</label><select id="lona_etapa" style="font:inherit;font-size:13px;padding:6px 10px;border:1px solid var(--line-2);border-radius:8px;background:#fff">${[["nosol","No solicitada"],["sol","Solicitada"],["nocol","Entregada · no colocada"],["col","Colocada"],["noperm","Sin lona (propietario no la permite)"]].map(([k,t])=>`<option value="${k}" ${lonaEstado(l)===k?"selected":""}>${t}</option>`).join("")}</select>${l.lona_no_permitida?`<span class="hint">${l.lona_motivo?esc(l.lona_motivo):"Motivo no registrado"}</span>`:""}</div>
@@ -689,7 +705,8 @@ function renderAlta(){
   on("eb_save",async()=>{const u=$("#eb_url").value.trim();if(!u){toast("Pega la liga",true);return}if(await patch({easybroker_url:u}))toast("Liga guardada")});
   on("act-ficha",generarFicha);
   on("act-activar",async()=>{if(await patch({estatus:"activo"}))toast("Publicada: ya sale en el catálogo de Brokerage")});
-  on("act-pausar",async()=>{if(confirm("¿Marcar como no disponible? Deja de salir en el catálogo de los asesores y pasa a “No disponibles”.")&&await patch({estatus:"pausado"}))toast("Marcada como no disponible")});
+  on("act-apartar",()=>setApartado(l,!esAp(l)));
+  on("act-pausar",async()=>{if(confirm("¿Marcar como no disponible? Deja de salir en el catálogo de los asesores y pasa a “No disponibles”.")&&await patch(l.apartado?{estatus:"pausado",apartado:false}:{estatus:"pausado"}))toast("Marcada como no disponible")});
   on("act-reactivar",async()=>{if(await patch({estatus:"activo"}))toast("Disponible de nuevo en el catálogo")});
   {const ls=$("#lona_etapa");if(ls)ls.onchange=async()=>{const k=ls.value;let upd;
     if(k==="noperm"){const m=prompt("¿Por qué no se puede colocar? (por ejemplo: el propietario no lo permite, condominio, reglamento)",l.lona_motivo||"El propietario no la permite");if(m===null){ls.value=lonaEstado(l);return}upd={lona_no_permitida:true,lona_motivo:m.trim()||"El propietario no la permite"}}
