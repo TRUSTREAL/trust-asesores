@@ -7,6 +7,10 @@
 (function(){
   "use strict";
   var PLAZO=30,H_INI=9,H_FIN=18;
+  /* INTERRUPTOR GENERAL del reloj de 30 min. false = en pausa (decisión de Álvaro, 27 nov 2026, hasta nuevo aviso):
+     no hay cuenta regresiva, ni "Vencido", ni leads devueltos a Berna. Los botones Llamar/WhatsApp siguen funcionando
+     y siguen guardando el primer contacto (para tener el dato cuando se reactive). Para reactivar: poner true. */
+  var ACTIVO=false;
   var esc=function(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})};
   /* minutos hábiles entre dos momentos (hora local del dispositivo) */
   function minHabiles(a,b){
@@ -24,6 +28,7 @@
   }
   /* estado del reloj de un lead: null si no aplica */
   function estado(l){
+    if(!ACTIVO)return null;
     if(!l||!l.asignado_en)return null;
     if(l.primer_contacto_en){var m=minHabiles(l.asignado_en,l.primer_contacto_en);return {contactado:true,min:m,vencido:m>PLAZO,canal:l.primer_contacto_canal||""}}
     if(l.venta||l.apartado||l.perdido||l.futuro)return null;   /* ya cerrado por otra vía: no se persigue */
@@ -77,5 +82,5 @@
     document.head.appendChild(st);
   }
   if(document.head)css();else document.addEventListener("DOMContentLoaded",css);
-  window.RELOJ={PLAZO:PLAZO,minHabiles:minHabiles,estado:estado,pendiente:pendiente,vencido:vencido,badge:badge,botones:botones,contacto:contacto,dur:dur};
+  window.RELOJ={ACTIVO:ACTIVO,PLAZO:PLAZO,minHabiles:minHabiles,estado:estado,pendiente:pendiente,vencido:vencido,badge:badge,botones:botones,contacto:contacto,dur:dur};
 })();
