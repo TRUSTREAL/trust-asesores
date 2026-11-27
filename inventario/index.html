@@ -829,6 +829,7 @@ function listaPDF(p){
   const nota=renta?"":"Aparta tu unidad con $5,000 reembolsables.";
   const nR=rows.length, dens=nR<=22?"":nR<=32?"c1":nR<=37?"c2":"c1";   // todo en una hoja si cabe; si no, 2 hojas con encabezado repetido
   const pols=(Array.isArray(p.politicas)&&p.politicas.length&&!renta)?p.politicas:[];
+  const hasPol=!renta&&(pols.length||!!p.politica);
   const mkTable=trs=>`<table class="${dens}"><thead><tr>${th.map(h=>`<th class="${h[1]||""}">${h[0]}</th>`).join("")}</tr></thead><tbody>${trs.map(r=>`<tr>${r.map(c=>`<td class="${c[1]||""}">${c[0]}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
   const chunks=!nR?[[]]:nR<=37?[tr]:(()=>{const o=[tr.slice(0,32)];for(let k=32;k<nR;k+=40)o.push(tr.slice(k,k+40));return o})();
   const HEAD=`<div class="top"><div><img class="logo" src="data:image/png;base64,${LOGO_B64}" alt="TRUST realtor">${p.desarrollador?`<div class="dev">Desarrolla: <b>${esc(p.desarrollador)}</b></div>`:""}</div><div class="right">Emitida<b>${hoy}</b></div></div>
@@ -839,8 +840,12 @@ function listaPDF(p){
   const EMPTY=`<div class="empty">${filtered?"Ninguna unidad coincide con el filtro.":"Sin unidades disponibles en este momento."}</div>`;
   const BAND=nota?`<div class="band"><div class="t">${esc(nota)}</div><div class="c">33 3376 5616</div></div>`:"";
   const PRICE=chunks.map((ch,i)=>`<div class="page">${i?MINI:HEAD}${nR?mkTable(ch):EMPTY}${i===chunks.length-1?BAND:""}${FOOT}</div>`).join("");
-  const POLP=pols.length?`<div class="page pol">${MINI.replace("Lista de precios · ","")}<div class="title">Políticas de <em>pago</em></div><div class="proj">${esc(p.nombre)}</div>
-  <div class="polsp">${pols.map(x=>{const c=polCalc(x);const n=+x.meses||0;return `<div class="pp"><b>${esc(x.nombre)}${+x.desc?` · ${pct(x.desc)} de descuento`:""}</b><span>Enganche ${x.eng_tipo==="pct"?pct(x.eng):money(x.eng)}${n?` · ${n} mensualidad${n===1?"":"es"} ${x.men_tipo==="pct"?"("+pct(x.men)+" total)":"de "+money(x.men)}`:""} · Escritura ${c.saldo!=null?pct(c.saldo):"resto"}</span>${x.nota?`<small>${esc(x.nota)}</small>`:""}</div>`}).join("")}</div>
+  const C=pols.map(x=>({x,n:+x.meses||0,dsc:+x.desc||0,saldo:polCalc(x).saldo}));
+  const prow=(l,fn)=>`<tr><td class="l">${l}</td>${C.map(c=>`<td>${fn(c)}</td>`).join("")}</tr>`;
+  const polTab=pols.length?`<table class="pt"><thead><tr><th class="l">Política de pago</th>${C.map(c=>`<th>${esc(c.x.nombre||"Política")}</th>`).join("")}</tr></thead><tbody>${prow("Descuento",c=>c.dsc?pct(c.dsc):"—")}${prow("Enganche",c=>c.x.eng_tipo==="pct"?pct(c.x.eng):money(+c.x.eng||0))}${prow("Mensualidades",c=>c.n?(c.x.men_tipo==="pct"?`${pct(c.x.men)}<small>en ${c.n} pago${c.n===1?"":"s"}</small>`:`${money(+c.x.men||0)}<small>${c.n} pago${c.n===1?"":"s"}</small>`):"—")}${prow("A escritura",c=>c.saldo!=null?pct(c.saldo):"Resto")}</tbody></table>`:"";
+  const polNotas=pols.some(x=>x.nota)?`<ul class="pn">${pols.filter(x=>x.nota).map(x=>`<li><b>${esc(x.nombre||"Política")}:</b> ${esc(x.nota)}</li>`).join("")}</ul>`:"";
+  const POLP=hasPol?`<div class="page pol">${MINI.replace("Lista de precios · ","")}<div class="title">Políticas de <em>pago</em></div><div class="proj">${esc(p.nombre)}</div>
+  ${polTab}${polNotas}${p.politica?`<div class="notes">${polHTML(p.politica)}</div>`:""}
   ${FOOT}</div>`:"";
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Lista de precios · ${esc(p.nombre)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
@@ -893,6 +898,18 @@ td.eng{font-weight:600}
 .foot .by{display:flex;align-items:center;gap:8px;font-size:9px;letter-spacing:.14em;text-transform:uppercase}
 .foot .by img{width:64px}
 .empty{padding:40px;text-align:center;color:#6F726B;font-size:13px}
+table.pt{table-layout:fixed;font-size:11px;margin-top:14px}
+.pt th{background:#173F35;color:#FAF8F2;font-family:Lora,Georgia,serif;font-size:12.5px;font-weight:500;padding:9px 8px;text-align:center;white-space:normal;letter-spacing:0;text-transform:none;border:0}
+.pt th.l{font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:#D9C9A8;text-align:left;width:20%;padding-left:14px}
+.pt td{padding:8px;border-bottom:1px solid #EEE9DD;text-align:center;font-variant-numeric:tabular-nums;font-weight:500;white-space:normal}
+.pt td.l{text-align:left;padding-left:14px;font-weight:400;color:#585C57}
+.pt td small{display:block;font-size:8.5px;color:#6F726B;font-weight:400}
+.pt tr:nth-child(even) td{background:#fff}
+.pn{margin:8px 0 0;padding:0 0 0 16px;font-size:9.5px;color:#6F726B;line-height:1.5}.pn b{color:#1E241F;font-weight:500}
+.notes{margin-top:12px;background:#fff;border:1px solid #E3DDD0;border-radius:10px;padding:10px 18px;font-size:10px;line-height:1.55;break-inside:avoid}
+.notes h3{font-family:Lora,serif;font-size:13px;color:#173F35;font-weight:500;margin:4px 0}
+.notes h4{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#6F726B;margin:6px 0 2px}
+.notes p{margin:3px 0}.notes ul{margin:3px 0;padding-left:18px}
 @media print{body{background:#FAF8F2}.page{margin:0}}
 @media screen{.page{margin:10px auto;box-shadow:0 2px 12px rgba(0,0,0,.15)}body{background:#ddd}}
 </style></head><body>${PRICE}${POLP}
