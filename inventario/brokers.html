@@ -931,7 +931,7 @@ function edPDF(p){
   const numSort=(a,b)=>uParse(a).num.localeCompare(uParse(b).num,undefined,{numeric:true});
   const rowH=Math.max(30,Math.min(56,Math.floor(540/(levels.length+(locs.length?1.6:0)+1))));
   const tile=u=>{const st=EDST(u.estatus),{num}=uParse(u);const mute=st!=="disponible"&&st!=="vendido";
-    if(VENTAS&&st!=="disponible")return `<div class="ebu hid"></div>`;
+    if((VENTAS||ED.disp)&&st!=="disponible")return `<div class="ebu hid"></div>`;
     const terr=edTerr(u),mi=+u.m2int||0;
     return `<div class="ebu st-${st} ${mute?"mute":""} ${pass(u)?"":"dim"}"><b>${esc(num)}</b>${mute?"":`<span class="t">${esOfi(p)?"":`<em>${esc(edRec(u))}</em>${edRec(u)?"·":""}`}${terr>0?`${mi.toFixed(0)}+${terr.toFixed(0)}`:mi.toFixed(0)}m²</span><span class="p">${st==="disponible"?edM(+u.precio||0):"Vendido"}</span>`}</div>`};
   const colsOf=tw=>Math.max(1,...levels.map(l=>deps.filter(u=>torreDe(u)===tw&&String(u.nivel).trim()===l).length));
@@ -947,8 +947,9 @@ function edPDF(p){
   });
   h+=`</div>`;
   if(locs.length)h+=`<div class="ebgf"><div class="lbl">Locales comerciales</div><div class="ebrow" style="grid-template-columns:repeat(${Math.max(locs.length,6)},minmax(0,1fr));height:${rowH}px">${locs.sort(numSort).map(tile).join("")}</div></div>`;
-  const c=k=>all.filter(u=>EDST(u.estatus)===k).length;
-  const leg=`<div class="ebleg"><span><i style="background:#E1F1E8;border:1px solid #2E7D5B"></i>Disponible</span>${VENTAS?"":`<span><i style="background:#F2C94C"></i>Apartado${" · "+c("apartado")}</span><span><i style="background:#2F5597"></i>Vendido${" · "+c("vendido")}</span>${c("aportante")?`<span><i style="background:#E07A2F"></i>Aportante</span>`:""}${c("bloqueado")?`<span><i style="background:#B8B8B5"></i>Bloqueado</span>`:""}`}<span class="r">Precios en millones de pesos · m² = interior + terraza</span></div>`;
+  const LEG={disponible:'<span><i style="background:#E1F1E8;border:1px solid #2E7D5B"></i>Disponible</span>',apartado:'<span><i style="background:#F2C94C"></i>Apartado</span>',vendido:'<span><i style="background:#2F5597"></i>Vendido</span>',aportante:'<span><i style="background:#E07A2F"></i>Aportante</span>',bloqueado:'<span><i style="background:#B8B8B5"></i>Bloqueado</span>'};
+  const shown=new Set(all.filter(u=>pass(u)&&!((VENTAS||ED.disp)&&EDST(u.estatus)!=="disponible")).map(u=>EDST(u.estatus)));   // solo las etiquetas de lo que se muestra, sin conteos
+  const leg=`<div class="ebleg">${["disponible","apartado","vendido","aportante","bloqueado"].filter(k=>shown.has(k)).map(k=>LEG[k]).join("")}<span class="r">Precios en millones de pesos · m² = interior + terraza</span></div>`;
   const nDisp=all.filter(u=>EDST(u.estatus)==="disponible"&&pass(u)).length;
   const fl=[ED.filt?(ED.filt==="Est"?"Estudio":ED.filt):"",ED.disp?"solo disponibles":""].filter(Boolean).join(" · ");
   return {html:h+leg,nDisp,fl};
