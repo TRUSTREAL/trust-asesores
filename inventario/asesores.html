@@ -791,15 +791,29 @@ function listaPDF(p){
   const nota=renta?"":"Aparta tu unidad con $5,000 reembolsables.";
   const nR=rows.length, dens=nR<=22?"":nR<=32?"c1":nR<=37?"c2":"c1";
   const pols=(Array.isArray(p.politicas)&&p.politicas.length&&!renta)?p.politicas:[];
+  const mkTable=trs=>`<table class="${dens}"><thead><tr>${th.map(h=>`<th class="${h[1]||""}">${h[0]}</th>`).join("")}</tr></thead><tbody>${trs.map(r=>`<tr>${r.map(c=>`<td class="${c[1]||""}">${c[0]}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+  const chunks=!nR?[[]]:nR<=37?[tr]:(()=>{const o=[tr.slice(0,32)];for(let k=32;k<nR;k+=40)o.push(tr.slice(k,k+40));return o})();
+  const HEAD=`<div class="top"><div><img class="logo" src="data:image/png;base64,${LOGO_B64}" alt="TRUST realtor">${p.desarrollador?`<div class="dev">Desarrolla: <b>${esc(p.desarrollador)}</b></div>`:""}</div><div class="right">Emitida<b>${hoy}</b></div></div>
+  <div class="title">Lista de <em>precios</em></div><div class="proj">${esc(p.nombre)}</div>
+  <div class="meta">${[p.giro?`<span>${esc(p.giro)}</span>`:"",p.ubicacion?`<span>${esc(p.ubicacion)}</span>`:"",(filtered?`<span><b>${rows.length}</b> unidad${rows.length===1?"":"es"} · filtro: <b>${esc(filtTxt)}</b></span>`:mixed?`<span><b>${rows.length}</b> unidad${rows.length===1?"":"es"}</span>`:`<span><b>${rows.length}</b> unidad${rows.length===1?"":"es"} disponible${rows.length===1?"":"s"}</span>`)].filter(Boolean).join("")}</div>`;
+  const MINI=`<div class="polh"><div><img class="logo" src="data:image/png;base64,${LOGO_B64}" alt="TRUST realtor"></div><div class="right">Lista de precios · ${esc(p.nombre)}<b>${hoy}</b></div></div>`;
+  const FOOT=`<div class="foot"><div>Precios en pesos mexicanos · Sujetos a cambio sin previo aviso${renta?" · Renta mensual sin IVA":""}${p.nota_lista?" · "+esc(p.nota_lista):""}</div><div class="by">Comercializado por <img src="data:image/png;base64,${LOGO_B64}" alt="TRUST"></div></div>`;
+  const EMPTY=`<div class="empty">${filtered?"Ninguna unidad coincide con el filtro.":"Sin unidades disponibles en este momento."}</div>`;
+  const BAND=nota?`<div class="band"><div class="t">${esc(nota)}</div><div class="c">33 3376 5616</div></div>`:"";
+  const PRICE=chunks.map((ch,i)=>`<div class="page">${i?MINI:HEAD}${nR?mkTable(ch):EMPTY}${i===chunks.length-1?BAND:""}${FOOT}</div>`).join("");
+  const POLP=pols.length?`<div class="page pol">${MINI.replace("Lista de precios · ","")}<div class="title">Políticas de <em>pago</em></div><div class="proj">${esc(p.nombre)}</div>
+  <div class="polsp">${pols.map(x=>{const c=polCalc(x);const n=+x.meses||0;return `<div class="pp"><b>${esc(x.nombre)}${+x.desc?` · ${pct(x.desc)} de descuento`:""}</b><span>Enganche ${x.eng_tipo==="pct"?pct(x.eng):money(x.eng)}${n?` · ${n} mensualidad${n===1?"":"es"} ${x.men_tipo==="pct"?"("+pct(x.men)+" total)":"de "+money(x.men)}`:""} · Escritura ${c.saldo!=null?pct(c.saldo):"resto"}</span>${x.nota?`<small>${esc(x.nota)}</small>`:""}</div>`}).join("")}</div>
+  ${FOOT}</div>`:"";
   const html=`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Lista de precios · ${esc(p.nombre)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-@page{size:letter;margin:.5in 0 .45in}
+@page{size:letter;margin:0}
 *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 html,body{background:#FAF8F2}
 body{margin:0;font-family:Poppins,"Segoe UI",sans-serif;color:#1E241F;background:#FAF8F2}
-.page{width:8.5in;margin:0 auto;padding:0 .6in;background:#FAF8F2;display:flex;flex-direction:column;min-height:9.9in}
-.page+.page{break-before:page}
+.page{width:8.5in;height:10.96in;margin:0 auto;padding:.5in .55in .45in;background:#FAF8F2;display:flex;flex-direction:column;overflow:hidden;break-after:page;position:relative}
+.page:last-of-type{break-after:auto}
+table{table-layout:auto;max-width:100%}
 .top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}
 .logo{width:120px;height:auto}
 .dev{font-size:10.5px;color:#6F726B;margin-top:10px}
@@ -841,27 +855,10 @@ td.eng{font-weight:600}
 .foot .by{display:flex;align-items:center;gap:8px;font-size:9px;letter-spacing:.14em;text-transform:uppercase}
 .foot .by img{width:64px}
 .empty{padding:40px;text-align:center;color:#6F726B;font-size:13px}
-@media print{body{background:#FAF8F2}.page{margin:0;min-height:auto}}
-</style></head><body><div class="page pr">
-  <div class="top">
-    <div><img class="logo" src="data:image/png;base64,${LOGO_B64}" alt="TRUST realtor">${p.desarrollador?`<div class="dev">Desarrolla: <b>${esc(p.desarrollador)}</b></div>`:""}</div>
-    <div class="right">Emitida<b>${hoy}</b></div>
-  </div>
-  <div class="title">Lista de <em>precios</em></div>
-  <div class="proj">${esc(p.nombre)}</div>
-  <div class="meta">${[p.giro?`<span>${esc(p.giro)}</span>`:"",p.ubicacion?`<span>${esc(p.ubicacion)}</span>`:"",(filtered?`<span><b>${rows.length}</b> unidad${rows.length===1?"":"es"} · filtro: <b>${esc(filtTxt)}</b></span>`:mixed?`<span><b>${rows.length}</b> unidad${rows.length===1?"":"es"}</span>`:`<span><b>${rows.length}</b> unidad${rows.length===1?"":"es"} disponible${rows.length===1?"":"s"}</span>`)].filter(Boolean).join("")}</div>
-  ${rows.length?`<table class="${dens}"><thead><tr>${th.map(h=>`<th class="${h[1]||""}">${h[0]}</th>`).join("")}</tr></thead><tbody>${tr.map(r=>`<tr>${r.map(c=>`<td class="${c[1]||""}">${c[0]}</td>`).join("")}</tr>`).join("")}</tbody></table>`:`<div class="empty">${filtered?"Ninguna unidad coincide con el filtro.":"Sin unidades disponibles en este momento."}</div>`}
-  ${nota?`<div class="band"><div class="t">${esc(nota)}</div><div class="c">33 3376 5616</div></div>`:""}
-  <div class="foot"><div>Precios en pesos mexicanos · Sujetos a cambio sin previo aviso${renta?" · Renta mensual sin IVA":""}${p.nota_lista?" · "+esc(p.nota_lista):""}</div><div class="by">Comercializado por <img src="data:image/png;base64,${LOGO_B64}" alt="TRUST"></div></div>
-</div>
-${pols.length?`<div class="page pol">
-  <div class="polh"><div><img class="logo" src="data:image/png;base64,${LOGO_B64}" alt="TRUST realtor"></div><div class="right">${esc(p.nombre)}<b>${hoy}</b></div></div>
-  <div class="title">Políticas de <em>pago</em></div>
-  <div class="proj">${esc(p.nombre)}</div>
-  <div class="polsp">${pols.map(x=>{const c=polCalc(x);const n=+x.meses||0;return `<div class="pp"><b>${esc(x.nombre)}${+x.desc?` · ${pct(x.desc)} de descuento`:""}</b><span>Enganche ${x.eng_tipo==="pct"?pct(x.eng):money(x.eng)}${n?` · ${n} mensualidad${n===1?"":"es"} ${x.men_tipo==="pct"?"("+pct(x.men)+" total)":"de "+money(x.men)}`:""} · Escritura ${c.saldo!=null?pct(c.saldo):"resto"}</span>${x.nota?`<small>${esc(x.nota)}</small>`:""}</div>`}).join("")}</div>
-  <div class="foot"><div>Precios en pesos mexicanos · Sujetos a cambio sin previo aviso${p.nota_lista?" · "+esc(p.nota_lista):""}</div><div class="by">Comercializado por <img src="data:image/png;base64,${LOGO_B64}" alt="TRUST"></div></div>
-</div>`:""}
-<script>window.addEventListener("load",()=>setTimeout(()=>window.print(),500));<\/script>
+@media print{body{background:#FAF8F2}.page{margin:0}}
+@media screen{.page{margin:10px auto;box-shadow:0 2px 12px rgba(0,0,0,.15)}body{background:#ddd}}
+</style></head><body>${PRICE}${POLP}
+<script>window.addEventListener("load",()=>setTimeout(()=>{document.querySelectorAll("table").forEach(t=>{const W=t.parentElement.clientWidth-(parseFloat(getComputedStyle(t.parentElement).paddingLeft)+parseFloat(getComputedStyle(t.parentElement).paddingRight));if(t.scrollWidth>W+1)t.style.zoom=(W/t.scrollWidth).toFixed(3)});window.print()},500));<\/script>
 </body></html>`;
   const w=window.open("","_blank");
   if(!w){alert("Permite las ventanas emergentes para generar el PDF.");return}
